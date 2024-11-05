@@ -1,0 +1,27 @@
+# ignore papers and outputs and data folders
+papers/
+outputs/
+data/
+
+# ignore vscode settings
+.vscode/
+
+# ignore cursor settings
+.cursorignore
+
+# ignore latex files
+*.tex
+
+# ignore pdfs
+*.pdf
+
+# ignore pycache
+__pycache__/
+
+# ignore pyc files
+*.pyc
+.DS_Store
+
+*.json
+
+venv/
