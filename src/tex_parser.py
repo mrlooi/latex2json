@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.patterns import PATTERNS, LABEL_PATTERN
+from src.patterns import CITATION_PATTERN, PATTERNS, LABEL_PATTERN, extract_citations
 from src.tables import parse_table
 from src.commands import CommandProcessor
 
@@ -36,11 +36,7 @@ class LatexParser:
 
     def _extract_citations(self, cell: str) -> List[str]:
         """Extract citation keys from a cell"""
-        citations = []
-        matches = re.finditer(r'\\cite[p]?{([^}]*)}', cell)
-        for match in matches:
-            citations.extend(match.group(1).split(','))
-        return [c.strip() for c in citations] if citations else None
+        return extract_citations(cell)
         
     def _parse_table(self, text: str) -> Dict[str, Union[str, Dict, None]]:
         """Parse LaTeX table environment into structured data"""
@@ -52,6 +48,29 @@ class LatexParser:
     def _expand_command(self, content: str) -> str:
         """Expand LaTeX commands in the content"""
         return self.command_processor.expand_commands(content)
+
+    def _find_matching_end(self, text: str, env_name: str, start_pos: int = 0) -> int:
+        """Find the matching end{env_name} for a begin{env_name}, handling nested environments"""
+        pattern = rf'\\(begin|end)\{{{env_name}}}'
+        nesting_level = 1
+        current_pos = start_pos
+        
+        while nesting_level > 0 and current_pos < len(text):
+            match = re.search(pattern, text[current_pos:])
+            if not match:
+                return -1  # No matching end found
+            
+            current_pos += match.start() + 1
+            if match.group(1) == 'begin':
+                nesting_level += 1
+            else:  # 'end'
+                nesting_level -= 1
+                
+            if nesting_level == 0:
+                return current_pos - 1
+            current_pos += len(match.group(0)) - 1
+            
+        return -1 if nesting_level > 0 else current_pos
 
     def parse(self, text: str) -> List[Dict[str, str]]:
         tokens = []
@@ -94,16 +113,55 @@ class LatexParser:
                     break
             
             if match:
-                # if matched_type == 'environment':
-                #     # Recursively parse the content inside the environment
-                #     inner_content = match.group(2).strip()
-                #     parsed_inner_content = self.parse(inner_content)
-                #     tokens.append({
-                #         "type": "environment",
-                #         "name": match.group(1).strip(),
-                #         "content": parsed_inner_content,  # Keep original content for reference
-                #     })
-                if matched_type == 'section':
+                if matched_type == 'environment':
+                    env_name = match.group(1).strip()
+                    # Find the correct ending position for this environment
+                    start_content = current_pos + match.start(2)
+                    end_pos = self._find_matching_end(text, env_name, start_content)
+                    
+                    if end_pos == -1:
+                        # No matching end found, treat as plain text
+                        tokens.append({
+                            "type": "text",
+                            "content": match.group(0)
+                        })
+                    else:
+                        # Extract content between begin and end
+                        inner_content = text[start_content:end_pos].strip()
+                        
+                        # Extract title if present (text within square brackets after environment name)
+                        title_match = re.match(r'\[(.*?)\]', inner_content)
+                        title = title_match.group(1).strip() if title_match else None
+                        
+                        # Remove title from inner content before parsing
+                        if title_match:
+                            inner_content = inner_content[title_match.end():].strip()
+                        
+                        # Extract any label if present
+                        label_match = re.search(LABEL_PATTERN, inner_content)
+                        label = label_match.group(1) if label_match else None
+                        
+                        # Remove label from inner content before parsing
+                        if label_match:
+                            inner_content = inner_content.replace(label_match.group(0), '').strip()
+                        
+                        parsed_inner_content = self.parse(inner_content)
+                        
+                        env_token = {
+                            "type": "environment",
+                            "name": env_name,
+                            "title": title,
+                            "content": parsed_inner_content,
+                            "label": label
+                        }
+                        
+                        if label:
+                            self.labels[label] = env_token
+                            
+                        tokens.append(env_token)
+                        current_pos = end_pos + len(f"\\end{{{env_name}}}")
+                        continue
+                elif matched_type == 'section':
                     tokens.append({
                         "type": "section",
                         "title": match.group(1).strip(),
@@ -215,15 +273,24 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-    \section{Results}
-    \label{results}
-
-    \begin{equation}\label{contra}
-    \frac{1}{\q^k} \sum_{a \in [1,\q^k] \hbox{ good}} \frac{1}{H} \sum_{H < H' \leq 2H} \left|\sum_{m=1}^{H'} \tilde{\boldsymbol{\chi}}(a+m)\right|^2 \ll_\eps 1.
+    \begin{theorem}[Logarithmically averaged nonasymptotic Elliott conjecture]\label{elliott}\cite[Theorem 1.3]{tao-elliott}   Let $a_1,a_2$ be natural numbers, and let $b_1,b_2$ be integers such that $a_1 b_2 - a_2 b_1 \neq 0$.   Let $\eps > 0$, and suppose that $A$ is sufficiently large depending on $\eps,a_1,a_2,b_1,b_2$.  Let $x \geq w \geq A$, and let $g_1,g_2\colon \N \to \C$ be multiplicative functions with $|g_1(n)|, |g_2(n)| \leq 1$ for all $n$, with $g_1$ ``non-pretentious'' in the sense that
+    \begin{equation}\label{tax0}
+    \sum_{p \leq x} \frac{1 - \operatorname{Re} g_1(p) \overline{\chi(p)} p^{-it}}{p} \geq A 
     \end{equation}
+    for all Dirichlet characters $\chi$ of period at most $A$, and all real numbers $t$ with $|t| \leq Ax$.  Then
+    \begin{equation}\label{mang} \left|\sum_{x/w < n \leq x} \frac{g_1(a_1 n + b_1) g_2(a_2 n + b_2)}{n}\right| \leq \eps \log \omega.
+    \end{equation}
+    \end{theorem}
 
-    \eqref{contra}
-    
+    \begin{proposition}[van der Corput argument]\label{star}  Suppose that $\g\colon \N \to S^1$ is a stochastic completely multiplicative function, such that
+    \begin{equation}\label{nax}
+    \E \left|\sum_{j=1}^n \g(j)\right|^2 \leq C^2
+    \end{equation}
+    for some finite $C>0$ and all natural numbers $n$ (thus, $\g$ would be counterexample to Theorem \ref{vec}).  Let $\eps > 0$, and suppose that $X$ is sufficiently large depending on $\eps,C$.  Then with probability $1-O(\eps)$, one can find a (stochastic) Dirichlet character $\boldsymbol{\chi}$ of period $\mathbf{q} = O_{C,\eps}(1)$ and a (stochastic) real number $\t = O_{C,\eps}(X)$ such that
+    \begin{equation}\label{gh0}
+    \sum_{p \leq X} \frac{1 -\operatorname{Re} \g(p) \overline{\boldsymbol{\chi}(p)} p^{-i\t}}{p} \ll_{C,\eps} 1.
+    \end{equation}
+    \end{proposition}
     """
 
     # Example usage

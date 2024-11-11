@@ -17,6 +17,16 @@ class TestParserText1(unittest.TestCase):
         self.assertEqual(sections[2]['title'], 'Hardware and Schedule')
         self.assertEqual(sections[2]['level'], 2)
 
+        regularization_section = None
+        for section in sections:
+            if section['title'] == 'Regularization':
+                regularization_section = section
+                break
+        self.assertIsNotNone(regularization_section)
+
+        # check its label is there
+        self.assertEqual(regularization_section['label'], 'sec:reg')
+
     # def test_parse_equations(self):
     #     equations = [token for token in self.parsed_tokens if token["type"] == "equation"]
     #     # inline equations = 7
@@ -36,9 +46,10 @@ class TestParserText1(unittest.TestCase):
         self.assertEqual(refs[0]['content'], 'tab:variations')
 
     def test_parse_labels(self):
-        labels = [token for token in self.parsed_tokens if token["type"] == "label"]
+        labels = self.parser.labels
         self.assertEqual(len(labels), 1)
-        self.assertEqual(labels[0]['content'], 'sec:reg')
+        # assert 'sec:reg' in labels
+        self.assertIn('sec:reg', labels)
 
 
 # class TestParserTable(unittest.TestCase):

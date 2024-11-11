@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.patterns import CAPTION_PATTERN, TABULAR_PATTERN, LABEL_PATTERN, CITATION_PATTERN
+from src.patterns import CAPTION_PATTERN, TABULAR_PATTERN, LABEL_PATTERN, CITATION_PATTERN, extract_citations
 
 def parse_table(text: str) -> Dict[str, Union[str, Dict, None]]:
     """Parse LaTeX table environment into structured data"""
@@ -183,17 +183,6 @@ def calculate_total_columns(headers):
         else:
             total += 1
     return total
-
-def extract_citations(text):
-    """
-    Extract citations from text
-    """
-    citations = []
-    # Match \cite{...} or \citep{...}
-    matches = re.finditer(CITATION_PATTERN, text)
-    for match in matches:
-        citations.extend(match.group(1).split(','))
-    return [c.strip() for c in citations] if citations else None
 
 def clean_content(text):
     """
