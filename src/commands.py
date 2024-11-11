@@ -30,17 +30,30 @@ class CommandProcessor:
             args['defaults'] = []
             args['required_args'] = args['num_args']
 
-        trailing_added = 0
-        if not definition.endswith('}') and definition.count('{') > definition.count('}'):
-            definition += '}'
-            trailing_added += 1
+        # Balance braces using a stack
+        # this is added to handle cases where the definition is missing closing braces
+        # which unfortunately regex may not always handle
+        stack = []
+        for char in definition:
+            if char == '{':
+                stack.append(char)
+            elif char == '}':
+                if stack:
+                    stack.pop()
+                else:
+                    # Unexpected closing brace
+                    raise ValueError("Unbalanced closing brace in definition.")
+
+        # Add the necessary closing braces
+        if stack:
+            definition += '}' * len(stack)
 
         self.commands[command_name] = {
             'definition': definition,
             'args': args
         }
 
-        return trailing_added
+        return len(stack)
 
     def _substitute_args(self, definition: str, args: List[str]) -> str:
         """Substitute #1, #2, etc. with the provided arguments in order"""

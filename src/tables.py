@@ -1,6 +1,39 @@
 import re
+from typing import List, Dict, Tuple, Union
 
-def parse_table(latex_table):
+from src.patterns import CAPTION_PATTERN, TABULAR_PATTERN, LABEL_PATTERN, CITATION_PATTERN
+
+def parse_table(text: str) -> Dict[str, Union[str, Dict, None]]:
+    """Parse LaTeX table environment into structured data"""
+    # Extract caption
+    caption_match = re.search(CAPTION_PATTERN, text)
+    caption = caption_match.group(1).strip() if caption_match else None
+    
+    # Extract label
+    label_match = re.search(LABEL_PATTERN, text)
+    label = label_match.group(1) if label_match else None
+    
+    # Extract tabular environment
+    tabular_match = re.search(
+        TABULAR_PATTERN,
+        text,
+        re.DOTALL
+    )
+    if not tabular_match:
+        return {"type": "table", "caption": caption, "label": label, "table": text}
+    
+    content = tabular_match.group(2).strip()
+
+    table_data = parse_tabular(content)
+    
+    return {
+        "type": "table",
+        "label": label,
+        "caption": caption,
+        "data": table_data
+    }
+
+def parse_tabular(latex_table):
     """
     Parse LaTeX table into structured format
     """
@@ -157,7 +190,7 @@ def extract_citations(text):
     """
     citations = []
     # Match \cite{...} or \citep{...}
-    matches = re.finditer(r'\\cite[p]?{([^}]*)}', text)
+    matches = re.finditer(CITATION_PATTERN, text)
     for match in matches:
         citations.extend(match.group(1).split(','))
     return [c.strip() for c in citations] if citations else None
@@ -172,7 +205,7 @@ def clean_content(text):
     # Remove common formatting commands
     text = re.sub(r'\\vspace{[^}]*}', '', text)
     text = re.sub(r'\\hspace{[^}]*}', '', text)
-    text = re.sub(r'\\cite(?:p)?{[^}]*}', '', text)
+    text = re.sub(CITATION_PATTERN, '', text)
     
     # Clean up whitespace
     return text.strip()
@@ -271,5 +304,5 @@ if __name__ == "__main__":
         \\hline
     """
 
-    parsed_table = parse_table(table_text)
+    parsed_table = parse_tabular(table_text)
     print(parsed_table)

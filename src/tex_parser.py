@@ -1,45 +1,20 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-try:
-    from ttt import parse_table
-except ImportError:
-    from .ttt import parse_table  # Try relative import
-
-try:
-    from commands import CommandProcessor
-except ImportError:
-    from .commands import CommandProcessor  # Try relative import
-
-PATTERNS = {
-    'section': r'\\section{([^}]*)}',
-    'subsection': r'\\subsection{([^}]*)}',
-    'paragraph': r'\\paragraph{([^}]*)}',
-    # Handle specific environments first (python 3.7+ is ordered dict)
-    'equation': r'\\begin\{equation\*?\}(.*?)\\end\{equation(?:\*)?\}',
-    'align': r'\\begin\{align\*?\}(.*?)\\end\{align(?:\*)?\}',
-    'table': r'\\begin\{table\*?\}(.*?)\\end\{table(?:\*)?\}',  # Add table pattern
-    'tabular': r'\\begin\{tabular\}\{([^}]*)\}(.*?)\\end\{tabular\}',  # Add tabular pattern
-    # Generic environment pattern comes last
-    # 'environment': r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}',
-
-    'equation_inline': r'\$([^$]*)\$',
-    'citation': r'\\(?:cite|citep){([^}]*)}',
-    'ref': r'\\ref{([^}]*)}',
-    'comment': r'%([^\n]*)',
-    'label': r'\\label{([^}]*)}',
-    'newcommand': r'\\(?:new|renew)command{\\([^}]+)}\{([^}]*)\}',  # Handles both new and renew
-    'newcommand_args': r'\\(?:new|renew)command\*?(?:{\\([^}]+)}|\\([^[\s{]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{((?:[^{}]|{(?:[^{}]|{[^{}]*})*})*)}',
-}
+from src.patterns import PATTERNS, LABEL_PATTERN
+from src.tables import parse_table
+from src.commands import CommandProcessor
 
 class LatexParser:
     def __init__(self):
         # Regex patterns for different LaTeX elements
         self.command_processor = CommandProcessor()
-    
-    def _parse_tabular(self, text: str) -> Dict[str, Union[str, Dict, None]]:
-        """Parse LaTeX tabular environment into structured data"""
-        return parse_table(text)
+        self.labels = {}
+
+    # getter for commands
+    @property
+    def commands(self):
+        return self.command_processor.commands
     
     def _split_cells(self, row: str) -> List[str]:
         """Split by & but handle escaped &"""
@@ -69,29 +44,10 @@ class LatexParser:
         
     def _parse_table(self, text: str) -> Dict[str, Union[str, Dict, None]]:
         """Parse LaTeX table environment into structured data"""
-        # Extract caption
-        caption_match = re.search(r'\\caption{([^}]*)}', text)
-        caption = caption_match.group(1).strip() if caption_match else None
-        
-        # Extract label
-        label_match = re.search(r'\\label{([^}]*)}', text)
-        label = label_match.group(1) if label_match else None
-        
-        # Extract tabular environment
-        tabular_match = re.search(r'\\begin{tabular}{([^}]*)}(.*?)\\end{tabular}', text, re.DOTALL)
-        if not tabular_match:
-            return {"type": "table", "caption": caption, "label": label, "table": text}
-        
-        content = tabular_match.group(2).strip()
-
-        table_data = self._parse_tabular(content)
-        
-        return {
-            "type": "table",
-            "label": label,
-            "caption": caption,
-            "data": table_data
-        }
+        table = parse_table(text)
+        if table and table["label"]:
+            self.labels[table["label"]] = table
+        return table
     
     def _expand_command(self, content: str) -> str:
         """Expand LaTeX commands in the content"""
@@ -138,13 +94,7 @@ class LatexParser:
                     break
             
             if match:
-                if matched_type == 'section':
-                    tokens.append({
-                        "type": "section",
-                        "title": match.group(1).strip(),
-                        "level": 1
-                    })
-                # elif matched_type == 'environment':
+                # if matched_type == 'environment':
                 #     # Recursively parse the content inside the environment
                 #     inner_content = match.group(2).strip()
                 #     parsed_inner_content = self.parse(inner_content)
@@ -153,6 +103,12 @@ class LatexParser:
                 #         "name": match.group(1).strip(),
                 #         "content": parsed_inner_content,  # Keep original content for reference
                 #     })
+                if matched_type == 'section':
+                    tokens.append({
+                        "type": "section",
+                        "title": match.group(1).strip(),
+                        "level": 1
+                    })
                 elif matched_type == 'subsection':
                     tokens.append({
                         "type": "section",
@@ -168,19 +124,35 @@ class LatexParser:
                 elif matched_type in ['equation', 'align']:
                     # Extract label if present in the equation content
                     content = match.group(1).strip()
-                    label_match = re.search(r'\\label{([^}]*)}', content)
+                    label_match = re.search(LABEL_PATTERN, content)
                     label = label_match.group(1) if label_match else None
                     
                     # Remove the label command from the content if it exists
                     if label_match:
                         content = content.replace(label_match.group(0), '').strip()
-                    
-                    tokens.append({
+
+                    token = {
                         "type": "equation",
                         "content": self._expand_command(content),
                         "display": "block",
                         "label": label
-                    })
+                    }
+                    if label:
+                        self.labels[label] = token
+                    
+                    tokens.append(token)
+                elif matched_type == 'label':
+                    label_content = match.group(1).strip()
+                    # If there are previous tokens, associate the label with the last one
+                    if tokens and tokens[-1]:
+                        tokens[-1]['label'] = label_content
+                        self.labels[label_content] = tokens[-1]
+                    else:
+                        # Fallback: create standalone label token if no previous token exists
+                        tokens.append({
+                            "type": "label",
+                            "content": label_content
+                        })
                 elif matched_type == 'equation_inline':
                     tokens.append({
                         "type": "equation",
@@ -192,7 +164,7 @@ class LatexParser:
                         "type": "citation",
                         "content": match.group(1).strip()
                     })
-                elif matched_type == 'ref':
+                elif matched_type == 'ref' or matched_type == 'eqref':
                     tokens.append({
                         "type": "ref",
                         "content": match.group(1).strip()
@@ -202,12 +174,8 @@ class LatexParser:
                         "type": "comment",
                         "content": self._expand_command(match.group(1).strip())
                     })
-                elif matched_type == 'label':
-                    tokens.append({
-                        "type": "label",
-                        "content": match.group(1).strip()
-                    })
-                elif matched_type in ['table', 'tabular']:
+
+                elif matched_type == 'table':
                     result = self._parse_table(match.group(1).strip())
                     if result:
                         tokens.append(result)
@@ -229,7 +197,10 @@ class LatexParser:
                     # For all other token types, expand any commands in their content
                     content = match.group(1) if match.groups() else match.group(0)
                     content = self._expand_command(content)
-                    # ... rest of existing token processing ...
+                    tokens.append({ 
+                        "type": matched_type,
+                        "content": content
+                    })
                 
                 current_pos += match.end()
             else:
@@ -244,18 +215,15 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-    \newcommand{\tensor}[3]{\mathbf{#1}_{#2}^{#3}}
-    \newcommand{\norm}[3][2]{\|#2\|_{#3}^{#1}}
-    $\tensor{T}{i}{j}$
-    \newcommand{\pow}[2][2]{#2^{#1}}
+    \section{Results}
+    \label{results}
 
-    \newcommand{\integral}[4][10]{\int_{#1}^{#2} #3 \, d#4}
-    $\pow[5]{3}$
-    $\integral{b}{f(x)}{x}$
-    $\norm[p]{x}{2}$
+    \begin{equation}\label{contra}
+    \frac{1}{\q^k} \sum_{a \in [1,\q^k] \hbox{ good}} \frac{1}{H} \sum_{H < H' \leq 2H} \left|\sum_{m=1}^{H'} \tilde{\boldsymbol{\chi}}(a+m)\right|^2 \ll_\eps 1.
+    \end{equation}
 
-    \newcommand{\tensorNorm}[4]{\norm{\tensor{#1}{#2}{#3}}{#4}}
-    $\tensorNorm{T}{i}{j}{\infty}$
+    \eqref{contra}
+    
     """
 
     # Example usage

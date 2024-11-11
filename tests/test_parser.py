@@ -68,8 +68,9 @@ class TestParserCommands(unittest.TestCase):
         \newcommand{\E}{\mathbb{E}} 
         \renewcommand{\P}{\mathbb{P}} 
         \newcommand{\pow}[2][2]{#2^{#1}}
+        \newcommand{\dmodel}{d_{\text{model}}}
 
-        $\pow[5]{3}$ and $\HH$ and $\I$
+        $\pow[5]{3}$ and $\HH$ and $\I$ and $\dmodel$
         """
         parsed_tokens = self.parser.parse(text)
         equations = [token for token in parsed_tokens if token["type"] == "equation"]
@@ -84,8 +85,9 @@ class TestParserCommands(unittest.TestCase):
 
         # Check command expansion in equations
         self.assertEqual(equations[0]["content"], "3^{5}")
-        self.assertEqual(equations[1]["content"], "\\mathbb{H}")
-        self.assertEqual(equations[2]["content"], "\\mathbb{I}")
+        self.assertEqual(equations[1]["content"], r"\mathbb{H}")
+        self.assertEqual(equations[2]["content"], r"\mathbb{I}")
+        self.assertEqual(equations[3]["content"], r"d_{\text{model}}")
 
     def test_complex_command_definitions(self):
         text = r"""
