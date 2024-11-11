@@ -230,18 +230,8 @@ class LatexParser:
 def main():
     # Example usage
     parser = LatexParser()
-    
-    try:
-        with open('papers/arXiv-1706.03762v7/ms.tex', 'r', encoding='utf-8') as file:
-            print("Debug: Successfully opened file")
-            content = file.read()
-            print(f"Debug: File length: {len(content)} characters")
-            print("Debug: First 200 characters of file:", content[:200])
-    except Exception as e:
-        print(f"Debug: Error reading file: {str(e)}")
-        return
-    
-    result = parser.parse_file('papers/arXiv-1706.03762v7/ms.tex')
+
+    result = parser.parse_file('papers/arXiv-1509.05363v6/taodiscrepancy.tex')
     
     # # Debug information
     # print("\nDocument structure:")
@@ -277,7 +267,7 @@ def main():
 if __name__ == '__main__':
     res, parser = main()
 
-    # store res in data/folder
-    with open('data/res.json', 'w') as f:
-        json.dump(res, f)
+    # # store res in data/folder
+    # with open('data/res.json', 'w') as f:
+    #     json.dump(res, f)
     
