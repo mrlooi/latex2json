@@ -2,7 +2,7 @@ import re
 from typing import List, Dict, Tuple, Union
 
 from src.patterns import PATTERNS, LABEL_PATTERN, SEPARATORS
-from src.tables import parse_table
+from src.tables import parse_table, parse_tabular
 from src.commands import CommandProcessor
 
 class LatexParser:
@@ -34,9 +34,9 @@ class LatexParser:
         """Check if row contains only LaTeX table separators"""
         return any(sep in row for sep in SEPARATORS)
         
-    def _parse_table(self, text: str) -> Dict[str, Union[str, Dict, None]]:
+    def _parse_table(self, text: str, type: str = "table") -> Dict[str, Union[str, Dict, None]]:
         """Parse LaTeX table environment into structured data"""
-        table = parse_table(text)
+        table = parse_table(text, type=type)
         if table and "label" in table:
             self.labels[table["label"]] = table
         return table
@@ -84,6 +84,38 @@ class LatexParser:
                     "type": "label",
                     "content": content
                 })
+    
+    def _handle_environment(self, env_name: str, inner_content: str) -> None:
+        # Extract title if present (text within square brackets after environment name)
+        title_match = re.match(r'\[(.*?)\]', inner_content)
+        title = title_match.group(1).strip() if title_match else None
+        
+        # Remove title from inner content before parsing
+        if title_match:
+            inner_content = inner_content[title_match.end():].strip()
+
+        # DEPRECATED: Label handling is now done independently through _handle_label()
+        # # Extract any label if present
+        # label_match = re.search(LABEL_PATTERN, inner_content)
+        # label = label_match.group(1) if label_match else None
+        
+        # # Remove label from inner content before parsing
+        # if label_match:
+        #     inner_content = inner_content.replace(label_match.group(0), '').strip()
+        
+        env_token = {
+            "type": "environment",
+            "name": env_name,
+            "title": title
+        }
+        
+        # Save previous environment and set current
+        prev_env = self.current_env
+        self.current_env = env_token
+        env_token["content"] = self.parse(inner_content)
+        self.current_env = prev_env
+
+        return env_token
 
     def parse(self, text: str) -> List[Dict[str, str]]:
         tokens = []
@@ -126,7 +158,9 @@ class LatexParser:
                     matched_type = pattern_type
                     break
             
+            trailing_added = 0
             if match:
+                # Handle environments
                 if matched_type == 'environment':
                     env_name = match.group(1).strip()
                     # Find the correct ending position for this environment
@@ -143,57 +177,25 @@ class LatexParser:
                         # Extract content between begin and end
                         inner_content = text[start_content:end_pos].strip()
                         
-                        # Extract title if present (text within square brackets after environment name)
-                        title_match = re.match(r'\[(.*?)\]', inner_content)
-                        title = title_match.group(1).strip() if title_match else None
-                        
-                        # Remove title from inner content before parsing
-                        if title_match:
-                            inner_content = inner_content[title_match.end():].strip()
-
-                        # DEPRECATED: Label handling is now done independently through _handle_label()
-                        # # Extract any label if present
-                        # label_match = re.search(LABEL_PATTERN, inner_content)
-                        # label = label_match.group(1) if label_match else None
-                        
-                        # # Remove label from inner content before parsing
-                        # if label_match:
-                        #     inner_content = inner_content.replace(label_match.group(0), '').strip()
-                        
-                        env_token = {
-                            "type": "environment",
-                            "name": env_name,
-                            "title": title
-                        }
-                        
-                        # Save previous environment and set current
-                        prev_env = self.current_env
-                        self.current_env = env_token
-                        env_token["content"] = self.parse(inner_content)
-                        self.current_env = prev_env
+                        env_token = self._handle_environment(env_name, inner_content)
                         
                         tokens.append(env_token)
                         current_pos = end_pos + len(f"\\end{{{env_name}}}")
                         continue
-                    
-                elif matched_type == 'section':
-                    tokens.append({
-                        "type": "section",
-                        "title": match.group(1).strip(),
-                        "level": 1
-                    })
-                elif matched_type == 'subsection':
-                    tokens.append({
-                        "type": "section",
-                        "title": match.group(1).strip(),
-                        "level": 2
-                    })
-                elif matched_type == 'paragraph':
-                    tokens.append({
-                        "type": "section",
-                        "title": match.group(1).strip(),
-                        "level": 3
-                    })
+                elif matched_type == 'table' or matched_type == 'figure':
+                    result = self._parse_table(match.group(1).strip(), type=matched_type)
+                    if result:
+                        tokens.append(result)
+                elif matched_type == 'tabular':
+                    # get entire match data
+                    token = {
+                        "type": "tabular",
+                        "title": match.group(1).strip()
+                    }
+                    result = parse_tabular(match.group(2).strip())
+                    if result:
+                        token["content"] = result
+                    tokens.append(token)
                 elif matched_type in ['equation', 'align']:
                     # Extract label if present in the equation content
                     content = match.group(1).strip()
@@ -214,9 +216,6 @@ class LatexParser:
                         token["label"] = label
                     
                     tokens.append(token)
-                elif matched_type == 'label':
-                    label_content = match.group(1).strip()
-                    self._handle_label(label_content, tokens)
                 elif matched_type == 'equation_inline':
                     # we want to parse inline equations in order to roll out any potential newcommand definitions
                     tokens.append({
@@ -224,6 +223,32 @@ class LatexParser:
                         "content": self._expand_command(match.group(1).strip()),
                         "display": "inline"
                     })
+
+                # Handle sections and paragraphs
+                elif matched_type == 'section':
+                    full_match = match.group(0)
+                    level = full_match.count('sub')
+                    
+                    tokens.append({
+                        "type": "section",
+                        "title": match.group(1).strip(),
+                        "level": level
+                    })
+                elif matched_type == 'paragraph':
+                    full_match = match.group(0)
+                    # Start paragraphs at a higher level than sections
+                    level = 3 + full_match.count('sub')
+                    
+                    tokens.append({
+                        "type": "section",
+                        "title": match.group(1).strip(),
+                        "level": level
+                    })
+
+                # Handle labels, citations, and references, comments, footnotes and graphics
+                elif matched_type == 'label':
+                    label_content = match.group(1).strip()
+                    self._handle_label(label_content, tokens)
                 elif matched_type == 'citation':
                     # Extract both the optional text and citation keys
                     optional_text = match.group(1) if match.group(1) else None
@@ -239,35 +264,53 @@ class LatexParser:
                         "type": "ref",
                         "content": match.group(1).strip()
                     })
+                elif matched_type == 'hyperref':
+                    tokens.append({
+                        "type": "ref",
+                        "content": match.group(1).strip(),
+                        "title": match.group(2).strip()
+                    })
                 elif matched_type == 'comment':
                     tokens.append({
                         "type": "comment",
                         "content": self._expand_command(match.group(1).strip())
                     })
-
-                elif matched_type == 'table':
-                    result = self._parse_table(match.group(1).strip())
-                    if result:
-                        tokens.append(result)
+                elif matched_type == 'footnote':
+                    tokens.append({
+                        "type": "footnote",
+                        "content": match.group(1).strip()
+                    })
+                elif matched_type == 'includegraphics':
+                    tokens.append({
+                        "type": "includegraphics",
+                        "content": match.group(2).strip()
+                    })
+                
+                # handle URL stuffs
+                elif matched_type == 'url':
+                    tokens.append({
+                        "type": "url",
+                        "content": match.group(1).strip()
+                    })
+                elif matched_type == 'href':
+                    tokens.append({
+                        "type": "url",
+                        "content": match.group(1).strip(),
+                        "title": match.group(2).strip()
+                    })
+                
+                # Handle newcommands
                 elif matched_type == 'newcommand':
-                    
                     cmd_name, definition = match.groups()
                     trailing_added = self.command_processor.process_command_definition(cmd_name, definition)
-                    current_pos += match.end() + trailing_added # for trailing }
-                    continue
+
                 elif matched_type == 'newcommand_args':
                     cmd_name = match.group(1) or match.group(2)  # Command name from either syntax
                     num_args = match.group(3)  # Number of arguments
                     defaults_str = match.group(4)  # All optional defaults
                     definition = match.group(5)  # The command definition
                     trailing_added = self.command_processor.process_command_definition(cmd_name, definition, num_args, defaults_str)
-                    current_pos += match.end() + trailing_added
-                    continue
-                elif matched_type == 'footnote':
-                    tokens.append({
-                        "type": "footnote",
-                        "content": match.group(1).strip()
-                    })
+                    
                 else:
                     # For all other token types, expand any commands in their content
                     content = match.group(1) if match.groups() else match.group(0)
@@ -277,7 +320,7 @@ class LatexParser:
                         "content": content
                     })
                 
-                current_pos += match.end()
+                current_pos += match.end() + trailing_added
             else:
                 # No match found, move forward one character
                 current_pos += 1
@@ -290,8 +333,20 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-        In \cite[Conjecture 3.12]{gowers}
-        In \cite{polymath, elon}
+
+    \begin{example}
+        \begin{tabular}{c c c}
+        a & b & c \\
+            d & e & f \\
+        \end{tabular}
+        \includegraphics[xxx]{HAHA}
+    \end{example}
+
+    \includegraphics[width=0.5\textwidth]{Figures/ModalNet-19}
+
+    \url{https://www.google.com}
+    \href{https://www.google.com}{Google}
+    \hyperref[fig:modalnet]{ModalNet}
     """
 
     # Example usage

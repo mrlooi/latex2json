@@ -1,14 +1,15 @@
 import re
 
 PATTERNS = {
-    'section': r'\\section{([^}]*)}',
-    'subsection': r'\\subsection{([^}]*)}',
-    'paragraph': r'\\paragraph{([^}]*)}',
-    # Handle specific environments first (python 3.7+ is ordered dict)
+    'section': r'\\(?:(?:sub)*section){([^}]*)}',
+    'paragraph': r'\\(?:(?:sub)*paragraph){([^}]*)}',
+    # Handle specific begin environments first (python 3.7+ is ordered dict)
     'equation': r'\\begin\{equation\*?\}(.*?)\\end\{equation(?:\*)?\}',
     'align': r'\\begin\{align\*?\}(.*?)\\end\{align(?:\*)?\}',
     'table': r'\\begin\{table\*?\}(.*?)\\end\{table(?:\*)?\}',  # Add table pattern
-    # Generic environment pattern comes last
+    'tabular': r'\\begin\{tabular\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{tabular\}',
+    'figure': r'\\begin\{figure\*?\}(.*?)\\end\{figure(?:\*)?\}',  # Add figure pattern
+    # Generic begin environment pattern comes last
     'environment': r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}',
 
     'equation_inline': r'\$([^$]*)\$', # we want to parse inline equations in order to roll out any potential newcommand definitions
@@ -21,11 +22,19 @@ PATTERNS = {
     'newcommand_args': r'\\(?:new|renew)command\*?(?:{\\([^}]+)}|\\([^[\s{]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{((?:[^{}]|{(?:[^{}]|{[^{}]*})*})*)}',
 
     'footnote': r'\\footnote{([^}]*)}',
+    'includegraphics': r'\\includegraphics\[([^\]]*)\]{([^}]*)}',
+
+    'url': r'\\url{([^}]*)}',                    # captures URL
+
+    'href': r'\\href{([^}]*)}{([^}]*)}',         # captures URL and text
+
+    'hyperref': r'\\hyperref\[([^]]*)\]{([^}]*)}' # captures label and text
 }
 
 LABEL_PATTERN = PATTERNS['label']
 CAPTION_PATTERN = r'\\caption{([^}]*)}'
-TABULAR_PATTERN = r'\\begin\{tabular\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{tabular\}'
+TABULAR_PATTERN = PATTERNS['tabular']
+GRAPHICS_PATTERN = PATTERNS['includegraphics']
 CITATION_PATTERN = PATTERNS['citation']
 
 def extract_citations(text):

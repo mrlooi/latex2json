@@ -11,11 +11,11 @@ class TestParserText1(unittest.TestCase):
         sections = [token for token in self.parsed_tokens if token["type"] == "section"]
         self.assertEqual(len(sections), 7)
         self.assertEqual(sections[0]['title'], 'Training')
-        self.assertEqual(sections[0]['level'], 1)
+        self.assertEqual(sections[0]['level'], 0)
         self.assertEqual(sections[1]['title'], 'Training Data and Batching')
-        self.assertEqual(sections[1]['level'], 2)
+        self.assertEqual(sections[1]['level'], 1)
         self.assertEqual(sections[2]['title'], 'Hardware and Schedule')
-        self.assertEqual(sections[2]['level'], 2)
+        self.assertEqual(sections[2]['level'], 1)
 
         regularization_section = None
         for section in sections:
@@ -26,6 +26,23 @@ class TestParserText1(unittest.TestCase):
 
         # check its label is there
         self.assertEqual(regularization_section['label'], 'sec:reg')
+    
+    def test_parse_subsections(self):
+        text = r"""
+        \subsection{Training Data and Batching}
+        \subsubsection{Hardware and Schedule}
+
+        \paragraph{Regularization}
+        \subparagraph{Sub Regularization}
+        """
+        parsed_tokens = self.parser.parse(text)
+        sections = [token for token in parsed_tokens if token["type"] == "section"]
+        self.assertEqual(sections[0]['title'], 'Training Data and Batching')
+        self.assertEqual(sections[0]['level'], 1)
+        self.assertEqual(sections[1]['title'], 'Hardware and Schedule')
+        self.assertEqual(sections[1]['level'], 2)
+        self.assertEqual(sections[2]['title'], 'Regularization')
+        self.assertEqual(sections[2]['level'], 3)
 
     # def test_parse_equations(self):
     #     equations = [token for token in self.parsed_tokens if token["type"] == "equation"]
@@ -258,6 +275,36 @@ class TestParserCitations(unittest.TestCase):
         # Test multiple citations
         self.assertEqual(citations[2]['content'], 'paper1,paper2')
         self.assertNotIn('title', citations[2])
+
+class TestParserRefs(unittest.TestCase):
+    def setUp(self):
+        self.parser = LatexParser()
+    
+    def test_parse_refs(self):
+        text = r"""
+        \url{https://www.tesla.com}
+        \href{https://www.google.com}{Google}
+
+        \hyperref[fig:modalnet]{ModalNet}
+        \ref{fig:modalnet}
+        """
+        parsed_tokens = self.parser.parse(text)
+        refs = [token for token in parsed_tokens]
+        self.assertEqual(len(refs), 4)
+
+        self.assertEqual(refs[0]['type'], 'url')
+        self.assertEqual(refs[1]['type'], 'url')
+        self.assertEqual(refs[2]['type'], 'ref')
+        self.assertEqual(refs[3]['type'], 'ref')
+
+        self.assertEqual(refs[0]['content'], 'https://www.tesla.com')
+        self.assertEqual(refs[1]['content'], 'https://www.google.com')
+        self.assertEqual(refs[2]['content'], 'fig:modalnet')
+        self.assertEqual('title' not in refs[0], True)
+        self.assertEqual(refs[1]['title'], 'Google')
+        self.assertEqual(refs[2]['title'], 'ModalNet')
+        self.assertEqual('title' not in refs[3], True)
+        self.assertEqual(refs[3]['content'], 'fig:modalnet')
 
 if __name__ == '__main__':
     unittest.main()

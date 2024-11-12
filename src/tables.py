@@ -3,7 +3,21 @@ from typing import List, Dict, Tuple, Union
 
 from src.patterns import CAPTION_PATTERN, SEPARATORS, TABULAR_PATTERN, LABEL_PATTERN, CITATION_PATTERN, extract_citations
 
-def parse_table(text: str) -> Dict[str, Union[str, Dict, None]]:
+def detect_tabular(text: str):
+    # Extract tabular environment
+    tabular_match = re.search(
+        TABULAR_PATTERN,
+        text,
+        re.DOTALL
+    )
+
+    if not tabular_match:
+        return None
+    
+    content = tabular_match.group(2).strip()
+    return content
+
+def parse_table(text: str, type: str = "table") -> Dict[str, Union[str, Dict, None]]:
     """Parse LaTeX table environment into structured data"""
     # Extract caption
     caption_match = re.search(CAPTION_PATTERN, text)
@@ -12,28 +26,21 @@ def parse_table(text: str) -> Dict[str, Union[str, Dict, None]]:
     # Extract label
     label_match = re.search(LABEL_PATTERN, text)
     label = label_match.group(1) if label_match else None
-    
-    # Extract tabular environment
-    tabular_match = re.search(
-        TABULAR_PATTERN,
-        text,
-        re.DOTALL
-    )
 
     data = {
-        "type": "table"
+        "type": type
     }
     if caption:
         data["caption"] = caption
     if label:
         data["label"] = label
     
-    if not tabular_match:
+    # Extract tabular environment
+    tabular_content = detect_tabular(text)
+    if not tabular_content:
         return data
-    
-    content = tabular_match.group(2).strip()
 
-    table_data = parse_tabular(content)
+    table_data = parse_tabular(tabular_content)
     data["data"] = table_data
 
     return data
@@ -80,7 +87,7 @@ def parse_tabular(latex_table):
     # Parse data rows
     parsed_rows = [parse_data_row(row, total_columns) for row in data_rows]
 
-    return {
+    return { 
         "headers": headers,
         "rows": parsed_rows
     }
@@ -135,9 +142,7 @@ def parse_headers(header_rows):
                 current_sub_idx += colspan
                 
         elif cell.strip():
-            headers.append({
-                "content": clean_content(cell)
-            })
+            headers.append(clean_content(cell))
             current_sub_idx += 1
             
         else:
@@ -183,7 +188,7 @@ def calculate_total_columns(headers):
     for header in headers:
         if header is None:
             total += 1
-        elif header.get('subheaders'):
+        elif 'subheaders' in header:
             total += len(header['subheaders'])
         else:
             total += 1
