@@ -98,7 +98,8 @@ class LatexParser:
             match = None
             matched_type = None
             
-            # Handle plain text until next LaTeX command
+            # Handle plain text until next LaTeX command 
+            # \\ -> new line, $ -> inline equation, % -> comment
             next_command = re.search(r'\\|\$|%', text[current_pos:])
             if not next_command:
                 # No more commands, add remaining text
@@ -153,7 +154,8 @@ class LatexParser:
                         # Remove title from inner content before parsing
                         if title_match:
                             inner_content = inner_content[title_match.end():].strip()
-                        
+
+                        # DEPRECATED: Label handling is now done independently through _handle_label()
                         # # Extract any label if present
                         # label_match = re.search(LABEL_PATTERN, inner_content)
                         # label = label_match.group(1) if label_match else None
@@ -220,6 +222,7 @@ class LatexParser:
                     label_content = match.group(1).strip()
                     self._handle_label(label_content, tokens)
                 elif matched_type == 'equation_inline':
+                    # we want to parse inline equations in order to roll out any potential newcommand definitions
                     tokens.append({
                         "type": "equation",
                         "content": self._expand_command(match.group(1).strip()),

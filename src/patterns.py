@@ -11,7 +11,7 @@ PATTERNS = {
     # Generic environment pattern comes last
     'environment': r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}',
 
-    'equation_inline': r'\$([^$]*)\$',
+    'equation_inline': r'\$([^$]*)\$', # we want to parse inline equations in order to roll out any potential newcommand definitions
     'citation': r'\\(?:cite|citep)(?:\[[^\]]*\])?{([^}]*)}',  # Updated to handle optional arguments
     'ref': r'\\ref{([^}]*)}',
     'eqref': r'\\eqref{([^}]*)}',
