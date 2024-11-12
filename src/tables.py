@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.patterns import CAPTION_PATTERN, TABULAR_PATTERN, LABEL_PATTERN, CITATION_PATTERN, extract_citations
+from src.patterns import CAPTION_PATTERN, SEPARATORS, TABULAR_PATTERN, LABEL_PATTERN, CITATION_PATTERN, extract_citations
 
 def parse_table(text: str) -> Dict[str, Union[str, Dict, None]]:
     """Parse LaTeX table environment into structured data"""
@@ -19,19 +19,24 @@ def parse_table(text: str) -> Dict[str, Union[str, Dict, None]]:
         text,
         re.DOTALL
     )
+
+    data = {
+        "type": "table"
+    }
+    if caption:
+        data["caption"] = caption
+    if label:
+        data["label"] = label
+    
     if not tabular_match:
-        return {"type": "table", "caption": caption, "label": label, "table": text}
+        return data
     
     content = tabular_match.group(2).strip()
 
     table_data = parse_tabular(content)
-    
-    return {
-        "type": "table",
-        "label": label,
-        "caption": caption,
-        "data": table_data
-    }
+    data["data"] = table_data
+
+    return data
 
 def parse_tabular(latex_table):
     """
@@ -209,10 +214,8 @@ def is_separator_row(row):
     """
     Check if row contains only separator commands
     """
-    separators = ['\\hline', '\\midrule', '\\toprule', 
-                 '\\bottomrule', '\\cmidrule']
     return row and all(
-        only_contains_separators(part.strip(), separators) 
+        only_contains_separators(part.strip(), SEPARATORS) 
         for part in row.split('&')
     )
 

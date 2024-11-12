@@ -141,5 +141,98 @@ class TestParserCommands(unittest.TestCase):
             self.assertEqual(eq["content"], expected)
 
 
+class TestParserEnvironments(unittest.TestCase):
+    def setUp(self):
+        self.parser = LatexParser()
+
+    def test_nested_environments(self):
+        text = r"""
+        \begin{lemma}\label{tb} With probability $1-O(\eps)$, one has 
+        \begin{equation}\label{t-bound}
+        \t = O_{\eps}(X^\delta).
+        \end{equation}
+        \end{lemma}
+        """
+        parsed_tokens = self.parser.parse(text)
+        
+        # Check environments
+        environments = [token for token in parsed_tokens if token["type"] == "environment"]
+        self.assertEqual(len(environments), 1)
+        
+        # Check lemma environment
+        lemma = environments[0]
+        self.assertEqual(lemma["name"], "lemma")
+        self.assertEqual(lemma["label"], "tb")
+        
+        # # Check equation environment (inside lemma['content'])
+        equation = lemma['content'][0]
+        for token in lemma['content']:
+            if token['type'] == 'equation' and 'label' in token:
+                equation = token
+                break
+        self.assertEqual(equation["label"], "t-bound")
+
+    def test_multiple_environments(self):
+        text = r"""
+        \begin{theorem}
+            Statement
+            \begin{proof}
+                Proof details
+                \begin{enumerate}
+                    \item First point
+                    \item Second point
+                \end{enumerate}
+            \end{proof}
+        \end{theorem}
+
+        \begin{corollary}
+            \begin{equation}\label{nax}
+            \E \left|\sum_{j=1}^n \g(j)\right|^2 \leq C^2
+            \end{equation}
+            \label{COL}
+        \end{corollary}
+        """
+        parsed_tokens = self.parser.parse(text)
+        theorem = parsed_tokens[0]
+        
+        self.assertEqual(theorem["name"], "theorem")
+
+        # check proof is nested inside theorem
+        proof = theorem['content'][1]
+        self.assertEqual(proof["name"], "proof")
+
+        # check enumerate is nested inside proof
+        self.assertEqual(proof['content'][0]['content'], 'Proof details')
+        enumerate = proof['content'][1]
+        self.assertEqual(enumerate["name"], "enumerate")
+
+        corollary = parsed_tokens[1]
+        self.assertEqual(corollary["name"], "corollary")
+        self.assertEqual(corollary["label"], "COL")
+
+        # check equation is nested inside corollary
+        equation = corollary['content'][0]
+        self.assertEqual(equation["content"], r"\E \left|\sum_{j=1}^n \g(j)\right|^2 \leq C^2")
+        self.assertEqual(equation["label"], "nax")
+
+    def test_split_equation(self):
+        text = r"""
+        \begin{equation}\label{jock}
+        \begin{split}
+        &\frac{1}{H} \sum_{H < H' \leq 2H} \sum_{a \in [1,\q^k], \hbox{ good}} \left|\sum_{m=1}^{H'} \tilde{\boldsymbol{\chi}}(a+m) \sum_{n = a+m \ (\q^k)} \frac{\h(n)}{n^{1+1/\log X}}\right|^2 \\
+        &\quad \ll_\eps \frac{\log^2 X}{\q^k} .
+        \end{split}
+        \end{equation}
+        """
+        parsed_tokens = self.parser.parse(text)
+        equation = parsed_tokens[0]
+        self.assertEqual(equation["type"], "equation")
+        self.assertEqual(equation["label"], "jock")
+
+        # check begin{split} is nested inside equation
+        split = equation['content']
+        self.assertEqual(split.startswith(r"\begin{split}"), True)
+        self.assertEqual(split.endswith(r"\end{split}"), True)
+
 if __name__ == '__main__':
     unittest.main()

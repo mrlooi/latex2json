@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.patterns import CITATION_PATTERN, PATTERNS, LABEL_PATTERN, extract_citations
+from src.patterns import CITATION_PATTERN, PATTERNS, LABEL_PATTERN, SEPARATORS, extract_citations
 from src.tables import parse_table
 from src.commands import CommandProcessor
 
@@ -10,6 +10,7 @@ class LatexParser:
         # Regex patterns for different LaTeX elements
         self.command_processor = CommandProcessor()
         self.labels = {}
+        self.current_env = None  # Current environment token (used for associating nested labels)
 
     # getter for commands
     @property
@@ -31,8 +32,7 @@ class LatexParser:
 
     def _is_separator_row(self, row: str) -> bool:
         """Check if row contains only LaTeX table separators"""
-        separators = ['\\hline', '\\midrule', '\\toprule', '\\bottomrule', '\\cmidrule']
-        return any(sep in row for sep in separators)
+        return any(sep in row for sep in SEPARATORS)
 
     def _extract_citations(self, cell: str) -> List[str]:
         """Extract citation keys from a cell"""
@@ -41,7 +41,7 @@ class LatexParser:
     def _parse_table(self, text: str) -> Dict[str, Union[str, Dict, None]]:
         """Parse LaTeX table environment into structured data"""
         table = parse_table(text)
-        if table and table["label"]:
+        if table and "label" in table:
             self.labels[table["label"]] = table
         return table
     
@@ -71,6 +71,23 @@ class LatexParser:
             current_pos += len(match.group(0)) - 1
             
         return -1 if nesting_level > 0 else current_pos
+    
+    def _handle_label(self, content: str, tokens: List[Dict[str, str]]) -> None:
+        """Handle labels by associating them with the current environment or adding them as a separate token"""
+        if self.current_env:
+            # Associate label with current environment
+            self.current_env["label"] = content
+            self.labels[content] = self.current_env
+        else:
+            # No current environment, associate with previous token if exists
+            if tokens and tokens[-1]:
+                tokens[-1]['label'] = content
+                self.labels[content] = tokens[-1]
+            else:
+                tokens.append({
+                    "type": "label",
+                    "content": content
+                })
 
     def parse(self, text: str) -> List[Dict[str, str]]:
         tokens = []
@@ -137,30 +154,30 @@ class LatexParser:
                         if title_match:
                             inner_content = inner_content[title_match.end():].strip()
                         
-                        # Extract any label if present
-                        label_match = re.search(LABEL_PATTERN, inner_content)
-                        label = label_match.group(1) if label_match else None
+                        # # Extract any label if present
+                        # label_match = re.search(LABEL_PATTERN, inner_content)
+                        # label = label_match.group(1) if label_match else None
                         
-                        # Remove label from inner content before parsing
-                        if label_match:
-                            inner_content = inner_content.replace(label_match.group(0), '').strip()
-                        
-                        parsed_inner_content = self.parse(inner_content)
+                        # # Remove label from inner content before parsing
+                        # if label_match:
+                        #     inner_content = inner_content.replace(label_match.group(0), '').strip()
                         
                         env_token = {
                             "type": "environment",
                             "name": env_name,
-                            "title": title,
-                            "content": parsed_inner_content,
-                            "label": label
+                            "title": title
                         }
                         
-                        if label:
-                            self.labels[label] = env_token
-                            
+                        # Save previous environment and set current
+                        prev_env = self.current_env
+                        self.current_env = env_token
+                        env_token["content"] = self.parse(inner_content)
+                        self.current_env = prev_env
+                        
                         tokens.append(env_token)
                         current_pos = end_pos + len(f"\\end{{{env_name}}}")
                         continue
+                    
                 elif matched_type == 'section':
                     tokens.append({
                         "type": "section",
@@ -192,25 +209,16 @@ class LatexParser:
                     token = {
                         "type": "equation",
                         "content": self._expand_command(content),
-                        "display": "block",
-                        "label": label
+                        "display": "block"
                     }
                     if label:
                         self.labels[label] = token
+                        token["label"] = label
                     
                     tokens.append(token)
                 elif matched_type == 'label':
                     label_content = match.group(1).strip()
-                    # If there are previous tokens, associate the label with the last one
-                    if tokens and tokens[-1]:
-                        tokens[-1]['label'] = label_content
-                        self.labels[label_content] = tokens[-1]
-                    else:
-                        # Fallback: create standalone label token if no previous token exists
-                        tokens.append({
-                            "type": "label",
-                            "content": label_content
-                        })
+                    self._handle_label(label_content, tokens)
                 elif matched_type == 'equation_inline':
                     tokens.append({
                         "type": "equation",
@@ -251,6 +259,11 @@ class LatexParser:
                     trailing_added = self.command_processor.process_command_definition(cmd_name, definition, num_args, defaults_str)
                     current_pos += match.end() + trailing_added
                     continue
+                elif matched_type == 'footnote':
+                    tokens.append({
+                        "type": "footnote",
+                        "content": match.group(1).strip()
+                    })
                 else:
                     # For all other token types, expand any commands in their content
                     content = match.group(1) if match.groups() else match.group(0)
@@ -273,24 +286,7 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-    \begin{theorem}[Logarithmically averaged nonasymptotic Elliott conjecture]\label{elliott}\cite[Theorem 1.3]{tao-elliott}   Let $a_1,a_2$ be natural numbers, and let $b_1,b_2$ be integers such that $a_1 b_2 - a_2 b_1 \neq 0$.   Let $\eps > 0$, and suppose that $A$ is sufficiently large depending on $\eps,a_1,a_2,b_1,b_2$.  Let $x \geq w \geq A$, and let $g_1,g_2\colon \N \to \C$ be multiplicative functions with $|g_1(n)|, |g_2(n)| \leq 1$ for all $n$, with $g_1$ ``non-pretentious'' in the sense that
-    \begin{equation}\label{tax0}
-    \sum_{p \leq x} \frac{1 - \operatorname{Re} g_1(p) \overline{\chi(p)} p^{-it}}{p} \geq A 
-    \end{equation}
-    for all Dirichlet characters $\chi$ of period at most $A$, and all real numbers $t$ with $|t| \leq Ax$.  Then
-    \begin{equation}\label{mang} \left|\sum_{x/w < n \leq x} \frac{g_1(a_1 n + b_1) g_2(a_2 n + b_2)}{n}\right| \leq \eps \log \omega.
-    \end{equation}
-    \end{theorem}
-
-    \begin{proposition}[van der Corput argument]\label{star}  Suppose that $\g\colon \N \to S^1$ is a stochastic completely multiplicative function, such that
-    \begin{equation}\label{nax}
-    \E \left|\sum_{j=1}^n \g(j)\right|^2 \leq C^2
-    \end{equation}
-    for some finite $C>0$ and all natural numbers $n$ (thus, $\g$ would be counterexample to Theorem \ref{vec}).  Let $\eps > 0$, and suppose that $X$ is sufficiently large depending on $\eps,C$.  Then with probability $1-O(\eps)$, one can find a (stochastic) Dirichlet character $\boldsymbol{\chi}$ of period $\mathbf{q} = O_{C,\eps}(1)$ and a (stochastic) real number $\t = O_{C,\eps}(X)$ such that
-    \begin{equation}\label{gh0}
-    \sum_{p \leq X} \frac{1 -\operatorname{Re} \g(p) \overline{\boldsymbol{\chi}(p)} p^{-i\t}}{p} \ll_{C,\eps} 1.
-    \end{equation}
-    \end{proposition}
+        for $k=1,\dots,D!$ and $j=1,\dots,D$.  Thus for instance the first few elements of the sequence\footnote{OEIS A262725} are
     """
 
     # Example usage

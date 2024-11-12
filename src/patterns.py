@@ -19,6 +19,8 @@ PATTERNS = {
     'label': r'\\label{([^}]*)}',
     'newcommand': r'\\(?:new|renew)command{\\([^}]+)}\{([^}]*)\}',  # Handles both new and renew
     'newcommand_args': r'\\(?:new|renew)command\*?(?:{\\([^}]+)}|\\([^[\s{]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{((?:[^{}]|{(?:[^{}]|{[^{}]*})*})*)}',
+
+    'footnote': r'\\footnote{([^}]*)}',
 }
 
 LABEL_PATTERN = PATTERNS['label']
@@ -35,3 +37,15 @@ def extract_citations(text):
     for match in matches:
         citations.extend(match.group(1).split(','))
     return [c.strip() for c in citations] if citations else None
+
+
+SEPARATORS = [
+    '\\hline',      # Basic horizontal line
+    '\\midrule',    # From booktabs - middle rule
+    '\\toprule',    # From booktabs - top rule
+    '\\bottomrule', # From booktabs - bottom rule
+    '\\cmidrule',   # From booktabs - partial rule
+    '\\hdashline',  # From arydshln - dashed line
+    '\\cdashline',  # From arydshln - partial dashed line
+    '\\specialrule' # From booktabs - custom thickness rule
+]
