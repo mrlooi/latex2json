@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.patterns import CITATION_PATTERN, PATTERNS, LABEL_PATTERN, SEPARATORS, extract_citations
+from src.patterns import PATTERNS, LABEL_PATTERN, SEPARATORS
 from src.tables import parse_table
 from src.commands import CommandProcessor
 
@@ -33,10 +33,6 @@ class LatexParser:
     def _is_separator_row(self, row: str) -> bool:
         """Check if row contains only LaTeX table separators"""
         return any(sep in row for sep in SEPARATORS)
-
-    def _extract_citations(self, cell: str) -> List[str]:
-        """Extract citation keys from a cell"""
-        return extract_citations(cell)
         
     def _parse_table(self, text: str) -> Dict[str, Union[str, Dict, None]]:
         """Parse LaTeX table environment into structured data"""
@@ -229,10 +225,15 @@ class LatexParser:
                         "display": "inline"
                     })
                 elif matched_type == 'citation':
-                    tokens.append({
+                    # Extract both the optional text and citation keys
+                    optional_text = match.group(1) if match.group(1) else None
+                    token = {
                         "type": "citation",
-                        "content": match.group(1).strip()
-                    })
+                        "content": match.group(2).strip()
+                    }
+                    if optional_text:
+                        token["title"] = optional_text.strip()
+                    tokens.append(token)
                 elif matched_type == 'ref' or matched_type == 'eqref':
                     tokens.append({
                         "type": "ref",
@@ -289,7 +290,8 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-        for $k=1,\dots,D!$ and $j=1,\dots,D$.  Thus for instance the first few elements of the sequence\footnote{OEIS A262725} are
+        In \cite[Conjecture 3.12]{gowers}
+        In \cite{polymath, elon}
     """
 
     # Example usage

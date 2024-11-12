@@ -12,7 +12,7 @@ PATTERNS = {
     'environment': r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}',
 
     'equation_inline': r'\$([^$]*)\$', # we want to parse inline equations in order to roll out any potential newcommand definitions
-    'citation': r'\\(?:cite|citep)(?:\[[^\]]*\])?{([^}]*)}',  # Updated to handle optional arguments
+    'citation': r'\\(?:cite|citep)(?:\[([^\]]*)\])?{([^}]*)}',  # Updated to handle optional arguments
     'ref': r'\\ref{([^}]*)}',
     'eqref': r'\\eqref{([^}]*)}',
     'comment': r'%([^\n]*)',
@@ -30,13 +30,23 @@ CITATION_PATTERN = PATTERNS['citation']
 
 def extract_citations(text):
     """
-    Extract citations from text, ignoring any optional arguments in square brackets
+    Extract citations from text, including optional title arguments in square brackets
+    Returns a list of tuples: (citation, title) where title may be None
     """
     citations = []
     matches = re.finditer(CITATION_PATTERN, text)
     for match in matches:
-        citations.extend(match.group(1).split(','))
-    return [c.strip() for c in citations] if citations else None
+        # Get the full match to extract the optional title
+        full_match = match.group(0)
+        # Look for optional title argument
+        title_match = re.search(r'\[(.*?)\]', full_match)
+        title = title_match.group(1) if title_match else None
+        
+        # Split citations if there are multiple
+        for citation in match.group(1).split(','):
+            citations.append((citation.strip(), title))
+            
+    return citations if citations else None
 
 
 SEPARATORS = [

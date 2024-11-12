@@ -234,5 +234,30 @@ class TestParserEnvironments(unittest.TestCase):
         self.assertEqual(split.startswith(r"\begin{split}"), True)
         self.assertEqual(split.endswith(r"\end{split}"), True)
 
+class TestParserCitations(unittest.TestCase):
+    def setUp(self):
+        self.parser = LatexParser()
+
+    def test_parse_citations(self):
+        text = r"""
+        Regular citation \cite{DBLP:journals/corr/BritzGLL17}
+        Citation with title \cite[Theorem 2.1]{smith2023}
+        Multiple citations \cite{paper1,paper2}
+        """
+        parsed_tokens = self.parser.parse(text)
+        citations = [token for token in parsed_tokens if token["type"] == "citation"]
+
+        # Test regular citation
+        self.assertEqual(citations[0]['content'], 'DBLP:journals/corr/BritzGLL17')
+        self.assertNotIn('title', citations[0])
+
+        # Test citation with title
+        self.assertEqual(citations[1]['content'], 'smith2023')
+        self.assertEqual(citations[1]['title'], 'Theorem 2.1')
+
+        # Test multiple citations
+        self.assertEqual(citations[2]['content'], 'paper1,paper2')
+        self.assertNotIn('title', citations[2])
+
 if __name__ == '__main__':
     unittest.main()
