@@ -199,30 +199,34 @@ class LatexParser:
                 elif matched_type in ['equation', 'align']:
                     # Extract label if present in the equation content
                     content = match.group(1).strip()
-                    label_match = re.search(LABEL_PATTERN, content)
-                    label = label_match.group(1) if label_match else None
-                    
-                    # Remove the label command from the content if it exists
-                    if label_match:
-                        content = content.replace(label_match.group(0), '').strip()
+                    if content:
+                        label_match = re.search(LABEL_PATTERN, content)
+                        label = label_match.group(1) if label_match else None
+                        
+                        # Remove the label command from the content if it exists
+                        if label_match:
+                            content = content.replace(label_match.group(0), '').strip()
 
-                    token = {
-                        "type": "equation",
-                        "content": self._expand_command(content),
-                        "display": "block"
-                    }
-                    if label:
-                        self.labels[label] = token
-                        token["label"] = label
-                    
-                    tokens.append(token)
-                elif matched_type == 'equation_inline':
+                        token = {
+                            "type": "equation",
+                            "content": self._expand_command(content),
+                            "display": "block"
+                        }
+                        if label:
+                            self.labels[label] = token
+                            token["label"] = label
+                        
+                        tokens.append(token)
+                elif matched_type.startswith('equation_'):
                     # we want to parse inline equations in order to roll out any potential newcommand definitions
-                    tokens.append({
-                        "type": "equation",
-                        "content": self._expand_command(match.group(1).strip()),
-                        "display": "inline"
-                    })
+                    content = match.group(1).strip()
+                    if content:
+                        display = "inline" if matched_type.startswith("equation_inline") else "block"
+                        tokens.append({
+                            "type": "equation",
+                            "content": self._expand_command(content),
+                            "display": display
+                        })
 
                 # Handle sections and paragraphs
                 elif matched_type == 'section':
@@ -245,20 +249,10 @@ class LatexParser:
                         "level": level
                     })
 
-                # Handle labels, citations, and references, comments, footnotes and graphics
+                # Handle labels and references
                 elif matched_type == 'label':
                     label_content = match.group(1).strip()
                     self._handle_label(label_content, tokens)
-                elif matched_type == 'citation':
-                    # Extract both the optional text and citation keys
-                    optional_text = match.group(1) if match.group(1) else None
-                    token = {
-                        "type": "citation",
-                        "content": match.group(2).strip()
-                    }
-                    if optional_text:
-                        token["title"] = optional_text.strip()
-                    tokens.append(token)
                 elif matched_type == 'ref' or matched_type == 'eqref':
                     tokens.append({
                         "type": "ref",
@@ -270,6 +264,18 @@ class LatexParser:
                         "content": match.group(1).strip(),
                         "title": match.group(2).strip()
                     })
+
+                # Handle citations, comments, footnotes and graphics
+                elif matched_type == 'citation':
+                    # Extract both the optional text and citation keys
+                    optional_text = match.group(1) if match.group(1) else None
+                    token = {
+                        "type": "citation",
+                        "content": match.group(2).strip()
+                    }
+                    if optional_text:
+                        token["title"] = optional_text.strip()
+                    tokens.append(token)
                 elif matched_type == 'comment':
                     tokens.append({
                         "type": "comment",
@@ -333,20 +339,14 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-
-    \begin{example}
-        \begin{tabular}{c c c}
-        a & b & c \\
-            d & e & f \\
-        \end{tabular}
-        \includegraphics[xxx]{HAHA}
-    \end{example}
-
-    \includegraphics[width=0.5\textwidth]{Figures/ModalNet-19}
-
-    \url{https://www.google.com}
-    \href{https://www.google.com}{Google}
-    \hyperref[fig:modalnet]{ModalNet}
+    \begin{itemize}
+        \item First item
+        \item \begin{figure}
+            \includegraphics[width=0.3\textwidth]{image.png}
+            \caption{A figure in a list}
+            \end{figure}
+        \item Third item
+    \end{itemize}
     """
 
     # Example usage

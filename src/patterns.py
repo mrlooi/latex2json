@@ -3,32 +3,46 @@ import re
 PATTERNS = {
     'section': r'\\(?:(?:sub)*section){([^}]*)}',
     'paragraph': r'\\(?:(?:sub)*paragraph){([^}]*)}',
+
     # Handle specific begin environments first (python 3.7+ is ordered dict)
     'equation': r'\\begin\{equation\*?\}(.*?)\\end\{equation(?:\*)?\}',
     'align': r'\\begin\{align\*?\}(.*?)\\end\{align(?:\*)?\}',
+    'equation_display_$$': r'\$\$([\s\S]*?)\$\$',  # Double dollar block equations with multiline support (make sure this is above equation_inline_$)
+    'equation_inline_$': r'\$([^$]*)\$', # we want to parse inline equations in order to roll out any potential newcommand definitions
+    'equation_display_brackets': r'\\\[(.*?)\\\]',  # Display math with \[...\]
+    'equation_inline_brackets': r'\\\((.*?)\\\)',  # Inline math with \(...\)
+
+    # Tables and figures
     'table': r'\\begin\{table\*?\}(.*?)\\end\{table(?:\*)?\}',  # Add table pattern
     'tabular': r'\\begin\{tabular\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{tabular\}',
     'figure': r'\\begin\{figure\*?\}(.*?)\\end\{figure(?:\*)?\}',  # Add figure pattern
+
+    # List environments - put before generic environment pattern
+    'itemize': r'\\begin\{itemize\}(.*?)\\end\{itemize\}',
+    'enumerate': r'\\begin\{enumerate\}(?:\[(.*?)\])?(.*?)\\end\{enumerate\}',
+    'description': r'\\begin\{description\}(.*?)\\end\{description\}',
+
     # Generic begin environment pattern comes last
     'environment': r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}',
 
-    'equation_inline': r'\$([^$]*)\$', # we want to parse inline equations in order to roll out any potential newcommand definitions
-    'citation': r'\\(?:cite|citep)(?:\[([^\]]*)\])?{([^}]*)}',  # Updated to handle optional arguments
+    # REF patterns and label
     'ref': r'\\ref{([^}]*)}',
     'eqref': r'\\eqref{([^}]*)}',
-    'comment': r'%([^\n]*)',
+    'hyperref': r'\\hyperref\[([^]]*)\]{([^}]*)}', # captures label and text
     'label': r'\\label{([^}]*)}',
+
+    # Newcommand patterns
     'newcommand': r'\\(?:new|renew)command{\\([^}]+)}\{([^}]*)\}',  # Handles both new and renew
     'newcommand_args': r'\\(?:new|renew)command\*?(?:{\\([^}]+)}|\\([^[\s{]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{((?:[^{}]|{(?:[^{}]|{[^{}]*})*})*)}',
 
-    'footnote': r'\\footnote{([^}]*)}',
-    'includegraphics': r'\\includegraphics\[([^\]]*)\]{([^}]*)}',
-
+    # URL patterns
     'url': r'\\url{([^}]*)}',                    # captures URL
-
     'href': r'\\href{([^}]*)}{([^}]*)}',         # captures URL and text
 
-    'hyperref': r'\\hyperref\[([^]]*)\]{([^}]*)}' # captures label and text
+    'citation': r'\\(?:cite|citep)(?:\[([^\]]*)\])?{([^}]*)}',  # Updated to handle optional arguments
+    'comment': r'%([^\n]*)',
+    'footnote': r'\\footnote{([^}]*)}',
+    'includegraphics': r'\\includegraphics\[([^\]]*)\]{([^}]*)}',
 }
 
 LABEL_PATTERN = PATTERNS['label']

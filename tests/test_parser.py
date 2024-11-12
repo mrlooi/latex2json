@@ -195,10 +195,10 @@ class TestParserEnvironments(unittest.TestCase):
             Statement
             \begin{proof}
                 Proof details
-                \begin{enumerate}
+                \begin{subproof}
                     \item First point
                     \item Second point
-                \end{enumerate}
+                \end{subproof}
             \end{proof}
         \end{theorem}
 
@@ -218,10 +218,10 @@ class TestParserEnvironments(unittest.TestCase):
         proof = theorem['content'][1]
         self.assertEqual(proof["name"], "proof")
 
-        # check enumerate is nested inside proof
+        # check subproof is nested inside proof
         self.assertEqual(proof['content'][0]['content'], 'Proof details')
-        enumerate = proof['content'][1]
-        self.assertEqual(enumerate["name"], "enumerate")
+        subproof = proof['content'][1]
+        self.assertEqual(subproof["name"], "subproof")
 
         corollary = parsed_tokens[1]
         self.assertEqual(corollary["name"], "corollary")
@@ -231,6 +231,11 @@ class TestParserEnvironments(unittest.TestCase):
         equation = corollary['content'][0]
         self.assertEqual(equation["content"], r"\E \left|\sum_{j=1}^n \g(j)\right|^2 \leq C^2")
         self.assertEqual(equation["label"], "nax")
+
+
+class TestParserEquations(unittest.TestCase):
+    def setUp(self):
+        self.parser = LatexParser()
 
     def test_split_equation(self):
         text = r"""
@@ -250,6 +255,48 @@ class TestParserEnvironments(unittest.TestCase):
         split = equation['content']
         self.assertEqual(split.startswith(r"\begin{split}"), True)
         self.assertEqual(split.endswith(r"\end{split}"), True)
+
+    def test_parse_equations(self):
+        text = r"""
+
+        \newcommand{\pow}[2][2]{#2^{#1}}
+
+        $$F=ma
+        E=mc^2
+        \pow{ELON}
+        $$
+        $\pow{x}$
+
+        \[
+        BLOCK ME 
+        BRO
+        \pow[5]{A}
+        \]
+        \(INLINE, \pow[3]{B}\)
+        """
+        parsed_tokens = self.parser.parse(text)
+        equations = [token for token in parsed_tokens if token["type"] == "equation"]
+        self.assertEqual(len(equations), 4)
+
+        block1 = equations[0]['content']
+        # block1 contains F=ma, E=mc^2 and ELON^{2}
+        self.assertIn('F=ma', block1)   
+        self.assertIn('E=mc^2', block1)
+        self.assertIn('ELON^{2}', block1)
+        self.assertEqual(equations[0]['display'], 'block')
+
+        self.assertEqual(equations[1]['display'], 'inline')
+        self.assertEqual(equations[1]['content'], 'x^{2}')
+
+        block2 = equations[2]['content']
+        self.assertIn('BLOCK ME', block2)
+        self.assertIn('BRO', block2)
+        self.assertIn('A^{5}', block2)
+        self.assertEqual(equations[2]['display'], 'block')
+
+        inline2 = equations[3]['content']
+        self.assertEqual(inline2, 'INLINE, B^{3}')
+        self.assertEqual(equations[3]['display'], 'inline')
 
 class TestParserCitations(unittest.TestCase):
     def setUp(self):
