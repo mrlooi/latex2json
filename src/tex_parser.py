@@ -1,8 +1,8 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.patterns import PATTERNS, LABEL_PATTERN, SEPARATORS, SECTION_LEVELS, LIST_ENVIRONMENTS
-from src.tables import parse_table, parse_tabular
+from src.patterns import ENV_TYPES, PATTERNS, LABEL_PATTERN, SEPARATORS, SECTION_LEVELS
+from src.tables import parse_tabular
 from src.commands import CommandProcessor
 
 # Add these compiled patterns at module level
@@ -24,30 +24,13 @@ class LatexParser:
     @property
     def commands(self):
         return self.command_processor.commands
-    
-    def _split_cells(self, row: str) -> List[str]:
-        """Split by & but handle escaped &"""
-        return [cell.strip() for cell in ESCAPED_AMPERSAND_SPLIT.split(row)]
-
-    def _clean_content(self, cell: str) -> str:
-        """Clean up cell content by removing LaTeX formatting commands"""
-        if cell is None:
-            return None
-    
-        # strip out trailing \\
-        cell = TRAILING_BACKSLASH.sub('', cell)
-        return cell.strip()
-
-    def _is_separator_row(self, row: str) -> bool:
-        """Check if row contains only LaTeX table separators"""
-        return any(sep in row for sep in SEPARATORS)
         
-    def _parse_table(self, text: str, type: str = "table") -> Dict[str, Union[str, Dict, None]]:
-        """Parse LaTeX table environment into structured data"""
-        table = parse_table(text, type=type)
-        if table and "label" in table:
-            self.labels[table["label"]] = table
-        return table
+    # def _parse_table(self, text: str, type: str = "table") -> Dict[str, Union[str, Dict, None]]:
+    #     """Parse LaTeX table environment into structured data"""
+    #     table = parse_table(text, type=type)
+    #     if table and "label" in table:
+    #         self.labels[table["label"]] = table
+    #     return table
     
     def _expand_command(self, content: str) -> str:
         """Expand LaTeX commands in the content"""
@@ -84,27 +67,37 @@ class LatexParser:
         """Handle labels by associating them with the current environment or adding them as a separate token"""
         if self.current_env:
             # Associate label with current environment
-            self.current_env["label"] = content
+            if 'labels' not in self.current_env:
+                self.current_env['labels'] = []
+            self.current_env['labels'].append(content)
             self.labels[content] = self.current_env
         else:
             # No current environment, associate with previous token if exists
             if tokens and tokens[-1]:
-                tokens[-1]['label'] = content
+                if 'labels' not in tokens[-1]:
+                    tokens[-1]['labels'] = []
+                tokens[-1]['labels'].append(content)
                 self.labels[content] = tokens[-1]
             else:
                 tokens.append({
-                    "type": "label",
+                    "type": 'label',
                     "content": content
                 })
     
     def _handle_environment(self, env_name: str, inner_content: str) -> None:
         # Extract title if present (text within square brackets after environment name)
-        title_match = re.match(r'\[(.*?)\]', inner_content)
+        title_match = re.match(r'^\[(.*?)\]', inner_content)
         title = title_match.group(1).strip() if title_match else None
         
         # Remove title from inner content before parsing
         if title_match:
             inner_content = inner_content[title_match.end():].strip()
+        
+        # Extract optional arguments
+        args_match = re.match(r'^\{(.*?)\}', inner_content)
+        if args_match:
+            args = args_match.group(1).strip()
+            inner_content = inner_content[args_match.end():].strip()
 
         # DEPRECATED: Label handling is now done independently through _handle_label()
         # # Extract any label if present
@@ -115,20 +108,24 @@ class LatexParser:
         # if label_match:
         #     inner_content = inner_content.replace(label_match.group(0), '').strip()
         
-        env_token = {
-            "type": "environment" if env_name not in LIST_ENVIRONMENTS else "list",
-            "name": env_name
-        }
+        token = {}
+        if env_name == "item":
+            token["type"] = "item"
+        else:
+            env_type = ENV_TYPES.get(env_name, "environment")
+            token["type"] = env_type
+            if env_type != "list":
+                token["name"] = env_name
         if title:
-            env_token["title"] = title
+            token["title"] = title
         
         # Save previous environment and set current
         prev_env = self.current_env
-        self.current_env = env_token
-        env_token["content"] = self.parse(inner_content)
+        self.current_env = token
+        token["content"] = self.parse(inner_content)
         self.current_env = prev_env
 
-        return env_token
+        return token
 
     def parse(self, text: str) -> List[Dict[str, str]]:
         tokens = []
@@ -190,20 +187,15 @@ class LatexParser:
                         tokens.append(env_token)
                         current_pos = end_pos + len(f"\\end{{{env_name}}}")
                         continue
-                # elif matched_type in ['itemize', 'enumerate', 'description']:
-                #     pass
-                #     # result = self._parse_list(match.group(1).strip(), type=matched_type)
-                #     # if result:
-                #     #     tokens.append(result)
-                elif matched_type == 'table' or matched_type == 'figure':
-                    result = self._parse_table(match.group(1).strip(), type=matched_type)
-                    if result:
-                        tokens.append(result)
+                # elif matched_type == 'table' or matched_type == 'figure':
+                #     result = self._parse_table(match.group(1).strip(), type=matched_type)
+                #     if result:
+                #         tokens.append(result)
                 elif matched_type == 'tabular':
                     # get entire match data
                     token = {
                         "type": "tabular",
-                        "title": match.group(1).strip()
+                        "column_spec": match.group(1).strip()
                     }
                     result = parse_tabular(match.group(2).strip())
                     if result:
@@ -213,6 +205,7 @@ class LatexParser:
                     # Extract label if present in the equation content
                     content = match.group(1).strip()
                     if content:
+                        # assume only one label per equation?
                         label_match = re.search(LABEL_PATTERN, content)
                         label = label_match.group(1) if label_match else None
                         
@@ -227,7 +220,7 @@ class LatexParser:
                         }
                         if label:
                             self.labels[label] = token
-                            token["label"] = label
+                            token["labels"] = [label]
                         
                         tokens.append(token)
                 elif matched_type.startswith('equation_'):
@@ -254,8 +247,14 @@ class LatexParser:
 
                 # Handle labels and references
                 elif matched_type == 'label':
-                    label_content = match.group(1).strip()
-                    self._handle_label(label_content, tokens)
+                    content = match.group(1).strip()
+                    self._handle_label(content, tokens)
+                elif matched_type.startswith('caption'):
+                    content =  match.group(2).strip() if matched_type == "captionof" else match.group(1).strip()
+                    tokens.append({
+                        "type": "caption",
+                        "content": content
+                    })
                 elif matched_type == 'ref' or matched_type == 'eqref':
                     tokens.append({
                         "type": "ref",
@@ -280,10 +279,12 @@ class LatexParser:
                         token["title"] = optional_text.strip()
                     tokens.append(token)
                 elif matched_type == 'comment':
-                    tokens.append({
-                        "type": "comment",
-                        "content": self._expand_command(match.group(1).strip())
-                    })
+                    content = match.group(1).strip()
+                    if content:
+                        tokens.append({
+                            "type": "comment",
+                            "content": self._expand_command(content)
+                        })
                 elif matched_type == 'footnote':
                     tokens.append({
                         "type": "footnote",
@@ -323,11 +324,8 @@ class LatexParser:
                 elif matched_type == 'item':
                     content = match.group(2).strip()
                     if content: 
-                        content = self.parse(content)
-                        tokens.append({
-                            "type": "item",
-                            "content": content
-                        })
+                        content = self._handle_environment('item', content)
+                        tokens.append(content)
                 else:
                     # For all other token types, expand any commands in their content
                     content = match.group(1) if match.groups() else match.group(0)
@@ -351,15 +349,22 @@ if __name__ == "__main__":
 
     text = r"""
     \begin{itemize}
-    \item First item
-    \item \begin{figure}
-          \includegraphics[width=0.3\textwidth]{image.png}
-          \caption{A figure in a list}
-          \end{figure}
-    \item Third item
-    \end{itemize}
-
+        \label{LABEL-TOP}
+        \item[*] First item with custom label
+        \item Second item
+        \item[+] \label{special-item} Third item with label
+        \end{itemize}
     """
+
+    # text = r"""
+    # \begin{figure}[h]
+    #     \label{fig:example}
+    #     Some thing interestin here
+    #     % haha
+    #     \includegraphics[width=0.5\textwidth]{example-image} % Replace with your image file
+    #     \caption{Example Image}
+    # \end{figure}
+    # """
 
     # Example usage
     parser = LatexParser()

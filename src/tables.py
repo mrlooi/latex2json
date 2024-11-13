@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.patterns import CAPTION_PATTERN, SEPARATORS, TABULAR_PATTERN, LABEL_PATTERN, CITATION_PATTERN, extract_citations
+from src.patterns import SEPARATORS, TABULAR_PATTERN, CITATION_PATTERN, extract_citations
 
 def detect_tabular(text: str):
     # Extract tabular environment
@@ -15,34 +15,6 @@ def detect_tabular(text: str):
     
     content = tabular_match.group(2).strip()
     return content
-
-def parse_table(text: str, type: str = "table") -> Dict[str, Union[str, Dict, None]]:
-    """Parse LaTeX table environment into structured data"""
-    # Extract caption
-    caption_match = re.search(CAPTION_PATTERN, text)
-    caption = caption_match.group(1).strip() if caption_match else None
-    
-    # Extract label
-    label_match = re.search(LABEL_PATTERN, text)
-    label = label_match.group(1) if label_match else None
-
-    data = {
-        "type": type
-    }
-    if caption:
-        data["caption"] = caption
-    if label:
-        data["label"] = label
-    
-    # Extract tabular environment
-    tabular_content = detect_tabular(text)
-    if not tabular_content:
-        return data
-
-    table_data = parse_tabular(tabular_content)
-    data["data"] = table_data
-
-    return data
 
 def parse_tabular(latex_table):
     """

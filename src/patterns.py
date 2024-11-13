@@ -14,10 +14,10 @@ RAW_PATTERNS = {
     'equation_display_brackets': r'\\\[(.*?)\\\]',  # Display math with \[...\]
     'equation_inline_brackets': r'\\\((.*?)\\\)',  # Inline math with \(...\)
 
-    # Tables and figures - put before generic environment pattern
-    'table': r'\\begin\{table\*?\}(.*?)\\end\{table(?:\*)?\}',  # Add table pattern
+    # Tables and figures - put before generic environment pattern # UPDATE: table and figure are now handled in environment pattern
     'tabular': r'\\begin\{tabular\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{tabular\}',
-    'figure': r'\\begin\{figure\*?\}(.*?)\\end\{figure(?:\*)?\}',  # Add figure pattern
+    # 'table': r'\\begin\{table\*?\}(.*?)\\end\{table(?:\*)?\}',  # Add table pattern
+    # 'figure': r'\\begin\{figure\*?\}(.*?)\\end\{figure(?:\*)?\}',  # Add figure pattern
 
     # # List environments - put before generic environment pattern
     # 'itemize': r'\\begin\{itemize\}(.*?)\\end\{itemize\}',
@@ -46,6 +46,8 @@ RAW_PATTERNS = {
     'comment': r'%([^\n]*)',
     'footnote': r'\\footnote{([^}]*)}',
     'includegraphics': r'\\includegraphics\[([^\]]*)\]{([^}]*)}',
+    'caption': r'\\caption{([^}]*)}',
+    'captionof': r'\\captionof{([^}]*)}{([^}]*)}',  # captures type and caption text
 }
 
 # needed for re.DOTALL flag (also written as re.S) makes the dot (.) special character match any character including newlines
@@ -62,7 +64,6 @@ PATTERNS = {
 }
 
 LABEL_PATTERN = PATTERNS['label']
-CAPTION_PATTERN = re.compile(r'\\caption{([^}]*)}')
 TABULAR_PATTERN = PATTERNS['tabular']
 GRAPHICS_PATTERN = PATTERNS['includegraphics']
 CITATION_PATTERN = PATTERNS['citation']
@@ -88,6 +89,17 @@ def extract_citations(text):
     return citations if citations else None
 
 LIST_ENVIRONMENTS = ['itemize', 'enumerate', 'description']
+
+# Map environment names to their types
+ENV_TYPES = {
+    "table": "table",
+    "subtable": "table",
+    "subsubtable": "table",
+    "figure": "figure",
+    "subfigure": "figure",
+    "subfloat": "figure",  # another common figure subdivision
+    **{env: "list" for env in LIST_ENVIRONMENTS}
+}
 
 SEPARATORS = [
     '\\hline',      # Basic horizontal line

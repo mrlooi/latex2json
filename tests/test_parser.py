@@ -28,7 +28,7 @@ class TestParserText1(unittest.TestCase):
         self.assertIsNotNone(regularization_section)
 
         # check its label is there
-        self.assertEqual(regularization_section['label'], 'sec:reg')
+        self.assertEqual(regularization_section['labels'], ['sec:reg'])
     
     def test_parse_subsections(self):
         text = r"""
@@ -186,15 +186,15 @@ class TestParserEnvironments(unittest.TestCase):
         # Check lemma environment
         lemma = environments[0]
         self.assertEqual(lemma["name"], "lemma")
-        self.assertEqual(lemma["label"], "tb")
+        self.assertEqual(lemma["labels"], ["tb"])
         
-        # # Check equation environment (inside lemma['content'])
+        # Check equation environment
         equation = lemma['content'][0]
         for token in lemma['content']:
-            if token['type'] == 'equation' and 'label' in token:
+            if token['type'] == 'equation' and 'labels' in token:
                 equation = token
                 break
-        self.assertEqual(equation["label"], "t-bound")
+        self.assertEqual(equation["labels"], ["t-bound"])
 
     def test_multiple_environments(self):
         text = r"""
@@ -232,12 +232,12 @@ class TestParserEnvironments(unittest.TestCase):
 
         corollary = parsed_tokens[1]
         self.assertEqual(corollary["name"], "corollary")
-        self.assertEqual(corollary["label"], "COL")
+        self.assertEqual(corollary["labels"], ["COL"])
 
         # check equation is nested inside corollary
         equation = corollary['content'][0]
         self.assertEqual(equation["content"], r"\E \left|\sum_{j=1}^n \g(j)\right|^2 \leq C^2")
-        self.assertEqual(equation["label"], "nax")
+        self.assertEqual(equation["labels"], ["nax"])
 
 
 class TestParserEquations(unittest.TestCase):
@@ -256,7 +256,7 @@ class TestParserEquations(unittest.TestCase):
         parsed_tokens = self.parser.parse(text)
         equation = parsed_tokens[0]
         self.assertEqual(equation["type"], "equation")
-        self.assertEqual(equation["label"], "jock")
+        self.assertEqual(equation["labels"], ["jock"])
 
         # check begin{split} is nested inside equation
         split = equation['content']
@@ -359,6 +359,94 @@ class TestParserRefs(unittest.TestCase):
         self.assertEqual(refs[2]['title'], 'ModalNet')
         self.assertEqual('title' not in refs[3], True)
         self.assertEqual(refs[3]['content'], 'fig:modalnet')
+
+class TestParserItems(unittest.TestCase):
+    def setUp(self):
+        self.parser = LatexParser()
+
+    def test_nested_items(self):
+        text = r"""
+        \begin{enumerate}
+        \item Here is an item with a nested equation and a graphic:
+        \begin{minipage}{0.45\textwidth}
+            \begin{equation}
+                E = mc^2
+            \end{equation}
+            \begin{equation}
+                F = ma
+            \end{equation}
+        \end{minipage}%
+        \\
+        \begin{minipage}{0.45\textwidth}
+            \centering
+            \includegraphics[width=0.5\textwidth]{example-image}
+            \captionof{figure}{Example Image}
+        \end{minipage}
+
+        \item $asdasdsads$
+        \end{enumerate}
+        """
+        parsed_tokens = self.parser.parse(text)
+        
+        # Check the enumerate environment
+        self.assertEqual(len(parsed_tokens), 1)
+        enum_env = parsed_tokens[0]
+        self.assertEqual(enum_env["type"], "list")
+        
+        # Check items within enumerate
+        items = [token for token in enum_env["content"] if token["type"] == "item"]
+        self.assertEqual(len(items), 2)
+        
+        # Check first item's nested content
+        first_item = items[0]
+        minipages = [token for token in first_item["content"] if token["type"] == "environment" and token["name"] == "minipage"]
+        self.assertEqual(len(minipages), 2)
+        
+        # Check equations in first minipage
+        first_minipage = minipages[0]
+        equations = [token for token in first_minipage["content"] if token["type"] == "equation"]
+        self.assertEqual(len(equations), 2)
+        self.assertEqual(equations[0]["content"], "E = mc^2")
+        self.assertEqual(equations[1]["content"], "F = ma")
+        
+        # Check second minipage content
+        second_minipage = minipages[1]
+        graphics = [token for token in second_minipage["content"] if token["type"] == "includegraphics"]
+        self.assertEqual(len(graphics), 1)
+        self.assertEqual(graphics[0]["content"], "example-image")
+        
+        # Check second item's equation
+        second_item = items[1]
+        equations = [token for token in second_item["content"] if token["type"] == "equation"]
+        self.assertEqual(len(equations), 1)
+        self.assertEqual(equations[0]["content"], "asdasdsads")
+        self.assertEqual(equations[0]["display"], "inline")
+
+    def test_item_with_label(self):
+        text = r"""
+        \begin{itemize}
+        \item[*] First item with custom label
+        \item Second item
+        \item[+] \label{special-item} Third item with label
+        \end{itemize}
+        """
+        parsed_tokens = self.parser.parse(text)
+        
+        itemize = parsed_tokens[0]
+        self.assertEqual(itemize["type"], "list")
+        
+        items = [token for token in itemize["content"] if token["type"] == "item"]
+        self.assertEqual(len(items), 3)
+        
+        # Check custom labels
+        # self.assertEqual(items[0]["title"], "*")
+        self.assertEqual(items[0]["content"][0]['content'], "First item with custom label")
+        self.assertEqual(items[1]["content"][0]['content'], "Second item")
+        self.assertEqual(items[2]["content"][0]['content'], "Third item with label")
+        # self.assertEqual(items[2]["title"], "+")
+        
+        # Check item with label
+        self.assertEqual(items[2]["labels"], ["special-item"])
 
 if __name__ == '__main__':
     unittest.main()
