@@ -1,4 +1,5 @@
 import unittest
+from src.patterns import SECTION_LEVELS
 from src.tex_parser import LatexParser
 from tests.latex_samples_data import TRAINING_SECTION_TEXT
 
@@ -10,12 +11,14 @@ class TestParserText1(unittest.TestCase):
     def test_parse_sections(self):
         sections = [token for token in self.parsed_tokens if token["type"] == "section"]
         self.assertEqual(len(sections), 7)
+
+        start_level = SECTION_LEVELS['section']
         self.assertEqual(sections[0]['title'], 'Training')
-        self.assertEqual(sections[0]['level'], 0)
+        self.assertEqual(sections[0]['level'], start_level)
         self.assertEqual(sections[1]['title'], 'Training Data and Batching')
-        self.assertEqual(sections[1]['level'], 1)
+        self.assertEqual(sections[1]['level'], start_level + 1)
         self.assertEqual(sections[2]['title'], 'Hardware and Schedule')
-        self.assertEqual(sections[2]['level'], 1)
+        self.assertEqual(sections[2]['level'], start_level + 1)
 
         regularization_section = None
         for section in sections:
@@ -37,12 +40,16 @@ class TestParserText1(unittest.TestCase):
         """
         parsed_tokens = self.parser.parse(text)
         sections = [token for token in parsed_tokens if token["type"] == "section"]
+
         self.assertEqual(sections[0]['title'], 'Training Data and Batching')
-        self.assertEqual(sections[0]['level'], 1)
+        self.assertEqual(sections[0]['level'], SECTION_LEVELS['section'] + 1)
         self.assertEqual(sections[1]['title'], 'Hardware and Schedule')
-        self.assertEqual(sections[1]['level'], 2)
+        self.assertEqual(sections[1]['level'], SECTION_LEVELS['section'] + 2)
+
         self.assertEqual(sections[2]['title'], 'Regularization')
-        self.assertEqual(sections[2]['level'], 3)
+        self.assertEqual(sections[2]['level'], SECTION_LEVELS['paragraph'])
+        self.assertEqual(sections[3]['title'], 'Sub Regularization')
+        self.assertEqual(sections[3]['level'], SECTION_LEVELS['paragraph'] + 1)
 
     # def test_parse_equations(self):
     #     equations = [token for token in self.parsed_tokens if token["type"] == "equation"]

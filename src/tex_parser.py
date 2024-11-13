@@ -1,9 +1,14 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.patterns import PATTERNS, LABEL_PATTERN, SEPARATORS
+from src.patterns import PATTERNS, LABEL_PATTERN, SEPARATORS, SECTION_LEVELS, LIST_ENVIRONMENTS
 from src.tables import parse_table, parse_tabular
 from src.commands import CommandProcessor
+
+# Add these compiled patterns at module level
+COMMAND_PATTERN = re.compile(r'\\|\$|%')
+ESCAPED_AMPERSAND_SPLIT = re.compile(r'(?<!\\)&')
+TRAILING_BACKSLASH = re.compile(r'\\+$')
 
 class LatexParser:
     def __init__(self):
@@ -11,6 +16,9 @@ class LatexParser:
         self.command_processor = CommandProcessor()
         self.labels = {}
         self.current_env = None  # Current environment token (used for associating nested labels)
+        
+        # Precompile frequently used patterns
+        self._env_pattern_cache = {}  # Cache for environment patterns
 
     # getter for commands
     @property
@@ -19,7 +27,7 @@ class LatexParser:
     
     def _split_cells(self, row: str) -> List[str]:
         """Split by & but handle escaped &"""
-        return [cell.strip() for cell in re.split(r'(?<!\\)&', row)]
+        return [cell.strip() for cell in ESCAPED_AMPERSAND_SPLIT.split(row)]
 
     def _clean_content(self, cell: str) -> str:
         """Clean up cell content by removing LaTeX formatting commands"""
@@ -27,7 +35,7 @@ class LatexParser:
             return None
     
         # strip out trailing \\
-        cell = re.sub(r'\\+$', '', cell)
+        cell = TRAILING_BACKSLASH.sub('', cell)
         return cell.strip()
 
     def _is_separator_row(self, row: str) -> bool:
@@ -47,7 +55,11 @@ class LatexParser:
 
     def _find_matching_end(self, text: str, env_name: str, start_pos: int = 0) -> int:
         """Find the matching end{env_name} for a begin{env_name}, handling nested environments"""
-        pattern = rf'\\(begin|end)\{{{env_name}}}'
+        # Cache the compiled pattern for this environment
+        if env_name not in self._env_pattern_cache:
+            self._env_pattern_cache[env_name] = re.compile(rf'\\(begin|end)\{{{env_name}}}')
+        
+        pattern = self._env_pattern_cache[env_name]
         nesting_level = 1
         current_pos = start_pos
         
@@ -104,10 +116,11 @@ class LatexParser:
         #     inner_content = inner_content.replace(label_match.group(0), '').strip()
         
         env_token = {
-            "type": "environment",
-            "name": env_name,
-            "title": title
+            "type": "environment" if env_name not in LIST_ENVIRONMENTS else "list",
+            "name": env_name
         }
+        if title:
+            env_token["title"] = title
         
         # Save previous environment and set current
         prev_env = self.current_env
@@ -122,13 +135,8 @@ class LatexParser:
         current_pos = 0
         
         while current_pos < len(text):
-            # Try to match each pattern at the current position
-            match = None
-            matched_type = None
-            
-            # Handle plain text until next LaTeX command 
-            # \\ -> new line, $ -> inline equation, % -> comment
-            next_command = re.search(r'\\|\$|%', text[current_pos:])
+            # Use precompiled pattern
+            next_command = COMMAND_PATTERN.search(text[current_pos:])
             if not next_command:
                 # No more commands, add remaining text
                 if current_pos < len(text):
@@ -153,7 +161,7 @@ class LatexParser:
             
             # Try each pattern
             for pattern_type, pattern in PATTERNS.items():
-                match = re.match(pattern, text[current_pos:], re.DOTALL)
+                match = re.match(pattern, text[current_pos:])
                 if match:
                     matched_type = pattern_type
                     break
@@ -182,6 +190,11 @@ class LatexParser:
                         tokens.append(env_token)
                         current_pos = end_pos + len(f"\\end{{{env_name}}}")
                         continue
+                # elif matched_type in ['itemize', 'enumerate', 'description']:
+                #     pass
+                #     # result = self._parse_list(match.group(1).strip(), type=matched_type)
+                #     # if result:
+                #     #     tokens.append(result)
                 elif matched_type == 'table' or matched_type == 'figure':
                     result = self._parse_table(match.group(1).strip(), type=matched_type)
                     if result:
@@ -229,22 +242,12 @@ class LatexParser:
                         })
 
                 # Handle sections and paragraphs
-                elif matched_type == 'section':
+                elif matched_type in ['section', 'paragraph', 'chapter', 'part']:
                     full_match = match.group(0)
-                    level = full_match.count('sub')
+                    level = full_match.count('sub') + SECTION_LEVELS[matched_type]
                     
                     tokens.append({
-                        "type": "section",
-                        "title": match.group(1).strip(),
-                        "level": level
-                    })
-                elif matched_type == 'paragraph':
-                    full_match = match.group(0)
-                    # Start paragraphs at a higher level than sections
-                    level = 3 + full_match.count('sub')
-                    
-                    tokens.append({
-                        "type": "section",
+                        "type": 'section',
                         "title": match.group(1).strip(),
                         "level": level
                     })
@@ -316,7 +319,15 @@ class LatexParser:
                     defaults_str = match.group(4)  # All optional defaults
                     definition = match.group(5)  # The command definition
                     trailing_added = self.command_processor.process_command_definition(cmd_name, definition, num_args, defaults_str)
-                    
+                
+                elif matched_type == 'item':
+                    content = match.group(2).strip()
+                    if content: 
+                        content = self.parse(content)
+                        tokens.append({
+                            "type": "item",
+                            "content": content
+                        })
                 else:
                     # For all other token types, expand any commands in their content
                     content = match.group(1) if match.groups() else match.group(0)
@@ -340,13 +351,14 @@ if __name__ == "__main__":
 
     text = r"""
     \begin{itemize}
-        \item First item
-        \item \begin{figure}
-            \includegraphics[width=0.3\textwidth]{image.png}
-            \caption{A figure in a list}
-            \end{figure}
-        \item Third item
+    \item First item
+    \item \begin{figure}
+          \includegraphics[width=0.3\textwidth]{image.png}
+          \caption{A figure in a list}
+          \end{figure}
+    \item Third item
     \end{itemize}
+
     """
 
     # Example usage

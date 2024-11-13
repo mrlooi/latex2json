@@ -1,8 +1,10 @@
 import re
 
-PATTERNS = {
+RAW_PATTERNS = {
     'section': r'\\(?:(?:sub)*section){([^}]*)}',
     'paragraph': r'\\(?:(?:sub)*paragraph){([^}]*)}',
+    'part': r'\\part{([^}]*)}', # apparently almost never used in papers (more books) but in case
+    'chapter': r'\\chapter{([^}]*)}', # apparently almost never used in papers (more books) but in case
 
     # Handle specific begin environments first (python 3.7+ is ordered dict)
     'equation': r'\\begin\{equation\*?\}(.*?)\\end\{equation(?:\*)?\}',
@@ -12,15 +14,16 @@ PATTERNS = {
     'equation_display_brackets': r'\\\[(.*?)\\\]',  # Display math with \[...\]
     'equation_inline_brackets': r'\\\((.*?)\\\)',  # Inline math with \(...\)
 
-    # Tables and figures
+    # Tables and figures - put before generic environment pattern
     'table': r'\\begin\{table\*?\}(.*?)\\end\{table(?:\*)?\}',  # Add table pattern
     'tabular': r'\\begin\{tabular\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{tabular\}',
     'figure': r'\\begin\{figure\*?\}(.*?)\\end\{figure(?:\*)?\}',  # Add figure pattern
 
-    # List environments - put before generic environment pattern
-    'itemize': r'\\begin\{itemize\}(.*?)\\end\{itemize\}',
-    'enumerate': r'\\begin\{enumerate\}(?:\[(.*?)\])?(.*?)\\end\{enumerate\}',
-    'description': r'\\begin\{description\}(.*?)\\end\{description\}',
+    # # List environments - put before generic environment pattern
+    # 'itemize': r'\\begin\{itemize\}(.*?)\\end\{itemize\}',
+    # 'enumerate': r'\\begin\{enumerate\}(?:\[(.*?)\])?(.*?)\\end\{enumerate\}',
+    # 'description': r'\\begin\{description\}(.*?)\\end\{description\}',
+    'item': r'\\item(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item|$)',  # Matches \item[optional]{content} until next \item or end
 
     # Generic begin environment pattern comes last
     'environment': r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}',
@@ -45,8 +48,21 @@ PATTERNS = {
     'includegraphics': r'\\includegraphics\[([^\]]*)\]{([^}]*)}',
 }
 
+# needed for re.DOTALL flag (also written as re.S) makes the dot (.) special character match any character including newlines
+MULTILINE_PATTERNS = {
+    'equation', 'equation_display_$$', 'equation_display_brackets',
+    'table', 'tabular', 'figure', 'environment', 'item'
+    # 'itemize', 'enumerate', 'description', 
+}
+
+# Then compile them into a new dictionary
+PATTERNS = {
+    key: re.compile(pattern, re.DOTALL if key in MULTILINE_PATTERNS else 0)
+    for key, pattern in RAW_PATTERNS.items()
+}
+
 LABEL_PATTERN = PATTERNS['label']
-CAPTION_PATTERN = r'\\caption{([^}]*)}'
+CAPTION_PATTERN = re.compile(r'\\caption{([^}]*)}')
 TABULAR_PATTERN = PATTERNS['tabular']
 GRAPHICS_PATTERN = PATTERNS['includegraphics']
 CITATION_PATTERN = PATTERNS['citation']
@@ -71,6 +87,7 @@ def extract_citations(text):
             
     return citations if citations else None
 
+LIST_ENVIRONMENTS = ['itemize', 'enumerate', 'description']
 
 SEPARATORS = [
     '\\hline',      # Basic horizontal line
@@ -82,3 +99,13 @@ SEPARATORS = [
     '\\cdashline',  # From arydshln - partial dashed line
     '\\specialrule' # From booktabs - custom thickness rule
 ]
+
+SECTION_LEVELS = {
+    'part': 0,
+    'chapter': 1,
+    'section': 1,
+    'subsection': 2,
+    'subsubsection': 3,
+    'paragraph': 4,
+    'subparagraph': 5
+}

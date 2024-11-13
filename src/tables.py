@@ -7,8 +7,7 @@ def detect_tabular(text: str):
     # Extract tabular environment
     tabular_match = re.search(
         TABULAR_PATTERN,
-        text,
-        re.DOTALL
+        text
     )
 
     if not tabular_match:
