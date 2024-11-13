@@ -1,190 +1,93 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.patterns import SEPARATORS, TABULAR_PATTERN, CITATION_PATTERN, extract_citations
+from src.patterns import SEPARATORS, CITATION_PATTERN, extract_citations
 
-def detect_tabular(text: str):
-    # Extract tabular environment
-    tabular_match = re.search(
-        TABULAR_PATTERN,
-        text
-    )
+ROW_SPLIT_PATTERN = re.compile(r'\\\\\s*(?:\n|$)')
+MULTICOLUMN_PATTERN = re.compile(r'\\multicolumn{(\d+)}{[^}]*}{(.*)}')
+MULTIROW_PATTERN = re.compile(r'\\multirow{(\d+)}{[^}]*}{(.*)}')
+CELL_SPLIT_PATTERN = re.compile(r'(?<!\\)&')
 
-    if not tabular_match:
-        return None
+def parse_tabular(latex_table: str, cell_parser_fn = None) -> List[List[Dict]]:
+    """
+    Parse LaTeX table into structured format with rows and cells containing content and span information
     
-    content = tabular_match.group(2).strip()
-    return content
-
-def parse_tabular(latex_table):
+    Returns:
+        List of rows, where each row is a list of cell dictionaries containing:
+        - content: List of parsed elements (text/equations)
+        - rowspan: Number of rows this cell spans
+        - colspan: Number of columns this cell spans
     """
-    Parse LaTeX table into structured format
-    """
-    # Split into rows and clean up
+    # Split into rows, ignoring empty lines
     rows = []
-    for row in latex_table.split('\\\\'):
-        row: str = row.strip()
-        if row and not row.startswith('%') and not is_separator_row(row):
+    for row in ROW_SPLIT_PATTERN.split(latex_table):
+        row = row.strip()
+        if not is_separator_row(row):
             rows.append(row)
-
-    if not rows:
-        return None
-
-    # Analyze header structure
-    header_rows_needed = 1  # default
-    first_row = rows[0]
-    if '\\multirow' in first_row:
-        # Find max multirow span
-        matches = re.finditer(r'\\multirow{(\d+)}', first_row)
-        header_rows_needed = max(
-            [int(m.group(1)) for m in matches], 
-            default=1
-        )
-
-    # Ensure we have enough rows
-    if len(rows) < header_rows_needed:
-        return None
-
-    # Split into header and data sections
-    header_rows = rows[:header_rows_needed]
-    data_rows = rows[header_rows_needed:]
-
-    # Parse headers
-    headers = parse_headers(header_rows)
     
-    # Calculate total columns from header structure
-    total_columns = calculate_total_columns(headers)
-
-    # Parse data rows
-    parsed_rows = [parse_data_row(row, total_columns) for row in data_rows]
-
-    return { 
-        "headers": headers,
-        "rows": parsed_rows
-    }
-
-def parse_headers(header_rows):
-    """
-    Parse header rows into structured format.
-    Handles multirow/multicolumn and varying number of header rows.
-    """
-    if not header_rows:
-        return []
-
-    headers = []
-    main_row = header_rows[0]
-    main_cells = split_cells(main_row)
+    parsed_rows = []
     
-    # Track subheader cells if we have them
-    sub_cells = []
-    if len(header_rows) > 1:
-        sub_cells = split_cells(header_rows[1])
-    
-    current_sub_idx = 0
-    for cell_idx, cell in enumerate(main_cells):
-        if "\\multirow" in cell:
-            match = re.search(r'\\multirow{(\d+)}{[^}]*}{([^}]*)}', cell)
-            if match:
-                headers.append({
-                    "content": clean_content(match.group(2)),
-                    "rowspan": int(match.group(1))
-                })
-            current_sub_idx += 1
-            
-        elif "\\multicolumn" in cell:
-            match = re.search(r'\\multicolumn{(\d+)}{[^}]*}{([^}]*)}', cell)
-            if match:
-                colspan = int(match.group(1))
-                content = match.group(2)
-                
-                # Get subheaders if they exist
-                these_subs = []
-                if sub_cells and current_sub_idx < len(sub_cells):
-                    these_subs = [
-                        clean_content(sh) 
-                        for sh in sub_cells[current_sub_idx:current_sub_idx + colspan] 
-                        if sh.strip()
-                    ]
-                
-                headers.append({
-                    "content": clean_content(content),
-                    "subheaders": these_subs if these_subs else None
-                })
-                current_sub_idx += colspan
-                
-        elif cell.strip():
-            headers.append(clean_content(cell))
-            current_sub_idx += 1
-            
-        else:
-            headers.append(None)
-            current_sub_idx += 1
-
-    return headers
-
-def parse_data_row(row, total_columns):
-    """
-    Parse a data row into structured format
-    """
-    cells = split_cells(row)
-    parsed_cells = []
-    
-    # Pad with None if needed
-    cells.extend([None] * (total_columns - len(cells)))
-    
-    for cell in cells[:total_columns]:
-        if not cell or not cell.strip():
-            parsed_cells.append(None)
-            continue
-            
-        # Extract citations if present
-        citations = extract_citations(cell)
-        content = clean_content(cell)
+    for row_idx, row in enumerate(rows):
+        cells = split_cells(row)
+        parsed_row = []
         
-        if citations:
-            parsed_cells.append({
-                "content": content,
-                "citations": citations
-            })
-        else:
-            parsed_cells.append(content)
-    
-    return parsed_cells
-
-def calculate_total_columns(headers):
-    """
-    Calculate total number of columns from header structure
-    """
-    total = 0
-    for header in headers:
-        if header is None:
-            total += 1
-        elif 'subheaders' in header:
-            total += len(header['subheaders'])
-        else:
-            total += 1
-    return total
-
-def clean_content(text):
-    """
-    Clean LaTeX formatting while preserving essential content
-    """
-    if not text:
-        return None
+        for cell in cells:
+            # Parse nested multicolumn/multirow
+            content = cell
+            colspan = 1
+            rowspan = 1
+            
+            # Handle multicolumn first
+            mcol_match = MULTICOLUMN_PATTERN.match(content)
+            if mcol_match:
+                colspan = int(mcol_match.group(1))
+                content = mcol_match.group(2).strip()
+            
+            # Then handle multirow within the content
+            mrow_match = MULTIROW_PATTERN.match(content)
+            if mrow_match:
+                rowspan = int(mrow_match.group(1))
+                content = mrow_match.group(2).strip()
+            
+            # Create cell structure
+            parsed_content = cell_parser_fn(content) if cell_parser_fn else content
+            parsed_cell = None
+            if rowspan > 1 or colspan > 1:
+                parsed_cell = {
+                    'content': parsed_content,
+                    'rowspan': rowspan,
+                    'colspan': colspan
+                }
+            else:
+                parsed_cell = parsed_content
+            
+            parsed_row.append(parsed_cell)
         
-    # Remove common formatting commands
-    text = re.sub(r'\\vspace{[^}]*}', '', text)
-    text = re.sub(r'\\hspace{[^}]*}', '', text)
-    text = re.sub(CITATION_PATTERN, '', text)
+        if parsed_row:
+            parsed_rows.append(parsed_row)
     
-    # Clean up whitespace
-    return text.strip()
+    return parsed_rows
 
-def split_cells(row):
+def split_cells(row: str) -> List[str]:
     """
-    Split row into cells by & but handle escaped &
+    Split row into cells by & but handle:
+    - escaped &
+    - newlines
+    - row separators like \\hline
+    
+    Returns:
+        List of cell contents, with separators and empty lines filtered out
     """
-    return [cell.strip() for cell in re.split(r'(?<!\\)&', row)]
+    # Split by newlines first and filter out separators
+    lines = [line.strip() for line in row.split('\n')]
+    lines = [line for line in lines if line and not is_separator_row(line)]
+    
+    # Join valid lines back together
+    row = ' '.join(lines)
+    # print(row)
+    
+    # Split by unescaped & characters
+    return [cell.strip() for cell in CELL_SPLIT_PATTERN.split(row)]
 
 def is_separator_row(row):
     """
@@ -205,72 +108,20 @@ def only_contains_separators(text, separators):
     return any(sep in text for sep in separators)
 
 if __name__ == "__main__":
-    # table_text = """
-    # \\toprule
-    # \\multirow{2}{*}{\\vspace{-2mm}Model} & \\multicolumn{2}{c}{BLEU} & & \\multicolumn{2}{c}{Training Cost (FLOPs)} \\\\
-    # \\cmidrule{2-3} \\cmidrule{5-6} 
-    # & EN-DE & EN-FR & & EN-DE & EN-FR \\\\ 
-    # \\hline
-    # ByteNet \\citep{NalBytenet2017} & 23.75 & & & &\\\\
-    # Deep-Att + PosUnk \\citep{DBLP:journals/corr/ZhouCWLX16} & & 39.2 & & & $1.0\\cdot10^{20}$ \\\\
-    # Transformer (big) & \\textbf{28.4} & \\textbf{41.8} & & \\multicolumn{2}{c}{$2.3\\cdot10^{19}$} \\\\
-    # """
 
-    # parsed_table = parse_table(table_text)
-    # print(parsed_table)
-    # print()
-
-    # table_text = """
-    # {\\bf Parser}  & {\\bf Training} & {\\bf WSJ 23 F1} \\\\
-    # Vinyals \\& Kaiser el al. (2014) \\cite{KVparse15}
-    #     & WSJ only, discriminative & 88.3 \\\\
-    # """
-
-    # parsed_table = parse_table(table_text)
-    # print(parsed_table)
-
-    table_text = """
-        \\hline\\rule{0pt}{2.0ex}
-        & \\multirow{2}{*}{$N$} & \\multirow{2}{*}{$\\dmodel$} &
-        \\multirow{2}{*}{$\\dff$} & \\multirow{2}{*}{$h$} & 
-        \\multirow{2}{*}{$d_k$} & \\multirow{2}{*}{$d_v$} & 
-        \\multirow{2}{*}{$P_{drop}$} & \\multirow{2}{*}{$\\epsilon_{ls}$} &
-        train & PPL & BLEU & params \\\\
-        & & & & & & & & & steps & (dev) & (dev) & $\times10^6$ \\\\
-        % & & & & & & & & & & & & \\\\
-        \\hline\\rule{0pt}{2.0ex}
-        base & 6 & 512 & 2048 & 8 & 64 & 64 & 0.1 & 0.1 & 100K & 4.92 & 25.8 & 65 \\\\
-        \\hline\\rule{0pt}{2.0ex}
-        \\multirow{4}{*}{(A)}
-        & & & & 1 & 512 & 512 & & & & 5.29 & 24.9 &  \\\\
-        & & & & 4 & 128 & 128 & & & & 5.00 & 25.5 &  \\\\
-        & & & & 16 & 32 & 32 & & & & 4.91 & 25.8 &  \\\\
-        & & & & 32 & 16 & 16 & & & & 5.01 & 25.4 &  \\\\
-        \\hline\\rule{0pt}{2.0ex}
-        \\multirow{2}{*}{(B)}
-        & & & & & 16 & & & & & 5.16 & 25.1 & 58 \\\\
-        & & & & & 32 & & & & & 5.01 & 25.4 & 60 \\\\
-        \\hline\\rule{0pt}{2.0ex}
-        \\multirow{7}{*}{(C)}
-        & 2 & & & & & & & &            & 6.11 & 23.7 & 36 \\\\
-        & 4 & & & & & & & &            & 5.19 & 25.3 & 50 \\\\
-        & 8 & & & & & & & &            & 4.88 & 25.5 & 80 \\\\
-        & & 256 & & & 32 & 32 & & &    & 5.75 & 24.5 & 28 \\\\
-        & & 1024 & & & 128 & 128 & & & & 4.66 & 26.0 & 168 \\\\
-        & & & 1024 & & & & & &         & 5.12 & 25.4 & 53 \\\\
-        & & & 4096 & & & & & &         & 4.75 & 26.2 & 90 \\\\
-        \\hline\\rule{0pt}{2.0ex}
-        \\multirow{4}{*}{(D)}
-        & & & & & & & 0.0 & & & 5.77 & 24.6 &  \\\\
-        & & & & & & & 0.2 & & & 4.95 & 25.5 &  \\\\
-        & & & & & & & & 0.0 & & 4.67 & 25.3 &  \\\\
-        & & & & & & & & 0.2 & & 5.47 & 25.7 &  \\\\
-        \\hline\\rule{0pt}{2.0ex}
-        (E) & & \\multicolumn{7}{c}{positional embedding instead of sinusoids} & & 4.92 & 25.7 & \\\\
-        \\hline\\rule{0pt}{2.0ex}
-        big & 6 & 1024 & 4096 & 16 & & & 0.3 & & 300K & \\textbf{4.33} & \\textbf{26.4} & 213 \\\\
-        \\hline
+    text = r"""
+        \hline
+        \multicolumn{2}{|c|}{\multirow{2}{*}{Region}} & \multicolumn{2}{c|}{Sales} \\
+        \cline{3-4}
+        \multicolumn{2}{|c|}{} & 2022 & 2023 \\
+        \hline
+        \multirow{2}{*}{North} & Urban & $x^2 + y^2 = z^2$ & 180 \\
+        & Rural & 100 & 120 \\
+        \hline
+        \multirow{2}{*}{South} & Urban & 200 & \begin{align} E = mc^2 \\ $F = ma$ \end{align} \\
+        & & 130 & 160 \\
+        \hline
     """
 
-    parsed_table = parse_tabular(table_text)
+    parsed_table = parse_tabular(text)
     print(parsed_table)

@@ -6,7 +6,7 @@ from src.tables import parse_tabular
 from src.commands import CommandProcessor
 
 # Add these compiled patterns at module level
-COMMAND_PATTERN = re.compile(r'\\|\$|%')
+DELIM_PATTERN = re.compile(r'\\|\$|%')
 ESCAPED_AMPERSAND_SPLIT = re.compile(r'(?<!\\)&')
 TRAILING_BACKSLASH = re.compile(r'\\+$')
 
@@ -84,6 +84,14 @@ class LatexParser:
                     "content": content
                 })
     
+    def _parse_table_cell(self, cell_content: str) -> List[Dict]:
+        cell = self.parse(cell_content)
+        if len(cell) == 0: 
+            return None
+        elif len(cell) == 1 and cell[0]['type'] == 'text':
+            return cell[0]['content']
+        return cell
+    
     def _handle_environment(self, env_name: str, inner_content: str) -> None:
         # Extract title if present (text within square brackets after environment name)
         title_match = re.match(r'^\[(.*?)\]', inner_content)
@@ -114,7 +122,7 @@ class LatexParser:
         else:
             env_type = ENV_TYPES.get(env_name, "environment")
             token["type"] = env_type
-            if env_type != "list":
+            if env_type not in ["list", "table", "figure"]:
                 token["name"] = env_name
         if title:
             token["title"] = title
@@ -133,7 +141,7 @@ class LatexParser:
         
         while current_pos < len(text):
             # Use precompiled pattern
-            next_command = COMMAND_PATTERN.search(text[current_pos:])
+            next_command = DELIM_PATTERN.search(text[current_pos:])
             if not next_command:
                 # No more commands, add remaining text
                 if current_pos < len(text):
@@ -197,7 +205,7 @@ class LatexParser:
                         "type": "tabular",
                         "column_spec": match.group(1).strip()
                     }
-                    result = parse_tabular(match.group(2).strip())
+                    result = parse_tabular(match.group(2).strip(), self._parse_table_cell)
                     if result:
                         token["content"] = result
                     tokens.append(token)
@@ -324,8 +332,12 @@ class LatexParser:
                 elif matched_type == 'item':
                     content = match.group(2).strip()
                     if content: 
+                        # treat item as a mini environment
                         content = self._handle_environment('item', content)
                         tokens.append(content)
+                elif matched_type == 'formatting':
+                    # ignore formatting commands
+                    pass
                 else:
                     # For all other token types, expand any commands in their content
                     content = match.group(1) if match.groups() else match.group(0)
@@ -348,12 +360,24 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-    \begin{itemize}
-        \label{LABEL-TOP}
-        \item[*] First item with custom label
-        \item Second item
-        \item[+] \label{special-item} Third item with label
-        \end{itemize}
+    \begin{table}[htbp]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        \multicolumn{2}{|c|}{\multirow{2}{*}{Region}} & \multicolumn{2}{c|}{Sales} \\
+        \cline{3-4}
+        \multicolumn{2}{|c|}{} & 2022 & 2023 \\
+        \hline
+        \multirow{2}{*}{North} & Urban & $x^2 + y^2 = z^2$ & 180 \\
+        & Rural & 100 & 120 \\
+        \hline
+        \multirow{2}{*}{South} & Urban & 200 & \begin{align} \label{eq:1} E = mc^2 \\ $F = ma$ \end{align} \\
+        & & 130 & 160 \\
+        \hline
+    \end{tabular}
+    \caption{Regional Sales Distribution}
+    \label{tab:sales}
+    \end{table}
     """
 
     # text = r"""

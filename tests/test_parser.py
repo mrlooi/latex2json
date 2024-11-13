@@ -75,23 +75,6 @@ class TestParserText1(unittest.TestCase):
         # assert 'sec:reg' in labels
         self.assertIn('sec:reg', labels)
 
-
-# class TestParserTable(unittest.TestCase):
-#     def setUp(self):
-#         self.parser = LatexParser()
-
-#     def test_nested_environments(self):
-#         text = r"""
-#         \begin{lemma}\label{tb} With probability $1-O(\eps)$, one has 
-# \begin{equation}\label{t-bound}
-# \t = O_{\eps}(X^\delta).
-# \end{equation}
-# \end{lemma}
-# """
-#         parsed_tokens = self.parser.parse(text)
-#         print(parsed_tokens)
-
-
 class TestParserCommands(unittest.TestCase):
     def setUp(self):
         self.parser = LatexParser()
@@ -425,6 +408,7 @@ class TestParserItems(unittest.TestCase):
     def test_item_with_label(self):
         text = r"""
         \begin{itemize}
+        \label{label-top}
         \item[*] First item with custom label
         \item Second item
         \item[+] \label{special-item} Third item with label
@@ -434,6 +418,7 @@ class TestParserItems(unittest.TestCase):
         
         itemize = parsed_tokens[0]
         self.assertEqual(itemize["type"], "list")
+        self.assertEqual(itemize["labels"], ["label-top"])
         
         items = [token for token in itemize["content"] if token["type"] == "item"]
         self.assertEqual(len(items), 3)
@@ -447,6 +432,136 @@ class TestParserItems(unittest.TestCase):
         
         # Check item with label
         self.assertEqual(items[2]["labels"], ["special-item"])
+
+class TestParserFigures(unittest.TestCase):
+    def setUp(self):
+        self.parser = LatexParser()
+
+    def test_nested_figures(self):
+        text = r"""
+        \begin{figure}[htbp]
+            \centering
+            \begin{subfigure}[b]{0.45\textwidth}
+                \centering
+                \includegraphics[width=\textwidth]{image.png}
+                \caption{First pendulum design}
+                \label{fig:pendulum-a}
+            \end{subfigure}
+            \hfill
+            \begin{subfigure}[b]{0.45\textwidth}
+                \centering
+                \includegraphics[width=\textwidth]{example-image-b}
+                \caption{Second pendulum design}
+                \label{fig:pendulum-b}
+            \end{subfigure}
+            \captionof{figure}{Different pendulum clock designs}
+            \label{fig:pendulum-designs}
+        \end{figure}
+        """
+        parsed_tokens = self.parser.parse(text)
+        
+        # Check main figure
+        self.assertEqual(len(parsed_tokens), 1)
+        figure = parsed_tokens[0]
+        self.assertEqual(figure["type"], "figure")
+        self.assertEqual(figure["labels"], ["fig:pendulum-designs"])
+        
+        # Check subfigures
+        subfigures = [token for token in figure["content"] if token["type"] == "figure"]
+        self.assertEqual(len(subfigures), 2)
+        
+        # Check first subfigure
+        first_subfig = subfigures[0]
+        self.assertEqual(first_subfig["labels"], ["fig:pendulum-a"])
+        
+        # Check first subfigure content
+        first_graphics = [t for t in first_subfig["content"] if t["type"] == "includegraphics"][0]
+        first_caption = [t for t in first_subfig["content"] if t["type"] == "caption"][0]
+        self.assertEqual(first_graphics["content"], "image.png")
+        self.assertEqual(first_caption["content"], "First pendulum design")
+        
+        # Check second subfigure
+        second_subfig = subfigures[1]
+        self.assertEqual(second_subfig["labels"], ["fig:pendulum-b"])
+        
+        # Check second subfigure content
+        second_graphics = [t for t in second_subfig["content"] if t["type"] == "includegraphics"][0]
+        second_caption = [t for t in second_subfig["content"] if t["type"] == "caption"][0]
+        self.assertEqual(second_graphics["content"], "example-image-b")
+        self.assertEqual(second_caption["content"], "Second pendulum design")
+        
+        # Check main caption
+        main_caption = [t for t in figure["content"] if t["type"] == "caption"][0]
+        self.assertEqual(main_caption["content"], "Different pendulum clock designs")
+
+        # # check titles
+        # self.assertEqual(figure["title"], "htbp")
+        # self.assertEqual(first_subfig["title"], "b")
+        # self.assertEqual(second_subfig["title"], "b")
+
+class TestParserTables(unittest.TestCase):
+    def setUp(self):
+        self.parser = LatexParser()
+
+    def test_complex_table(self):
+        text = r"""
+        \begin{table}[htbp]
+        \centering
+        \begin{tabular}{|c|c|c|c|}
+            \hline
+            \multicolumn{2}{|c|}{\multirow{2}{*}{Region}} & \multicolumn{2}{c|}{Sales} \\
+            \cline{3-4}
+            \multicolumn{2}{|c|}{} & 2022 & 2023 \\
+            \hline
+            \multirow{2}{*}{North} & Urban & $x^2 + y^2 = z^2$ & 180 \\
+            & Rural & 100 & 120 \\
+            \hline
+            \multirow{2}{*}{South} & Urban & 200 & \begin{align} \label{eq:1} E = mc^2 \\ $F = ma$ \end{align} \\
+            & & 130 & 160 \\
+            \hline
+        \end{tabular}
+        \caption{Regional Sales Distribution}
+        \label{tab:sales}
+        \end{table}
+        """
+        parsed_tokens = self.parser.parse(text)
+        table = parsed_tokens[0]
+        
+        # Check table properties
+        self.assertEqual(table["type"], "table")
+        self.assertEqual(table["title"], "htbp")
+        self.assertEqual(table["labels"], ["tab:sales"])
+        
+        # Check tabular content
+        tabular = table["content"][0]
+        self.assertEqual(tabular["type"], "tabular")
+        self.assertEqual(tabular["column_spec"], "|c|c|c|c|")
+        
+        # Check specific cells
+        cells = tabular["content"]
+        
+        # Check header cell with multicolumn and multirow
+        self.assertEqual(cells[0][0]["content"], "Region")
+        self.assertEqual(cells[0][0]["rowspan"], 2)
+        self.assertEqual(cells[0][0]["colspan"], 2)
+        
+        # Check equation cell
+        equation_cell = cells[2][2]
+        self.assertEqual(equation_cell[0]["type"], "equation")
+        self.assertEqual(equation_cell[0]["content"], "x^2 + y^2 = z^2")
+        self.assertEqual(equation_cell[0]["display"], "inline")
+        
+        # Check align environment cell
+        align_cell = cells[4][3]
+        self.assertEqual(align_cell[0]["type"], "equation")
+        self.assertEqual(align_cell[0]["display"], "block")
+        self.assertEqual(align_cell[0]["labels"], ["eq:1"])
+        
+        # Check caption
+        caption = table["content"][1]
+        self.assertEqual(caption["type"], "caption")
+        self.assertEqual(caption["content"], "Regional Sales Distribution")
+
 
 if __name__ == '__main__':
     unittest.main()

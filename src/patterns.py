@@ -23,10 +23,11 @@ RAW_PATTERNS = {
     # 'itemize': r'\\begin\{itemize\}(.*?)\\end\{itemize\}',
     # 'enumerate': r'\\begin\{enumerate\}(?:\[(.*?)\])?(.*?)\\end\{enumerate\}',
     # 'description': r'\\begin\{description\}(.*?)\\end\{description\}',
-    'item': r'\\item(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item|$)',  # Matches \item[optional]{content} until next \item or end
 
     # Generic begin environment pattern comes last
     'environment': r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}',
+
+    'item': r'\\item(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item|$)',  # Matches \item[optional]{content} until next \item or end
 
     # REF patterns and label
     'ref': r'\\ref{([^}]*)}',
@@ -48,6 +49,8 @@ RAW_PATTERNS = {
     'includegraphics': r'\\includegraphics\[([^\]]*)\]{([^}]*)}',
     'caption': r'\\caption{([^}]*)}',
     'captionof': r'\\captionof{([^}]*)}{([^}]*)}',  # captures type and caption text
+
+    'formatting': r'\\(centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b',
 }
 
 # needed for re.DOTALL flag (also written as re.S) makes the dot (.) special character match any character including newlines
@@ -103,6 +106,7 @@ ENV_TYPES = {
 
 SEPARATORS = [
     '\\hline',      # Basic horizontal line
+    '\\cline',      # From booktabs - partial horizontal line
     '\\midrule',    # From booktabs - middle rule
     '\\toprule',    # From booktabs - top rule
     '\\bottomrule', # From booktabs - bottom rule
