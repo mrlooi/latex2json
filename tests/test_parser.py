@@ -89,6 +89,14 @@ class TestParserNewCommands(unittest.TestCase):
         \newcommand{\dmodel}{d_{\text{model}}}
 
         $\pow[5]{3}$ and $\HH$ and $\I$ and $\dmodel$
+
+        \newcommand*{\goodexample}[1]{#1}
+        \goodexample{Single line of text}
+
+        \newcommand{\myedit}[1]{#1 \newline(Edited by me)}
+        \myedit{First paragraph
+
+        Second paragraph}
         """
         parsed_tokens = self.parser.parse(text)
         equations = [token for token in parsed_tokens if token["type"] == "equation"]
@@ -106,6 +114,15 @@ class TestParserNewCommands(unittest.TestCase):
         self.assertEqual(equations[1]["content"], r"\mathbb{H}")
         self.assertEqual(equations[2]["content"], r"\mathbb{I}")
         self.assertEqual(equations[3]["content"], r"d_{\text{model}}")
+
+        self.assertEqual(parsed_tokens[-2]["content"], "Single line of text")
+        last_token = parsed_tokens[-1]["content"]
+        split_content = [line.strip() for line in last_token.split("\n") if line.strip()]
+        self.assertEqual(len(split_content), 3)
+        self.assertEqual(split_content[0], "First paragraph")
+        self.assertEqual(split_content[1], "Second paragraph")
+        self.assertEqual(split_content[2], "(Edited by me)")
+
 
     def test_complex_command_definitions(self):
         text = r"""

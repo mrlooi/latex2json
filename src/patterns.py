@@ -47,6 +47,9 @@ RAW_PATTERNS = {
     'newcommand': r'\\(?:new|renew)command\*?(?:{\\([^}]+)}|\\([^[\s{]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{',
 
     'item': r'\\item(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item|$)',  # Matches \item[optional]{content} until next \item or end
+
+    # Line breaks (these will be converted to \n)
+    'newline': r'\\(?:newline|linebreak)\b',
 }
 
 # Update NESTED_BRACE_COMMANDS to reflect all commands needing special handling
@@ -82,6 +85,7 @@ PATTERNS = {
 LABEL_PATTERN = PATTERNS['label']
 TABULAR_PATTERN = PATTERNS['tabular']
 CITATION_PATTERN = PATTERNS['citation']
+NEWLINE_PATTERN = PATTERNS['newline']
 
 def extract_citations(text):
     """

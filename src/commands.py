@@ -2,10 +2,20 @@
 
 import re
 from typing import List, Dict, Optional
+from src.patterns import NEWLINE_PATTERN
 
 class CommandProcessor:
     def __init__(self):
         self.commands: Dict[str, Dict[str, any]] = {}
+        
+        # Add built-in newline normalization command using pre-compiled pattern
+        newline_command = {
+            'definition': '\n',
+            'args': {'num_args': 0, 'defaults': [], 'required_args': 0},
+            'pattern': NEWLINE_PATTERN,
+            'handler': lambda m: '\n'
+        }
+        self.commands['newline'] = newline_command
 
     def has_command(self, command_name: str) -> bool:
         return command_name in self.commands
@@ -83,7 +93,8 @@ class CommandProcessor:
         pattern += ''.join(r'(?:\[(.*?)\])?' for _ in range(num_optional))
         num_required = cmd_info['args']['required_args']
         pattern += ''.join(r'\{(.*?)\}' for _ in range(num_required))
-        regex = re.compile(pattern)
+        # use dotall flag to allow for multiline matches
+        regex = re.compile(pattern, re.DOTALL)
 
         def handler(match):
             groups = match.groups()

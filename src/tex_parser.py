@@ -381,13 +381,14 @@ class LatexParser:
                         token["title"] = optional_text.strip()
                     tokens.append(token)
                 elif matched_type == 'comment':
-                    content = match.group(1).strip()
-                    if content:
-                        tokens.append({
-                            "type": "comment",
-                            "content": content
-                            # "content": self._expand_command(content)
-                        })
+                    pass
+                    # content = match.group(1).strip()
+                    # if content:
+                    #     tokens.append({
+                    #         "type": "comment",
+                    #         "content": content
+                    #         # "content": self._expand_command(content)
+                    #     })
                 
                 elif matched_type == 'includegraphics':
                     tokens.append({
@@ -410,6 +411,14 @@ class LatexParser:
                 elif matched_type == 'formatting':
                     # ignore formatting commands
                     pass
+                elif matched_type == 'newline':
+                    if tokens and tokens[-1] and tokens[-1]['type'] == 'text':
+                        tokens[-1]['content'] += "\n"
+                    else:
+                        tokens.append({
+                            "type": "text",
+                        "content": "\n"
+                        })
                 else:
                     # For all other token types, expand any commands in their content
                     content = match.group(1) if match.groups() else match.group(0)
@@ -436,23 +445,10 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-    \newcommand{\Fma}{$F=ma$}
+    \newcommand{\myedit}[1]{#1 \newline(Edited by me)}
+    \myedit{First paragraph
 
-    \newcommand{\myenv}[2]{
-        \begin{equation*}
-            #1 = #2 
-            \Fma
-        \end{equation*}
-    }
-    \myenv{E}{mc^2}
-
-    \footnote{
-        Here's a list: \Fma
-        \begin{itemize}
-            \item First point
-            \item Second point
-        \end{itemize}
-    }
+    Second paragraph}  % Works with \newcommand, errors with \newcommand*
     """
 
     # text = r"""
