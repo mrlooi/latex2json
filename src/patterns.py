@@ -1,56 +1,59 @@
 import re
+from collections import OrderedDict
 
+# NOTE: THESE patterns are primarily for content inside document environments already. i.e. no bibliography, etc
+# NOTE: Don't handle text related commands e.g. \text, \textbf, \textit, \mathbb etc. We will process them on render
+# NOTE: We also ignore itemlist containers e.g. \enumerate, \itemize, \description since we treat them as lists internally
 
-# NOTE: Don't handle text related commands e.g. \text, \textbf, \textit, etc. We will process them on render
-
-RAW_PATTERNS = {
+# ASSUMES ORDERD DICT (PYTHON 3.7+)
+RAW_PATTERNS = OrderedDict([
     # 1. Commands that need nested brace handling (simplified patterns)
-    'section': r'\\(?:(?:sub)*section)\s*{',
-    'paragraph': r'\\(?:(?:sub)*paragraph)\s*{',
-    'part': r'\\part\s*{',
-    'chapter': r'\\chapter\s*{',
-    'footnote': r'\\footnote\s*{',
-    'caption': r'\\caption\s*{',
-    'captionof': r'\\captionof\s*{([^}]*?)}\s*{',  # First arg is simple, second needs brace matching
-    'hyperref': r'\\hyperref\s*\[([^]]*)\]\s*{',
-    'href': r'\\href\s*{([^}]*)}\s*{',  # First arg is URL (simple), second needs brace matching
+    ('section', r'\\(?:(?:sub)*section)\s*{'),
+    ('paragraph', r'\\(?:(?:sub)*paragraph)\s*{'),
+    ('part', r'\\part\s*{'),
+    ('chapter', r'\\chapter\s*{'),
+    ('footnote', r'\\footnote\s*{'),
+    ('caption', r'\\caption\s*{'),
+    ('captionof', r'\\captionof\s*{([^}]*?)}\s*{'),
+    ('hyperref', r'\\hyperref\s*\[([^]]*)\]\s*{'),
+    ('href', r'\\href\s*{([^}]*)}\s*{'),
 
-    # Environment patterns (keep as is - they use begin/end)
-    'equation': r'\\begin\{equation\*?\}(.*?)\\end\{equation(?:\*)?\}',
-    'align': r'\\begin\{align\*?\}(.*?)\\end\{align(?:\*)?\}',
-    'tabular': r'\\begin\{tabular\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{tabular\}',
-    'environment': r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}',
+    # Environment patterns
+    ('equation', r'\\begin\{equation\*?\}(.*?)\\end\{equation(?:\*)?\}'),
+    ('align', r'\\begin\{align\*?\}(.*?)\\end\{align(?:\*)?\}'),
+    ('tabular', r'\\begin\{tabular\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{tabular\}'),
+    ('environment', r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}'),
 
-    # Math delimiters (keep as is - they use clear delimiters)
-    'equation_display_$$': r'\$\$([\s\S]*?)\$\$',
-    'equation_inline_$': r'\$([^$]*)\$',
-    'equation_display_brackets': r'\\\[(.*?)\\\]',
-    'equation_inline_brackets': r'\\\((.*?)\\\)',
+    # Math delimiters
+    ('equation_display_$$', r'\$\$([\s\S]*?)\$\$'),
+    ('equation_inline_$', r'\$([^$]*)\$'),
+    ('equation_display_brackets', r'\\\[(.*?)\\\]'),
+    ('equation_inline_brackets', r'\\\((.*?)\\\)'),
 
-    # Simple commands (no nested content possible)
-    'ref': r'\\ref\s*{([^}]*)}',
-    'eqref': r'\\eqref\s*{([^}]*)}',
-    'label': r'\\label\s*{([^}]*)}',
-    'url': r'\\url\s*{([^}]*)}',
-    'includegraphics': r'\\includegraphics\s*\[([^\]]*)\]\s*{([^}]*)}',
+    # Simple commands
+    ('ref', r'\\ref\s*{([^}]*)}'),
+    ('eqref', r'\\eqref\s*{([^}]*)}'),
+    ('label', r'\\label\s*{([^}]*)}'),
+    ('url', r'\\url\s*{([^}]*)}'),
+    ('includegraphics', r'\\includegraphics\s*\[([^\]]*)\]\s*{([^}]*)}'),
     
-    # Citations (simple - no nested content)
-    'citation': r'\\(?:cite|citep)(?:\[([^\]]*)\])?\s*{([^}]*)}',
+    # Citations
+    ('citation', r'\\(?:cite|citep)(?:\[([^\]]*)\])?\s*{([^}]*)}'),
     
-    # Comments (keep as is)
-    'comment': r'%([^\n]*)',
+    # Comments
+    ('comment', r'%([^\n]*)'),
     
-    # Formatting commands (no braces)
-    'formatting': r'\\(centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b',
+    # Formatting commands
+    ('formatting', r'\\(usepackage|centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b'),
 
-    # Special handling for newcommand due to complex syntax
-    'newcommand': r'\\(?:new|renew)command\*?(?:{\\([^}]+)}|\\([^[\s{]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{',
+    # Special handling for newcommand
+    ('newcommand', r'\\(?:new|renew)command\*?(?:{\\([^}]+)}|\\([^[\s{]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{'),
 
-    'item': r'\\item(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item|$)',  # Matches \item[optional]{content} until next \item or end
+    ('item', r'\\item(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item|$)'),
 
-    # Line breaks (these will be converted to \n)
-    'newline': r'\\(?:newline|linebreak)\b',
-}
+    # Line breaks
+    ('newline', r'\\(?:newline|linebreak)\b'),
+])
 
 # Update NESTED_BRACE_COMMANDS to reflect all commands needing special handling
 NESTED_BRACE_COMMANDS = {
@@ -71,16 +74,16 @@ NESTED_BRACE_COMMANDS = {
 
 # needed for re.DOTALL flag (also written as re.S) makes the dot (.) special character match any character including newlines
 MULTILINE_PATTERNS = {
-    'equation', 'equation_display_$$', 'equation_display_brackets',
+    'equation', 'align', 'equation_display_$$', 'equation_display_brackets',
     'table', 'tabular', 'figure', 'environment', 'item'
     # 'itemize', 'enumerate', 'description', 
 }
 
 # Then compile them into a new dictionary
-PATTERNS = {
-    key: re.compile(pattern, re.DOTALL if key in MULTILINE_PATTERNS else 0)
+PATTERNS = OrderedDict(
+    (key, re.compile(pattern, re.DOTALL if key in MULTILINE_PATTERNS else 0))
     for key, pattern in RAW_PATTERNS.items()
-}
+)
 
 LABEL_PATTERN = PATTERNS['label']
 TABULAR_PATTERN = PATTERNS['tabular']
@@ -129,7 +132,9 @@ SEPARATORS = [
     '\\cmidrule',   # From booktabs - partial rule
     '\\hdashline',  # From arydshln - dashed line
     '\\cdashline',  # From arydshln - partial dashed line
-    '\\specialrule' # From booktabs - custom thickness rule
+    '\\specialrule', # From booktabs - custom thickness rule
+    '\\addlinespace',  # From booktabs - adds vertical space
+    '\\morecmidrules', # From booktabs - allows multiple cmidrules
 ]
 
 SECTION_LEVELS = {

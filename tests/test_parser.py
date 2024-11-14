@@ -330,6 +330,22 @@ class TestParserEquations(unittest.TestCase):
         self.assertEqual(inline2, 'INLINE, B^{3}')
         self.assertEqual(equations[3]['display'], 'inline')
 
+    def test_align_block(self):
+        text = r"""
+        \begin{align*}
+        \left(\E \left|\sum_{j=1}^n \g(jd)\right|^2\right)^{1/2} &= \left(\E \left| \sum_{i \geq 0: 3^i \leq n} \boldsymbol{\eps}_{i+l} \sum_{m \leq n/3^i} \chi_3(md') \right|^2\right)^{1/2} \\
+        &\leq \left(\sum_{i \geq 0: 3^i \leq n} 1\right)^{1/2}\\
+        &\ll \sqrt{\log n},
+        \end{align*}
+        """
+        parsed_tokens = self.parser.parse(text)
+        align = parsed_tokens[0]
+        self.assertEqual(align['type'], 'equation')
+        self.assertEqual(align['display'], 'block')
+        content = align['content']
+        self.assertEqual(content.startswith(r'\left('), True)
+        self.assertEqual(content.endswith(r'\sqrt{\log n},'), True)
+
 class TestParserCitations(unittest.TestCase):
     def setUp(self):
         self.parser = LatexParser()
