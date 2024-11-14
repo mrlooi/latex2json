@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.patterns import ENV_TYPES, PATTERNS, LABEL_PATTERN, SEPARATORS, SECTION_LEVELS
+from src.patterns import ENV_TYPES, PATTERNS, LABEL_PATTERN, SEPARATORS, SECTION_LEVELS, NESTED_BRACE_COMMANDS
 from src.tables import parse_tabular
 from src.commands import CommandProcessor
 
@@ -10,6 +10,40 @@ DELIM_PATTERN = re.compile(r'\\|\$|%')
 ESCAPED_AMPERSAND_SPLIT = re.compile(r'(?<!\\)&')
 TRAILING_BACKSLASH = re.compile(r'\\+$')
 UNKNOWN_COMMAND_PATTERN = re.compile(r'\\([a-zA-Z]+)(?:\{(?:[^{}]|{[^{}]*})*\})*')
+
+def find_matching_brace(text: str, start: int = 0) -> int:
+    """
+    Find the position of the matching closing brace, handling nested braces.
+    Returns the position of the matching closing brace, or -1 if not found.
+    """
+    stack = []
+    i = start
+    while i < len(text):
+        if text[i] == '{':
+            stack.append(i)
+        elif text[i] == '}':
+            if not stack:
+                return -1  # Unmatched closing brace
+            stack.pop()
+            if not stack:  # Found the matching brace
+                return i
+        i += 1
+    return -1  # No matching brace found
+
+def extract_nested_content(text: str, start: int) -> Tuple[str, int]:
+    """
+    Extract content between braces, handling nested braces.
+    Returns (content, end_position) or (None, start) if no valid content found.
+    """
+    if start >= len(text) or text[start] != '{':
+        return None, start
+        
+    end_pos = find_matching_brace(text, start)
+    if end_pos == -1:
+        return None, start
+        
+    # Return content without the braces and the end position
+    return text[start + 1:end_pos], end_pos
 
 class LatexParser:
     def __init__(self):
@@ -78,7 +112,7 @@ class LatexParser:
                     "content": content
                 })
     
-    def _parse_table_cell(self, cell_content: str) -> List[Dict]:
+    def _parse_cell(self, cell_content: str) -> List[Dict]:
         cell = self.parse(cell_content)
         if len(cell) == 0: 
             return None
@@ -140,6 +174,64 @@ class LatexParser:
             "content": full_match
         }
 
+    def _handle_newcommand(self, text: str, start_pos: int, match):
+        content, end_pos = extract_nested_content(text, start_pos - 1)
+        if content is None:
+            return None, start_pos
+        cmd_name = match.group(1)
+        num_args = match.group(3)
+        # cmd_name, definition = match.groups()
+        trailing_added = self.command_processor.process_command_definition(cmd_name, content, num_args, match.group(4))
+        return end_pos + trailing_added
+
+    def _handle_nested_brace_command(self, matched_type: str, match, text: str, start_pos: int) -> Tuple[Dict, int]:
+        content, end_pos = extract_nested_content(text, start_pos - 1)
+        if content is None:
+            return None, start_pos
+        
+        token = None
+
+        if content is not None:
+            # Handle sections and paragraphs
+            if matched_type in ['section', 'paragraph', 'chapter', 'part']:
+                level = match.group(0).count('sub') + SECTION_LEVELS[matched_type]
+                token = {
+                    "type": 'section',
+                    "title": content,
+                    "level": level
+                }
+            elif matched_type == 'caption':
+                token = {
+                    "type": "caption",
+                    "content": content
+                }
+            elif matched_type == 'captionof':
+                token = {
+                    "type": "caption",
+                    "title": match.group(1).strip(),
+                    "content": content
+                }
+            elif matched_type == 'footnote':
+                token = {
+                    "type": "footnote",
+                    "content": content
+                }
+            elif matched_type == 'hyperref':
+                token = {
+                    "type": "ref",
+                    "title": match.group(1).strip(),
+                    "content": content
+                }
+            elif matched_type == 'href':
+                # href{link}{text/title} i.e. title is parsed content here
+                token = {
+                    "type": "url",
+                    "title": content,
+                    "content": match.group(1).strip()
+                }
+
+        return token, end_pos
+    
     def parse(self, text: str) -> List[Dict[str, str]]:
         tokens = []
         current_pos = 0
@@ -180,8 +272,24 @@ class LatexParser:
             
             trailing_added = 0
             if match:
+                # Special handling for nested brace commands
+                if matched_type == 'newcommand':
+                    start_pos = current_pos + match.end()
+                    current_pos = self._handle_newcommand(text, start_pos, match) + 1
+                    continue
+                elif matched_type in NESTED_BRACE_COMMANDS:
+                    start_pos = current_pos + match.end()
+                    token, end_pos = self._handle_nested_brace_command(matched_type, match, text, start_pos)
+                    if token:
+                        tokens.append(token)
+                        current_pos = end_pos + 1
+                        continue
+                    elif matched_type == 'newcommand':
+                        current_pos = end_pos + 1
+                        continue
+                    
                 # Handle environments
-                if matched_type == 'environment':
+                elif matched_type == 'environment':
                     env_name = match.group(1).strip()
                     # Find the correct ending position for this environment
                     start_content = current_pos + match.start(2)
@@ -212,7 +320,7 @@ class LatexParser:
                         "type": "tabular",
                         "column_spec": match.group(1).strip()
                     }
-                    result = parse_tabular(match.group(2).strip(), self._parse_table_cell)
+                    result = parse_tabular(match.group(2).strip(), self._parse_cell)
                     if result:
                         token["content"] = result
                     tokens.append(token)
@@ -248,48 +356,24 @@ class LatexParser:
                             "content": self._expand_command(content),
                             "display": display
                         })
-
-                # Handle sections and paragraphs
-                elif matched_type in ['section', 'paragraph', 'chapter', 'part']:
-                    full_match = match.group(0)
-                    level = full_match.count('sub') + SECTION_LEVELS[matched_type]
-                    
-                    tokens.append({
-                        "type": 'section',
-                        "title": match.group(1).strip(),
-                        "level": level
-                    })
-
                 # Handle labels and references
                 elif matched_type == 'label':
                     content = match.group(1).strip()
                     self._handle_label(content, tokens)
-                elif matched_type.startswith('caption'):
-                    content =  match.group(2).strip() if matched_type == "captionof" else match.group(1).strip()
-                    tokens.append({
-                        "type": "caption",
-                        "content": content
-                    })
                 elif matched_type == 'ref' or matched_type == 'eqref':
                     tokens.append({
                         "type": "ref",
                         "content": match.group(1).strip()
                     })
-                elif matched_type == 'hyperref':
-                    tokens.append({
-                        "type": "ref",
-                        "content": match.group(1).strip(),
-                        "title": match.group(2).strip()
-                    })
-
+               
                 # Handle citations, comments, footnotes and graphics
                 elif matched_type == 'citation':
                     # Extract both the optional text and citation keys
-                    optional_text = match.group(1) if match.group(1) else None
                     token = {
                         "type": "citation",
                         "content": match.group(2).strip()
                     }
+                    optional_text = match.group(1) if match.group(1) else None
                     if optional_text:
                         token["title"] = optional_text.strip()
                     tokens.append(token)
@@ -298,13 +382,10 @@ class LatexParser:
                     if content:
                         tokens.append({
                             "type": "comment",
-                            "content": self._expand_command(content)
+                            "content": content
+                            # "content": self._expand_command(content)
                         })
-                elif matched_type == 'footnote':
-                    tokens.append({
-                        "type": "footnote",
-                        "content": match.group(1).strip()
-                    })
+                
                 elif matched_type == 'includegraphics':
                     tokens.append({
                         "type": "includegraphics",
@@ -317,24 +398,13 @@ class LatexParser:
                         "type": "url",
                         "content": match.group(1).strip()
                     })
-                elif matched_type == 'href':
-                    tokens.append({
-                        "type": "url",
-                        "content": match.group(1).strip(),
-                        "title": match.group(2).strip()
-                    })
                 
-                # Handle newcommands
-                elif matched_type == 'newcommand':
-                    cmd_name, definition = match.groups()
-                    trailing_added = self.command_processor.process_command_definition(cmd_name, definition)
-
-                elif matched_type == 'newcommand_args':
-                    cmd_name = match.group(1) or match.group(2)  # Command name from either syntax
-                    num_args = match.group(3)  # Number of arguments
-                    defaults_str = match.group(4)  # All optional defaults
-                    definition = match.group(5)  # The command definition
-                    trailing_added = self.command_processor.process_command_definition(cmd_name, definition, num_args, defaults_str)
+                # elif matched_type == 'newcommand_args':
+                #     cmd_name = match.group(1) or match.group(2)  # Command name from either syntax
+                #     num_args = match.group(3)  # Number of arguments
+                #     defaults_str = match.group(4)  # All optional defaults
+                #     definition = match.group(5)  # The command definition
+                #     trailing_added = self.command_processor.process_command_definition(cmd_name, definition, num_args, defaults_str)
                 
                 elif matched_type == 'item':
                     content = match.group(2).strip()
@@ -371,51 +441,19 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-        \begin{table}[t]
-        \begin{center}
-        \caption{The Transformer achieves better BLEU scores than previous state-of-the-art models on the English-to-German and English-to-French newstest2014 tests at a fraction of the training cost.  }
-        \label{tab:wmt-results}
-        \vspace{-2mm}
-        %\scalebox{1.0}{
-        \begin{tabular}{lccccc}
-        \toprule
-        \multirow{2}{*}{\vspace{-2mm}Model} & \multicolumn{2}{c}{BLEU} & & \multicolumn{2}{c}{Training Cost (FLOPs)} \\
-        \cmidrule{2-3} \cmidrule{5-6} 
-        & EN-DE & EN-FR & & EN-DE & EN-FR \\ 
-        \hline
-        ByteNet \citep{NalBytenet2017} & 23.75 & & & &\\
-        Deep-Att + PosUnk \citep{DBLP:journals/corr/ZhouCWLX16} & & 39.2 & & & $1.0\cdot10^{20}$ \\
-        GNMT + RL \citep{wu2016google} & 24.6 & 39.92 & & $2.3\cdot10^{19}$  & $1.4\cdot10^{20}$\\
-        ConvS2S \citep{JonasFaceNet2017} & 25.16 & 40.46 & & $9.6\cdot10^{18}$ & $1.5\cdot10^{20}$\\
-        MoE \citep{shazeer2017outrageously} & 26.03 & 40.56 & & $2.0\cdot10^{19}$ & $1.2\cdot10^{20}$ \\
-        \hline
-        \rule{0pt}{2.0ex}Deep-Att + PosUnk Ensemble \citep{DBLP:journals/corr/ZhouCWLX16} & & 40.4 & & &
-        $8.0\cdot10^{20}$ \\
-        GNMT + RL Ensemble \citep{wu2016google} & 26.30 & 41.16 & & $1.8\cdot10^{20}$  & $1.1\cdot10^{21}$\\
-        ConvS2S Ensemble \citep{JonasFaceNet2017} & 26.36 & \textbf{41.29} & & $7.7\cdot10^{19}$ & $1.2\cdot10^{21}$\\
-        \specialrule{1pt}{-1pt}{0pt}
-        \rule{0pt}{2.2ex}Transformer (base model) & 27.3 & 38.1 & & \multicolumn{2}{c}{\boldmath$3.3\cdot10^{18}$}\\
-        Transformer (big) & \textbf{28.4} & \textbf{41.8} & & \multicolumn{2}{c}{$2.3\cdot10^{19}$} \\
-        %\hline
-        %\specialrule{1pt}{-1pt}{0pt}
-        %\rule{0pt}{2.0ex}
-        \bottomrule
-        \end{tabular}
-        %}
-        \end{center}
-        \end{table}
-    """
+    \newcommand{\HH}{\mathbb{H}} 
+    \newcommand{\pow}[2][2]{#2^{#1}}
+    \newcommand{\dmodel}{d_{\text{model}}}
 
-    text = r"""
+    \newcommand{\tensor}[3]{\mathbf{#1}_{#2}^{#3}}
+    \newcommand{\norm}[3][2]{\|#2\|_{#3}^{#1}}
+    \newcommand{\integral}[4][0]{\int_{#1}^{#2} #3 \, d#4}
 
-    \textbf{41.29}
-    \begin{figure}[h]
-        \label{fig:example}
-        Some thing interestin here
-        % haha
-        \includegraphics[width=0.5\textwidth]{example-image} % Replace with your image file
-        \caption{Example Image}
-    \end{figure}
+    \newcommand{\tensorNorm}[4]{\norm{\tensor{#1}{#2}{#3}}{#4}}
+
+    $\pow[5]{3}$ and $\HH$ and $\dmodel$
+
+    $\tensorNorm{T}{i}{j}{\infty}$
     """
 
     # text = r"""

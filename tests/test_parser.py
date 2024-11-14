@@ -51,12 +51,12 @@ class TestParserText1(unittest.TestCase):
         self.assertEqual(sections[3]['title'], 'Sub Regularization')
         self.assertEqual(sections[3]['level'], SECTION_LEVELS['paragraph'] + 1)
 
-    # def test_parse_equations(self):
-    #     equations = [token for token in self.parsed_tokens if token["type"] == "equation"]
-    #     # inline equations = 7
-    #     inline_equations = [token for token in equations if token["display"] == "inline"]
-    #     self.assertEqual(len(inline_equations), 7)
-    #     self.assertEqual(len(equations), 8)
+    def test_parse_equations(self):
+        equations = [token for token in self.parsed_tokens if token["type"] == "equation"]
+        # inline equations = 7
+        inline_equations = [token for token in equations if token["display"] == "inline"]
+        self.assertEqual(len(inline_equations), 7)
+        self.assertEqual(len(equations), 8)
 
     def test_parse_citations(self):
         # number of citations=5
@@ -75,7 +75,7 @@ class TestParserText1(unittest.TestCase):
         # assert 'sec:reg' in labels
         self.assertIn('sec:reg', labels)
 
-class TestParserCommands(unittest.TestCase):
+class TestParserNewCommands(unittest.TestCase):
     def setUp(self):
         self.parser = LatexParser()
 
@@ -336,10 +336,10 @@ class TestParserRefs(unittest.TestCase):
 
         self.assertEqual(refs[0]['content'], 'https://www.tesla.com')
         self.assertEqual(refs[1]['content'], 'https://www.google.com')
-        self.assertEqual(refs[2]['content'], 'fig:modalnet')
+        self.assertEqual(refs[2]['title'], 'fig:modalnet')
         self.assertEqual('title' not in refs[0], True)
         self.assertEqual(refs[1]['title'], 'Google')
-        self.assertEqual(refs[2]['title'], 'ModalNet')
+        self.assertEqual(refs[2]['content'], 'ModalNet')
         self.assertEqual('title' not in refs[3], True)
         self.assertEqual(refs[3]['content'], 'fig:modalnet')
 
@@ -584,48 +584,47 @@ class TestUnknownCommands(unittest.TestCase):
             self.assertEqual(cmd, parsed[0]["content"], 
                            f"Command not preserved exactly: expected '{cmd}', got '{parsed[0]['content']}'")
 
-    # def test_unknown_commands(self):
-    #     text = r"""
-    #     Simple \textbf{bold} and \textit{italic} text.
+    def test_unknown_commands(self):
+        text = r"""
+        Simple \textbf{bold} and \textit{italic} text.
         
-    #     \begin{itemize}
-    #     \item \textcolor{red}{Colored text} in a list
-    #     \item Nested unknown commands: \textbf{\textit{both}}
-    #     \end{itemize}
+        \begin{itemize}
+        \item \textcolor{red}{Colored text} in a list
+        \item Nested unknown commands: \textbf{\textit{both}}
+        \end{itemize}
 
-    #     \begin{equation}
-    #     \mathcal{L} = \textbf{x} + y
-    #     \end{equation}
+        \begin{equation}
+        \mathcal{L} = \textbf{x} + y
+        \end{equation}
 
-    #     \begin{figure}
-    #         \centering
-    #         \includegraphics[width=0.8\textwidth]{image.png}
-    #         \caption{\textsc{Small Caps} and \textsf{Sans Serif} in caption}
-    #     \end{figure}
-    #     """
-    #     parsed_tokens = self.parser.parse(text)
+        \begin{figure}
+            \centering
+            \includegraphics[width=0.8\textwidth]{image.png}
+            \captionof{Table}{\textsc{Small Caps} and \textsf{Sans Serif} in caption}
+        \end{figure}
+        """
+        parsed_tokens = self.parser.parse(text)
 
-    #     # Check top-level unknown commands
-    #     text_tokens = [t for t in parsed_tokens if t['type'] == 'text']
-    #     self.assertTrue(any('\\textbf{bold}' in t['content'] for t in text_tokens))
-    #     self.assertTrue(any('\\textit{italic}' in t['content'] for t in text_tokens))
+        # Check top-level unknown commands
+        text_tokens = [t for t in parsed_tokens if t['type'] == 'text']
+        self.assertTrue(any('\\textbf{bold}' in t['content'] for t in text_tokens))
+        self.assertTrue(any('\\textit{italic}' in t['content'] for t in text_tokens))
 
-    #     # Check unknown commands in list environment
-    #     list_env = [t for t in parsed_tokens if t['type'] == 'list'][0]
-    #     items = [t for t in list_env['content'] if t['type'] == 'item']
-    #     self.assertTrue('\\textcolor{red}{Colored text}' in items[0]['content'][0]['content'])
-    #     # self.assertTrue('\\textbf{\\textit{both}}' in items[1]['content'][0]['content'])
+        # Check unknown commands in list environment
+        list_env = [t for t in parsed_tokens if t['type'] == 'list'][0]
+        items = [t for t in list_env['content'] if t['type'] == 'item']
+        self.assertTrue('\\textcolor{red}{Colored text}' in items[0]['content'][0]['content'])
+        # self.assertTrue('\\textbf{\\textit{both}}' in items[1]['content'][0]['content'])
 
-    #     # Check unknown commands in equation
-    #     equation = [t for t in parsed_tokens if t['type'] == 'equation'][0]
-    #     self.assertTrue('\\textbf{x}' in equation['content'])
+        # Check unknown commands in equation
+        equation = [t for t in parsed_tokens if t['type'] == 'equation'][0]
+        self.assertTrue('\\textbf{x}' in equation['content'])
 
-    #     # Check unknown commands in figure caption
-    #     figure = [t for t in parsed_tokens if t['type'] == 'figure'][0]
-    #     caption = [t for t in figure['content'] if t['type'] == 'caption'][0]
-    #     print(caption)
-    #     self.assertTrue('\\textsc{Small Caps}' in caption['content'])
-    #     self.assertTrue('\\textsf{Sans Serif}' in caption['content'])
+        # Check unknown commands in figure caption
+        figure = [t for t in parsed_tokens if t['type'] == 'figure'][0]
+        caption = [t for t in figure['content'] if t['type'] == 'caption'][0]
+        self.assertTrue('\\textsc{Small Caps}' in caption['content'])
+        self.assertTrue('\\textsf{Sans Serif}' in caption['content'])
 
 
 if __name__ == '__main__':

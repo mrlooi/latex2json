@@ -11,12 +11,12 @@ class CommandProcessor:
         self, 
         command_name: str, 
         definition: str, 
-        num_args: Optional[str] = None, 
+        num_args: Optional[int] = None, 
         defaults_str: Optional[str] = None
     ) -> None:
         """Store a new or renewed command definition"""
         args = {}
-        if num_args:
+        if num_args is not None:
             args['num_args'] = int(num_args)
         else:
             used_args = re.findall(r'#(\d+)', definition)

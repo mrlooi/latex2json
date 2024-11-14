@@ -1,76 +1,69 @@
 import re
 
-RAW_PATTERNS = {
-    'section': r'\\(?:(?:sub)*section){([^}]*)}',
-    'paragraph': r'\\(?:(?:sub)*paragraph){([^}]*)}',
-    'part': r'\\part{([^}]*)}', # apparently almost never used in papers (more books) but in case
-    'chapter': r'\\chapter{([^}]*)}', # apparently almost never used in papers (more books) but in case
 
-    # Handle specific begin environments first (python 3.7+ is ordered dict)
+# NOTE: Don't handle text related commands e.g. \text, \textbf, \textit, etc. We will process them on render
+
+RAW_PATTERNS = {
+    # 1. Commands that need nested brace handling (simplified patterns)
+    'section': r'\\(?:(?:sub)*section)\s*{',
+    'paragraph': r'\\(?:(?:sub)*paragraph)\s*{',
+    'part': r'\\part\s*{',
+    'chapter': r'\\chapter\s*{',
+    'footnote': r'\\footnote\s*{',
+    'caption': r'\\caption\s*{',
+    'captionof': r'\\captionof\s*{([^}]*?)}\s*{',  # First arg is simple, second needs brace matching
+    'hyperref': r'\\hyperref\s*\[([^]]*)\]\s*{',
+    'href': r'\\href\s*{([^}]*)}\s*{',  # First arg is URL (simple), second needs brace matching
+
+    # Environment patterns (keep as is - they use begin/end)
     'equation': r'\\begin\{equation\*?\}(.*?)\\end\{equation(?:\*)?\}',
     'align': r'\\begin\{align\*?\}(.*?)\\end\{align(?:\*)?\}',
-    'equation_display_$$': r'\$\$([\s\S]*?)\$\$',  # Double dollar block equations with multiline support (make sure this is above equation_inline_$)
-    'equation_inline_$': r'\$([^$]*)\$', # we want to parse inline equations in order to roll out any potential newcommand definitions
-    'equation_display_brackets': r'\\\[(.*?)\\\]',  # Display math with \[...\]
-    'equation_inline_brackets': r'\\\((.*?)\\\)',  # Inline math with \(...\)
-
-    # Tables and figures - put before generic environment pattern # UPDATE: table and figure are now handled in environment pattern
     'tabular': r'\\begin\{tabular\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{tabular\}',
-    # 'table': r'\\begin\{table\*?\}(.*?)\\end\{table(?:\*)?\}',  # Add table pattern
-    # 'figure': r'\\begin\{figure\*?\}(.*?)\\end\{figure(?:\*)?\}',  # Add figure pattern
-
-    # # List environments - put before generic environment pattern
-    # 'itemize': r'\\begin\{itemize\}(.*?)\\end\{itemize\}',
-    # 'enumerate': r'\\begin\{enumerate\}(?:\[(.*?)\])?(.*?)\\end\{enumerate\}',
-    # 'description': r'\\begin\{description\}(.*?)\\end\{description\}',
-
-    # Generic begin environment pattern comes last
     'environment': r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}',
 
-    'item': r'\\item(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item|$)',  # Matches \item[optional]{content} until next \item or end
+    # Math delimiters (keep as is - they use clear delimiters)
+    'equation_display_$$': r'\$\$([\s\S]*?)\$\$',
+    'equation_inline_$': r'\$([^$]*)\$',
+    'equation_display_brackets': r'\\\[(.*?)\\\]',
+    'equation_inline_brackets': r'\\\((.*?)\\\)',
 
-    # REF patterns and label
-    'ref': r'\\ref{([^}]*)}',
-    'eqref': r'\\eqref{([^}]*)}',
-    'hyperref': r'\\hyperref\[([^]]*)\]{([^}]*)}', # captures label and text
-    'label': r'\\label{([^}]*)}',
-
-    # Newcommand patterns
-    'newcommand': r'\\(?:new|renew)command{\\([^}]+)}\{([^}]*)\}',  # Handles both new and renew
-    'newcommand_args': r'\\(?:new|renew)command\*?(?:{\\([^}]+)}|\\([^[\s{]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{((?:[^{}]|{(?:[^{}]|{[^{}]*})*})*)}',
-
-    # URL patterns
-    'url': r'\\url{([^}]*)}',                    # captures URL
-    'href': r'\\href{([^}]*)}{([^}]*)}',         # captures URL and text
-
-    'citation': r'\\(?:cite|citep)(?:\[([^\]]*)\])?{([^}]*)}',  # Updated to handle optional arguments
+    # Simple commands (no nested content possible)
+    'ref': r'\\ref\s*{([^}]*)}',
+    'eqref': r'\\eqref\s*{([^}]*)}',
+    'label': r'\\label\s*{([^}]*)}',
+    'url': r'\\url\s*{([^}]*)}',
+    'includegraphics': r'\\includegraphics\s*\[([^\]]*)\]\s*{([^}]*)}',
+    
+    # Citations (simple - no nested content)
+    'citation': r'\\(?:cite|citep)(?:\[([^\]]*)\])?\s*{([^}]*)}',
+    
+    # Comments (keep as is)
     'comment': r'%([^\n]*)',
-    'footnote': r'\\footnote{([^}]*)}',
-    'includegraphics': r'\\includegraphics\[([^\]]*)\]{([^}]*)}',
-    'caption': r'\\caption{([^}]*)}',
-    'captionof': r'\\captionof{([^}]*)}{([^}]*)}',  # captures type and caption text
-
+    
+    # Formatting commands (no braces)
     'formatting': r'\\(centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b',
+
+    # Special handling for newcommand due to complex syntax
+    'newcommand': r'\\(?:new|renew)command\*?(?:{\\([^}]+)}|\\([^[\s{]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{',
+
+    'item': r'\\item(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item|$)',  # Matches \item[optional]{content} until next \item or end
 }
 
-# Commands that need special brace matching due to potential nested content
+# Update NESTED_BRACE_COMMANDS to reflect all commands needing special handling
 NESTED_BRACE_COMMANDS = {
     # Section-like commands
     'section',
-    'subsection',
-    'subsubsection',
     'paragraph',
-    'subparagraph',
     'part',
     'chapter',
     
     # Other commands with potentially nested content
     'caption',
-    'captionof',
+    'captionof',  # Second argument only
     'footnote',
     'hyperref',
+    'href',       # Second argument only
     'newcommand',
-    'renewcommand'
 }
 
 # needed for re.DOTALL flag (also written as re.S) makes the dot (.) special character match any character including newlines
