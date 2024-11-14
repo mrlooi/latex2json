@@ -134,7 +134,7 @@ class LatexParser:
         # Extract optional arguments
         args_match = re.match(r'^\{(.*?)\}', inner_content)
         if args_match:
-            args = args_match.group(1).strip()
+            # args = args_match.group(1).strip()
             inner_content = inner_content[args_match.end():].strip()
 
         # DEPRECATED: Label handling is now done independently through _handle_label()
@@ -168,10 +168,15 @@ class LatexParser:
     def _handle_unknown_command(self, match) -> Dict[str, str]:
         """Convert unknown LaTeX command into a text token with original syntax"""
         # Get the full matched text to preserve all arguments
-        full_match = match.group(0)
+        content = match.group(0)
+        if content:
+            content = self._expand_command(content)
+            if r'\begin{' in content:
+                content = self._parse_cell(content)
+                return content
         return {
             "type": "text",
-            "content": full_match
+            "content": content
         }
 
     def _handle_newcommand(self, text: str, start_pos: int, match):
@@ -192,6 +197,7 @@ class LatexParser:
         token = None
 
         if content is not None:
+            content = self._expand_command(content)
             # Handle sections and paragraphs
             if matched_type in ['section', 'paragraph', 'chapter', 'part']:
                 level = match.group(0).count('sub') + SECTION_LEVELS[matched_type]
@@ -214,7 +220,7 @@ class LatexParser:
             elif matched_type == 'footnote':
                 token = {
                     "type": "footnote",
-                    "content": content
+                    "content": self._parse_cell(content) # footnotes can contain environments
                 }
             elif matched_type == 'hyperref':
                 token = {
@@ -282,9 +288,6 @@ class LatexParser:
                     token, end_pos = self._handle_nested_brace_command(matched_type, match, text, start_pos)
                     if token:
                         tokens.append(token)
-                        current_pos = end_pos + 1
-                        continue
-                    elif matched_type == 'newcommand':
                         current_pos = end_pos + 1
                         continue
                     
@@ -398,14 +401,6 @@ class LatexParser:
                         "type": "url",
                         "content": match.group(1).strip()
                     })
-                
-                # elif matched_type == 'newcommand_args':
-                #     cmd_name = match.group(1) or match.group(2)  # Command name from either syntax
-                #     num_args = match.group(3)  # Number of arguments
-                #     defaults_str = match.group(4)  # All optional defaults
-                #     definition = match.group(5)  # The command definition
-                #     trailing_added = self.command_processor.process_command_definition(cmd_name, definition, num_args, defaults_str)
-                
                 elif matched_type == 'item':
                     content = match.group(2).strip()
                     if content: 
@@ -441,19 +436,23 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-    \newcommand{\HH}{\mathbb{H}} 
-    \newcommand{\pow}[2][2]{#2^{#1}}
-    \newcommand{\dmodel}{d_{\text{model}}}
+    \newcommand{\Fma}{$F=ma$}
 
-    \newcommand{\tensor}[3]{\mathbf{#1}_{#2}^{#3}}
-    \newcommand{\norm}[3][2]{\|#2\|_{#3}^{#1}}
-    \newcommand{\integral}[4][0]{\int_{#1}^{#2} #3 \, d#4}
+    \newcommand{\myenv}[2]{
+        \begin{equation*}
+            #1 = #2 
+            \Fma
+        \end{equation*}
+    }
+    \myenv{E}{mc^2}
 
-    \newcommand{\tensorNorm}[4]{\norm{\tensor{#1}{#2}{#3}}{#4}}
-
-    $\pow[5]{3}$ and $\HH$ and $\dmodel$
-
-    $\tensorNorm{T}{i}{j}{\infty}$
+    \footnote{
+        Here's a list: \Fma
+        \begin{itemize}
+            \item First point
+            \item Second point
+        \end{itemize}
+    }
     """
 
     # text = r"""

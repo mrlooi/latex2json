@@ -63,7 +63,7 @@ NESTED_BRACE_COMMANDS = {
     'footnote',
     'hyperref',
     'href',       # Second argument only
-    'newcommand',
+    # 'newcommand', # handled separately
 }
 
 # needed for re.DOTALL flag (also written as re.S) makes the dot (.) special character match any character including newlines

@@ -147,6 +147,31 @@ class TestParserNewCommands(unittest.TestCase):
         for eq, expected in zip(equations, expected_results):
             self.assertEqual(eq["content"], expected)
 
+    def test_command_with_environments(self):
+        text = r"""
+            \newcommand{\Fma}{$F=ma$}
+
+            \newcommand{\myenv}[2]{
+                \begin{equation*}
+                    #1 = #2 
+                    \Fma
+                \end{equation*}
+            }
+            \myenv{E}{mc^2}
+        """
+        parsed_tokens = self.parser.parse(text)
+                # Check that we got one equation token
+        self.assertEqual(len(parsed_tokens), 1)
+        equation = parsed_tokens[0]
+        
+        # Verify equation properties
+        self.assertEqual(equation["type"], "equation")
+        self.assertEqual(equation["display"], "block")
+        
+        # Verify equation content includes both the substituted parameters 
+        # and the expanded \Fma command
+        self.assertIn("E = mc^2", equation["content"])
+        self.assertIn("F=ma", equation["content"])
 
 class TestParserEnvironments(unittest.TestCase):
     def setUp(self):
@@ -626,6 +651,65 @@ class TestUnknownCommands(unittest.TestCase):
         self.assertTrue('\\textsc{Small Caps}' in caption['content'])
         self.assertTrue('\\textsf{Sans Serif}' in caption['content'])
 
+    def test_newcommand_with_unknown_command(self):
+        text = r"""
+        \newcommand{\pow}[2][2]{#2^{#1}}
+        \newcommand{\uno}{1}
+
+        \textbf{$\pow[5]{\uno}$}
+        """
+        parsed_tokens = self.parser.parse(text)
+        self.assertEqual(parsed_tokens[0]['content'], "\\textbf{$1^{5}$}")
+
+class TestMisc(unittest.TestCase):
+    def setUp(self):
+        self.parser = LatexParser()
+
+    def test_footnote_with_environments(self):
+        text = r"""
+        \newcommand{\Fma}{$F=ma$}
+
+        \footnote{
+            Here's a list: \Fma
+            \begin{itemize}
+                \item First point
+                \item Second point
+            \end{itemize}
+        }
+        """
+        parsed_tokens = self.parser.parse(text)
+        self.assertEqual(len(parsed_tokens), 1)
+        footnote = parsed_tokens[0]
+        self.assertEqual(footnote['type'], 'footnote')
+        
+        # Check footnote content structure
+        content = footnote['content']
+        self.assertEqual(len(content), 3)
+        
+        # Check text component
+        self.assertEqual(content[0]['type'], 'text')
+        self.assertEqual(content[0]['content'], "Here's a list:")
+        
+        # Check equation component
+        self.assertEqual(content[1]['type'], 'equation')
+        self.assertEqual(content[1]['content'], 'F=ma')
+        self.assertEqual(content[1]['display'], 'inline')
+        
+        # Check list component
+        list_content = content[2]
+        self.assertEqual(list_content['type'], 'list')
+        items = list_content['content']
+        self.assertEqual(len(items), 2)
+        
+        # Check first item
+        self.assertEqual(items[0]['type'], 'item')
+        self.assertEqual(items[0]['content'][0]['type'], 'text')
+        self.assertEqual(items[0]['content'][0]['content'], 'First point')
+        
+        # Check second item
+        self.assertEqual(items[1]['type'], 'item')
+        self.assertEqual(items[1]['content'][0]['type'], 'text')
+        self.assertEqual(items[1]['content'][0]['content'], 'Second point')
 
 if __name__ == '__main__':
     unittest.main()

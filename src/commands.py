@@ -7,6 +7,9 @@ class CommandProcessor:
     def __init__(self):
         self.commands: Dict[str, Dict[str, any]] = {}
 
+    def has_command(self, command_name: str) -> bool:
+        return command_name in self.commands
+
     def process_command_definition(
         self, 
         command_name: str, 
@@ -15,6 +18,9 @@ class CommandProcessor:
         defaults_str: Optional[str] = None
     ) -> None:
         """Store a new or renewed command definition"""
+        command = {'definition': definition}
+        
+        # Process arguments
         args = {}
         if num_args is not None:
             args['num_args'] = int(num_args)
@@ -30,9 +36,9 @@ class CommandProcessor:
             args['defaults'] = []
             args['required_args'] = args['num_args']
 
-        # Balance braces using a stack
-        # this is added to handle cases where the definition is missing closing braces
-        # which unfortunately regex may not always handle
+        command['args'] = args
+
+        # Balance braces and add missing ones
         stack = []
         for char in definition:
             if char == '{':
@@ -41,18 +47,16 @@ class CommandProcessor:
                 if stack:
                     stack.pop()
                 else:
-                    # Unexpected closing brace
                     raise ValueError("Unbalanced closing brace in definition.")
-
-        # Add the necessary closing braces
         if stack:
             definition += '}' * len(stack)
 
-        self.commands[command_name] = {
-            'definition': definition,
-            'args': args
-        }
+        # Create and store the handler with the command
+        pattern, handler = self._create_command_handler(command_name, command)
+        command['pattern'] = pattern
+        command['handler'] = handler
 
+        self.commands[command_name] = command
         return len(stack)
 
     def _substitute_args(self, definition: str, args: List[str]) -> str:
@@ -64,53 +68,45 @@ class CommandProcessor:
                 result = result.replace(f'#{i}', arg)
         return result
 
+    def _create_command_handler(self, cmd_name: str, cmd_info: dict) -> tuple[re.Pattern, callable]:
+        """Creates and returns a cached (pattern, handler) tuple for a command"""
+        pattern = r'\\' + re.escape(cmd_name)
+        num_args = cmd_info['args']['num_args']
+        
+        if num_args == 0:
+            regex = re.compile(pattern)
+            handler = lambda m: cmd_info['definition']
+            return regex, handler
+            
+        # Build pattern for commands with arguments
+        num_optional = len(cmd_info['args'].get('defaults', []))
+        pattern += ''.join(r'(?:\[(.*?)\])?' for _ in range(num_optional))
+        num_required = cmd_info['args']['required_args']
+        pattern += ''.join(r'\{(.*?)\}' for _ in range(num_required))
+        regex = re.compile(pattern)
+
+        def handler(match):
+            groups = match.groups()
+            args = []
+            
+            # Handle optional args
+            if num_optional:
+                defaults = cmd_info['args']['defaults']
+                args.extend(groups[i] if groups[i] is not None else defaults[i] 
+                          for i in range(num_optional))
+            
+            # Add required args
+            args.extend(groups[num_optional:num_optional + num_required])
+            
+            return self._substitute_args(cmd_info['definition'], args)
+
+        return regex, handler
+
     def expand_commands(self, text: str) -> str:
-        """
-        Recursively expand defined commands in the text until no further expansions are possible.
-        
-        Args:
-            text (str): The text containing LaTeX commands to expand.
-        
-        Returns:
-            str: The text with all defined commands expanded.
-        """
+        """Recursively expand defined commands in the text until no further expansions are possible."""
         previous_text = None
         while previous_text != text:
             previous_text = text
-            for cmd_name, cmd_info in self.commands.items():
-                pattern = r'\\' + re.escape(cmd_name)
-                
-                if cmd_info['args']['num_args'] > 0:
-                    # Build regex pattern to match optional and required arguments
-                    num_optional = len(cmd_info['args'].get('defaults', []))
-                    pattern += ''.join([r'(?:\[(.*?)\])?' for _ in range(num_optional)])
-                    num_required = cmd_info['args']['required_args']
-                    pattern += ''.join([r'\{(.*?)\}' for _ in range(num_required)])
-
-                    # Compile the regex pattern
-                    regex = re.compile(pattern)
-
-                    def replace_with_args(match):
-                        groups = match.groups()
-
-                        # Extract optional arguments with defaults
-                        args = []
-                        if num_optional:
-                            defaults = cmd_info['args']['defaults']
-                            for i in range(num_optional):
-                                arg = groups[i] if groups[i] is not None else defaults[i]
-                                args.append(arg)
-
-                        # Extract required arguments
-                        args.extend(groups[num_optional:num_optional + num_required])
-
-                        # Substitute arguments into the command definition
-                        expanded = self._substitute_args(cmd_info['definition'], args)
-                        return expanded
-
-                    # Replace all occurrences of the command with its expanded form
-                    text = regex.sub(replace_with_args, text)
-                else:
-                    # Commands without arguments
-                    text = re.sub(pattern, lambda m: cmd_info['definition'], text)
+            for cmd in self.commands.values():
+                text = cmd['pattern'].sub(cmd['handler'], text)
         return text
