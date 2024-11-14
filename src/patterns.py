@@ -53,6 +53,26 @@ RAW_PATTERNS = {
     'formatting': r'\\(centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b',
 }
 
+# Commands that need special brace matching due to potential nested content
+NESTED_BRACE_COMMANDS = {
+    # Section-like commands
+    'section',
+    'subsection',
+    'subsubsection',
+    'paragraph',
+    'subparagraph',
+    'part',
+    'chapter',
+    
+    # Other commands with potentially nested content
+    'caption',
+    'captionof',
+    'footnote',
+    'hyperref',
+    'newcommand',
+    'renewcommand'
+}
+
 # needed for re.DOTALL flag (also written as re.S) makes the dot (.) special character match any character including newlines
 MULTILINE_PATTERNS = {
     'equation', 'equation_display_$$', 'equation_display_brackets',
@@ -68,7 +88,6 @@ PATTERNS = {
 
 LABEL_PATTERN = PATTERNS['label']
 TABULAR_PATTERN = PATTERNS['tabular']
-GRAPHICS_PATTERN = PATTERNS['includegraphics']
 CITATION_PATTERN = PATTERNS['citation']
 
 def extract_citations(text):

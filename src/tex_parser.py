@@ -9,6 +9,7 @@ from src.commands import CommandProcessor
 DELIM_PATTERN = re.compile(r'\\|\$|%')
 ESCAPED_AMPERSAND_SPLIT = re.compile(r'(?<!\\)&')
 TRAILING_BACKSLASH = re.compile(r'\\+$')
+UNKNOWN_COMMAND_PATTERN = re.compile(r'\\([a-zA-Z]+)(?:\{(?:[^{}]|{[^{}]*})*\})*')
 
 class LatexParser:
     def __init__(self):
@@ -24,14 +25,7 @@ class LatexParser:
     @property
     def commands(self):
         return self.command_processor.commands
-        
-    # def _parse_table(self, text: str, type: str = "table") -> Dict[str, Union[str, Dict, None]]:
-    #     """Parse LaTeX table environment into structured data"""
-    #     table = parse_table(text, type=type)
-    #     if table and "label" in table:
-    #         self.labels[table["label"]] = table
-    #     return table
-    
+
     def _expand_command(self, content: str) -> str:
         """Expand LaTeX commands in the content"""
         return self.command_processor.expand_commands(content)
@@ -88,8 +82,10 @@ class LatexParser:
         cell = self.parse(cell_content)
         if len(cell) == 0: 
             return None
-        elif len(cell) == 1 and cell[0]['type'] == 'text':
-            return cell[0]['content']
+        elif len(cell) == 1:
+            if cell[0]['type'] == 'text':
+                return cell[0]['content']
+            return cell[0]
         return cell
     
     def _handle_environment(self, env_name: str, inner_content: str) -> None:
@@ -135,24 +131,35 @@ class LatexParser:
 
         return token
 
+    def _handle_unknown_command(self, match) -> Dict[str, str]:
+        """Convert unknown LaTeX command into a text token with original syntax"""
+        # Get the full matched text to preserve all arguments
+        full_match = match.group(0)
+        return {
+            "type": "text",
+            "content": full_match
+        }
+
     def parse(self, text: str) -> List[Dict[str, str]]:
         tokens = []
         current_pos = 0
         
         while current_pos < len(text):
-            # Use precompiled pattern
             next_command = DELIM_PATTERN.search(text[current_pos:])
             if not next_command:
-                # No more commands, add remaining text
                 if current_pos < len(text):
                     remaining_text = text[current_pos:].strip()
                     if remaining_text:
-                        tokens.append({
-                            "type": "text",
-                            "content": remaining_text
-                        })
+                        unknown_cmd = UNKNOWN_COMMAND_PATTERN.match(remaining_text)
+                        if unknown_cmd:
+                            tokens.append(self._handle_unknown_command(unknown_cmd))
+                        else:
+                            tokens.append({
+                                "type": "text",
+                                "content": remaining_text
+                            })
                 break
-                
+
             # Add text before the next command if it exists
             if next_command.start() > 0:
                 plain_text = text[current_pos:current_pos + next_command.start()].strip()
@@ -349,8 +356,12 @@ class LatexParser:
                 
                 current_pos += match.end() + trailing_added
             else:
-                # No match found, move forward one character
-                current_pos += 1
+                unknown_cmd = UNKNOWN_COMMAND_PATTERN.match(text[current_pos:])
+                if unknown_cmd:
+                    tokens.append(self._handle_unknown_command(unknown_cmd))
+                    current_pos += unknown_cmd.end()
+                else:
+                    current_pos += 1
         
         return tokens
 
@@ -360,24 +371,51 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-    \begin{table}[htbp]
-    \centering
-    \begin{tabular}{|c|c|c|c|}
+        \begin{table}[t]
+        \begin{center}
+        \caption{The Transformer achieves better BLEU scores than previous state-of-the-art models on the English-to-German and English-to-French newstest2014 tests at a fraction of the training cost.  }
+        \label{tab:wmt-results}
+        \vspace{-2mm}
+        %\scalebox{1.0}{
+        \begin{tabular}{lccccc}
+        \toprule
+        \multirow{2}{*}{\vspace{-2mm}Model} & \multicolumn{2}{c}{BLEU} & & \multicolumn{2}{c}{Training Cost (FLOPs)} \\
+        \cmidrule{2-3} \cmidrule{5-6} 
+        & EN-DE & EN-FR & & EN-DE & EN-FR \\ 
         \hline
-        \multicolumn{2}{|c|}{\multirow{2}{*}{Region}} & \multicolumn{2}{c|}{Sales} \\
-        \cline{3-4}
-        \multicolumn{2}{|c|}{} & 2022 & 2023 \\
+        ByteNet \citep{NalBytenet2017} & 23.75 & & & &\\
+        Deep-Att + PosUnk \citep{DBLP:journals/corr/ZhouCWLX16} & & 39.2 & & & $1.0\cdot10^{20}$ \\
+        GNMT + RL \citep{wu2016google} & 24.6 & 39.92 & & $2.3\cdot10^{19}$  & $1.4\cdot10^{20}$\\
+        ConvS2S \citep{JonasFaceNet2017} & 25.16 & 40.46 & & $9.6\cdot10^{18}$ & $1.5\cdot10^{20}$\\
+        MoE \citep{shazeer2017outrageously} & 26.03 & 40.56 & & $2.0\cdot10^{19}$ & $1.2\cdot10^{20}$ \\
         \hline
-        \multirow{2}{*}{North} & Urban & $x^2 + y^2 = z^2$ & 180 \\
-        & Rural & 100 & 120 \\
-        \hline
-        \multirow{2}{*}{South} & Urban & 200 & \begin{align} \label{eq:1} E = mc^2 \\ $F = ma$ \end{align} \\
-        & & 130 & 160 \\
-        \hline
-    \end{tabular}
-    \caption{Regional Sales Distribution}
-    \label{tab:sales}
-    \end{table}
+        \rule{0pt}{2.0ex}Deep-Att + PosUnk Ensemble \citep{DBLP:journals/corr/ZhouCWLX16} & & 40.4 & & &
+        $8.0\cdot10^{20}$ \\
+        GNMT + RL Ensemble \citep{wu2016google} & 26.30 & 41.16 & & $1.8\cdot10^{20}$  & $1.1\cdot10^{21}$\\
+        ConvS2S Ensemble \citep{JonasFaceNet2017} & 26.36 & \textbf{41.29} & & $7.7\cdot10^{19}$ & $1.2\cdot10^{21}$\\
+        \specialrule{1pt}{-1pt}{0pt}
+        \rule{0pt}{2.2ex}Transformer (base model) & 27.3 & 38.1 & & \multicolumn{2}{c}{\boldmath$3.3\cdot10^{18}$}\\
+        Transformer (big) & \textbf{28.4} & \textbf{41.8} & & \multicolumn{2}{c}{$2.3\cdot10^{19}$} \\
+        %\hline
+        %\specialrule{1pt}{-1pt}{0pt}
+        %\rule{0pt}{2.0ex}
+        \bottomrule
+        \end{tabular}
+        %}
+        \end{center}
+        \end{table}
+    """
+
+    text = r"""
+
+    \textbf{41.29}
+    \begin{figure}[h]
+        \label{fig:example}
+        Some thing interestin here
+        % haha
+        \includegraphics[width=0.5\textwidth]{example-image} % Replace with your image file
+        \caption{Example Image}
+    \end{figure}
     """
 
     # text = r"""

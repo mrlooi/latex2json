@@ -547,20 +547,85 @@ class TestParserTables(unittest.TestCase):
         
         # Check equation cell
         equation_cell = cells[2][2]
-        self.assertEqual(equation_cell[0]["type"], "equation")
-        self.assertEqual(equation_cell[0]["content"], "x^2 + y^2 = z^2")
-        self.assertEqual(equation_cell[0]["display"], "inline")
+        self.assertEqual(equation_cell["type"], "equation")
+        self.assertEqual(equation_cell["content"], "x^2 + y^2 = z^2")
+        self.assertEqual(equation_cell["display"], "inline")
         
         # Check align environment cell
         align_cell = cells[4][3]
-        self.assertEqual(align_cell[0]["type"], "equation")
-        self.assertEqual(align_cell[0]["display"], "block")
-        self.assertEqual(align_cell[0]["labels"], ["eq:1"])
+        self.assertEqual(align_cell["type"], "equation")
+        self.assertEqual(align_cell["display"], "block")
+        self.assertEqual(align_cell["labels"], ["eq:1"])
         
         # Check caption
         caption = table["content"][1]
         self.assertEqual(caption["type"], "caption")
         self.assertEqual(caption["content"], "Regional Sales Distribution")
+
+class TestUnknownCommands(unittest.TestCase):
+    def setUp(self):
+        self.parser = LatexParser()
+
+
+    def test_unknown_commands_preservation(self):
+        """Test that unknown commands are preserved exactly as they appear"""
+        test_cases = [
+            r'\textbf{bold}',
+            r'\textcolor{red}{Colored text}',
+            r'\textsc{Small Caps}',
+            r'\textbf{\textit{nested}}',
+            r'\command{with}{multiple}{args}',
+        ]
+        
+        for cmd in test_cases:
+            parsed = self.parser.parse(cmd)
+            self.assertEqual(1, len(parsed), f"Expected single token for {cmd}")
+            self.assertEqual("text", parsed[0]["type"])
+            self.assertEqual(cmd, parsed[0]["content"], 
+                           f"Command not preserved exactly: expected '{cmd}', got '{parsed[0]['content']}'")
+
+    # def test_unknown_commands(self):
+    #     text = r"""
+    #     Simple \textbf{bold} and \textit{italic} text.
+        
+    #     \begin{itemize}
+    #     \item \textcolor{red}{Colored text} in a list
+    #     \item Nested unknown commands: \textbf{\textit{both}}
+    #     \end{itemize}
+
+    #     \begin{equation}
+    #     \mathcal{L} = \textbf{x} + y
+    #     \end{equation}
+
+    #     \begin{figure}
+    #         \centering
+    #         \includegraphics[width=0.8\textwidth]{image.png}
+    #         \caption{\textsc{Small Caps} and \textsf{Sans Serif} in caption}
+    #     \end{figure}
+    #     """
+    #     parsed_tokens = self.parser.parse(text)
+
+    #     # Check top-level unknown commands
+    #     text_tokens = [t for t in parsed_tokens if t['type'] == 'text']
+    #     self.assertTrue(any('\\textbf{bold}' in t['content'] for t in text_tokens))
+    #     self.assertTrue(any('\\textit{italic}' in t['content'] for t in text_tokens))
+
+    #     # Check unknown commands in list environment
+    #     list_env = [t for t in parsed_tokens if t['type'] == 'list'][0]
+    #     items = [t for t in list_env['content'] if t['type'] == 'item']
+    #     self.assertTrue('\\textcolor{red}{Colored text}' in items[0]['content'][0]['content'])
+    #     # self.assertTrue('\\textbf{\\textit{both}}' in items[1]['content'][0]['content'])
+
+    #     # Check unknown commands in equation
+    #     equation = [t for t in parsed_tokens if t['type'] == 'equation'][0]
+    #     self.assertTrue('\\textbf{x}' in equation['content'])
+
+    #     # Check unknown commands in figure caption
+    #     figure = [t for t in parsed_tokens if t['type'] == 'figure'][0]
+    #     caption = [t for t in figure['content'] if t['type'] == 'caption'][0]
+    #     print(caption)
+    #     self.assertTrue('\\textsc{Small Caps}' in caption['content'])
+    #     self.assertTrue('\\textsf{Sans Serif}' in caption['content'])
 
 
 if __name__ == '__main__':
