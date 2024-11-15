@@ -44,11 +44,15 @@ RAW_PATTERNS = OrderedDict([
     # Comments
     ('comment', r'%([^\n]*)'),
     
+    # Special handling for newcommand
+    ('newcommand', r'\\(?:new|renew)command\*?(?:{\\([^}]+)}|\\([^\s{[]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{'),
+
+    # Add before the 'formatting' pattern: these are alternative mostly text/page formatting commands e.g. {\textbf x} instead of \textbf{x}
+    # UPDATE: WE IGNORE THESE FOR NOW since they're mostly text formatting commands
+    # ('alt_brace_command', r'\{\\([a-zA-Z]+)\s+'),
+
     # Formatting commands
     ('formatting', r'\\(usepackage|centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b'),
-
-    # Special handling for newcommand
-    ('newcommand', r'\\(?:new|renew)command\*?(?:{\\([^}]+)}|\\([^[\s{]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{'),
 
     ('item', r'\\item(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item|$)'),
 

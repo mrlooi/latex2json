@@ -183,9 +183,13 @@ class LatexParser:
         content, end_pos = extract_nested_content(text, start_pos - 1)
         if content is None:
             return None, start_pos
-        cmd_name = match.group(1)
+        
+        # Get command name from either group 1 (with braces) or group 2 (without braces)
+        cmd_name = match.group(1) or match.group(2)
+        if cmd_name.startswith('\\'): # Handle case where command name starts with backslash
+            cmd_name = cmd_name[1:]
+        
         num_args = match.group(3)
-        # cmd_name, definition = match.groups()
         trailing_added = self.command_processor.process_command_definition(cmd_name, content, num_args, match.group(4))
         return end_pos + trailing_added
 
