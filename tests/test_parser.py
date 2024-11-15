@@ -865,7 +865,7 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(parsed_tokens[6]['type'], 'text')
         self.assertEqual(parsed_tokens[6]['content'], 'outside')
     
-    def test_verb_command(self):
+    def test_verb_and_lstlisting_commands(self):
         text = r"""
         \begin{verbatim}
         def function():
@@ -874,13 +874,28 @@ class TestMisc(unittest.TestCase):
         \end{verbatim}
         
         \verb|$math$ \command{arg}|
+
+        \begin{lstlisting}[language=Python]
+        def hello():
+            print("world")
+        \end{lstlisting}
+
+        \begin{lstlisting}
+        def hello():
+            print("world")
+        \end{lstlisting}
         """
         parsed_tokens = self.parser.parse(text)
-        self.assertEqual(len(parsed_tokens), 2)
-        self.assertEqual(parsed_tokens[0]['type'], 'verb')
+        self.assertEqual(len(parsed_tokens), 4)
+        self.assertEqual(parsed_tokens[0]['type'], 'code')
         self.assertIn("def function():", parsed_tokens[0]['content'])
-        self.assertEqual(parsed_tokens[1]['type'], 'verb')
+        self.assertEqual(parsed_tokens[1]['type'], 'code')
         self.assertEqual(parsed_tokens[1]['content'], r'$math$ \command{arg}')
+
+        self.assertEqual(parsed_tokens[2]['type'], 'code')
+        self.assertEqual(parsed_tokens[2]['title'], 'language=Python')
+        self.assertEqual(parsed_tokens[3]['type'], 'code')
+        self.assertEqual(parsed_tokens[3]['title'], None)
     
     def test_escaped_special_chars(self):
         """Test that escaped special characters are preserved correctly"""
@@ -925,6 +940,15 @@ class TestMisc(unittest.TestCase):
         text_tokens = [t for t in parsed_tokens if t['type'] == 'text']
         self.assertTrue(len(text_tokens) <= 4,  # Allow for newline splits
                     "Text was split incorrectly at escaped characters")
+    
+    def test_newtheorem(self):
+        text = r"""
+        \newtheorem{theorem}{Theorem}[section]
+        \newtheorem{lemma}[theorem]{Lemma}
+        """
+        parsed_tokens = self.parser.parse(text)
+        # we ignore newtheorem commands but make sure they are parsed
+        self.assertEqual(len(parsed_tokens), 0)
 
 if __name__ == '__main__':
     unittest.main()

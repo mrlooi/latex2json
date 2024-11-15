@@ -1,15 +1,19 @@
 import re
 from collections import OrderedDict
 
+EQUATION_PATTERNS = {
+    'equation',    # basic numbered equation
+    'align',       # aligned equations
+    'gather',      # centered equations
+    'multline',    # long equation split across lines
+    'eqnarray',    # old style align (deprecated but used)
+    'flalign',     # flush aligned equations
+    'alignat'      # aligned with custom spacing
+}
+
 # NOTE: THESE patterns are primarily for content inside document environments already. i.e. no bibliography, etc
 # NOTE: Don't handle text related commands e.g. \text, \textbf, \textit, \mathbb etc. We will process them on render
 # NOTE: We also ignore itemlist containers e.g. \enumerate, \itemize, \description since we parse them as regular env and label as lists via env_name check
-
-TEXT_PATTERNS = OrderedDict([
-    ('text_commands', r'\\(?:text|textbf|textit|textrm|texttt|textsc|textsf|textmd|textup|textsl|textnormal)\s*{([^}]*)}'),
-    ('math_text', r'\\(?:mathbb|mathbf|mathit|mathrm|mathsf|mathtt|mathcal|mathscr|mathfrak)\s*{([^}]*)}'),
-    ('font_commands', r'\\(?:em|bf|it|rm|sf|tt|sc|sl|normalfont)\b'),
-])
 
 # ASSUMES ORDERD DICT (PYTHON 3.7+)
 RAW_PATTERNS = OrderedDict([
@@ -24,14 +28,11 @@ RAW_PATTERNS = OrderedDict([
     ('hyperref', r'\\hyperref\s*\[([^]]*)\]\s*{'),
     ('href', r'\\href\s*{([^}]*)}\s*{'),
 
-    # Environment patterns
-    ('equation', r'\\begin\{equation\*?\}(.*?)\\end\{equation(?:\*)?\}'),
-    ('align', r'\\begin\{align\*?\}(.*?)\\end\{align(?:\*)?\}'),
-    ('gather', r'\\begin\{gather\*?\}(.*?)\\end\{gather(?:\*)?\}'),
+    # Env patterns that we want to handle (non-equation, non-generic)
     ('tabular', r'\\begin\{tabular\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{tabular\}'),
     ('verbatim_env', r'\\begin\{verbatim\}(.*?)\\end\{verbatim\}'),
-    ('environment', r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}'),
-
+    ('lstlisting', r'\\begin\{lstlisting\}(?:\[([^\]]*)\])?(.*?)\\end\{lstlisting\}'),  # Updated pattern
+ 
     ('verb_command', r'\\verb([^a-zA-Z])(.*?)\1'),  # \verb|code| where | can be any non-letter delimiter
 
     # Math delimiters
@@ -64,7 +65,19 @@ RAW_PATTERNS = OrderedDict([
     # Line breaks
     ('newline', r'\\(?:newline|linebreak)\b'),
 
+    # newtheorem
+    ('newtheorem', r'\\newtheorem{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?'),
 ])
+
+# Add equation patterns dynamically
+equation_pattern_dict = {
+    name: rf'\\begin\{{{name}\*?\}}(.*?)\\end\{{{name}(?:\*)?\}}'
+    for name in EQUATION_PATTERNS
+}
+RAW_PATTERNS.update(equation_pattern_dict)
+# ADD generic env pattern at the end (SO THAT HANDLED AFTER EQUATIONS etc)
+RAW_PATTERNS['environment'] = r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}'
+
 
 # Update NESTED_BRACE_COMMANDS to reflect all commands needing special handling
 NESTED_BRACE_COMMANDS = {
@@ -84,11 +97,10 @@ NESTED_BRACE_COMMANDS = {
 }
 
 # needed for re.DOTALL flag (also written as re.S) makes the dot (.) special character match any character including newlines
-EQUATION_PATTERNS = {'equation', 'align', 'gather'}
 MULTILINE_PATTERNS = EQUATION_PATTERNS | {
     'equation_display_$$', 'equation_display_brackets',
     'table', 'tabular', 'figure', 'environment', 'item',
-    'verbatim_env', 
+    'verbatim_env', 'lstlisting',
     # 'itemize', 'enumerate', 'description', 
 }
 
@@ -159,3 +171,10 @@ SECTION_LEVELS = {
     'paragraph': 4,
     'subparagraph': 5
 }
+
+
+TEXT_PATTERNS = OrderedDict([
+    ('text_commands', r'\\(?:text|textbf|textit|textrm|texttt|textsc|textsf|textmd|textup|textsl|textnormal)\s*{([^}]*)}'),
+    ('math_text', r'\\(?:mathbb|mathbf|mathit|mathrm|mathsf|mathtt|mathcal|mathscr|mathfrak)\s*{([^}]*)}'),
+    ('font_commands', r'\\(?:em|bf|it|rm|sf|tt|sc|sl|normalfont)\b'),
+])

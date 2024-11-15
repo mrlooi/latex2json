@@ -276,6 +276,9 @@ class LatexParser:
                     start_pos = current_pos + match.end()
                     current_pos = self._handle_newcommand(text, start_pos, match) + 1
                     continue
+                elif matched_type == 'newtheorem':
+                    # ignore
+                    pass
                 elif matched_type in NESTED_BRACE_COMMANDS:
                     start_pos = current_pos + match.end()
                     token, end_pos = self._handle_nested_brace_command(matched_type, match, text, start_pos)
@@ -309,14 +312,21 @@ class LatexParser:
                 elif matched_type == 'verbatim_env':
                     content = match.group(1).strip()
                     tokens.append({
-                        "type": "verb",
+                        "type": "code",
                         "content": content
                     })
                 elif matched_type == 'verb_command':
                     content = match.group(2).strip()
                     tokens.append({
-                        "type": "verb",
+                        "type": "code",
                         "content": content
+                    })
+                elif matched_type == 'lstlisting':
+                    content = match.group(2).strip()
+                    tokens.append({
+                        "type": "code",
+                        "content": content,
+                        "title": match.group(1).strip() if match.group(1) else None
                     })
                 elif matched_type == 'tabular':
                     # get entire match data
@@ -446,14 +456,26 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-    \begin{verbatim}
-    def function():
-        # This is code
-        return $math$ \command{arg}
-    \end{verbatim}
+    \begin{algorithm}[H]
+        \caption{My Algorithm}
+        \begin{algorithmic}[1]
+            \State $x \gets 0$
+            \While{$x < 10$}
+                \State $x \gets x + 1$
+            \EndWhile
+        \end{algorithmic}
+    \end{algorithm}
     
-    \verb|$math$ \command{arg}|
-    """
+    \begin{lstlisting}[language=Python]
+    def hello():
+        print("world")
+    \end{lstlisting}
+
+    \begin{lstlisting}
+    def hello():
+        print("world")
+    \end{lstlisting}
+"""
 
     # text = r"""
     # \begin{figure}[h]
