@@ -75,6 +75,23 @@ class TestParserText1(unittest.TestCase):
         # assert 'sec:reg' in labels
         self.assertIn('sec:reg', labels)
 
+class TestParserEquations(unittest.TestCase):
+    def setUp(self):
+        self.parser = LatexParser()
+    
+    def test_math_mode_edge_cases(self):
+        text = r"""
+        $a_1^2$ and $x_{i,j}^{2n}$ and $\frac{1}{2}$
+        $\left(\frac{1}{2}\right)$ and $\left[\frac{1}{2}\right]$
+        $\{x : x > 0\}$ and $|x|$ and $\|x\|$
+        $\sum_{i=1}^n$ and $\int_0^\infty$ and $\prod_{i=1}^n$
+        $\lim_{x \to \infty}$ and $\sup_{x \in X}$
+        """
+        parsed_tokens = self.parser.parse(text)
+        equations = [t for t in parsed_tokens if t["type"] == "equation"]
+        self.assertEqual(len(equations), 13)
+        # Add specific assertions for each equation's content
+
 class TestParserNewCommands(unittest.TestCase):
     def setUp(self):
         self.parser = LatexParser()
@@ -123,6 +140,20 @@ class TestParserNewCommands(unittest.TestCase):
         self.assertEqual(split_content[1], "Second paragraph")
         self.assertEqual(split_content[2], "(Edited by me)")
 
+    def test_recommand_definitions(self):
+        text = r"""
+        \renewcommand{\outer}[2]{\inner{#1}{#2}}
+        \newcommand{\inner}[2]{(#1,#2)}
+        
+        \outer{a}{b}
+        
+        \renewcommand{\inner}[2]{[#1,#2]}
+        \outer{x}{y}
+        """
+        parsed_tokens = self.parser.parse(text)
+        # Verify nested command expansion works correctly
+        self.assertEqual(parsed_tokens[0]['content'], "(a,b)")
+        self.assertEqual(parsed_tokens[1]['content'], "[x,y]")
 
     def test_complex_command_definitions(self):
         text = r"""
@@ -717,6 +748,21 @@ class TestMisc(unittest.TestCase):
     def setUp(self):
         self.parser = LatexParser()
 
+    def test_comments(self):
+        text = r"""
+        % Single line comment
+        Text % Comment after text
+        $E=mc^2$ % Comment after equation
+        \begin{equation} % Comment after environment start
+            F=ma % Comment in equation
+        \end{equation} % Comment after environment end
+        """
+        parsed_tokens = self.parser.parse(text)
+        # Verify comments are stripped appropriately
+        equations = [t for t in parsed_tokens if t["type"] == "equation"]
+        self.assertEqual(equations[0]["content"].strip(), "E=mc^2")
+        self.assertIn("F=ma", equations[1]['content'])
+
     def test_footnote_with_environments(self):
         text = r"""
         \newcommand{\Fma}{$F=ma$}
@@ -818,6 +864,23 @@ class TestMisc(unittest.TestCase):
         
         self.assertEqual(parsed_tokens[6]['type'], 'text')
         self.assertEqual(parsed_tokens[6]['content'], 'outside')
+    
+    def test_verb_command(self):
+        text = r"""
+        \begin{verbatim}
+        def function():
+            # This is code
+            return $math$ \command{arg}
+        \end{verbatim}
+        
+        \verb|$math$ \command{arg}|
+        """
+        parsed_tokens = self.parser.parse(text)
+        self.assertEqual(len(parsed_tokens), 2)
+        self.assertEqual(parsed_tokens[0]['type'], 'verb')
+        self.assertIn("def function():", parsed_tokens[0]['content'])
+        self.assertEqual(parsed_tokens[1]['type'], 'verb')
+        self.assertEqual(parsed_tokens[1]['content'], r'$math$ \command{arg}')
     
     def test_escaped_special_chars(self):
         """Test that escaped special characters are preserved correctly"""

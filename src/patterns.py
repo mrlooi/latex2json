@@ -29,7 +29,10 @@ RAW_PATTERNS = OrderedDict([
     ('align', r'\\begin\{align\*?\}(.*?)\\end\{align(?:\*)?\}'),
     ('gather', r'\\begin\{gather\*?\}(.*?)\\end\{gather(?:\*)?\}'),
     ('tabular', r'\\begin\{tabular\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{tabular\}'),
+    ('verbatim_env', r'\\begin\{verbatim\}(.*?)\\end\{verbatim\}'),
     ('environment', r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}'),
+
+    ('verb_command', r'\\verb([^a-zA-Z])(.*?)\1'),  # \verb|code| where | can be any non-letter delimiter
 
     # Math delimiters
     ('equation_display_$$', r'\$\$([\s\S]*?)\$\$'),
@@ -60,6 +63,7 @@ RAW_PATTERNS = OrderedDict([
 
     # Line breaks
     ('newline', r'\\(?:newline|linebreak)\b'),
+
 ])
 
 # Update NESTED_BRACE_COMMANDS to reflect all commands needing special handling
@@ -84,6 +88,7 @@ EQUATION_PATTERNS = {'equation', 'align', 'gather'}
 MULTILINE_PATTERNS = EQUATION_PATTERNS | {
     'equation_display_$$', 'equation_display_brackets',
     'table', 'tabular', 'figure', 'environment', 'item',
+    'verbatim_env', 
     # 'itemize', 'enumerate', 'description', 
 }
 

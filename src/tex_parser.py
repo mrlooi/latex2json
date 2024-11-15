@@ -306,10 +306,18 @@ class LatexParser:
                         tokens.append(env_token)
                         current_pos = end_pos + len(f"\\end{{{env_name}}}")
                         continue
-                # elif matched_type == 'table' or matched_type == 'figure':
-                #     result = self._parse_table(match.group(1).strip(), type=matched_type)
-                #     if result:
-                #         tokens.append(result)
+                elif matched_type == 'verbatim_env':
+                    content = match.group(1).strip()
+                    tokens.append({
+                        "type": "verb",
+                        "content": content
+                    })
+                elif matched_type == 'verb_command':
+                    content = match.group(2).strip()
+                    tokens.append({
+                        "type": "verb",
+                        "content": content
+                    })
                 elif matched_type == 'tabular':
                     # get entire match data
                     token = {
@@ -438,7 +446,13 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-    \\tt
+    \begin{verbatim}
+    def function():
+        # This is code
+        return $math$ \command{arg}
+    \end{verbatim}
+    
+    \verb|$math$ \command{arg}|
     """
 
     # text = r"""
