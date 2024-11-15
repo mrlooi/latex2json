@@ -4,46 +4,15 @@ from typing import List, Dict, Tuple, Union
 from src.patterns import ENV_TYPES, EQUATION_PATTERNS, PATTERNS, LABEL_PATTERN, SEPARATORS, SECTION_LEVELS, NESTED_BRACE_COMMANDS
 from src.tables import parse_tabular
 from src.commands import CommandProcessor
+from src.tex_utils import extract_nested_content
 
+# ... rest of the parser code ...
 # Add these compiled patterns at module level
 DELIM_PATTERN = re.compile(r'\\|\$|%')
 ESCAPED_AMPERSAND_SPLIT = re.compile(r'(?<!\\)&')
 TRAILING_BACKSLASH = re.compile(r'\\+$')
 UNKNOWN_COMMAND_PATTERN = re.compile(r'\\([a-zA-Z]+)(?:\{(?:[^{}]|{[^{}]*})*\})*')
 
-def find_matching_brace(text: str, start: int = 0) -> int:
-    """
-    Find the position of the matching closing brace, handling nested braces.
-    Returns the position of the matching closing brace, or -1 if not found.
-    """
-    stack = []
-    i = start
-    while i < len(text):
-        if text[i] == '{':
-            stack.append(i)
-        elif text[i] == '}':
-            if not stack:
-                return -1  # Unmatched closing brace
-            stack.pop()
-            if not stack:  # Found the matching brace
-                return i
-        i += 1
-    return -1  # No matching brace found
-
-def extract_nested_content(text: str, start: int) -> Tuple[str, int]:
-    """
-    Extract content between braces, handling nested braces.
-    Returns (content, end_position) or (None, start) if no valid content found.
-    """
-    if start >= len(text) or text[start] != '{':
-        return None, start
-        
-    end_pos = find_matching_brace(text, start)
-    if end_pos == -1:
-        return None, start
-        
-    # Return content without the braces and the end position
-    return text[start + 1:end_pos], end_pos
 
 class LatexParser:
     def __init__(self):
@@ -64,7 +33,7 @@ class LatexParser:
         """Expand LaTeX commands in the content"""
         return self.command_processor.expand_commands(content)
 
-    def _find_matching_end(self, text: str, env_name: str, start_pos: int = 0) -> int:
+    def _find_matching_env_block(self, text: str, env_name: str, start_pos: int = 0) -> int:
         """Find the matching end{env_name} for a begin{env_name}, handling nested environments"""
         # Cache the compiled pattern for this environment
         if env_name not in self._env_pattern_cache:
@@ -175,7 +144,7 @@ class LatexParser:
                 content = self._parse_cell(content)
                 return content
         return {
-            "type": "text",
+            "type": "command",
             "content": content
         }
 
@@ -241,12 +210,31 @@ class LatexParser:
                 }
 
         return token, end_pos
-    
+ 
     def parse(self, text: str) -> List[Dict[str, str]]:
         tokens = []
         current_pos = 0
         
         while current_pos < len(text):
+            # Skip whitespace
+            while current_pos < len(text) and text[current_pos].isspace():
+                current_pos += 1
+            if current_pos >= len(text):
+                break
+
+            # Add handling for bare braces at the start i.e. latex grouping {content here}
+            if text[current_pos] == '{':
+                # Find matching closing brace
+                content, end_pos = extract_nested_content(text, current_pos)
+                if content is not None:
+                    # Parse the content within the braces
+                    nested_tokens = self.parse(content)
+                    if nested_tokens:
+                        # could use append here but we want to keep flatten it out since {} are used just for basic grouping and don't preserve meaningful structure
+                        tokens.extend(nested_tokens)
+                    current_pos = end_pos + 1
+                    continue
+            
             next_command = DELIM_PATTERN.search(text[current_pos:])
             if not next_command:
                 if current_pos < len(text):
@@ -300,7 +288,7 @@ class LatexParser:
                     env_name = match.group(1).strip()
                     # Find the correct ending position for this environment
                     start_content = current_pos + match.start(2)
-                    end_pos = self._find_matching_end(text, env_name, start_content)
+                    end_pos = self._find_matching_env_block(text, env_name, start_content)
 
                     if end_pos == -1:
                         # No matching end found, treat as plain text
@@ -449,17 +437,22 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-\begin{gather*}
-{\mathbb P}=\begin{pmatrix}
-r_0&p_0&0&0
-\\
-q_1&r_1&p_1&0
-\\
-0&q_2&r_2&p_2
-\\
-&&\ddots&\ddots&\ddots
-\end{pmatrix},
-\end{gather*} 
+
+    \newcommand\pow[2]{#1^{#2}}
+
+    {
+    \begin{figure}[h]
+        inside $\pow{3}{2}$
+    \end{figure}
+
+    \\tt someTT
+    \\tt{someTT2}
+
+    \\textbf{someBold}
+    }
+
+    \\tt{someTT3}
+    outside
     """
 
     # text = r"""

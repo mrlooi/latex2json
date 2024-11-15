@@ -3,7 +3,13 @@ from collections import OrderedDict
 
 # NOTE: THESE patterns are primarily for content inside document environments already. i.e. no bibliography, etc
 # NOTE: Don't handle text related commands e.g. \text, \textbf, \textit, \mathbb etc. We will process them on render
-# NOTE: We also ignore itemlist containers e.g. \enumerate, \itemize, \description since we treat them as lists internally
+# NOTE: We also ignore itemlist containers e.g. \enumerate, \itemize, \description since we parse them as regular env and label as lists via env_name check
+
+TEXT_PATTERNS = OrderedDict([
+    ('text_commands', r'\\(?:text|textbf|textit|textrm|texttt|textsc|textsf|textmd|textup|textsl|textnormal)\s*{([^}]*)}'),
+    ('math_text', r'\\(?:mathbb|mathbf|mathit|mathrm|mathsf|mathtt|mathcal|mathscr|mathfrak)\s*{([^}]*)}'),
+    ('font_commands', r'\\(?:em|bf|it|rm|sf|tt|sc|sl|normalfont)\b'),
+])
 
 # ASSUMES ORDERD DICT (PYTHON 3.7+)
 RAW_PATTERNS = OrderedDict([
@@ -47,10 +53,6 @@ RAW_PATTERNS = OrderedDict([
     # Special handling for newcommand
     ('newcommand', r'\\(?:new|renew)command\*?(?:{\\([^}]+)}|\\([^\s{[]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{'),
 
-    # Add before the 'formatting' pattern: these are alternative mostly text/page formatting commands e.g. {\textbf x} instead of \textbf{x}
-    # UPDATE: WE IGNORE THESE FOR NOW since they're mostly text formatting commands
-    # ('alt_brace_command', r'\{\\([a-zA-Z]+)\s+'),
-
     # Formatting commands
     ('formatting', r'\\(usepackage|centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b'),
 
@@ -81,7 +83,7 @@ NESTED_BRACE_COMMANDS = {
 EQUATION_PATTERNS = {'equation', 'align', 'gather'}
 MULTILINE_PATTERNS = EQUATION_PATTERNS | {
     'equation_display_$$', 'equation_display_brackets',
-    'table', 'tabular', 'figure', 'environment', 'item'
+    'table', 'tabular', 'figure', 'environment', 'item',
     # 'itemize', 'enumerate', 'description', 
 }
 

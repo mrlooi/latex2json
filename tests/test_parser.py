@@ -763,5 +763,65 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(items[1]['content'][0]['type'], 'text')
         self.assertEqual(items[1]['content'][0]['content'], 'Second point')
 
+class TestGrouping(unittest.TestCase):
+    def setUp(self):
+        self.parser = LatexParser()
+
+    def test_command_and_grouping(self):
+        text = r"""
+        \newcommand\pow[2]{#1^{#2}}
+
+        {
+        \begin{figure}[h]
+            inside $\pow{3}{2}$
+        \end{figure}
+
+        \tt someTT
+        \tt{someTT2}
+
+        \textbf{someBold}
+        }
+
+        \tt{someTT3}
+        outside
+        """
+        parsed_tokens = self.parser.parse(text)
+        
+        # Check total number of tokens
+        self.assertEqual(len(parsed_tokens), 7)
+        
+        # Check figure environment
+        figure = parsed_tokens[0]
+        self.assertEqual(figure['type'], 'figure')
+        self.assertEqual(figure['title'], 'h')
+        self.assertEqual(len(figure['content']), 2)
+        
+        # Check equation inside figure
+        equation = figure['content'][1]
+        self.assertEqual(equation['type'], 'equation')
+        self.assertEqual(equation['content'], '3^{2}')
+        self.assertEqual(equation['display'], 'inline')
+        
+        # Check various tt commands
+        self.assertEqual(parsed_tokens[1]['type'], 'command')
+        self.assertEqual(parsed_tokens[1]['content'], r'\tt')
+        
+        self.assertEqual(parsed_tokens[2]['type'], 'text')
+        self.assertEqual(parsed_tokens[2]['content'], 'someTT')
+        
+        self.assertEqual(parsed_tokens[3]['type'], 'command')
+        self.assertEqual(parsed_tokens[3]['content'], r'\tt{someTT2}')
+        
+        # Check textbf command
+        self.assertEqual(parsed_tokens[4]['type'], 'command')
+        self.assertEqual(parsed_tokens[4]['content'], r'\textbf{someBold}')
+        
+        # Check final tt command and text
+        self.assertEqual(parsed_tokens[5]['type'], 'command')
+        self.assertEqual(parsed_tokens[5]['content'], r'\tt{someTT3}')
+        
+        self.assertEqual(parsed_tokens[6]['type'], 'text')
+        self.assertEqual(parsed_tokens[6]['content'], 'outside')
+
 if __name__ == '__main__':
     unittest.main()
