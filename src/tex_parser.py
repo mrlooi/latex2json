@@ -6,9 +6,10 @@ from src.tables import parse_tabular
 from src.commands import CommandProcessor
 from src.tex_utils import extract_nested_content
 
-# ... rest of the parser code ...
 # Add these compiled patterns at module level
-DELIM_PATTERN = re.compile(r'\\|\$|%')
+# match $ or % only if not preceded by \
+# Update DELIM_PATTERN to handle all common LaTeX special characters
+DELIM_PATTERN = re.compile(r'(?<!\\)(?:\$|%|\\(?![$%&_#{}^~\\]))')
 ESCAPED_AMPERSAND_SPLIT = re.compile(r'(?<!\\)&')
 TRAILING_BACKSLASH = re.compile(r'\\+$')
 UNKNOWN_COMMAND_PATTERN = re.compile(r'\\([a-zA-Z]+)(?:\{(?:[^{}]|{[^{}]*})*\})*')
@@ -437,22 +438,7 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-
-    \newcommand\pow[2]{#1^{#2}}
-
-    {
-    \begin{figure}[h]
-        inside $\pow{3}{2}$
-    \end{figure}
-
-    \\tt someTT
-    \\tt{someTT2}
-
-    \\textbf{someBold}
-    }
-
-    \\tt{someTT3}
-    outside
+    \\tt
     """
 
     # text = r"""

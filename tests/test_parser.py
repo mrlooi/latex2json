@@ -763,10 +763,6 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(items[1]['content'][0]['type'], 'text')
         self.assertEqual(items[1]['content'][0]['content'], 'Second point')
 
-class TestGrouping(unittest.TestCase):
-    def setUp(self):
-        self.parser = LatexParser()
-
     def test_command_and_grouping(self):
         text = r"""
         \newcommand\pow[2]{#1^{#2}}
@@ -822,6 +818,50 @@ class TestGrouping(unittest.TestCase):
         
         self.assertEqual(parsed_tokens[6]['type'], 'text')
         self.assertEqual(parsed_tokens[6]['content'], 'outside')
+    
+    def test_escaped_special_chars(self):
+        """Test that escaped special characters are preserved correctly"""
+        text = r"""
+        Price: \$100.00 (save 25\%)
+        Table cell A \& B with x\_1 \#5
+        Use \{braces\} for \^{superscript} and \~{n} for tilde
+        100\% \& 200\$ \#1 x\_2 \{a\} \^{2} \~{n} \\textbackslash
+        """
+        parsed_tokens = self.parser.parse(text)
+        
+        # Join all text content to check the full string
+        content = ' '.join(token['content'].strip() for token in parsed_tokens 
+                        if token['type'] == 'text' and token['content'].strip())
+        
+        # Check that special characters are preserved
+        expected_patterns = [
+            r'\$100.00',
+            r'25\%',
+            r'A \& B',
+            r'x\_1',
+            r'\#5',
+            r'\{braces\}',
+            r'\^{superscript}',
+            r'\~{n}',
+            r'100\%',
+            r'200\$',
+            r'\#1',
+            r'x\_2',
+            r'\{a\}',
+            r'\^{2}',
+            r'\~{n}',
+            r'\\textbackslash'
+        ]
+        
+        for pattern in expected_patterns:
+            self.assertIn(pattern, content, 
+                        f"Expected to find '{pattern}' in parsed content")
+        
+        # Check that the content is parsed as a single text token
+        # rather than being split at escaped characters
+        text_tokens = [t for t in parsed_tokens if t['type'] == 'text']
+        self.assertTrue(len(text_tokens) <= 4,  # Allow for newline splits
+                    "Text was split incorrectly at escaped characters")
 
 if __name__ == '__main__':
     unittest.main()
