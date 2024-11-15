@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.patterns import ENV_TYPES, PATTERNS, LABEL_PATTERN, SEPARATORS, SECTION_LEVELS, NESTED_BRACE_COMMANDS
+from src.patterns import ENV_TYPES, EQUATION_PATTERNS, PATTERNS, LABEL_PATTERN, SEPARATORS, SECTION_LEVELS, NESTED_BRACE_COMMANDS
 from src.tables import parse_tabular
 from src.commands import CommandProcessor
 
@@ -327,7 +327,7 @@ class LatexParser:
                     if result:
                         token["content"] = result
                     tokens.append(token)
-                elif matched_type in ['equation', 'align']:
+                elif matched_type in EQUATION_PATTERNS:
                     # Extract label if present in the equation content
                     content = match.group(1).strip()
                     if content:
@@ -445,17 +445,17 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-\begin{example}[Random Borwein-Choi-Coons example]\label{rbc}  Let $\g\colon \N \to \{-1,+1\}$ be the stochastic (i.e. random) multiplicative function defined by setting $\g(n) = \chi_3(n)$ is coprime to $3$, and $\g(3^j) := \boldsymbol{\eps}_j$ for $j=1,2,3,\dots$, where $\chi_3$ is as in Example \ref{bcc-ex} and $\boldsymbol{\eps}_1, \boldsymbol{\eps}_2, \dots \in \{-1,+1\}$ are independently identically distributed signs, attaining $-1$ and $+1$ with equal probability.  Arguing similarly to \ref{vbc}, we have
-\begin{align*}
-\left(\E \left|\sum_{j=1}^n \g(jd)\right|^2\right)^{1/2} &= \left(\E \left| \sum_{i \geq 0: 3^i \leq n} \boldsymbol{\eps}_{i+l} \sum_{m \leq n/3^i} \chi_3(md') \right|^2\right)^{1/2} \\
-&\leq \left(\sum_{i \geq 0: 3^i \leq n} 1\right)^{1/2}\\
-&\ll \sqrt{\log n},
-\end{align*}
-where to reach the second line we use the additivity of variance for independent random variables.
-Thus $\g$ in some sense has discrepancy growth like $\sqrt{\log N}$ ``on the average''.  (Note that one can interpret this example as a special case of Example \ref{vbc}, by setting $H$ to be the Hilbert space of real-valued square-integrable random variables.)  However, by carefully choosing the base $3$ expansion of $n$ depending on the signs $\boldsymbol{\eps}_1,\dots,\boldsymbol{\eps}_k$ (similarly to Example \ref{bcc-ex}) one can show that
-$$ \sup_{n <3^{k+1}} \left|\sum_{j=1}^n \g(j)\right| \geq \frac{k+1}{2}$$
-and so the actual discrepancy grows like $\log N$.  So this random example actually has essentially the same discrepancy growth as Example \ref{bcc-ex}.  We do not know if scalar sequences of significantly slower discrepancy growth than this can be constructed.
-\end{example}
+\begin{gather*}
+{\mathbb P}=\begin{pmatrix}
+r_0&p_0&0&0
+\\
+q_1&r_1&p_1&0
+\\
+0&q_2&r_2&p_2
+\\
+&&\ddots&\ddots&\ddots
+\end{pmatrix},
+\end{gather*} 
     """
 
     # text = r"""

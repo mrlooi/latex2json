@@ -21,6 +21,7 @@ RAW_PATTERNS = OrderedDict([
     # Environment patterns
     ('equation', r'\\begin\{equation\*?\}(.*?)\\end\{equation(?:\*)?\}'),
     ('align', r'\\begin\{align\*?\}(.*?)\\end\{align(?:\*)?\}'),
+    ('gather', r'\\begin\{gather\*?\}(.*?)\\end\{gather(?:\*)?\}'),
     ('tabular', r'\\begin\{tabular\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{tabular\}'),
     ('environment', r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}'),
 
@@ -73,8 +74,9 @@ NESTED_BRACE_COMMANDS = {
 }
 
 # needed for re.DOTALL flag (also written as re.S) makes the dot (.) special character match any character including newlines
-MULTILINE_PATTERNS = {
-    'equation', 'align', 'equation_display_$$', 'equation_display_brackets',
+EQUATION_PATTERNS = {'equation', 'align', 'gather'}
+MULTILINE_PATTERNS = EQUATION_PATTERNS | {
+    'equation_display_$$', 'equation_display_brackets',
     'table', 'tabular', 'figure', 'environment', 'item'
     # 'itemize', 'enumerate', 'description', 
 }
