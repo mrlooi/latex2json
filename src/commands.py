@@ -116,8 +116,11 @@ class CommandProcessor:
     def expand_commands(self, text: str) -> str:
         """Recursively expand defined commands in the text until no further expansions are possible."""
         previous_text = None
+        match_count = 0
         while previous_text != text:
             previous_text = text
             for cmd in self.commands.values():
                 text = cmd['pattern'].sub(cmd['handler'], text)
-        return text
+                if previous_text != text:
+                    match_count += 1
+        return text, match_count

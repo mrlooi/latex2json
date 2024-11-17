@@ -42,20 +42,24 @@ RAW_PATTERNS = OrderedDict([
     ('equation_inline_brackets', r'\\\((.*?)\\\)'),
 
     # Simple commands
-    ('ref', r'\\ref\s*{([^}]*)}'),
-    ('eqref', r'\\eqref\s*{([^}]*)}'),
-    ('label', r'\\label\s*{([^}]*)}'),
-    ('url', r'\\url\s*{([^}]*)}'),
-    ('includegraphics', r'\\includegraphics\s*\[([^\]]*)\]\s*{([^}]*)}'),
+    ('ref', r'\\ref\s*{'),
+    ('eqref', r'\\eqref\s*{'),
+    ('label', r'\\label\s*{'),
+    ('url', r'\\url\s*{'),
+    ('includegraphics', r'\\includegraphics\s*(?:\[([^\]]*)\])?\s*{'),
     
     # Citations
-    ('citation', r'\\(?:cite|citep)(?:\[([^\]]*)\])?\s*{([^}]*)}'),
+    ('citation', r'\\(?:cite|citep)(?:\[([^\]]*)\])?\s*{'),
     
     # Comments
     ('comment', r'%([^\n]*)'),
-    
-    # Special handling for newcommand
+
+    # Matches newcommand/renewcommand up to the opening definition brace, capturing the command name, 
+    # number of arguments, and optional default values. Supports both {\commandname} and \commandname syntax.    
     ('newcommand', r'\\(?:new|renew)command\*?(?:{\\([^}]+)}|\\([^\s{[]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{'),
+
+    # Matches newenvironment up to \newenvironment{name} only. parse optional args later
+    ('newenvironment', r'\\(?:new|renew)environment\*?\s*{([^}]+)}'),
 
     # Formatting commands
     ('formatting', r'\\(usepackage|centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b'),
@@ -93,7 +97,12 @@ NESTED_BRACE_COMMANDS = {
     'footnote',
     'hyperref',
     'href',       # Second argument only
-    # 'newcommand', # handled separately
+    'ref',        # Added
+    'eqref',      # Added
+    # 'label',      # Added
+    'url',        # Added
+    'includegraphics',  # Added (second argument)
+    'citation',   # Added
 }
 
 # needed for re.DOTALL flag (also written as re.S) makes the dot (.) special character match any character including newlines

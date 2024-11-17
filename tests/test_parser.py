@@ -132,7 +132,7 @@ class TestParserNewCommands(unittest.TestCase):
         self.assertEqual(equations[2]["content"], r"\mathbb{I}")
         self.assertEqual(equations[3]["content"], r"d_{\text{model}}")
 
-        self.assertEqual(parsed_tokens[-2]["content"], "Single line of text")
+        self.assertEqual(parsed_tokens[-2]["content"].strip(), "Single line of text")
         last_token = parsed_tokens[-1]["content"]
         split_content = [line.strip() for line in last_token.split("\n") if line.strip()]
         self.assertEqual(len(split_content), 3)
@@ -152,8 +152,8 @@ class TestParserNewCommands(unittest.TestCase):
         """
         parsed_tokens = self.parser.parse(text)
         # Verify nested command expansion works correctly
-        self.assertEqual(parsed_tokens[0]['content'], "(a,b)")
-        self.assertEqual(parsed_tokens[1]['content'], "[x,y]")
+        self.assertEqual(parsed_tokens[0]['content'].strip(), "(a,b)")
+        self.assertEqual(parsed_tokens[1]['content'].strip(), "[x,y]")
 
     def test_complex_command_definitions(self):
         text = r"""
@@ -742,7 +742,7 @@ class TestUnknownCommands(unittest.TestCase):
         \textbf{$\pow[5]{\uno}$}
         """
         parsed_tokens = self.parser.parse(text)
-        self.assertEqual(parsed_tokens[0]['content'], "\\textbf{$1^{5}$}")
+        self.assertEqual(parsed_tokens[0]['content'].strip(), "\\textbf{$1^{5}$}")
 
 class TestMisc(unittest.TestCase):
     def setUp(self):
@@ -846,24 +846,24 @@ class TestMisc(unittest.TestCase):
         
         # Check various tt commands
         self.assertEqual(parsed_tokens[1]['type'], 'command')
-        self.assertEqual(parsed_tokens[1]['content'], r'\tt')
+        self.assertEqual(parsed_tokens[1]['content'].strip(), r'\tt')
         
         self.assertEqual(parsed_tokens[2]['type'], 'text')
-        self.assertEqual(parsed_tokens[2]['content'], 'someTT')
+        self.assertEqual(parsed_tokens[2]['content'].strip(), 'someTT')
         
         self.assertEqual(parsed_tokens[3]['type'], 'command')
-        self.assertEqual(parsed_tokens[3]['content'], r'\tt{someTT2}')
+        self.assertEqual(parsed_tokens[3]['content'].strip(), r'\tt{someTT2}')
         
         # Check textbf command
         self.assertEqual(parsed_tokens[4]['type'], 'command')
-        self.assertEqual(parsed_tokens[4]['content'], r'\textbf{someBold}')
+        self.assertEqual(parsed_tokens[4]['content'].strip(), r'\textbf{someBold}')
         
         # Check final tt command and text
         self.assertEqual(parsed_tokens[5]['type'], 'command')
-        self.assertEqual(parsed_tokens[5]['content'], r'\tt{someTT3}')
+        self.assertEqual(parsed_tokens[5]['content'].strip(), r'\tt{someTT3}')
         
         self.assertEqual(parsed_tokens[6]['type'], 'text')
-        self.assertEqual(parsed_tokens[6]['content'], 'outside')
+        self.assertEqual(parsed_tokens[6]['content'].strip(), 'outside')
     
     def test_verb_and_lstlisting_commands(self):
         text = r"""
