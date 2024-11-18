@@ -33,7 +33,7 @@ RAW_PATTERNS = OrderedDict([
     ('verbatim_env', r'\\begin\{verbatim\}(.*?)\\end\{verbatim\}'),
     ('lstlisting', r'\\begin\{lstlisting\}(?:\[([^\]]*)\])?(.*?)\\end\{lstlisting\}'),  # Updated pattern
  
-    ('verb_command', r'\\verb([^a-zA-Z])(.*?)\1'),  # \verb|code| where | can be any non-letter delimiter
+    ('verb_command', r'\\verb\*?([^a-zA-Z])(.*?)\1'),  # \verb|code| or \verb*|code| where | can be any non-letter delimiter
 
     # Math delimiters
     ('equation_display_$$', r'\$\$([\s\S]*?)\$\$'),
@@ -42,31 +42,51 @@ RAW_PATTERNS = OrderedDict([
     ('equation_inline_brackets', r'\\\((.*?)\\\)'),
 
     # Simple commands
-    ('ref', r'\\ref\s*{([^}]*)}'),
-    ('eqref', r'\\eqref\s*{([^}]*)}'),
-    ('label', r'\\label\s*{([^}]*)}'),
-    ('url', r'\\url\s*{([^}]*)}'),
-    ('includegraphics', r'\\includegraphics\s*\[([^\]]*)\]\s*{([^}]*)}'),
+    ('ref', r'\\ref\s*{'),
+    ('eqref', r'\\eqref\s*{'),
+    ('label', r'\\label\s*{'),
+    ('url', r'\\url\s*{'),
+    ('includegraphics', r'\\includegraphics\s*(?:\[([^\]]*)\])?\s*{'),
     
     # Citations
-    ('citation', r'\\(?:cite|citep)(?:\[([^\]]*)\])?\s*{([^}]*)}'),
+    ('citation', r'\\(?:cite|citep)(?:\[([^\]]*)\])?\s*{'),
     
     # Comments
     ('comment', r'%([^\n]*)'),
-    
-    # Special handling for newcommand
+
+    # Matches newcommand/renewcommand up to the opening definition brace, capturing the command name, 
+    # number of arguments, and optional default values. Supports both {\commandname} and \commandname syntax.    
     ('newcommand', r'\\(?:new|renew)command\*?(?:{\\([^}]+)}|\\([^\s{[]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{'),
 
-    # Formatting commands
-    ('formatting', r'\\(usepackage|centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b'),
+    # Matches newenvironment up to \newenvironment{name} only. parse optional args later
+    ('newenvironment', r'\\(?:new|renew)environment\*?\s*{([^}]+)}'),
 
+
+    # Itemize, enumerate, description
     ('item', r'\\item(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item|$)'),
-
-    # Line breaks
-    ('newline', r'\\(?:newline|linebreak)\b'),
 
     # newtheorem
     ('newtheorem', r'\\newtheorem{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?'),
+
+    # Put these all at the end
+
+    # Formatting commands
+    ('formatting', r'\\(usepackage|centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b'),
+    ('separators', r'\\(?:'
+        r'hline|'  # no args
+        r'cline\s*{([^}]+)}|'  # {n-m}
+        r'(?:midrule|toprule|bottomrule)(?:\[\d*[\w-]*\])?|'  # optional [trim]
+        r'cmidrule(?:\[([^\]]*)\])?\s*{([^}]+)}|'  # optional [trim] and {n-m}
+        r'hdashline(?:\[[\d,\s]*\])?|'  # optional [length,space]
+        r'cdashline\s*{([^}]+)}|'  # {n-m}
+        r'specialrule\s*{([^}]*)}\s*{([^}]*)}\s*{([^}]*)}|'  # {height}{above}{below}
+        r'addlinespace(?:\[([^\]]*)\])?|'  # optional [length]
+        r'morecmidrules'  # no args
+        r')'),
+    # Line breaks
+    ('newline', r'\\(?:newline|linebreak)\b'),
+    # Line break with optional spacing specification
+    ('break_spacing', r'\\\\(?:\s*\[([^]]*)\])?'),  # Added \s* to handle optional whitespace
 ])
 
 # Add equation patterns dynamically
@@ -93,7 +113,12 @@ NESTED_BRACE_COMMANDS = {
     'footnote',
     'hyperref',
     'href',       # Second argument only
-    # 'newcommand', # handled separately
+    'ref',        # Added
+    'eqref',      # Added
+    # 'label',      # Added
+    'url',        # Added
+    'includegraphics',  # Added (second argument)
+    'citation',   # Added
 }
 
 # needed for re.DOTALL flag (also written as re.S) makes the dot (.) special character match any character including newlines
@@ -148,19 +173,6 @@ ENV_TYPES = {
     **{env: "list" for env in LIST_ENVIRONMENTS}
 }
 
-SEPARATORS = [
-    '\\hline',      # Basic horizontal line
-    '\\cline',      # From booktabs - partial horizontal line
-    '\\midrule',    # From booktabs - middle rule
-    '\\toprule',    # From booktabs - top rule
-    '\\bottomrule', # From booktabs - bottom rule
-    '\\cmidrule',   # From booktabs - partial rule
-    '\\hdashline',  # From arydshln - dashed line
-    '\\cdashline',  # From arydshln - partial dashed line
-    '\\specialrule', # From booktabs - custom thickness rule
-    '\\addlinespace',  # From booktabs - adds vertical space
-    '\\morecmidrules', # From booktabs - allows multiple cmidrules
-]
 
 SECTION_LEVELS = {
     'part': 0,
