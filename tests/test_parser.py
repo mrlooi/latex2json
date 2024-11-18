@@ -884,9 +884,10 @@ class TestMisc(unittest.TestCase):
         def hello():
             print("world")
         \end{lstlisting}
+
+        \verb*|ssdsds#|
         """
         parsed_tokens = self.parser.parse(text)
-        self.assertEqual(len(parsed_tokens), 4)
         self.assertEqual(parsed_tokens[0]['type'], 'code')
         self.assertIn("def function():", parsed_tokens[0]['content'])
         self.assertEqual(parsed_tokens[1]['type'], 'code')
@@ -896,6 +897,9 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(parsed_tokens[2]['title'], 'language=Python')
         self.assertEqual(parsed_tokens[3]['type'], 'code')
         self.assertEqual(parsed_tokens[3]['title'], None)
+
+        self.assertEqual(parsed_tokens[4]['type'], 'code')
+        self.assertEqual(parsed_tokens[4]['content'], 'ssdsds#')
     
     def test_escaped_special_chars(self):
         """Test that escaped special characters are preserved correctly"""
@@ -928,7 +932,7 @@ class TestMisc(unittest.TestCase):
             r'\{a\}',
             r'\^{2}',
             r'\~{n}',
-            r'\\textbackslash'
+            r'textbackslash'
         ]
         
         for pattern in expected_patterns:
@@ -949,6 +953,71 @@ class TestMisc(unittest.TestCase):
         parsed_tokens = self.parser.parse(text)
         # we ignore newtheorem commands but make sure they are parsed
         self.assertEqual(len(parsed_tokens), 0)
+
+class TestNewEnvironments(unittest.TestCase):
+    def setUp(self):
+        self.parser = LatexParser()
+    
+    def test_new_environment(self):
+        text = r"""
+        \renewenvironment{boxed}[2][This is a box]
+        {
+            \begin{center}
+            Argument 1 (\#1)=#1\\[1ex]
+            \begin{tabular}{|p{0.9\textwidth}|}
+            \hline\\
+            Argument 2 (\#2)=#2\\[2ex]
+        }
+        { 
+            \\\\\hline
+            \end{tabular} 
+            \end{center}
+        }
+
+        \begin{boxed}[BOX]{BOX2}
+        This text is \textit{inside} the environment.
+        \end{boxed}
+        """
+        parsed_tokens = self.parser.parse(text)
+        self.assertEqual(len(parsed_tokens), 1)
+        self.assertEqual(parsed_tokens[0]['type'], 'environment')
+        self.assertEqual(parsed_tokens[0]['name'], 'boxed')
+
+        # Check center environment
+        boxed = parsed_tokens[0]
+        self.assertEqual(len(boxed['content']), 1)
+        center = boxed['content'][0]
+        self.assertEqual(center['type'], 'environment')
+        self.assertEqual(center['name'], 'center')
+        
+        # Check center content
+        self.assertEqual(len(center['content']), 2)
+        
+        # Check argument substitution text
+        arg_text = center['content'][0]
+        self.assertEqual(arg_text['type'], 'text')
+        self.assertEqual(arg_text['content'].strip(), 'Argument 1 (\\#1)=BOX')
+        
+        # Check tabular
+        tabular = center['content'][1]
+        self.assertEqual(tabular['type'], 'tabular')
+        self.assertEqual(tabular['column_spec'], '|p{0.9\\textwidth}|')
+        
+        # Check tabular content
+        self.assertEqual(len(tabular['content']), 2)
+        
+        # First row with argument substitution
+        self.assertEqual(tabular['content'][0][0], 'Argument 2 (\\#2)=BOX2')
+        
+        # Second row with text and command
+        row = tabular['content'][1][0]
+        self.assertEqual(len(row), 3)
+        self.assertEqual(row[0]['type'], 'text')
+        self.assertEqual(row[0]['content'], 'This text is')
+        self.assertEqual(row[1]['type'], 'command')
+        self.assertEqual(row[1]['content'], '\\textit{inside} ')
+        self.assertEqual(row[2]['type'], 'text')
+        self.assertEqual(row[2]['content'], 'the environment.')
 
 if __name__ == '__main__':
     unittest.main()

@@ -33,7 +33,7 @@ RAW_PATTERNS = OrderedDict([
     ('verbatim_env', r'\\begin\{verbatim\}(.*?)\\end\{verbatim\}'),
     ('lstlisting', r'\\begin\{lstlisting\}(?:\[([^\]]*)\])?(.*?)\\end\{lstlisting\}'),  # Updated pattern
  
-    ('verb_command', r'\\verb([^a-zA-Z])(.*?)\1'),  # \verb|code| where | can be any non-letter delimiter
+    ('verb_command', r'\\verb\*?([^a-zA-Z])(.*?)\1'),  # \verb|code| or \verb*|code| where | can be any non-letter delimiter
 
     # Math delimiters
     ('equation_display_$$', r'\$\$([\s\S]*?)\$\$'),
@@ -61,16 +61,32 @@ RAW_PATTERNS = OrderedDict([
     # Matches newenvironment up to \newenvironment{name} only. parse optional args later
     ('newenvironment', r'\\(?:new|renew)environment\*?\s*{([^}]+)}'),
 
-    # Formatting commands
-    ('formatting', r'\\(usepackage|centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b'),
 
+    # Itemize, enumerate, description
     ('item', r'\\item(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item|$)'),
-
-    # Line breaks
-    ('newline', r'\\(?:newline|linebreak)\b'),
 
     # newtheorem
     ('newtheorem', r'\\newtheorem{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?'),
+
+    # Put these all at the end
+
+    # Formatting commands
+    ('formatting', r'\\(usepackage|centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b'),
+    ('separators', r'\\(?:'
+        r'hline|'  # no args
+        r'cline\s*{([^}]+)}|'  # {n-m}
+        r'(?:midrule|toprule|bottomrule)(?:\[\d*[\w-]*\])?|'  # optional [trim]
+        r'cmidrule(?:\[([^\]]*)\])?\s*{([^}]+)}|'  # optional [trim] and {n-m}
+        r'hdashline(?:\[[\d,\s]*\])?|'  # optional [length,space]
+        r'cdashline\s*{([^}]+)}|'  # {n-m}
+        r'specialrule\s*{([^}]*)}\s*{([^}]*)}\s*{([^}]*)}|'  # {height}{above}{below}
+        r'addlinespace(?:\[([^\]]*)\])?|'  # optional [length]
+        r'morecmidrules'  # no args
+        r')'),
+    # Line breaks
+    ('newline', r'\\(?:newline|linebreak)\b'),
+    # Line break with optional spacing specification
+    ('break_spacing', r'\\\\(?:\s*\[([^]]*)\])?'),  # Added \s* to handle optional whitespace
 ])
 
 # Add equation patterns dynamically
@@ -157,19 +173,6 @@ ENV_TYPES = {
     **{env: "list" for env in LIST_ENVIRONMENTS}
 }
 
-SEPARATORS = [
-    '\\hline',      # Basic horizontal line
-    '\\cline',      # From booktabs - partial horizontal line
-    '\\midrule',    # From booktabs - middle rule
-    '\\toprule',    # From booktabs - top rule
-    '\\bottomrule', # From booktabs - bottom rule
-    '\\cmidrule',   # From booktabs - partial rule
-    '\\hdashline',  # From arydshln - dashed line
-    '\\cdashline',  # From arydshln - partial dashed line
-    '\\specialrule', # From booktabs - custom thickness rule
-    '\\addlinespace',  # From booktabs - adds vertical space
-    '\\morecmidrules', # From booktabs - allows multiple cmidrules
-]
 
 SECTION_LEVELS = {
     'part': 0,

@@ -2,15 +2,16 @@ import re
 from typing import List, Dict, Tuple, Union
 
 from src.environments import EnvironmentProcessor
-from src.patterns import ENV_TYPES, EQUATION_PATTERNS, PATTERNS, LABEL_PATTERN, SEPARATORS, SECTION_LEVELS, NESTED_BRACE_COMMANDS
+from src.flattern import flatten_tokens
+from src.patterns import ENV_TYPES, EQUATION_PATTERNS, PATTERNS, LABEL_PATTERN, SECTION_LEVELS, NESTED_BRACE_COMMANDS
 from src.tables import parse_tabular
 from src.commands import CommandProcessor
 from src.tex_utils import extract_nested_content
 
 # Add these compiled patterns at module level
 # match $ or % only if not preceded by \
-# Update DELIM_PATTERN to handle all common LaTeX special characters
-DELIM_PATTERN = re.compile(r'(?<!\\)(?:\$|%|\\(?![$%&_#{}^~\\]))')
+# Update DELIM_PATTERN to also match double backslashes
+DELIM_PATTERN = re.compile(r'(?<!\\)(?:\\\\|\$|%|\\(?![$%&_#{}^~\\]))')
 ESCAPED_AMPERSAND_SPLIT = re.compile(r'(?<!\\)&')
 TRAILING_BACKSLASH = re.compile(r'\\+$')
 UNKNOWN_COMMAND_PATTERN = re.compile(r'([ \t\n]*\\[a-zA-Z]+(?:\{(?:[^{}]|{[^{}]*})*\})*[ \t\n]*)')
@@ -237,21 +238,25 @@ class LatexParser:
         next_brace = text[current_pos:].find('{')
         if next_brace == -1:
             return start_pos
-        begin_def, first_end = extract_nested_content(text, current_pos + next_brace)
+
+        begin_def, first_end = extract_nested_content(text[current_pos + next_brace:])
         if begin_def is None:
             return start_pos
-        
         env_def['begin_def'] = begin_def.strip()
+
+        first_end = current_pos + next_brace + first_end
         
         # Find next brace for end definition
-        next_brace = text[first_end:].find('{')
+        next_brace = text[first_end+1:].find('{')
         if next_brace == -1:
             return first_end
-            
         next_pos = first_end + next_brace
-        end_def, final_end = extract_nested_content(text, next_pos)
+
+        end_def, final_end = extract_nested_content(text[next_pos:])
         if end_def is None:
             return first_end
+        
+        final_end = next_pos + final_end
         
         env_def['end_def'] = end_def.strip()
 
@@ -261,7 +266,7 @@ class LatexParser:
                 
         return final_end
 
-    def _handle_nested_brace_command(self, matched_type: str, match, text: str, start_pos: int, tokens) -> Tuple[Dict, int]:
+    def _handle_nested_brace_command(self, matched_type: str, match, text: str, start_pos: int) -> Tuple[Dict, int]:
         content, end_pos = extract_nested_content(text[start_pos - 1:])
         if content is None:
             return None, start_pos
@@ -339,10 +344,101 @@ class LatexParser:
                 }
 
         return token, end_pos
+    
+    def _handle_tabular(self, match):
+        # get entire match data
+        # Get position after \begin{tabular}
+        inner_content = match.group(0)
+        # strip out the beginning \begin{tabular} and \end{tabular}
+        inner_content = inner_content[len(r'\begin{tabular}'):-len(r'\end{tabular}')]
+        
+        token = {
+            "type": "tabular",
+        }
+        # Extract column spec using nested content extraction
+        column_spec, end_pos = extract_nested_content(inner_content)
+        if column_spec is not None:
+            token["column_spec"] = column_spec.strip()
+
+            # Get the table content after the column spec
+            inner_content = inner_content[end_pos+1:]
+
+            # now, we need to parse the table content first into an intermediate format
+            # then we can pass it to parse_tabular
+            parsed_content = self.parse(inner_content, r'\\') # preserve \\ line break to maintain tabular row delimiter \\ integrity
+            # then flatten it out to text form and pass it to parse_tabular
+            flattened_content, reference_map = flatten_tokens(parsed_content)
+
+            def cell_parser_fn(content: str):
+                content = content.strip()
+                cells = []
+                current_pos = 0
+
+                # check if content even has any references
+                for ref_key in reference_map:
+                    if ref_key in content:
+                        break
+                else:
+                    return self._parse_cell(content)
+                
+                def parse_and_add_to_cell(text: str):
+                    if text:
+                        parsed_content = self.parse(text)
+                        if parsed_content:
+                            cells.extend(parsed_content)
+                
+                while current_pos < len(content):
+                    # Look for the next reference key
+                    next_ref = None
+                    next_ref_pos = len(content)
+                    
+                    # Find the earliest occurring reference key
+                    for ref_key in reference_map:
+                        pos = content.find(ref_key, current_pos)
+                        if pos != -1 and pos < next_ref_pos:
+                            next_ref = ref_key
+                            next_ref_pos = pos
+                    
+                    # Handle text before the reference key
+                    if next_ref_pos > current_pos:
+                        text_before = content[current_pos:next_ref_pos].strip()
+                        parse_and_add_to_cell(text_before)
+                    
+                    # Handle the reference key if found
+                    if next_ref:
+                        cells.append(reference_map[next_ref])
+                        current_pos = next_ref_pos + len(next_ref)
+                    else:
+                        # No more references found, only parse remaining content if we haven't reached the end
+                        if current_pos < len(content):
+                            remaining = content[current_pos:].strip()
+                            parse_and_add_to_cell(remaining)
+                        break
+                    
+                if cells:
+                    if len(cells) == 1: return cells[0]
+                    return cells
+                return None
+
+            result = parse_tabular(flattened_content, cell_parser_fn)
+            if result:
+                token["content"] = result
+
+        return token
  
-    def parse(self, content: str) -> List[Dict[str, str]]:
+    def parse(self, content: str, line_break_delimiter: str = "\n") -> List[Dict[str, str]]:
         tokens = []
         current_pos = 0
+
+        def add_text_token(text: str):
+            if text:
+                if tokens and tokens[-1] and tokens[-1]['type'] == 'text':
+                    tokens[-1]['content'] += text
+                else:
+                    tokens.append({
+                        "type": "text",
+                        "content": text
+                    })
         
         while current_pos < len(content):
             # Skip whitespace
@@ -368,26 +464,20 @@ class LatexParser:
             next_command = DELIM_PATTERN.search(content[current_pos:])
             if not next_command:
                 if current_pos < len(content):
-                    remaining_text = content[current_pos:].strip()
+                    remaining_text = content[current_pos:]
                     if remaining_text:
                         unknown_cmd = UNKNOWN_COMMAND_PATTERN.match(remaining_text)
                         if unknown_cmd:
                             tokens.append(self._handle_unknown_command(unknown_cmd))
                         else:
-                            tokens.append({
-                                "type": "text",
-                                "content": remaining_text
-                            })
+                            add_text_token(remaining_text)
                 break
 
             # Add text before the next command if it exists
             if next_command.start() > 0:
                 plain_text = content[current_pos:current_pos + next_command.start()].strip()
                 if plain_text:
-                    tokens.append({
-                        "type": "text",
-                        "content": plain_text
-                    })
+                    add_text_token(plain_text)
                 current_pos += next_command.start()
                 continue
             
@@ -416,7 +506,7 @@ class LatexParser:
                     pass
                 elif matched_type in NESTED_BRACE_COMMANDS:
                     start_pos = current_pos + match.end()
-                    token, end_pos = self._handle_nested_brace_command(matched_type, match, content, start_pos, tokens)
+                    token, end_pos = self._handle_nested_brace_command(matched_type, match, content, start_pos)
                     if token:
                         tokens.append(token)
                         current_pos = end_pos + 1
@@ -437,10 +527,7 @@ class LatexParser:
 
                     if end_pos == -1:
                         # No matching end found, treat as plain text
-                        tokens.append({
-                            "type": "text",
-                            "content": match.group(0)
-                        })
+                        add_text_token(match.group(0))
                     else:
                         # Extract content between begin and end
                         inner_content = content[start_content:end_pos].strip()
@@ -467,24 +554,8 @@ class LatexParser:
                         "title": match.group(1).strip() if match.group(1) else None
                     })
                 elif matched_type == 'tabular':
-                    # get entire match data
-                    # Get position after \begin{tabular}
-                    inner_content = match.group(0)
-                    # strip out the beginning \begin{tabular} and \end{tabular}
-                    inner_content = inner_content[len(r'\begin{tabular}'):-len(r'\end{tabular}')]
-                    
-                    # Extract column spec using nested content extraction
-                    column_spec, end_pos = extract_nested_content(inner_content)
-                    if column_spec is not None:
-                        token = {
-                            "type": "tabular",
-                            "column_spec": column_spec.strip()
-                        }
-                        # Get the table content after the column spec
-                        inner_content = inner_content[end_pos+1:]
-                        result = parse_tabular(inner_content, self._parse_cell)
-                        if result:
-                            token["content"] = result
+                    token = self._handle_tabular(match)
+                    if token:
                         tokens.append(token)
                     # print(text[current_pos+match.end():])
                 elif matched_type in EQUATION_PATTERNS:
@@ -501,9 +572,10 @@ class LatexParser:
                             if label:
                                 equation = equation[start_pos+end_pos+1:].strip()
 
+                        equation = self._expand_command(equation)
                         token = {
                             "type": "equation",
-                            "content": self._expand_command(equation),
+                            "content": equation,
                             "display": "block"
                         }
                         if label:
@@ -537,17 +609,11 @@ class LatexParser:
                         # treat item as a mini environment
                         item = self._handle_environment('item', item)
                         tokens.append(item)
-                elif matched_type == 'formatting':
+                elif matched_type == 'formatting' or matched_type == 'separators':
                     # ignore formatting commands
                     pass
-                elif matched_type == 'newline':
-                    if tokens and tokens[-1] and tokens[-1]['type'] == 'text':
-                        tokens[-1]['content'] += "\n"
-                    else:
-                        tokens.append({
-                            "type": "text",
-                        "content": "\n"
-                        })
+                elif matched_type == 'newline' or matched_type == 'break_spacing':
+                    add_text_token(line_break_delimiter)
                 else:
                     # For all other token types, expand any commands in their content
                     x = match.group(1) if match.groups() else match.group(0)
@@ -575,47 +641,40 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-    %\newenvironment{important}
-    %{\begin{center}\begin{tabular}{|p{0.9\textwidth}|}\hline\\ }  % begin definition
-    %{\\\\\hline\end{tabular}\end{center}}                         % end definition
-  
-    %\newenvironment{titled}[1]  % environment with one argument
-    %{\begin{center}\textbf{#1}\\\hrule}  % begin definition uses the argument
-    %{\end{center}}                       % end definition
-    
 \renewenvironment{boxed}[2][This is a box]
-    {\begin{center}
-    Argument 1 (#1)=#1\\[1ex]
+{
+    \begin{center}
+    Argument 1 (\#1)=#1\\[1ex]
     \begin{tabular}{|p{0.9\textwidth}|}
     \hline\\
-    Argument 2 (#2)=#2\\[2ex]
+    Argument 2 (\#2)=#2\\[2ex]
 }
 { 
     \\\\\hline
     \end{tabular} 
     \end{center}
-    }
+}
 
-    \begin{boxed}{Some preliminary text}
-    This text is \textit{inside} the environment.
-    \end{boxed}
+\begin{boxed}[BOX]{BOX2}
+This text is \textit{inside} the environment.
+\end{boxed}
     """
 
-    text = r"""
-
-    \begin{tabular}{{ p\textbf{{0.9\textwidth}} }}
-    \hline\\
-    Argument 2 (Some preliminary text)=Some preliminary text\\[2ex]
-
-    This text is \textit{inside} the environment.
-    \\\\\hline
-    \end{tabular}
-
-    \section{\{ssss}\label{{label:sss}}
-    \verb#{nested}\|sds#
-
-    \eqref{{label:sss}}
-    """
+    # text = r"""
+    # \begin{tabular}{|c|c|c|c|}
+    # \hline
+    # \multicolumn{2}{|c|}{\multirow{2}{*}{Region}} & \multicolumn{2}{c|}{Sales} \\
+    # \cline{3-4}
+    # \multicolumn{2}{|c|}{} & 2022 & 2023 \\
+    # \hline
+    # \multirow{2}{*}{North} & Urban & $x^2 + y^2 = z^2$ & 180 \\
+    # & Rural & 100 & 120 \\
+    # \hline
+    # \multirow{2}{*}{South} & Urban & 200 & \begin{align} \label{eq:1} E = mc^2 \\ $F = ma$ \end{align} \\
+    # & & 130 & 160 \\
+    # \hline
+    # \end{tabular}
+    # """
 
     # text = r"""
     # \begin{figure}[h]
@@ -629,7 +688,7 @@ if __name__ == "__main__":
 
     # Example usage
     parser = LatexParser()
-    parsed_tokens = parser.parse(text)
+    parsed_tokens = parser.parse(text, r'\\')
 
     print(parsed_tokens)
 

@@ -26,59 +26,10 @@ class EnvironmentProcessor:
             }
         }
 
-        # Create and store the handler with the environment
-        pattern, handler = self._create_environment_handler(env_name, environment)
-        environment['pattern'] = pattern
-        environment['handler'] = handler
-
         self.environments[env_name] = environment
 
     def has_environment(self, env_name: str) -> bool:
         return env_name in self.environments
-
-    def _create_environment_handler(self, env_name: str, env_info: dict) -> tuple[re.Pattern, callable]:
-        """Creates and returns a cached (pattern, handler) tuple for an environment"""
-        # Match \begin{name}[opt1][opt2]{arg1}{arg2}...\end{name}
-        pattern = rf'\\begin{{{re.escape(env_name)}}}'
-        
-        # Add patterns for optional arguments
-        for _ in env_info['args']['optional_args']:
-            pattern += r'(?:\[(.*?)\])?'
-            
-        # Add patterns for required arguments
-        num_args = env_info['args']['num_args']
-        pattern += ''.join(r'\{(.*?)\}' for _ in range(num_args))
-        
-        # Match everything until the end tag
-        pattern += r'(.*?)\\end{' + re.escape(env_name) + r'}'
-        regex = re.compile(pattern, re.DOTALL)
-
-        def handler(match):
-            groups = match.groups()
-            num_optional = len(env_info['args']['optional_args'])
-            
-            # Extract optional arguments
-            opt_args = list(groups[:num_optional])
-            
-            # Extract required arguments
-            req_args = list(groups[num_optional:num_optional + num_args])
-            
-            # Get the content
-            content = groups[-1]
-
-            # Process begin definition
-            result = env_info['begin_def']
-            
-            # Replace argument placeholders
-            for i, arg in enumerate(opt_args + req_args, 1):
-                if arg is not None:
-                    result = result.replace(f'#{i}', arg)
-                    
-            # Add content and end definition
-            result += content + env_info['end_def']
-            return result
-
-        return regex, handler
 
     def expand_environments(self, env_name: str, text: str) -> str:
         """Expand defined environments in the text
@@ -101,7 +52,7 @@ class EnvironmentProcessor:
             for _ in env_info['args']['optional_args']:
                 if content.startswith('['):
                     arg, end_pos = extract_nested_content(content, '[', ']')
-                    content = content[end_pos:]
+                    content = content[end_pos+1:]
                     args.append(arg)
                 else:
                     args.append(None)
@@ -110,7 +61,7 @@ class EnvironmentProcessor:
             for _ in range(env_info['args']['num_args']):
                 if content.startswith('{'):
                     arg, end_pos = extract_nested_content(content, '{', '}')
-                    content = content[end_pos:]
+                    content = content[end_pos+1:]
                     args.append(arg)
                 else:
                     args.append('')  # Empty string for missing required args
@@ -119,7 +70,8 @@ class EnvironmentProcessor:
             result = env_info['begin_def']
             for i, arg in enumerate(args, 1):
                 if arg is not None:
-                    result = result.replace(f'#{i}', arg)
+                    # Replace unescaped #i with arg, preserve \#
+                    result = re.sub(r'(?<!\\)#' + str(i), arg, result)
                     
             # Add content and end definition
             result += content + env_info['end_def']

@@ -1,9 +1,7 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.patterns import SEPARATORS, CITATION_PATTERN, extract_citations
-
-ROW_SPLIT_PATTERN = re.compile(r'\\\\\s*(?:\n|$)')
+ROW_SPLIT_PATTERN = re.compile(r'\\\\(?:\s*\[[^\]]*\])?')
 MULTICOLUMN_PATTERN = re.compile(r'\\multicolumn{(\d+)}{[^}]*}{(.*)}')
 MULTIROW_PATTERN = re.compile(r'\\multirow{(\d+)}{[^}]*}{(.*)}')
 CELL_SPLIT_PATTERN = re.compile(r'(?<!\\)&')
@@ -22,7 +20,7 @@ def parse_tabular(latex_table: str, cell_parser_fn = None) -> List[List[Dict]]:
     rows = []
     for row in ROW_SPLIT_PATTERN.split(latex_table):
         row = row.strip()
-        if not is_separator_row(row):
+        if row:
             rows.append(row)
     
     parsed_rows = []
@@ -51,15 +49,13 @@ def parse_tabular(latex_table: str, cell_parser_fn = None) -> List[List[Dict]]:
             
             # Create cell structure
             parsed_content = cell_parser_fn(content) if cell_parser_fn else content
-            parsed_cell = None
+            parsed_cell = parsed_content
             if rowspan > 1 or colspan > 1:
                 parsed_cell = {
                     'content': parsed_content,
                     'rowspan': rowspan,
                     'colspan': colspan
                 }
-            else:
-                parsed_cell = parsed_content
             
             parsed_row.append(parsed_cell)
         
@@ -80,7 +76,7 @@ def split_cells(row: str) -> List[str]:
     """
     # Split by newlines first and filter out separators
     lines = [line.strip() for line in row.split('\n')]
-    lines = [line for line in lines if line and not is_separator_row(line)]
+    lines = [line for line in lines if line]
     
     # Join valid lines back together
     row = ' '.join(lines)
@@ -89,38 +85,25 @@ def split_cells(row: str) -> List[str]:
     # Split by unescaped & characters
     return [cell.strip() for cell in CELL_SPLIT_PATTERN.split(row)]
 
-def is_separator_row(row):
-    """
-    Check if row contains only separator commands
-    """
-    return row and all(
-        only_contains_separators(part.strip(), SEPARATORS) 
-        for part in row.split('&')
-    )
-
-def only_contains_separators(text, separators):
-    """
-    Check if text only contains separator commands
-    """
-    text = text.strip()
-    if not text:
-        return True
-    return any(sep in text for sep in separators)
 
 if __name__ == "__main__":
 
     text = r"""
-        \hline
-        \multicolumn{2}{|c|}{\multirow{2}{*}{Region}} & \multicolumn{2}{c|}{Sales} \\
-        \cline{3-4}
-        \multicolumn{2}{|c|}{} & 2022 & 2023 \\
-        \hline
-        \multirow{2}{*}{North} & Urban & $x^2 + y^2 = z^2$ & 180 \\
-        & Rural & 100 & 120 \\
-        \hline
-        \multirow{2}{*}{South} & Urban & 200 & \begin{align} E = mc^2 \\ $F = ma$ \end{align} \\
-        & & 130 & 160 \\
-        \hline
+    \hline\\
+    Argument 2 (\\Some preliminary text)=Some preliminary text\\\\[2ex]
+
+    This text is \textit{inside} the environment.
+    """
+
+    text = r"""
+        \hline\\
+        Argument 2 (Some preliminary text)=Some preliminary text\\[2ex]
+
+        This text is \textit{inside} the environment.\\
+        
+        \begin{align} 3+2 \\ 332+2 \end{align}
+        \\\\\hline 
+        
     """
 
     parsed_table = parse_tabular(text)
