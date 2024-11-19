@@ -52,7 +52,7 @@ class EnvironmentProcessor:
             for _ in env_info['args']['optional_args']:
                 if content.startswith('['):
                     arg, end_pos = extract_nested_content(content, '[', ']')
-                    content = content[end_pos+1:]
+                    content = content[end_pos:]
                     args.append(arg)
                 else:
                     args.append(None)
@@ -61,7 +61,7 @@ class EnvironmentProcessor:
             for _ in range(env_info['args']['num_args']):
                 if content.startswith('{'):
                     arg, end_pos = extract_nested_content(content, '{', '}')
-                    content = content[end_pos+1:]
+                    content = content[end_pos:]
                     args.append(arg)
                 else:
                     args.append('')  # Empty string for missing required args

@@ -39,8 +39,8 @@ class DefinitionHandler(TokenHandler):
     
     def _handle_newcommand(self, content: str, match) -> Tuple[Optional[Dict], int]:
         """Handle \newcommand and \renewcommand definitions"""
-        start_pos = match.end()
-        definition, end_pos = extract_nested_content(content[start_pos - 1:])
+        start_pos = match.end() 
+        definition, end_pos = extract_nested_content(content[start_pos - 1:]) # -1 to go back {
         if definition is None:
             return None, start_pos
         
@@ -130,10 +130,10 @@ class DefinitionHandler(TokenHandler):
         first_end = current_pos + next_brace + first_end
         
         # Find next brace for end definition
-        next_brace = content[first_end+1:].find('{')
+        next_brace = content[first_end:].find('{')
         if next_brace == -1:
             return None, first_end
-        next_pos = first_end + next_brace + 1
+        next_pos = first_end + next_brace
 
         end_def, final_end = extract_nested_content(content[next_pos:])
         if end_def is None:

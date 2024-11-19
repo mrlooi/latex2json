@@ -37,12 +37,14 @@ def find_matching_delimiter(text: str, open_delim: str='{', close_delim: str='}'
 def extract_nested_content(text: str, open_delim: str='{', close_delim: str='}') -> Tuple[str | None, int]:
     """
     Extract content between delimiters, handling nesting.
-    Returns (content, remaining_text) or (None, text) if no valid content found.
+    Returns a tuple of (content, next_position) where:
+        - content is the text between delimiters (or None if not found)
+        - next_position is the position after the closing delimiter (or 0 if not found)
     """
     start_pos, end_pos = find_matching_delimiter(text, open_delim, close_delim)
     if start_pos == -1:
         return None, 0
         
-    # Return content without the delimiters and the remaining text
+    # Return content without the delimiters and the next position to process
     content = text[start_pos + 1:end_pos]
-    return content, end_pos
+    return content, end_pos + 1

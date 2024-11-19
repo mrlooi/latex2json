@@ -239,24 +239,25 @@ class LatexParser:
         if next_brace == -1:
             return start_pos
 
-        begin_def, first_end = extract_nested_content(text[current_pos + next_brace:])
+        current_pos += next_brace
+        begin_def, first_end = extract_nested_content(text[current_pos:])
         if begin_def is None:
             return start_pos
         env_def['begin_def'] = begin_def.strip()
 
-        first_end = current_pos + next_brace + first_end
+        current_pos += first_end
         
         # Find next brace for end definition
-        next_brace = text[first_end+1:].find('{')
+        next_brace = text[current_pos:].find('{')
         if next_brace == -1:
-            return first_end
-        next_pos = first_end + next_brace
+            return current_pos
+        current_pos += next_brace
 
-        end_def, final_end = extract_nested_content(text[next_pos:])
+        end_def, final_end = extract_nested_content(text[current_pos:])
         if end_def is None:
             return first_end
         
-        final_end = next_pos + final_end
+        current_pos += final_end
         
         env_def['end_def'] = end_def.strip()
 
@@ -264,7 +265,7 @@ class LatexParser:
         if env_name in self._env_pattern_cache:
             del self._env_pattern_cache[env_name]
                 
-        return final_end
+        return current_pos
 
     def _handle_nested_brace_command(self, matched_type: str, match, text: str, start_pos: int) -> Tuple[Dict, int]:
         content, end_pos = extract_nested_content(text[start_pos - 1:])
@@ -361,7 +362,7 @@ class LatexParser:
             token["column_spec"] = column_spec.strip()
 
             # Get the table content after the column spec
-            inner_content = inner_content[end_pos+1:]
+            inner_content = inner_content[end_pos:]
 
             # now, we need to parse the table content first into an intermediate format
             # then we can pass it to parse_tabular
@@ -451,14 +452,13 @@ class LatexParser:
             if content[current_pos] == '{':
                 # Find matching closing brace
                 inner_content, end_pos = extract_nested_content(content[current_pos:])
-                end_pos = current_pos + end_pos # move back one to account for current_pos
                 if inner_content is not None:
                     # Parse the content within the braces
                     nested_tokens = self.parse(inner_content)
                     if nested_tokens:
                         # could use append here but we want to keep flatten it out since {} are used just for basic grouping and don't preserve meaningful structure
                         tokens.extend(nested_tokens)
-                    current_pos = end_pos + 1
+                    current_pos += end_pos
                     continue
             
             next_command = DELIM_PATTERN.search(content[current_pos:])
@@ -512,11 +512,11 @@ class LatexParser:
                         current_pos = end_pos + 1
                         continue
                 elif matched_type == 'label':
-                    start_pos = current_pos + match.end()
-                    label, end_pos = extract_nested_content(content[start_pos-1:])
+                    start_pos = current_pos + match.end() - 1 # -1 to account for the label command '{'
+                    label, end_pos = extract_nested_content(content[start_pos:])
                     if label:
                         self._handle_label(label, tokens)
-                    current_pos = start_pos +end_pos
+                    current_pos = start_pos + end_pos
                     continue
                 # Handle environments
                 elif matched_type == 'environment':
@@ -570,7 +570,7 @@ class LatexParser:
                             start_pos = label_match.end() - 1 # -1 to account for the label command '{'
                             label, end_pos = extract_nested_content(equation[start_pos:])
                             if label:
-                                equation = equation[start_pos+end_pos+1:].strip()
+                                equation = equation[start_pos+end_pos:].strip()
 
                         equation = self._expand_command(equation)
                         token = {

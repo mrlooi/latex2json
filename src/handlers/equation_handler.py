@@ -64,7 +64,7 @@ class EquationHandler(TokenHandler):
             if label:
                 labels.append(label)
                 # Remove the entire \label{...} command
-                parsed_equation = parsed_equation[:match.start()] + parsed_equation[start_pos + end_pos + 1:]
+                parsed_equation = parsed_equation[:match.start()] + parsed_equation[start_pos + end_pos:]
         
         # Clean up any double spaces and trim
         parsed_equation = parsed_equation.strip()
