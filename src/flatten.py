@@ -1,9 +1,12 @@
 from typing import List, Dict
 from collections import OrderedDict
-def flatten_tokens(tokens: List[Dict[str, str]]) -> tuple[str, dict]:
+def flatten_tokens(tokens: str | List[Dict[str, str]]) -> tuple[str, dict]:
     flattened_content = ""
     reference_map = OrderedDict()
     ref_counter = 1
+
+    if isinstance(tokens, str):
+        return tokens, {}
     
     for token in tokens:
         token_type = token['type']

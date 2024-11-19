@@ -3,7 +3,7 @@ from typing import List, Dict, Tuple, Union
 
 from src.environments import EnvironmentProcessor
 from src.flatten import flatten_tokens
-from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler
+from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler, TabularHandler
 from src.patterns import ENV_TYPES, PATTERNS
 from src.tables import parse_tabular
 from src.commands import CommandProcessor
@@ -34,6 +34,7 @@ class LatexParser:
             EquationHandler(self._expand_command),
             CodeBlockHandler(),
             ContentCommandHandler(self._expand_command),
+            # TabularHandler(self._expand_command, self._parse_cell)
         ]
         self.new_definition_handler = NewDefinitionHandler()
 

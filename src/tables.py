@@ -36,13 +36,13 @@ def parse_tabular(latex_table: str, cell_parser_fn = None) -> List[List[Dict]]:
             rowspan = 1
             
             # Handle multicolumn first
-            mcol_match = MULTICOLUMN_PATTERN.match(content)
+            mcol_match = MULTICOLUMN_PATTERN.search(content)
             if mcol_match:
                 colspan = int(mcol_match.group(1))
                 content = mcol_match.group(2).strip()
             
             # Then handle multirow within the content
-            mrow_match = MULTIROW_PATTERN.match(content)
+            mrow_match = MULTIROW_PATTERN.search(content)
             if mrow_match:
                 rowspan = int(mrow_match.group(1))
                 content = mrow_match.group(2).strip()
