@@ -15,7 +15,7 @@ PATTERNS = {
     'newtheorem': re.compile(r'\\newtheorem{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?'),
 }
 
-class DefinitionHandler(TokenHandler):
+class NewDefinitionHandler(TokenHandler):
     def __init__(self):
         pass
 
@@ -52,7 +52,9 @@ class DefinitionHandler(TokenHandler):
         token = {
             "type": "newcommand",
             "name": cmd_name,
-            "content": definition
+            "content": definition,
+            "num_args": None,
+            "defaults": []
         }
         
         # Add number of arguments if specified
@@ -77,6 +79,8 @@ class DefinitionHandler(TokenHandler):
         # Store environment definition
         token = {
             "type": "newenvironment",
+            "begin_def": "",
+            "end_def": "",
             "name": env_name,
             "args": [],
             "optional_args": []
@@ -163,7 +167,7 @@ class DefinitionHandler(TokenHandler):
         return token, match.end() 
     
 if __name__ == "__main__":
-    handler = DefinitionHandler()
+    handler = NewDefinitionHandler()
     token, pos = handler.handle(r"\newcommand{\cmd")
     print(token, pos)
 

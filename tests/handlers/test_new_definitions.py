@@ -1,9 +1,9 @@
 import pytest
-from src.handlers.new_definition_handler import DefinitionHandler
+from src.handlers.new_definition_handler import NewDefinitionHandler
 
 @pytest.fixture
 def handler():
-    return DefinitionHandler()
+    return NewDefinitionHandler()
 
 def test_can_handle_definitions(handler):
     assert handler.can_handle(r"\newcommand{\cmd}{definition}")
@@ -16,21 +16,17 @@ def test_handle_newcommand(handler):
     # Test basic newcommand
     content = r"\newcommand{\cmd}{some definition}"
     token, pos = handler.handle(content)
-    assert token == {
-        "type": "newcommand",
-        "name": "cmd",
-        "content": "some definition"
-    }
+    assert token["type"] == "newcommand"
+    assert token["name"] == "cmd"
+    assert token["content"] == "some definition"
     
     # Test with number of arguments
     content = r"\newcommand{\cmd}[2]{arg1=#1, arg2=#2}"
     token, pos = handler.handle(content)
-    assert token == {
-        "type": "newcommand",
-        "name": "cmd",
-        "num_args": 2,
-        "content": "arg1=#1, arg2=#2"
-    }
+    assert token["type"] == "newcommand"
+    assert token["name"] == "cmd"
+    assert token["num_args"] == 2
+    assert token["content"] == "arg1=#1, arg2=#2"
     
     # Test with default values
     content = r"\newcommand{\cmd}[2][default]{arg1=#1, arg2=#2}"
@@ -46,11 +42,10 @@ def test_handle_newcommand(handler):
 def test_handle_renewcommand(handler):
     content = r"\renewcommand{\cmd}{new definition}"
     token, pos = handler.handle(content)
-    assert token == {
-        "type": "newcommand",
-        "name": "cmd",
-        "content": "new definition"
-    }
+
+    assert token["type"] == "newcommand"
+    assert token["name"] == "cmd"
+    assert token["content"] == "new definition"
 
 def test_handle_newenvironment(handler):
     # Test basic newenvironment
@@ -136,12 +131,11 @@ def test_handle_complex_definitions(handler):
     # Test newcommand with nested braces
     content = r"\newcommand{\complex}[2]{outer{nested{#1}}{#2}}"
     token, pos = handler.handle(content)
-    assert token == {
-        "type": "newcommand",
-        "name": "complex",
-        "num_args": 2,
-        "content": "outer{nested{#1}}{#2}"
-    }
+
+    assert token["type"] == "newcommand"
+    assert token["name"] == "complex"
+    assert token["num_args"] == 2
+    assert token["content"] == "outer{nested{#1}}{#2}"
     
     # Test newenvironment with complex begin/end definitions
     content = r"\newenvironment{complex}{\begin{center}\begin{tabular}}{end{tabular}\end{center}}"

@@ -25,7 +25,7 @@ class CommandProcessor:
         command_name: str, 
         definition: str, 
         num_args: Optional[int] = None, 
-        defaults_str: Optional[str] = None
+        defaults: Optional[List[str]] = []
     ) -> None:
         """Store a new or renewed command definition"""
         command = {'definition': definition}
@@ -38,13 +38,8 @@ class CommandProcessor:
             used_args = re.findall(r'#(\d+)', definition)
             args['num_args'] = max(int(x) for x in used_args) if used_args else 0
 
-        if defaults_str:
-            defaults = re.findall(r'\[([^]]*)\]', defaults_str)
-            args['defaults'] = [d if d else None for d in defaults]
-            args['required_args'] = args['num_args'] - len(args['defaults'])
-        else:
-            args['defaults'] = []
-            args['required_args'] = args['num_args']
+        args['defaults'] = defaults
+        args['required_args'] = args['num_args'] - len(defaults)
 
         command['args'] = args
 

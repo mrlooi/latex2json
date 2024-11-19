@@ -845,7 +845,7 @@ def test_verb_and_lstlisting_commands(parser):
     assert parsed_tokens[2]['type'] == 'code'
     assert parsed_tokens[2]['title'] == 'language=Python'
     assert parsed_tokens[3]['type'] == 'code'
-    assert parsed_tokens[3]['title'] == None
+    assert 'title' not in parsed_tokens[3]
 
     assert parsed_tokens[4]['type'] == 'code'
     assert parsed_tokens[4]['content'] == 'ssdsds#'

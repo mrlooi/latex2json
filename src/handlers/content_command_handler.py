@@ -30,7 +30,6 @@ RAW_PATTERNS = OrderedDict([
     # Simple commands
     ('ref', r'\\ref\s*{'),
     ('eqref', r'\\eqref\s*{'),
-    ('label', r'\\label\s*{'),
     ('url', r'\\url\s*{'),
     ('includegraphics', r'\\includegraphics\s*(?:\[([^\]]*)\])?\s*{'),
     
