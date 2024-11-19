@@ -36,14 +36,10 @@ PATTERNS.update(RAW_PATTERNS)
 
 
 class EquationHandler(TokenHandler):
-    def __init__(self):
-        # Use the pre-defined PATTERNS
-        self.patterns = PATTERNS
-        # No need to combine patterns as we'll check each one individually
-
+  
     def can_handle(self, content: str) -> bool:
         # Check each pattern individually
-        return any(pattern.match(content) for pattern in self.patterns.values())
+        return any(pattern.match(content) for pattern in PATTERNS.values())
     
     def _handle_labels(self, equation: str) -> Tuple[str, list[str]]:
         # Find all labels in the equation
@@ -71,10 +67,10 @@ class EquationHandler(TokenHandler):
         
         return parsed_equation, list(reversed(labels))
     
-    def handle(self, content: str, process_equation_fn: Optional[Callable[[str], str]] = None) -> Tuple[Optional[Dict], int]:
+    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
         
         # Try each pattern until we find a match
-        for pattern_name, pattern in self.patterns.items():
+        for pattern_name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if match:
                 equation = match.group(1).strip()
@@ -86,7 +82,8 @@ class EquationHandler(TokenHandler):
                 equation, labels = self._handle_labels(equation)
 
                 # Expand any commands in the equation
-                equation = process_equation_fn(equation) if process_equation_fn else equation
+                if self.process_content_fn:
+                    equation = self.process_content_fn(equation)
                 
                 # Create token
                 token = {

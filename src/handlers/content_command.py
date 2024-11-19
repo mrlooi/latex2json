@@ -3,16 +3,7 @@ from collections import OrderedDict
 from typing import Callable, Dict, Optional, Tuple
 from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content
-
-SECTION_LEVELS = {
-    'part': 0,
-    'chapter': 1,
-    'section': 1,
-    'subsection': 2,
-    'subsubsection': 3,
-    'paragraph': 4,
-    'subparagraph': 5
-}
+from src.patterns import SECTION_LEVELS
 
 # ASSUMES ORDERD DICT (PYTHON 3.7+)
 RAW_PATTERNS = OrderedDict([
@@ -44,13 +35,10 @@ PATTERNS = OrderedDict(
 )
 
 class ContentCommandHandler(TokenHandler):
-    def __init__(self):
-        pass
-
     def can_handle(self, content: str) -> bool:
         return any(pattern.match(content) for pattern in PATTERNS.values())
     
-    def handle(self, content: str, expand_command_fn: Optional[Callable[[str], str]] = None) -> Tuple[Optional[Dict], int]:
+    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
         # Try each pattern until we find a match
         for pattern_name, pattern in PATTERNS.items():
             match = pattern.match(content)
@@ -67,8 +55,8 @@ class ContentCommandHandler(TokenHandler):
                 end_pos = start_pos + end_pos - 1  # move back one to account for start_pos -1
                 
                 # Expand any nested commands in the content
-                if expand_command_fn:
-                    nested_content = expand_command_fn(nested_content)
+                if self.process_content_fn:
+                    nested_content = self.process_content_fn(nested_content)
                 
                 # Create token based on command type
                 token = self._create_token(pattern_name, match, nested_content)

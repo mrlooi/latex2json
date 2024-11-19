@@ -1,13 +1,20 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Any
 
 class TokenHandler(ABC):
+    def __init__(self, process_content_fn: Optional[Callable[[str], Any]] = None):
+        """Initialize handler with optional command expansion function"""
+        self.process_content_fn = process_content_fn
+
+    def set_process_content_fn(self, process_content_fn: Callable[[str], Any]):
+        self.process_content_fn = process_content_fn
+
     @abstractmethod
     def can_handle(self, content: str) -> bool:
         """Check if this handler can process the current content"""
-        pass
+        raise NotImplementedError
     
     @abstractmethod
-    def handle(self, content: str, expand_command_fn: Optional[Callable[[str], str]] = None) -> Tuple[Optional[Dict], int]:
+    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
         """Process the content and return (token, new_position)"""
-        pass
+        raise NotImplementedError

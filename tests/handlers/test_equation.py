@@ -77,11 +77,12 @@ def test_handle_empty_equations(handler):
     assert token is None
     assert pos == 4
 
-def test_equation_with_process_fn(handler):
+def test_equation_with_process_fn():
     def mock_process(eq: str) -> str:
         return eq.replace('x', 'y')
     
-    token, pos = handler.handle("$x^2$", process_equation_fn=mock_process)
+    handler = EquationHandler(process_content_fn=mock_process)
+    token, pos = handler.handle("$x^2$")
     assert token == {"type": "equation", "content": "y^2", "display": "inline"}
     assert pos == 5
 

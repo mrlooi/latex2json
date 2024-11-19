@@ -2,7 +2,7 @@ import re
 from typing import List, Dict, Tuple, Union
 
 from src.environments import EnvironmentProcessor
-from src.flattern import flatten_tokens
+from src.flatten import flatten_tokens
 from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler
 from src.patterns import ENV_TYPES, PATTERNS
 from src.tables import parse_tabular
@@ -31,9 +31,9 @@ class LatexParser:
         self._env_pattern_cache = {}  # Cache for environment patterns
 
         self.handlers: List[TokenHandler] = [
-            EquationHandler(),
+            EquationHandler(self._expand_command),
             CodeBlockHandler(),
-            ContentCommandHandler(),
+            ContentCommandHandler(self._expand_command),
         ]
         self.new_definition_handler = NewDefinitionHandler()
 
@@ -258,7 +258,7 @@ class LatexParser:
     def _check_for_new_definitions(self, content: str) -> None:
         """Check for new definitions in the content and process them"""
         if self.new_definition_handler.can_handle(content):
-            token, end_pos = self.new_definition_handler.handle(content, self._expand_command)
+            token, end_pos = self.new_definition_handler.handle(content)
             if token:
                 if token['type'] == 'newcommand':
                     cmd_name = token['name']
@@ -337,7 +337,7 @@ class LatexParser:
             matched = False
             for handler in self.handlers:
                 if handler.can_handle(content[current_pos:]):
-                    token, end_pos = handler.handle(content[current_pos:], self._expand_command)
+                    token, end_pos = handler.handle(content[current_pos:])
                     if token:
                         if token['type'] == 'footnote':
                             token["content"] = self._parse_cell(token["content"])
@@ -428,9 +428,12 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text = r"""
-    \newcommand{\foo}[1]{#1}
-
-    \foo{bar}
+    \begin{ee}
+        1+1=2
+        \begin{ee}
+            2+2=4
+        \end{ee}
+    \end{ee}
     """
 
     # Example usage

@@ -120,23 +120,25 @@ def test_handle_urls(handler):
         "content": "http://example.com"
     }
 
-def test_handle_with_expand_fn(handler):
+def test_handle_with_expand_fn():
     def mock_expand(content: str) -> str:
         return content.replace('old', 'new')
     
-    token, pos = handler.handle(r"\section{old title}", expand_command_fn=mock_expand)
+    handler = ContentCommandHandler(process_content_fn=mock_expand)
+    token, pos = handler.handle(r"\section{old title}")
     assert token == {
         "type": "section",
         "title": "new title",
         "level": 1
     }
 
-def test_handle_nested_content(handler):
+def test_handle_nested_content():
     content = r"\section{Title with \textbf{bold} {hello} text}"
     def mock_expand(content: str) -> str:
         return content.replace(r'\textbf{bold}', 'bold')
     
-    token, pos = handler.handle(content, expand_command_fn=mock_expand)
+    handler = ContentCommandHandler(process_content_fn=mock_expand)
+    token, pos = handler.handle(content)
     assert token == {
         "type": "section",
         "title": "Title with bold {hello} text",
