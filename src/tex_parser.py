@@ -2,10 +2,8 @@ import re
 from typing import List, Dict, Tuple, Union
 
 from src.environments import EnvironmentProcessor
-from src.flatten import flatten_tokens
 from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler, TabularHandler
 from src.patterns import ENV_TYPES, PATTERNS
-from src.tables import parse_tabular
 from src.commands import CommandProcessor
 from src.tex_utils import extract_nested_content
 
@@ -34,7 +32,8 @@ class LatexParser:
             EquationHandler(self._expand_command),
             CodeBlockHandler(),
             ContentCommandHandler(self._expand_command),
-            # TabularHandler(self._expand_command, self._parse_cell)
+            # for tabular, on the first pass we process content and maintain the '\\' delimiter to maintain row integrity
+            TabularHandler(process_content_fn=lambda x: self.parse(x, r'\\'), cell_parser_fn=self.parse)
         ]
         self.new_definition_handler = NewDefinitionHandler()
 
@@ -102,6 +101,9 @@ class LatexParser:
     
     def _parse_cell(self, cell_content: str) -> List[Dict]:
         cell = self.parse(cell_content)
+        return self._clean_cell(cell)
+
+    def _clean_cell(self, cell: List[Dict]) -> List[Dict]:
         if len(cell) == 0: 
             return None
         elif len(cell) == 1:
@@ -175,87 +177,6 @@ class LatexParser:
             "content": content
         }
     
-    def _handle_tabular(self, match):
-        # get entire match data
-        # Get position after \begin{tabular}
-        inner_content = match.group(0)
-        # strip out the beginning \begin{tabular} and \end{tabular}
-        inner_content = inner_content[len(r'\begin{tabular}'):-len(r'\end{tabular}')]
-        
-        token = {
-            "type": "tabular",
-        }
-        # Extract column spec using nested content extraction
-        column_spec, end_pos = extract_nested_content(inner_content)
-        if column_spec is not None:
-            token["column_spec"] = column_spec.strip()
-
-            # Get the table content after the column spec
-            inner_content = inner_content[end_pos:]
-
-            # now, we need to parse the table content first into an intermediate format
-            # then we can pass it to parse_tabular
-            parsed_content = self.parse(inner_content, r'\\') # preserve \\ line break to maintain tabular row delimiter \\ integrity
-            # then flatten it out to text form and pass it to parse_tabular
-            flattened_content, reference_map = flatten_tokens(parsed_content)
-
-            def cell_parser_fn(content: str):
-                content = content.strip()
-                cells = []
-                current_pos = 0
-
-                # check if content even has any references
-                for ref_key in reference_map:
-                    if ref_key in content:
-                        break
-                else:
-                    return self._parse_cell(content)
-                
-                def parse_and_add_to_cell(text: str):
-                    if text:
-                        parsed_content = self.parse(text)
-                        if parsed_content:
-                            cells.extend(parsed_content)
-                
-                while current_pos < len(content):
-                    # Look for the next reference key
-                    next_ref = None
-                    next_ref_pos = len(content)
-                    
-                    # Find the earliest occurring reference key
-                    for ref_key in reference_map:
-                        pos = content.find(ref_key, current_pos)
-                        if pos != -1 and pos < next_ref_pos:
-                            next_ref = ref_key
-                            next_ref_pos = pos
-                    
-                    # Handle text before the reference key
-                    if next_ref_pos > current_pos:
-                        text_before = content[current_pos:next_ref_pos].strip()
-                        parse_and_add_to_cell(text_before)
-                    
-                    # Handle the reference key if found
-                    if next_ref:
-                        cells.append(reference_map[next_ref])
-                        current_pos = next_ref_pos + len(next_ref)
-                    else:
-                        # No more references found, only parse remaining content if we haven't reached the end
-                        if current_pos < len(content):
-                            remaining = content[current_pos:].strip()
-                            parse_and_add_to_cell(remaining)
-                        break
-                    
-                if cells:
-                    if len(cells) == 1: return cells[0]
-                    return cells
-                return None
-
-            result = parse_tabular(flattened_content, cell_parser_fn)
-            if result:
-                token["content"] = result
-
-        return token
-    
     def _check_for_new_definitions(self, content: str) -> None:
         """Check for new definitions in the content and process them"""
         if self.new_definition_handler.can_handle(content):
@@ -272,8 +193,7 @@ class LatexParser:
         
             return end_pos
         return 0
-            
- 
+
     def parse(self, content: str, line_break_delimiter: str = "\n") -> List[Dict[str, str]]:
         tokens = []
         current_pos = 0
@@ -384,11 +304,6 @@ class LatexParser:
                         tokens.append(env_token)
                         current_pos = end_pos + len(f"\\end{{{env_name}}}")
                         continue
-                elif matched_type == 'tabular':
-                    token = self._handle_tabular(match)
-                    if token:
-                        tokens.append(token)
-                    # print(text[current_pos+match.end():])
                 elif matched_type == 'comment':
                     pass
                 elif matched_type == 'item':
@@ -428,18 +343,30 @@ if __name__ == "__main__":
 
     # text = RESULTS_SECTION_TEXT
 
-    text = r"""
-    \begin{ee}
-        1+1=2
-        \begin{ee}
-            2+2=4
-        \end{ee}
-    \end{ee}
+    text =  r"""
+        \begin{table}[htbp]
+        \centering
+        \begin{tabular}{|c|c|c|c|}
+            \hline
+            \multicolumn{2}{|c|}{\multirow{2}{*}{Region}} & \multicolumn{2}{c|}{Sales} \\
+            \cline{3-4}
+            \multicolumn{2}{|c|}{} & 2022 & 2023 \\
+            \hline
+            \multirow{2}{*}{North} & Urban & $x^2 + y^2 = z^2$ & 180 \\
+            & Rural & 100 & 120 \\
+            \hline
+            \multirow{2}{*}{South} & Urban & 200 & \begin{align} \label{eq:1} E = mc^2 \\ $F = ma$ \end{align} \\
+            & & 130 & 160 \\
+            \hline
+        \end{tabular}
+        \caption{Regional Sales Distribution}
+        \label{tab:sales}
+        \end{table}
     """
 
     # Example usage
     parser = LatexParser()
-    parsed_tokens = parser.parse(text, r'\\')
+    parsed_tokens = parser.parse(text)
 
     print(parsed_tokens)
 

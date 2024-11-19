@@ -10,9 +10,6 @@ from collections import OrderedDict
 RAW_PATTERNS = OrderedDict([
     ('label', r'\\label\s*{'),
 
-    # Env patterns that we want to handle (non-equation, non-generic)
-    ('tabular', r'\\begin\{tabular\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{tabular\}'),
-
     # Comments
     ('comment', r'%([^\n]*)'),
 
@@ -43,7 +40,7 @@ RAW_PATTERNS = OrderedDict([
 
 # needed for re.DOTALL flag (also written as re.S) makes the dot (.) special character match any character including newlines
 MULTILINE_PATTERNS = {
-    'tabular', 'environment', 'item',
+    'environment', 'item',
     # 'itemize', 'enumerate', 'description', 
 }
 
