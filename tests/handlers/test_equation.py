@@ -1,5 +1,5 @@
 import pytest
-from src.handlers.equation_handler import EquationHandler
+from src.handlers.equation import EquationHandler
 
 @pytest.fixture
 def handler():

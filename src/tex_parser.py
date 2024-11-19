@@ -121,18 +121,15 @@ class LatexParser:
             }
         else:
             # Extract title if present (text within square brackets after environment name)
-            title_match = re.match(r'^\[(.*?)\]', inner_content)
-            title = title_match.group(1).strip() if title_match else None
-            
-            # Remove title from inner content before parsing
-            if title_match:
-                inner_content = inner_content[title_match.end():].strip()
+            title, end_pos = extract_nested_content(inner_content, '[', ']')
+            if title: 
+                inner_content = inner_content[end_pos:]
+                token["title"] = title
             
             # Extract optional arguments
-            args_match = re.match(r'^\{(.*?)\}', inner_content)
-            if args_match:
-                # args = args_match.group(1).strip()
-                inner_content = inner_content[args_match.end():].strip()
+            args, end_pos = extract_nested_content(inner_content, '{', '}')
+            if args:
+                inner_content = inner_content[end_pos:].strip()
 
             # DEPRECATED: Label handling is now done independently through _handle_label()
             # # Extract any label if present
@@ -150,8 +147,6 @@ class LatexParser:
                 token["type"] = env_type
                 if env_type not in ["list", "table", "figure"]:
                     token["name"] = env_name
-            if title:
-                token["title"] = title
         
         # Save previous environment and set current
         prev_env = self.current_env

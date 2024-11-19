@@ -1,6 +1,6 @@
 import re
 from typing import Callable, Dict, Optional, Tuple
-from src.handlers.base_handler import TokenHandler
+from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content
 
 # Compile patterns for definition commands

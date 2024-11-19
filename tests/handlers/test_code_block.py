@@ -1,5 +1,5 @@
 import pytest
-from src.handlers.code_block_handler import CodeBlockHandler
+from src.handlers.code_block import CodeBlockHandler
 
 @pytest.fixture
 def handler():

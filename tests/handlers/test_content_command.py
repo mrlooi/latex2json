@@ -1,5 +1,5 @@
 import pytest
-from src.handlers.content_command_handler import ContentCommandHandler
+from src.handlers.content_command import ContentCommandHandler
 
 @pytest.fixture
 def handler():

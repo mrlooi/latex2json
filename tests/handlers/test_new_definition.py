@@ -1,5 +1,5 @@
 import pytest
-from src.handlers.new_definition_handler import NewDefinitionHandler
+from src.handlers.new_definition import NewDefinitionHandler
 
 @pytest.fixture
 def handler():
