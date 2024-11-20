@@ -1,9 +1,9 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.environments import EnvironmentProcessor
-from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler, TabularHandler, FormattingHandler
-from src.patterns import ENV_TYPES, PATTERNS
+from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler, TabularHandler, FormattingHandler, ItemHandler, EnvironmentHandler
+from src.handlers.environment import BaseEnvironmentHandler
+from src.patterns import PATTERNS
 from src.commands import CommandProcessor
 from src.tex_utils import extract_nested_content
 
@@ -20,7 +20,6 @@ class LatexParser:
     def __init__(self):
         # Regex patterns for different LaTeX elements
         self.command_processor = CommandProcessor()
-        self.environment_processor = EnvironmentProcessor()
 
         self.labels = {}
         self.current_env = None  # Current environment token (used for associating nested labels)
@@ -34,7 +33,9 @@ class LatexParser:
             ContentCommandHandler(self._expand_command),
             # for tabular, on the first pass we process content and maintain the '\\' delimiter to maintain row integrity
             TabularHandler(process_content_fn=lambda x: self.parse(x, r'\\'), cell_parser_fn=self.parse),
-            FormattingHandler()
+            FormattingHandler(),
+            ItemHandler(),
+            EnvironmentHandler()
         ]
         self.new_definition_handler = NewDefinitionHandler()
 
@@ -43,41 +44,10 @@ class LatexParser:
     def commands(self):
         return self.command_processor.commands
     
-    @property
-    def environments(self):
-        return self.environment_processor.environments
-
     def _expand_command(self, content: str) -> str:
         """Expand LaTeX commands in the content"""
         out, match_count = self.command_processor.expand_commands(content)
         return out
-
-    def _find_matching_env_block(self, text: str, env_name: str, start_pos: int = 0) -> int:
-        """Find the matching end{env_name} for a begin{env_name}, handling nested environments"""
-        # Cache the compiled pattern for this environment
-        if env_name not in self._env_pattern_cache:
-            self._env_pattern_cache[env_name] = re.compile(rf'\\(begin|end)\{{{env_name}}}')
-        
-        pattern = self._env_pattern_cache[env_name]
-        nesting_level = 1
-        current_pos = start_pos
-        
-        while nesting_level > 0 and current_pos < len(text):
-            match = re.search(pattern, text[current_pos:])
-            if not match:
-                return -1  # No matching end found
-            
-            current_pos += match.start() + 1
-            if match.group(1) == 'begin':
-                nesting_level += 1
-            else:  # 'end'
-                nesting_level -= 1
-                
-            if nesting_level == 0:
-                return current_pos - 1
-            current_pos += len(match.group(0)) - 1
-            
-        return -1 if nesting_level > 0 else current_pos
     
     def _handle_label(self, content: str, tokens: List[Dict[str, str]]) -> None:
         """Handle labels by associating them with the current environment or adding them as a separate token"""
@@ -112,53 +82,6 @@ class LatexParser:
                 return cell[0]['content']
             return cell[0]
         return cell
-    
-    def _handle_environment(self, env_name: str, inner_content: str) -> None:
-        token = {}
-
-        if self.environment_processor.has_environment(env_name):
-            # check if expanded and changed
-            inner_content = self.environment_processor.expand_environments(env_name, inner_content)
-            token = {
-                "type": "environment",
-                "name": env_name
-            }
-        else:
-            # Extract title if present (text within square brackets after environment name)
-            title, end_pos = extract_nested_content(inner_content, '[', ']')
-            if title: 
-                inner_content = inner_content[end_pos:]
-                token["title"] = title
-            
-            # Extract optional arguments
-            args, end_pos = extract_nested_content(inner_content, '{', '}')
-            if args:
-                inner_content = inner_content[end_pos:].strip()
-
-            # DEPRECATED: Label handling is now done independently through _handle_label()
-            # # Extract any label if present
-            # label_match = re.search(LABEL_PATTERN, inner_content)
-            # label = label_match.group(1) if label_match else None
-            
-            # # Remove label from inner content before parsing
-            # if label_match:
-            #     inner_content = inner_content.replace(label_match.group(0), '').strip()
-            
-            if env_name == "item":
-                token["type"] = "item"
-            else:
-                env_type = ENV_TYPES.get(env_name, "environment")
-                token["type"] = env_type
-                if env_type not in ["list", "table", "figure"]:
-                    token["name"] = env_name
-        
-        # Save previous environment and set current
-        prev_env = self.current_env
-        self.current_env = token
-        token["content"] = self.parse(inner_content)
-        self.current_env = prev_env
-
-        return token
 
     def _handle_unknown_command(self, match) -> Dict[str, str]:
         """Convert unknown LaTeX command into a text token with original syntax"""
@@ -186,9 +109,6 @@ class LatexParser:
                 if token['type'] == 'newcommand':
                     cmd_name = token['name']
                     self.command_processor.process_command_definition(cmd_name, token["content"], token["num_args"], token["defaults"])
-                elif token['type'] == 'newenvironment':
-                    env_name = token['name']
-                    self.environment_processor.process_environment_definition(env_name, token["begin_def"], token["end_def"], len(token["args"]), token["optional_args"])
                 elif token['type'] == 'newtheorem':
                     pass
         
@@ -263,6 +183,14 @@ class LatexParser:
                     if token:
                         if token['type'] == 'footnote':
                             token["content"] = self._parse_cell(token["content"])
+                        elif token['type'] == 'section':
+                            self.current_env = token
+                        elif isinstance(handler, BaseEnvironmentHandler):
+                            prev_env = self.current_env
+                            self.current_env = token
+                            token["content"] = self.parse(token["content"])
+                            self.current_env = prev_env
+
                         tokens.append(token)
                     current_pos += end_pos
                     matched = True
@@ -286,31 +214,6 @@ class LatexParser:
                         self._handle_label(label, tokens)
                     current_pos = start_pos + end_pos
                     continue
-                # Handle environments
-                elif matched_type == 'environment':
-                    env_name = match.group(1).strip()
-                    # Find the correct ending position for this environment
-                    start_content = current_pos + match.start(2)
-                    end_pos = self._find_matching_env_block(content, env_name, start_content)
-
-                    if end_pos == -1:
-                        # No matching end found, treat as plain text
-                        add_text_token(match.group(0))
-                    else:
-                        # Extract content between begin and end
-                        inner_content = content[start_content:end_pos].strip()
-                        
-                        env_token = self._handle_environment(env_name, inner_content)
-                        
-                        tokens.append(env_token)
-                        current_pos = end_pos + len(f"\\end{{{env_name}}}")
-                        continue
-                elif matched_type == 'item':
-                    item = match.group(2).strip()
-                    if item: 
-                        # treat item as a mini environment
-                        item = self._handle_environment('item', item)
-                        tokens.append(item)
                 elif matched_type == 'newline' or matched_type == 'break_spacing':
                     add_text_token(line_break_delimiter)
                 else:
@@ -340,6 +243,8 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text =  r"""
+
+    \section{SECTION 2}
         \begin{table}[htbp]
         \centering
         \begin{tabular}{|c|c|c|c|}
@@ -356,8 +261,10 @@ if __name__ == "__main__":
             \hline
         \end{tabular}
         \caption{Regional Sales Distribution}
-        \label{tab:sales}
+            \label{tab:sales}
         \end{table}
+    
+        \label{sec:2}
     """
 
     # Example usage

@@ -40,7 +40,7 @@ def test_tabular_with_multicolumn(handler):
         a & b & c \\
         \hline
     \end{tabular}
-    """
+    """.strip()
     token, end_pos = handler.handle(text.strip())
     
     assert token is not None

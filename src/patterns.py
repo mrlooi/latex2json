@@ -10,21 +10,14 @@ from collections import OrderedDict
 RAW_PATTERNS = OrderedDict([
     ('label', r'\\label\s*{'),
 
-    # Itemize, enumerate, description
-    ('item', r'\\item(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item|$)'),
-
     # Line breaks
     ('newline', r'\\(?:newline|linebreak)\b'),
     # Line break with optional spacing specification
     ('break_spacing', r'\\\\(?:\s*\[([^]]*)\])?'),  # Added \s* to handle optional whitespace
-
-    # Generic env pattern
-    ('environment', r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}')
 ])
 
 # needed for re.DOTALL flag (also written as re.S) makes the dot (.) special character match any character including newlines
 MULTILINE_PATTERNS = {
-    'environment', 'item',
     # 'itemize', 'enumerate', 'description', 
 }
 
@@ -36,19 +29,6 @@ PATTERNS = OrderedDict(
 
 LABEL_PATTERN = PATTERNS['label']
 NEWLINE_PATTERN = PATTERNS['newline']
-
-LIST_ENVIRONMENTS = ['itemize', 'enumerate', 'description']
-
-# Map environment names to their types
-ENV_TYPES = {
-    "table": "table",
-    "subtable": "table",
-    "subsubtable": "table",
-    "figure": "figure",
-    "subfigure": "figure",
-    "subfloat": "figure",  # another common figure subdivision
-    **{env: "list" for env in LIST_ENVIRONMENTS}
-}
 
 SECTION_LEVELS = {
     'part': 0,
