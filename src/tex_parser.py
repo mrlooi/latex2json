@@ -16,6 +16,16 @@ TRAILING_BACKSLASH = re.compile(r'\\+$')
 UNKNOWN_COMMAND_PATTERN = re.compile(r'([ \t\n]*\\[a-zA-Z]+(?:\{(?:[^{}]|{[^{}]*})*\})*[ \t\n]*)')
 
 
+def add_text_token(text: str, tokens: List[Dict]):
+    if text:
+        if tokens and tokens[-1] and tokens[-1]['type'] == 'text':
+            tokens[-1]['content'] += text
+        else:
+            tokens.append({
+                "type": "text",
+                "content": text
+            })
+
 class LatexParser:
     def __init__(self):
         # Regex patterns for different LaTeX elements
@@ -23,9 +33,6 @@ class LatexParser:
 
         self.labels = {}
         self.current_env = None  # Current environment token (used for associating nested labels)
-        
-        # Precompile frequently used patterns
-        self._env_pattern_cache = {}  # Cache for environment patterns
 
         self.handlers: List[TokenHandler] = [
             EquationHandler(self._expand_command),
@@ -35,7 +42,8 @@ class LatexParser:
             TabularHandler(process_content_fn=lambda x: self.parse(x, r'\\'), cell_parser_fn=self.parse),
             FormattingHandler(),
             ItemHandler(),
-            EnvironmentHandler()
+            # make sure to add EnvironmentHandler after equation/tabular or other env related formats, since it will greedily parse any begin/end block. Add as last to be safe
+            EnvironmentHandler() 
         ]
         self.new_definition_handler = NewDefinitionHandler()
 
@@ -115,19 +123,63 @@ class LatexParser:
             return end_pos
         return 0
 
+    def _check_handlers(self, content: str, tokens: List[Dict]) -> Tuple[bool, int]:
+        """Process content through available handlers.
+        
+        Returns:
+            Tuple[bool, int]: (whether content was matched, new position)
+        """
+        for handler in self.handlers:
+            if handler.can_handle(content):
+                token, end_pos = handler.handle(content)
+                if token:
+                    if token['type'] == 'footnote':
+                        token["content"] = self._parse_cell(token["content"])
+                    elif token['type'] == 'section':
+                        self.current_env = token
+                    elif isinstance(handler, BaseEnvironmentHandler):
+                        prev_env = self.current_env
+                        self.current_env = token
+                        token["content"] = self.parse(token["content"])
+                        self.current_env = prev_env
+
+                    tokens.append(token)
+                return True, end_pos
+        return False, 0
+
+    def _check_remaining_patterns(self, content: str, tokens: List[Dict], line_break_delimiter: str = '\n') -> Tuple[bool, int]:
+        # Try each pattern
+        for pattern_type, pattern in PATTERNS.items():
+            match = re.match(pattern, content)
+            if match:
+                matched_type = pattern_type
+                break
+        
+        if match:
+            if matched_type == 'label':
+                start_pos = match.end() - 1 # -1 to account for the label command '{'
+                label, end_pos = extract_nested_content(content[start_pos:])
+                if label:
+                    self._handle_label(label, tokens)
+                return True, start_pos + end_pos
+            elif matched_type == 'newline' or matched_type == 'break_spacing':
+                add_text_token(line_break_delimiter, tokens)
+            else:
+                # For all other token types, expand any commands in their content
+                x = match.group(1) if match.groups() else match.group(0)
+                x = self._expand_command(x)
+                tokens.append({ 
+                    "type": matched_type,
+                    "content": x
+                })
+            
+            return True, match.end()
+
+        return False, 0
+
     def parse(self, content: str, line_break_delimiter: str = "\n") -> List[Dict[str, str]]:
         tokens = []
         current_pos = 0
-
-        def add_text_token(text: str):
-            if text:
-                if tokens and tokens[-1] and tokens[-1]['type'] == 'text':
-                    tokens[-1]['content'] += text
-                else:
-                    tokens.append({
-                        "type": "text",
-                        "content": text
-                    })
         
         while current_pos < len(content):
             # Skip whitespace
@@ -158,14 +210,14 @@ class LatexParser:
                         if unknown_cmd:
                             tokens.append(self._handle_unknown_command(unknown_cmd))
                         else:
-                            add_text_token(remaining_text)
+                            add_text_token(remaining_text, tokens)
                 break
 
             # Add text before the next command if it exists
             if next_command.start() > 0:
                 plain_text = content[current_pos:current_pos + next_command.start()].strip()
                 if plain_text:
-                    add_text_token(plain_text)
+                    add_text_token(plain_text, tokens)
                 current_pos += next_command.start()
                 continue
             
@@ -176,57 +228,15 @@ class LatexParser:
                 continue
             
             # try each handler
-            matched = False
-            for handler in self.handlers:
-                if handler.can_handle(content[current_pos:]):
-                    token, end_pos = handler.handle(content[current_pos:])
-                    if token:
-                        if token['type'] == 'footnote':
-                            token["content"] = self._parse_cell(token["content"])
-                        elif token['type'] == 'section':
-                            self.current_env = token
-                        elif isinstance(handler, BaseEnvironmentHandler):
-                            prev_env = self.current_env
-                            self.current_env = token
-                            token["content"] = self.parse(token["content"])
-                            self.current_env = prev_env
-
-                        tokens.append(token)
-                    current_pos += end_pos
-                    matched = True
-                    break
-            
+            matched, end_pos = self._check_handlers(content[current_pos:], tokens)
+            current_pos += end_pos
             if matched:
                 continue
             
-            # Try each pattern
-            for pattern_type, pattern in PATTERNS.items():
-                match = re.match(pattern, content[current_pos:])
-                if match:
-                    matched_type = pattern_type
-                    break
-            
-            if match:
-                if matched_type == 'label':
-                    start_pos = current_pos + match.end() - 1 # -1 to account for the label command '{'
-                    label, end_pos = extract_nested_content(content[start_pos:])
-                    if label:
-                        self._handle_label(label, tokens)
-                    current_pos = start_pos + end_pos
-                    continue
-                elif matched_type == 'newline' or matched_type == 'break_spacing':
-                    add_text_token(line_break_delimiter)
-                else:
-                    # For all other token types, expand any commands in their content
-                    x = match.group(1) if match.groups() else match.group(0)
-                    x = self._expand_command(x)
-                    tokens.append({ 
-                        "type": matched_type,
-                        "content": x
-                    })
-                
-                current_pos += match.end()
-            else:
+            matched, end_pos = self._check_remaining_patterns(content[current_pos:], tokens, line_break_delimiter)
+            current_pos += end_pos
+
+            if not matched:
                 unknown_cmd = UNKNOWN_COMMAND_PATTERN.match(content[current_pos:])
                 if unknown_cmd:
                     tokens.append(self._handle_unknown_command(unknown_cmd))
