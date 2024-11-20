@@ -1,171 +1,108 @@
-# import pytest
-# from src.handlers.tabular import TabularHandler
+import pytest
+from src.handlers.formatting import FormattingHandler
+from src.handlers.tabular import TabularHandler
 
-# @pytest.fixture
-# def handler():
-#     return TabularHandler()
+@pytest.fixture
+def handler():
+    format_handler = FormattingHandler()
+    def parse_cell(content):
+        content = content.strip()
+        current_pos = 0
+        if format_handler.can_handle(content[current_pos:]):
+            token, end_pos = format_handler.handle(content[current_pos:])
+            current_pos += end_pos
+        return content[current_pos:].strip()
+    
+    return TabularHandler(cell_parser_fn=parse_cell)
 
-# def test_basic_tabular(handler):
-#     text = r"""
-#     \begin{tabular}{c|c}
-#         a & b \\
-#         c & d
-#     \end{tabular}
-#     """.strip()
-#     token, end_pos = handler.handle(text.strip())
+def test_basic_tabular(handler):
+    text = r"""
+    \begin{tabular}{c|c}
+        a & b \\
+        c & d
+    \end{tabular}
+    """.strip()
+    token, end_pos = handler.handle(text.strip())
     
-#     assert token is not None
-#     assert token["type"] == "tabular"
-#     assert token["column_spec"] == "c|c"
-#     assert len(token["content"]) == 2  # Two rows
-#     assert token["content"][0] == ["a", "b"]  # First row
-#     assert token["content"][1] == ["c", "d"]  # Second row
+    assert token is not None
+    assert token["type"] == "tabular"
+    assert token["column_spec"] == "c|c"
+    assert len(token["content"]) == 2  # Two rows
+    assert token["content"][0] == ["a", "b"]  # First row
+    assert token["content"][1] == ["c", "d"]  # Second row
 
-# def test_tabular_with_multicolumn(handler):
-#     text = r"""
-#     \begin{tabular}{|c|c|c|}
-#         \hline
-#         \multicolumn{2}{|c|}{Header} & Value \\
-#         \hline
-#         a & b & c \\
-#         \hline
-#     \end{tabular}
-#     """
-#     token, end_pos = handler.handle(text.strip())
+def test_tabular_with_multicolumn(handler):
+    text = r"""
+    \begin{tabular}{|c|c|c|}
+        \hline
+        \multicolumn{2}{|c|}{Header} & Value \\
+        \hline
+        a & b & c \\
+        \hline
+    \end{tabular}
+    """
+    token, end_pos = handler.handle(text.strip())
     
-#     assert token is not None
-#     assert token["type"] == "tabular"
-#     assert token["column_spec"] == "|c|c|c|"
-#     assert len(token["content"]) == 2
+    assert token is not None
+    assert token["type"] == "tabular"
+    assert token["column_spec"] == "|c|c|c|"
+    assert len(token["content"]) == 2
     
-#     # First row with multicolumn
-#     assert len(token["content"][0]) == 2
-#     assert token["content"][0][0] == "Header"
-#     assert token["content"][0][0]["colspan"] == 2
-#     assert token["content"][0][1] == "Value"
-    
-#     # Second row
-#     assert token["content"][1] == ["a", "b", "c"]
+    # First row with multicolumn
+    assert len(token["content"][0]) == 2
 
-# def test_tabular_with_equations(handler):
-#     text = r"""
-#     \begin{tabular}{cc}
-#         $x^2$ & $y^2$ \\
-#         $\alpha$ & $\beta$
-#     \end{tabular}
-#     """.strip()
-#     token, end_pos = handler.handle(text.strip())
+    first_row = token["content"][0]
+    assert first_row[0]["content"] == "Header"
+    assert first_row[0]["colspan"] == 2
+    assert first_row[1] == "Value"
     
-#     assert token is not None
-#     assert token["type"] == "tabular"
-#     assert token["column_spec"] == "cc"
-#     assert len(token["content"]) == 2
-    
-#     # Check equations in cells
-#     for row in token["content"]:
-#         for cell in row:
-#             assert cell["type"] == "equation"
-#             assert cell["display"] == "inline"
+    # Second row
+    assert token["content"][1] == ["a", "b", "c"]
 
-# def test_tabular_with_nested_content(handler):
-#     text = r"""
-#     \begin{tabular}{|l|c|}
-#         \hline
-#         Text & \begin{equation} E = mc^2 \end{equation} \\
-#         \hline
-#         More text & \begin{align} F = ma \\ p = mv \end{align} \\
-#         \hline
-#     \end{tabular}
-#     """.strip()
-#     token, end_pos = handler.handle(text.strip())
+def test_tabular_with_equations(handler):
+    text = r"""
+    \begin{tabular}{{cc}}
+        $x^2$ & $y^2$ \\
+        $\alpha$ & $\beta$
+    \end{tabular}
+    """.strip()
+    token, end_pos = handler.handle(text.strip())
     
-#     assert token is not None
-#     assert token["type"] == "tabular"
-#     assert token["column_spec"] == "|l|c|"
-#     assert len(token["content"]) == 2
+    assert token is not None
+    assert token["type"] == "tabular"
+    assert token["column_spec"] == "{cc}"
+    assert len(token["content"]) == 2
     
-#     # Check first row
-#     assert token["content"][0][0] == "Text"
-#     assert token["content"][0][1]["type"] == "equation"
-#     assert token["content"][0][1]["display"] == "block"
-#     assert "E = mc^2" in token["content"][0][1]["content"]
-    
-#     # Check second row
-#     assert token["content"][1][0] == "More text"
-#     assert token["content"][1][1]["type"] == "equation"
-#     assert token["content"][1][1]["display"] == "block"
-#     assert "F = ma" in token["content"][1][1]["content"]
-#     assert "p = mv" in token["content"][1][1]["content"]
+    # Check equations in cells
+    rows = token["content"]
+    assert rows[0][0] == "$x^2$"
+    assert rows[0][1] == "$y^2$"
+    assert rows[1][0] == r"$\alpha$"
+    assert rows[1][1] == r"$\beta$"
 
-# def test_tabular_with_custom_cell_parser(handler):
-#     def custom_cell_parser(content):
-#         return {"type": "custom", "content": content}
-    
-#     handler = TabularHandler(cell_parser_fn=custom_cell_parser)
-#     text = r"""
-#     \begin{tabular}{cc}
-#         Cell1 & Cell2 \\
-#         Cell3 & Cell4
-#     \end{tabular}
-#     """.strip()
-#     token, end_pos = handler.handle(text.strip())
-    
-#     assert token is not None
-#     assert token["type"] == "tabular"
-    
-#     # Check custom parsing of cells
-#     for row in token["content"]:
-#         for cell in row:
-#             assert cell["type"] == "custom"
-#             assert "content" in cell
 
-# def test_invalid_tabular(handler):
-#     text = r"""
-#     \begin{not_tabular}{cc}
-#         a & b \\
-#         c & d
-#     \end{not_tabular}
-#     """.strip()
-#     token, end_pos = handler.handle(text.strip())
-#     assert token is None
-#     assert end_pos == 0
+def test_tabular_with_empty_cells(handler):
+    text = r"""
+    \begin{tabular}{ccc}
+        & & \\
+        a & & c \\
+        & b & \\
+        & & \\
+    \end{tabular}
+    """.strip()
+    token, end_pos = handler.handle(text.strip())
+    assert token is not None
+    assert token["type"] == "tabular"
 
-# def test_tabular_with_process_content(handler):
-#     def process_content(content):
-#         return content.replace("REPLACE", "processed")
-    
-#     handler = TabularHandler(process_content_fn=process_content)
-#     text = r"""
-#     \begin{tabular}{cc}
-#         REPLACE & normal \\
-#         also & REPLACE
-#     \end{tabular}
-#     """.strip()
-#     token, end_pos = handler.handle(text.strip())
-    
-#     assert token is not None
-#     assert token["type"] == "tabular"
-#     assert "processed" in token["content"][0][0]
-#     assert "processed" in token["content"][1][1]
+    # stripped out start/end empty rows
+    assert len(token["content"]) == 2
 
-# def test_tabular_with_empty_cells(handler):
-#     text = r"""
-#     \begin{tabular}{ccc}
-#         a & & c \\
-#         & b & 
-#     \end{tabular}
-#     """.strip()
-#     token, end_pos = handler.handle(text.strip())
-    
-#     assert token is not None
-#     assert token["type"] == "tabular"
-#     assert len(token["content"]) == 2
-#     assert token["content"][0] == ["a", "", "c"]
-#     assert token["content"][1] == ["", "b", ""]
+    assert token["content"][0] == ["a", "", "c"]
+    assert token["content"][1] == ["", "b", ""]
 
-# def test_can_handle_method(handler):
-#     valid_text = r"\begin{tabular}{cc} a & b \\ \end{tabular}"
-#     invalid_text = r"\begin{other}{cc} a & b \\ \end{other}"
+def test_can_handle_method(handler):
+    valid_text = r"\begin{tabular}{cc} a & b \\ \end{tabular}"
+    invalid_text = r"\begin{other}{cc} a & b \\ \end{other}"
     
-#     assert handler.can_handle(valid_text) is True
-#     assert handler.can_handle(invalid_text) is False
+    assert handler.can_handle(valid_text) is True
+    assert not handler.can_handle(invalid_text)

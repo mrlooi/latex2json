@@ -10,25 +10,9 @@ from collections import OrderedDict
 RAW_PATTERNS = OrderedDict([
     ('label', r'\\label\s*{'),
 
-    # Comments
-    ('comment', r'%([^\n]*)'),
-
     # Itemize, enumerate, description
     ('item', r'\\item(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item|$)'),
 
-    # Formatting commands
-    ('formatting', r'\\(usepackage|centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b'),
-    ('separators', r'\\(?:'
-        r'hline|'  # no args
-        r'cline\s*{([^}]+)}|'  # {n-m}
-        r'(?:midrule|toprule|bottomrule)(?:\[\d*[\w-]*\])?|'  # optional [trim]
-        r'cmidrule(?:\[([^\]]*)\])?\s*{([^}]+)}|'  # optional [trim] and {n-m}
-        r'hdashline(?:\[[\d,\s]*\])?|'  # optional [length,space]
-        r'cdashline\s*{([^}]+)}|'  # {n-m}
-        r'specialrule\s*{([^}]*)}\s*{([^}]*)}\s*{([^}]*)}|'  # {height}{above}{below}
-        r'addlinespace(?:\[([^\]]*)\])?|'  # optional [length]
-        r'morecmidrules'  # no args
-        r')'),
     # Line breaks
     ('newline', r'\\(?:newline|linebreak)\b'),
     # Line break with optional spacing specification

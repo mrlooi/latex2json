@@ -624,11 +624,18 @@ def test_complex_table(parser):
     assert equation_cell["content"] == "x^2 + y^2 = z^2"
     assert equation_cell["display"] == "inline"
     
+    assert cells[3] == [None, "Rural", "100", "120"]
+
+    assert cells[4][0]['rowspan'] == 2
+    assert cells[4][0]['content'] == "South"
+
     # Check align environment cell
     align_cell = cells[4][3]
     assert align_cell["type"] == "equation"
     assert align_cell["display"] == "block"
     assert align_cell["labels"] == ["eq:1"]
+
+    assert cells[5] == [None, None, "130", "160"]
     
     # Check caption
     caption = table["content"][1]

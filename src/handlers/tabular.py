@@ -68,6 +68,15 @@ def parse_tabular(latex_table: str, cell_parser_fn = None) -> List[List[Dict]]:
         if parsed_row:
             parsed_rows.append(parsed_row)
     
+    # strip out start/end empty rows (incl empty cells)
+    if parsed_rows:
+        first_row_empty = not any(parsed_rows[0])
+        if first_row_empty:
+            parsed_rows = parsed_rows[1:]
+        last_row_empty = not any(parsed_rows[-1])
+        if last_row_empty:
+            parsed_rows = parsed_rows[:-1]
+    
     return parsed_rows
 
 def split_cells(row: str) -> List[str]:
@@ -90,6 +99,7 @@ def split_cells(row: str) -> List[str]:
     
     # Split by unescaped & characters
     return [cell.strip() for cell in CELL_SPLIT_PATTERN.split(row)]
+
 
 class TabularHandler(TokenHandler):
     def __init__(self, process_content_fn: Optional[Callable[[str], str]] = None, cell_parser_fn: Optional[Callable[[str], List[Dict]]] = None):
@@ -206,7 +216,19 @@ class TabularHandler(TokenHandler):
         return token, match.end()
     
 if __name__ == "__main__":
-    handler = TabularHandler()
+    from src.handlers.formatting import FormattingHandler
+
+    format_handler = FormattingHandler()
+    def parse_cell(content):
+        content = content.strip()
+        current_pos = 0
+        if format_handler.can_handle(content[current_pos:]):
+            token, end_pos = format_handler.handle(content[current_pos:])
+            current_pos += end_pos
+        return content[current_pos:].strip()
+    
+    handler = TabularHandler(cell_parser_fn=parse_cell)
+    
     text = r"""
      \begin{tabular}{|c|c|c|}
         \hline

@@ -2,7 +2,7 @@ import re
 from typing import List, Dict, Tuple, Union
 
 from src.environments import EnvironmentProcessor
-from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler, TabularHandler
+from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler, TabularHandler, FormattingHandler
 from src.patterns import ENV_TYPES, PATTERNS
 from src.commands import CommandProcessor
 from src.tex_utils import extract_nested_content
@@ -33,7 +33,8 @@ class LatexParser:
             CodeBlockHandler(),
             ContentCommandHandler(self._expand_command),
             # for tabular, on the first pass we process content and maintain the '\\' delimiter to maintain row integrity
-            TabularHandler(process_content_fn=lambda x: self.parse(x, r'\\'), cell_parser_fn=self.parse)
+            TabularHandler(process_content_fn=lambda x: self.parse(x, r'\\'), cell_parser_fn=self.parse),
+            FormattingHandler()
         ]
         self.new_definition_handler = NewDefinitionHandler()
 
@@ -304,17 +305,12 @@ class LatexParser:
                         tokens.append(env_token)
                         current_pos = end_pos + len(f"\\end{{{env_name}}}")
                         continue
-                elif matched_type == 'comment':
-                    pass
                 elif matched_type == 'item':
                     item = match.group(2).strip()
                     if item: 
                         # treat item as a mini environment
                         item = self._handle_environment('item', item)
                         tokens.append(item)
-                elif matched_type == 'formatting' or matched_type == 'separators':
-                    # ignore formatting commands
-                    pass
                 elif matched_type == 'newline' or matched_type == 'break_spacing':
                     add_text_token(line_break_delimiter)
                 else:
