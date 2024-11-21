@@ -201,6 +201,10 @@ class EnvironmentHandler(BaseEnvironmentHandler):
     @property
     def environments(self):
         return self.environment_processor.environments
+    
+    def clear(self):
+        super().clear()
+        self.environment_processor.clear()
 
     def clear_environments(self):
         self.environment_processor.environments = {}

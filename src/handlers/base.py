@@ -18,3 +18,6 @@ class TokenHandler(ABC):
     def handle(self, content: str) -> Tuple[Optional[Dict], int]:
         """Process the content and return (token, new_position)"""
         raise NotImplementedError
+    
+    def clear(self):
+        self.process_content_fn = None

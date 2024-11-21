@@ -28,12 +28,13 @@ def add_text_token(text: str, tokens: List[Dict]):
 
 class LatexParser:
     def __init__(self):
-        # Regex patterns for different LaTeX elements
-        self.command_processor = CommandProcessor()
-
         self.labels = {}
         self.current_env = None  # Current environment token (used for associating nested labels)
 
+        # Regex patterns for different LaTeX elements
+        self.command_processor = CommandProcessor()
+
+        # handlers
         self.handlers: List[TokenHandler] = [
             EquationHandler(self._expand_command),
             CodeBlockHandler(),
@@ -51,6 +52,15 @@ class LatexParser:
     @property
     def commands(self):
         return self.command_processor.commands
+    
+    def clear(self):
+        self.labels = {}
+        self.current_env = None
+        self.command_processor.clear()
+        # handlers
+        for handler in self.handlers:
+            handler.clear()
+        self.new_definition_handler.clear()
     
     def _expand_command(self, content: str) -> str:
         """Expand LaTeX commands in the content"""

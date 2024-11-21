@@ -9,6 +9,9 @@ class CommandProcessor:
         self.commands: Dict[str, Dict[str, any]] = {}
         
         # Add built-in newline normalization command using pre-compiled pattern
+        self._init_newline_command()
+
+    def _init_newline_command(self):
         newline_command = {
             'definition': '\n',
             'args': {'num_args': 0, 'defaults': [], 'required_args': 0},
@@ -16,6 +19,10 @@ class CommandProcessor:
             'handler': lambda m: '\n'
         }
         self.commands['newline'] = newline_command
+
+    def clear(self):
+        self.commands = {}
+        self._init_newline_command()
 
     def has_command(self, command_name: str) -> bool:
         return command_name in self.commands
