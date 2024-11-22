@@ -1,16 +1,16 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler, TabularHandler, FormattingHandler, ItemHandler, EnvironmentHandler
+from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler, TabularHandler, FormattingHandler, ItemHandler, EnvironmentHandler, LegacyFormattingHandler
 from src.handlers.environment import BaseEnvironmentHandler
 from src.patterns import PATTERNS
 from src.commands import CommandProcessor
 from src.tex_utils import extract_nested_content
 
 # Add these compiled patterns at module level
-# match $ or % only if not preceded by \
-# Update DELIM_PATTERN to also match double backslashes
-DELIM_PATTERN = re.compile(r'(?<!\\)(?:\\\\|\$|%|\\(?![$%&_#{}^~\\]))')
+# match $ or % or { or } only if not preceded by \
+# Update DELIM_PATTERN to also match double backslashes and curly braces
+DELIM_PATTERN = re.compile(r'(?<!\\)(?:\\\\|\$|%|(?:^|[ \t])\{|\\\^|\\(?![$%&_#{}^~\\]))')
 ESCAPED_AMPERSAND_SPLIT = re.compile(r'(?<!\\)&')
 TRAILING_BACKSLASH = re.compile(r'\\+$')
 UNKNOWN_COMMAND_PATTERN = re.compile(r'([ \t\n]*\\[a-zA-Z]+(?:\{(?:[^{}]|{[^{}]*})*\})*[ \t\n]*)')
@@ -34,15 +34,18 @@ class LatexParser:
         # Regex patterns for different LaTeX elements
         self.command_processor = CommandProcessor()
 
+        self.legacy_formatting_handler = LegacyFormattingHandler()
+
         # handlers
         self.handlers: List[TokenHandler] = [
             EquationHandler(self._expand_command),
             CodeBlockHandler(),
+            ItemHandler(),
             ContentCommandHandler(self._expand_command),
             # for tabular, on the first pass we process content and maintain the '\\' delimiter to maintain row integrity
             TabularHandler(process_content_fn=lambda x: self.parse(x, r'\\'), cell_parser_fn=self.parse),
             FormattingHandler(),
-            ItemHandler(),
+            self.legacy_formatting_handler,
             # make sure to add EnvironmentHandler after equation/tabular or other env related formats, since it will greedily parse any begin/end block. Add as last to be safe
             EnvironmentHandler() 
         ]
@@ -200,6 +203,14 @@ class LatexParser:
 
             # Add handling for bare braces at the start i.e. latex grouping {content here}
             if content[current_pos] == '{':
+                # check if legacy formatting
+                if self.legacy_formatting_handler.can_handle(content[current_pos:]):
+                    token, end_pos = self.legacy_formatting_handler.handle(content[current_pos:])
+                    current_pos += end_pos
+                    if token:
+                        tokens.append(token)
+                    continue
+
                 # Find matching closing brace
                 inner_content, end_pos = extract_nested_content(content[current_pos:])
                 if inner_content is not None:
@@ -212,23 +223,21 @@ class LatexParser:
                     continue
             
             next_command = DELIM_PATTERN.search(content[current_pos:])
-            if not next_command:
-                if current_pos < len(content):
-                    remaining_text = content[current_pos:]
-                    if remaining_text:
-                        unknown_cmd = UNKNOWN_COMMAND_PATTERN.match(remaining_text)
-                        if unknown_cmd:
-                            tokens.append(self._handle_unknown_command(unknown_cmd))
-                        else:
-                            add_text_token(remaining_text, tokens)
-                break
-
-            # Add text before the next command if it exists
-            if next_command.start() > 0:
-                plain_text = content[current_pos:current_pos + next_command.start()].strip()
-                if plain_text:
-                    add_text_token(plain_text, tokens)
-                current_pos += next_command.start()
+            
+            # Handle text before the next command (or all remaining text if no command)
+            end_pos = len(content[current_pos:]) if not next_command else next_command.start()
+            if end_pos > 0:
+                # print("NEXT", content[current_pos:current_pos+end_pos])
+                text = content[current_pos:current_pos + end_pos]#.strip()
+                if text:
+                    unknown_cmd = UNKNOWN_COMMAND_PATTERN.match(text)
+                    if unknown_cmd:
+                        tokens.append(self._handle_unknown_command(unknown_cmd))
+                    else:
+                        add_text_token(text, tokens)
+                current_pos += end_pos
+                if not next_command:
+                    break
                 continue
             
             # check for new definition commands
@@ -263,28 +272,8 @@ if __name__ == "__main__":
     # text = RESULTS_SECTION_TEXT
 
     text =  r"""
+\phfMakeCommentingCommand[initials={PhF},color={phfcc5}]{phf}
 
-    \section{SECTION 2}
-        \begin{table}[htbp]
-        \centering
-        \begin{tabular}{|c|c|c|c|}
-            \hline
-            \multicolumn{2}{|c|}{\multirow{2}{*}{Region}} & \multicolumn{2}{c|}{Sales} \\
-            \cline{3-4}
-            \multicolumn{2}{|c|}{} & 2022 & 2023 \\
-            \hline
-            \multirow{2}{*}{North} & Urban & $x^2 + y^2 = z^2$ & 180 \\
-            & Rural & 100 & 120 \\
-            \hline
-            \multirow{2}{*}{South} & Urban & 200 & \begin{align} \label{eq:1} E = mc^2 \\ $F = ma$ \end{align} \\
-            & & 130 & 160 \\
-            \hline
-        \end{tabular}
-        \caption{Regional Sales Distribution}
-            \label{tab:sales}
-        \end{table}
-    
-        \label{sec:2}
     """
 
     # Example usage
