@@ -3,12 +3,15 @@ from collections import OrderedDict
 from typing import Callable, Dict, Optional, Tuple
 from src.handlers.base import TokenHandler
 
+
+
 RAW_PATTERNS = OrderedDict([
     # Comments
     ('comment', r'%([^\n]*)'),
 
     # Formatting commands
-    ('formatting', r'\\(usepackage|centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b'),
+    ('page', r'\\(usepackage|centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|nopagebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b'),
+    ('make', r'\\(maketitle|makeatletter|makeatother)\b'),
 
     ('separators', r'\\(?:'
         r'hline|'  # no args
@@ -21,6 +24,8 @@ RAW_PATTERNS = OrderedDict([
         r'addlinespace(?:\[([^\]]*)\])?|'  # optional [length]
         r'morecmidrules'  # no args
         r')'),
+    
+    ('backslash', r'\\(backslash|textbackslash)\b')
 ])
 
 # Then compile them into a new dictionary
@@ -38,6 +43,11 @@ class FormattingHandler(TokenHandler):
         for pattern_name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if match:
+                if pattern_name == 'backslash':
+                    return {
+                        'type': 'text',
+                        'content': r'\\'
+                    }, match.end()
                 # ignore formatting commands
                 return None, match.end()
         
@@ -45,4 +55,5 @@ class FormattingHandler(TokenHandler):
     
 if __name__ == "__main__":
     handler = FormattingHandler()
-    print(handler.can_handle(r"\hline"))
+    print(handler.handle(r"\textbackslash"))
+    print(handler.handle(r"\maketitle"))

@@ -6,7 +6,7 @@ from src.tex_utils import extract_nested_content
 
 ENVIRONMENT_PATTERN = re.compile(r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}', re.DOTALL)
 
-NEW_ENVIRONMENT_PATTERN = re.compile(r'\\(?:new|renew)environment\*?\s*{([^}]+)}')
+NEW_ENVIRONMENT_PATTERN = re.compile(r'\\(?:new|renew|provide)environment\*?\s*{([^}]+)}')
 
 LIST_ENVIRONMENTS = ['itemize', 'enumerate', 'description']
 

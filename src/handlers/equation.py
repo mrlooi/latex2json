@@ -12,7 +12,8 @@ EQUATION_ENV = {
     'multline',    # long equation split across lines
     'eqnarray',    # old style align (deprecated but used)
     'flalign',     # flush aligned equations
-    'alignat'      # aligned with custom spacing
+    'alignat',      # aligned with custom spacing
+    'dmath',       # display math
 }
 
 RAW_PATTERNS = OrderedDict([

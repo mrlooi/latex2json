@@ -25,7 +25,7 @@ RAW_PATTERNS = OrderedDict([
     ('includegraphics', r'\\includegraphics\s*(?:\[([^\]]*)\])?\s*{'),
     
     # Citations
-    ('citation', r'\\(?:cite|citep)(?:\[([^\]]*)\])?\s*{'),
+    ('citation', r'\\(?:cite|citep|citet)(?:\[([^\]]*)\])?\s*{'),
 ])
 
 # compile them

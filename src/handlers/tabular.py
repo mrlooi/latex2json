@@ -5,7 +5,7 @@ from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content
 
 # Compile patterns for code blocks
-TABULAR_PATTERN = re.compile(r'\\begin\{tabular\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{tabular\}', re.DOTALL)
+TABULAR_PATTERN = re.compile(r'\\begin\{(tabular\*?|tabularx)\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{\1\}', re.DOTALL)
 
 ROW_SPLIT_PATTERN = re.compile(r'\\\\(?:\s*\[[^\]]*\])?')
 MULTICOLUMN_PATTERN = re.compile(r'\\multicolumn{(\d+)}{[^}]*}{(.*)}')
@@ -128,19 +128,29 @@ class TabularHandler(TokenHandler):
         if not match:
             return None, 0
         
-        # get entire match data
-        # Get position after \begin{tabular}
+        env_type = match.group(1)  # tabular, tabular*, or tabularx
         inner_content = match.group(0)
-        # strip out the beginning \begin{tabular} and \end{tabular}
-        inner_content = inner_content[len(r'\begin{tabular}'):-len(r'\end{tabular}')]
+        # Strip out the beginning and end tags dynamically using the matched environment type
+        inner_content = inner_content[len(r'\begin{' + env_type + r'}'):-len(r'\end{' + env_type + r'}')]
         
         token = {
             "type": "tabular",
+            "environment": env_type,  # Store the specific environment type
         }
 
         # Extract column spec using nested content extraction
         column_spec, end_pos = extract_nested_content(inner_content)
+        
         if column_spec is not None:
+            # For tabularx, the first argument is the width
+            if env_type == 'tabularx':
+                width_spec, width_end = extract_nested_content(inner_content)
+                if width_spec is not None:
+                    token["width"] = width_spec.strip()
+                    # Get the actual column spec after the width
+                    column_spec, end_pos = extract_nested_content(inner_content[width_end:])
+                    end_pos += width_end  # Adjust end position to account for width spec
+
             token["column_spec"] = column_spec.strip()
 
             # Get the table content after the column spec
@@ -230,13 +240,8 @@ if __name__ == "__main__":
     handler = TabularHandler(cell_parser_fn=parse_cell)
     
     text = r"""
-     \begin{tabular}{|c|c|c|}
-        \hline
-        \multicolumn{2}{|c|}{Header} & Value \\
-        \hline
-        a & b & c \\
-        \hline
-    \end{tabular}
+    \begin{tabularx}{\textwidth}{|X|X|}
+        Cell 1 & \begin{tabular}{cc} a & b \\ c & d \end{tabular} \\
+    \end{tabularx}
     """.strip()
-    token, end_pos = handler.handle(text)
-    print(token)
+    token, end_pos = handler.handle(text.strip())
