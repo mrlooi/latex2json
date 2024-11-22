@@ -1,5 +1,6 @@
 import pytest
 from src.handlers.new_definition import NewDefinitionHandler
+import re
 
 @pytest.fixture
 def handler():
@@ -46,56 +47,6 @@ def test_handle_renewcommand(handler):
     assert token["type"] == "newcommand"
     assert token["name"] == "cmd"
     assert token["content"] == "new definition"
-
-# def test_handle_newenvironment(handler):
-#     # Test basic newenvironment
-#     content = r"\newenvironment{test}{begin def}{end def}"
-#     token, pos = handler.handle(content)
-#     assert token == {
-#         "type": "newenvironment",
-#         "name": "test",
-#         "args": [],
-#         "optional_args": [],
-#         "begin_def": "begin def",
-#         "end_def": "end def"
-#     }
-    
-#     # Test with arguments
-#     content = r"\newenvironment{test}[2]{begin #1 #2}{end #2}"
-#     token, pos = handler.handle(content)
-#     assert token == {
-#         "type": "newenvironment",
-#         "name": "test",
-#         "args": ["#1", "#2"],
-#         "optional_args": [],
-#         "begin_def": "begin #1 #2",
-#         "end_def": "end #2"
-#     }
-    
-#     # Test with optional arguments
-#     content = r"\newenvironment{test}[2][default]{begin #1 #2}{end}"
-#     token, pos = handler.handle(content)
-#     assert token == {
-#         "type": "newenvironment",
-#         "name": "test",
-#         "args": ["#1", "#2"],
-#         "optional_args": ["default"],
-#         "begin_def": "begin #1 #2",
-#         "end_def": "end"
-#     }
-
-#     # Test newenvironment with complex begin/end definitions
-#     content = r"\newenvironment{complex}{\begin{center}\begin{tabular}}{end{tabular}\end{center}}"
-#     token, pos = handler.handle(content)
-#     assert token == {
-#         "type": "newenvironment",
-#         "name": "complex",
-#         "args": [],
-#         "optional_args": [],
-#         "begin_def": r"\begin{center}\begin{tabular}",
-#         "end_def": r"end{tabular}\end{center}"
-#     }
-
 
 def test_handle_newtheorem(handler):
     # Test basic newtheorem
@@ -149,7 +100,127 @@ def test_handle_complex_definitions(handler):
     assert token["name"] == "complex"
     assert token["num_args"] == 2
     assert token["content"] == "outer{nested{#1}}{#2}"
+
+
+def test_declare_operators(handler):
+    content = r"\DeclareMathOperator\sin{cos}"
+    token, pos = handler.handle(content)
+
+    assert token is not None
+    assert token["type"] == "newcommand"
+    assert token["name"] == "sin"
+    assert token["content"] == "cos"
+
+    content = r"\DeclareRobustCommand\sin{cos}"
+    token, pos = handler.handle(content)
+
+    assert token is not None
+    assert token["type"] == "newcommand"
+    assert token["name"] == "sin"
+    assert token["content"] == "cos"
+
+    content = r"\DeclareRobustCommandxxx\sin{cos}"
+    token, pos = handler.handle(content)
+    assert token is None
+
+
+def clean_groups(match):
+    """Remove None values from regex match groups"""
+    if match:
+        return tuple(g for g in match.groups() if g is not None)
+    return tuple()
+
+def test_def_command_usage_patterns(handler):
+    # Basic command without parameters
+    content = r"\def\gaga{LADY GAGA}"
+    token, _ = handler.handle(content)
+    pattern = token["usage_pattern"]
     
+    assert re.match(pattern, r"\gaga")
+    assert re.match(pattern, r"\gaga ")
+    assert not re.match(pattern, r"\gagaa")
+
+    # Simple parameter pattern
+    content = r"\def\fullname#1#2{#1 #2}"
+    token, _ = handler.handle(content)
+    pattern = token["usage_pattern"]
+    
+    assert re.match(pattern, r"\fullname{John}{Doe}")
+    assert re.match(pattern, r"\fullname John Doe")
+    assert re.match(pattern, r"\fullname{John} Doe")
+    assert not re.match(pattern, r"\fullname")
+
+    # Delimiter pattern with colon
+    content = r"\def\ratio#1:#2{#1 divided by #2}"
+    token, _ = handler.handle(content)
+    pattern = token["usage_pattern"]
+    
+    assert re.match(pattern, r"\ratio{4}:{42}")
+    assert re.match(pattern, r"\ratio 55:42")
+    assert re.match(pattern, r"\ratio{3.14}:{2.718}")
+    assert not re.match(pattern, r"\ratio{4}")
+
+    # Complex delimiters with parentheses and comma
+    content = r"\def\pair(#1,#2){#1 and #2}"
+    token, _ = handler.handle(content)
+    pattern = token["usage_pattern"]
+    
+    assert re.match(pattern, r"\pair(asd sd ,b)")
+    assert re.match(pattern, r"\pair({complex}, {args})")
+    assert re.match(pattern, r"\pair(a,b)")
+    assert not re.match(pattern, r"\pair(a)")
+
+    # Exclamation marks as delimiters
+    content = r"\def\foo!#1!{shout #1}"
+    token, _ = handler.handle(content)
+    pattern = token["usage_pattern"]
+    
+    assert re.match(pattern, r"\foo! hello!")
+    assert re.match(pattern, r"\foo!{hell  o!}!")
+    assert re.match(pattern, r"\foo!scream!")
+    assert not re.match(pattern, r"\foo!")
+
+    # Special case with \end as delimiter
+    content = r"\def\until#1\end#2{This text until #1 #2}"
+    token, _ = handler.handle(content)
+    pattern = token["usage_pattern"]
+    
+    assert re.match(pattern, r"\until some \end3")
+    assert re.match(pattern, r"\until{text}\end{section}")
+    assert re.match(pattern, r"\until stuff \end more")
+    assert not re.match(pattern, r"\until text")
+
+
+def test_def_usage_outputs(handler):
+    def extract_def_args(text, search):
+        token, end_pos = handler.handle(text)
+        if token:
+            if token["usage_pattern"]:
+                regex = re.compile(token["usage_pattern"])
+                match = regex.match(search)
+                # print(token["usage_pattern"], token["content"])
+                if match:
+                    return clean_groups(match)
+        return None
+
+    assert extract_def_args(r"\def\ratio#1:#2{#1 divided by #2}", r"\ratio{4}:{42}") == ("4", "42")
+
+    # for 2nd arg, only 4 is captured (like in latex) since it is not in braces
+    assert extract_def_args(r"\def\ratio#1:#2{#1 divided by #2}", r"\ratio55:42") == ("55", "4") 
+
+    assert extract_def_args(r"\def\foo!#1!{shout #1}", r"\foo! hello!") == ("hello",)
+    assert extract_def_args(r"\def\foo!#1!{shout #1}", r"\foo!{hell  o!}!") == ("hell  o!",)
+    assert extract_def_args(r"\def\swap#1#2{#2#1}", r"\swap a b") == ("a", "b")
+    assert extract_def_args(r"\def\fullname#1#2{#1 #2}", r"\fullname{John}{Doe}") == ("John", "Doe")
+    assert extract_def_args(r"\def\pair(#1,#2){#1 and #2}", r"\pair(asd sd ,b)") == ("asd sd ", "b")
+    assert extract_def_args(r"\def\grab#1.#2]{#1 and #2}", r"\grab first.second]") == ("first", "second")
+    assert extract_def_args(r"\def\until#1\end#2{This text until #1 #2}", r"\until some \end3") == ("some ", "3")
+    assert extract_def_args(r"\def\until#1\end#2{This text until #1 #2}", r"\until some \end {333}") == ("some ", "333")
+    assert extract_def_args(r"\def\gaga{LADY GAGA}", r"\gaga") is not None 
+
+    assert extract_def_args(r"\def\gaga{LADY GAGA}", r"\gagaa") is None
+    assert extract_def_args(r"\def\fullname#1#2{#1 #2}", r"\fullname") is None
+    assert extract_def_args(r"\def\fullname#1#2{#1 #2}", r"\fullname32") == ("3", "2")
 
 if __name__ == "__main__":
     pytest.main([__file__]) 
