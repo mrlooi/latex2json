@@ -222,5 +222,25 @@ def test_def_usage_outputs(handler):
     assert extract_def_args(r"\def\fullname#1#2{#1 #2}", r"\fullname") is None
     assert extract_def_args(r"\def\fullname#1#2{#1 #2}", r"\fullname32") == ("3", "2")
 
+    # Mathematical notation tests
+    assert extract_def_args(r"\def\norm#1{\left\|#1\right\|}", r"\norm{x}") == ("x",)
+    assert extract_def_args(r"\def\abs#1{\left|#1\right|}", r"\abs{x + y}") == ("x + y",)
+    assert extract_def_args(r"\def\set#1{\{#1\}}", r"\set{x \in \mathbb{R}}") == (r"x \in \mathbb{R}",)
+    
+    # Multi-parameter math operators
+    assert extract_def_args(r"\def\inner#1#2{\langle#1,#2\rangle}", r"\inner{u}{v}") == ("u", "v")
+    assert extract_def_args(r"\def\pfrac#1#2{\frac{\partial #1}{\partial #2}}", r"\pfrac{f}{x}") == ("f", "x")
+    
+    # Subscript/superscript patterns
+    assert extract_def_args(r"\def\tensor#1_#2^#3{#1_{#2}^{#3}}", r"\tensor{T}_i^j") == ("T", "i", "j")
+    assert extract_def_args(r"\def\tensor#1_#2^#3{#1_{#2}^{#3}}", r"\tensor{\{T\}}_i^j") == (r"\{T\}", "i", "j")
+    assert extract_def_args(r"\def\evalat#1|#2{\left.#1\right|_{#2}}", r"\evalat{f(x)}|{x=0}") == ("f(x)", "x=0")
+    
+    # Common text formatting
+    assert extract_def_args(r"\def\emphtext#1{\textit{\textbf{#1}}}", r"\emphtext{important}") == ("important",)
+    
+    # Multiple optional parts
+    assert extract_def_args(r"\def\theorem#1[#2]#3{Theorem #1 (#2): #3}", r"\theorem{1}[Name]{Statement}") == ("1", "Name", "Statement")
+
 if __name__ == "__main__":
     pytest.main([__file__]) 

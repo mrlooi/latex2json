@@ -134,8 +134,11 @@ class NewDefinitionHandler(TokenHandler):
             if before_param:
                 parts.append(re.escape(before_param))
             
-            # Add the parameter pattern
-            parts.append(r'\s*(?:\{([^}]*)\}|([^\}]+?))')
+            # Add the parameter pattern to capture delimiters and parameters e.g. {xxx} or x 
+            # e.g. \def\foo#1{bar #1} \foo{xxx} will match 'xxx' arg, \foo xaaa will match 'x' arg
+            # Update regex to handle escaped braces and normal braces
+            parts.append(r'\s*(?:\{((?:[^{}]|\\\{|\\\}|{[^{}]*})*)\}|([^\}]+?))')
+
             current_pos = param.end()
             param_count += 1
         
@@ -143,15 +146,16 @@ class NewDefinitionHandler(TokenHandler):
         if current_pos < len(usage_pattern):
             parts.append(re.escape(usage_pattern[current_pos:]))
         
-        # print(parts)
         usage_pattern = ''.join(parts)
-        
+        # Add check at the very end to prevent partial matches (e.g., \foo matching \foobar)
+        usage_pattern = r'\\' + usage_pattern + r'(?![a-zA-Z@])'
+
         token = {
             "type": "def",
             "name": cmd_name,
             "content": definition,
             "num_args": param_count,
-            "usage_pattern": r'\\' + usage_pattern + r'(?![a-zA-Z@])'  # Add check at the very end to prevent partial matches (e.g., \foo matching \foobar)
+            "usage_pattern": usage_pattern   
         }
 
         return token, start_pos + end_pos - 1
@@ -160,23 +164,23 @@ class NewDefinitionHandler(TokenHandler):
 if __name__ == "__main__":
     handler = NewDefinitionHandler()
 
-    # def clean_groups(match):
-    #     """Remove None values from regex match groups"""
-    #     if match:
-    #         return tuple(g for g in match.groups() if g is not None)
-    #     return tuple()
+    def clean_groups(match):
+        """Remove None values from regex match groups"""
+        if match:
+            return tuple(g for g in match.groups() if g is not None)
+        return tuple()
 
-    # def check_usage(text, search):
-    #     print("Checking", text, "with SEARCH:   ", search)
-    #     token, end_pos = handler.handle(text)
-    #     if token:
-    #         if token["usage_pattern"]:
-    #             regex = re.compile(token["usage_pattern"])
-    #             match = regex.match(search)
-    #             print(token["usage_pattern"], token["content"])
-    #             if match:
-    #                 print(clean_groups(match))
-    #     print()
+    def check_usage(text, search):
+        print("Checking", text, "with SEARCH:   ", search)
+        token, end_pos = handler.handle(text)
+        if token:
+            if token["usage_pattern"]:
+                regex = re.compile(token["usage_pattern"])
+                match = regex.match(search)
+                print(token["usage_pattern"], token["content"])
+                if match:
+                    print(clean_groups(match))
+        print()
 
     # check_usage(r"\def\ratio#1:#2{#1 divided by #2}  % Usage: \ratio 3:4", r"\ratio{4}:{42}")
     # check_usage(r"\def\ratio#1:#2{#1 divided by #2}  % Usage: \ratio 3:4", r"\ratio55:42 ss")
@@ -190,7 +194,21 @@ if __name__ == "__main__":
     # check_usage(r"\def\gaga{LADY GAGA}", r"\gaga")
     # check_usage(r"\def\gaga{LADY GAGA}", r"\gagaa")
     # check_usage(r"\def\fullname#1#2{#1 #2}", r"\fullname32")
+    # check_usage(r"\def\until#1\end#2{This text until #1 #2}", r"\until some \end2")
+    # check_usage(r"\def\norm#1{\left\|#1\right\|}", r"\norm{x}")
+    # check_usage(r"\def\abs#1{\left|#1\right|}", r"\abs{x + y}")
+    # check_usage(r"\def\set#1{\{#1\}}", r"\set{x \in \mathbb{R}}")
 
-    content = r"\DeclareMathOperator\sin{sin}"
-    token, pos = handler.handle(content)
-    print(token)
+    # # Multi-parameter math operators
+    # check_usage(r"\def\inner#1#2{\langle#1,#2\rangle}", r"\inner{u}{v}")
+    # check_usage(r"\def\pfrac#1#2{\frac{\partial #1}{\partial #2}}", r"\pfrac{f}{x}")
+    
+    # # Subscript/superscript patterns
+    # check_usage(r"\def\tensor#1_#2^#3{#1_{#2}^{#3}}", r"\tensor{T}_i^j")
+    # check_usage(r"\def\evalat#1|#2{\left.#1\right|_{#2}}", r"\evalat{f(x)}|{x=0}")
+    
+    # # # Common text formatting
+    # check_usage(r"\def\emphtext#1{\textit{\textbf{#1}}}", r"\emphtext{important}")
+    
+    # # Multiple optional parts
+    # check_usage(r"\def\theorem#1[#2]#3{Theorem #1 (#2): #3}", r"\theorem{1}[Name]{Statement}")
