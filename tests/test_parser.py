@@ -133,13 +133,13 @@ def test_command_definitions(parser):
     assert equations[2]["content"] == r"\mathbb{I}"
     assert equations[3]["content"] == r"d_{\text{model}}"
 
-    assert parsed_tokens[-2]["content"].strip() == "Single line of text"
     last_token = parsed_tokens[-1]["content"]
     split_content = [line.strip() for line in last_token.split("\n") if line.strip()]
-    assert len(split_content) == 3
-    assert split_content[0] == "First paragraph"
-    assert split_content[1] == "Second paragraph"
-    assert split_content[2] == "(Edited by me)"
+    assert len(split_content) == 4
+    assert split_content[0] == 'Single line of text'
+    assert split_content[1] == "First paragraph"
+    assert split_content[2] == "Second paragraph"
+    assert split_content[3] == "(Edited by me)"
 
 def test_recommand_definitions(parser):
     text = r"""
@@ -153,8 +153,14 @@ def test_recommand_definitions(parser):
     """
     parsed_tokens = parser.parse(text)
     # Verify nested command expansion works correctly
-    assert parsed_tokens[0]['content'].strip() == "(a,b)"
-    assert parsed_tokens[1]['content'].strip() == "[x,y]"
+    text_content = []
+    for token in parsed_tokens:
+        ss = token['content'].split('\n')
+        for s in ss:
+            if s.strip():
+                text_content.append(s.strip())
+    assert text_content[0] == "(a,b)"
+    assert text_content[1] == "[x,y]"
 
 def test_complex_command_definitions(parser):
     text = r"""

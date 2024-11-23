@@ -16,16 +16,26 @@ TRAILING_BACKSLASH = re.compile(r'\\+$')
 UNKNOWN_COMMAND_PATTERN = re.compile(r'([ \t\n]*\\[a-zA-Z]+(?:\{(?:[^{}]|{[^{}]*})*\})*[ \t\n]*)')
 
 
-def add_text_token(text: str, tokens: List[Dict]):
-    if text:
+def add_token(token: str | Dict, tokens: List[Dict]):
+    if not token:
+        return
+    if isinstance(token, str):
         if tokens and tokens[-1] and tokens[-1]['type'] == 'text':
-            tokens[-1]['content'] += text
+            tokens[-1]['content'] += token
         else:
             tokens.append({
                 "type": "text",
-                "content": text
+                "content": token
             })
-
+    else:
+        if 'type' in token and token['type'] == 'text':
+            if tokens and tokens[-1] and tokens[-1]['type'] == 'text':
+                tokens[-1]['content'] += token['content']
+            else:
+                tokens.append(token)
+        else:
+            tokens.append(token)
+            
 class LatexParser:
     def __init__(self):
         self.labels = {}
@@ -156,7 +166,7 @@ class LatexParser:
                         token["content"] = self.parse(token["content"])
                         self.current_env = prev_env
 
-                    tokens.append(token)
+                    add_token(token, tokens)
                 return True, end_pos
         return False, 0
 
@@ -176,12 +186,12 @@ class LatexParser:
                     self._handle_label(label, tokens)
                 return True, start_pos + end_pos
             elif matched_type == 'newline' or matched_type == 'break_spacing':
-                add_text_token(line_break_delimiter, tokens)
+                add_token(line_break_delimiter, tokens)
             else:
                 # For all other token types, expand any commands in their content
                 x = match.group(1) if match.groups() else match.group(0)
                 x = self._expand_command(x)
-                tokens.append({ 
+                add_token({ 
                     "type": matched_type,
                     "content": x
                 })
@@ -208,7 +218,7 @@ class LatexParser:
                     token, end_pos = self.legacy_formatting_handler.handle(content[current_pos:])
                     current_pos += end_pos
                     if token:
-                        tokens.append(token)
+                        add_token(token, tokens)
                     continue
 
                 # Find matching closing brace
@@ -232,9 +242,8 @@ class LatexParser:
                 if text:
                     unknown_cmd = UNKNOWN_COMMAND_PATTERN.match(text)
                     if unknown_cmd:
-                        tokens.append(self._handle_unknown_command(unknown_cmd))
-                    else:
-                        add_text_token(text, tokens)
+                        text = self._handle_unknown_command(unknown_cmd)
+                    add_token(text, tokens)
                 current_pos += end_pos
                 if not next_command:
                     break
@@ -258,7 +267,8 @@ class LatexParser:
             if not matched:
                 unknown_cmd = UNKNOWN_COMMAND_PATTERN.match(content[current_pos:])
                 if unknown_cmd:
-                    tokens.append(self._handle_unknown_command(unknown_cmd))
+                    text = self._handle_unknown_command(unknown_cmd)
+                    add_token(text, tokens)
                     # Adjust position by the full match length including whitespace
                     current_pos += len(unknown_cmd.group(0))
                 else:
@@ -269,7 +279,22 @@ class LatexParser:
 if __name__ == "__main__":
 
     text =  r"""
-    of $f$ is infinite. This answers a question of Erd\H{o}s.
+        \newcommand{\HH}{\mathbb{H}}
+        \newcommand{\I}{\mathbb{I}}
+        \newcommand{\E}{\mathbb{E}}
+        \renewcommand{\P}{\mathbb{P}}
+        \newcommand{\pow}[2][2]{#2^{#1}}
+        \newcommand{\dmodel}{d_{\text{model}}}
+
+        $\pow[5]{3}$ and $\HH$ and $\I$ and $\dmodel$
+
+        \newcommand*{\goodexample}[1]{#1}
+        \goodexample{Single line of text}
+
+        \newcommand{\myedit}[1]{#1 \newline(Edited by me)}
+        \myedit{First paragraph
+
+        Second paragraph}
     """
 
     # Example usage
