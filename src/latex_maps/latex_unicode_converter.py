@@ -38,7 +38,9 @@ class LatexUnicodeConverter:
                 continue
             
             # Add word boundary after the command to prevent partial matches
-            escaped = re.escape(cmd) + r'(?![a-zA-Z])'
+            escaped = re.escape(cmd)
+            if not escaped.endswith('}'):
+                escaped += r'(?![a-zA-Z])'
             if cmd.startswith('\\ensuremath'):
                 patterns['ensuremath'].append(escaped)
             elif cmd.startswith('\\text'):
