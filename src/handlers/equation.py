@@ -75,7 +75,6 @@ class EquationHandler(TokenHandler):
             match = pattern.match(content)
             if match:
                 equation = match.group(1).strip()
-                print(match)
                 if not equation:
                     return None, match.end()
                 

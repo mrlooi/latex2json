@@ -38,7 +38,8 @@ class LatexParser:
 
         # handlers
         self.handlers: List[TokenHandler] = [
-            EquationHandler(self._expand_command),
+            # ignore unicode conversion for equations
+            EquationHandler(lambda x: self._expand_command(x, ignore_unicode=True)),
             CodeBlockHandler(),
             ItemHandler(),
             ContentCommandHandler(self._expand_command),
@@ -65,9 +66,9 @@ class LatexParser:
             handler.clear()
         self.new_definition_handler.clear()
     
-    def _expand_command(self, content: str) -> str:
+    def _expand_command(self, content: str, ignore_unicode: bool = False) -> str:
         """Expand LaTeX commands in the content"""
-        out, match_count = self.command_processor.expand_commands(content)
+        out, match_count = self.command_processor.expand_commands(content, ignore_unicode)
         return out
     
     def _handle_label(self, content: str, tokens: List[Dict[str, str]]) -> None:
@@ -109,7 +110,6 @@ class LatexParser:
         # Get the full matched text to preserve all arguments
         content = match.group(0)
 
-        matched = False
         if content:
             content, matched = self.command_processor.expand_commands(content)
             # Only parse if the content changed during expansion
@@ -118,7 +118,7 @@ class LatexParser:
                 return content
         
         return {
-            "type": "text" if matched else "command",
+            "type": "command" if content.startswith('\\') else "text",
             "content": content
         }
     
@@ -267,13 +267,9 @@ class LatexParser:
         return tokens
 
 if __name__ == "__main__":
-    # from tests.latex_samples_data import RESULTS_SECTION_TEXT
-
-    # text = RESULTS_SECTION_TEXT
 
     text =  r"""
-\phfMakeCommentingCommand[initials={PhF},color={phfcc5}]{phf}
-
+    of $f$ is infinite. This answers a question of Erd\H{o}s.
     """
 
     # Example usage
@@ -281,11 +277,3 @@ if __name__ == "__main__":
     parsed_tokens = parser.parse(text)
 
     print(parsed_tokens)
-
-    # # print all equations
-    # table_token = None
-    # for token in parsed_tokens:
-    #     if token["type"] == 'table':
-    #         print(token)
-    #         table_token = token
-    

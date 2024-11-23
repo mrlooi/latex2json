@@ -3,6 +3,9 @@
 import re
 from typing import List, Dict, Optional
 from src.patterns import NEWLINE_PATTERN
+from src.latex_maps._uni2latexmap import uni2latex
+from src.latex_maps._uni2latexmap_xml import uni2latex as uni2latex_xml
+from collections import OrderedDict
 
 class CommandProcessor:
     def __init__(self):
@@ -10,6 +13,10 @@ class CommandProcessor:
         
         # Add built-in newline normalization command using pre-compiled pattern
         self._init_newline_command()
+        
+        # Initialize unicode conversion maps and patterns
+        self.latex2unicode = self._create_latex_to_unicode_map()
+        self.unicode_patterns = self._create_unicode_patterns()
 
     def _init_newline_command(self):
         newline_command = {
@@ -115,8 +122,39 @@ class CommandProcessor:
 
         return regex, handler
 
-    def expand_commands(self, text: str) -> str:
+    def _create_latex_to_unicode_map(self):
+        latex2unicode = OrderedDict()
+        
+        # Load from XML mappings first
+        for k, v in uni2latex_xml.items():
+            latex2unicode[v] = k
+        
+        # Then load from regular mappings, skipping duplicates and ensuremath
+        for k, v in uni2latex.items():
+            if v in latex2unicode or v.startswith('\\ensuremath'):
+                continue
+            latex2unicode[v] = k
+            
+        return latex2unicode
+
+    def _create_unicode_patterns(self):
+        patterns = []
+        
+        # Create patterns for each command
+        for cmd in self.latex2unicode.keys():
+            if cmd.startswith('\\') or cmd.startswith('{'):
+                # Add negative lookahead to prevent partial matches
+                escaped = re.escape(cmd) + r'(?![a-zA-Z])'
+                patterns.append(escaped)
+        
+        # Compile into single pattern if we have any patterns
+        if patterns:
+            return re.compile('|'.join(patterns))
+        return None
+
+    def expand_commands(self, text: str, ignore_unicode: bool = False) -> tuple[str, int]:
         """Recursively expand defined commands in the text until no further expansions are possible."""
+        # First handle all regular command expansions
         previous_text = None
         match_count = 0
         while previous_text != text:
@@ -125,4 +163,12 @@ class CommandProcessor:
                 text = cmd['pattern'].sub(cmd['handler'], text)
                 if previous_text != text:
                     match_count += 1
+        
+        # Finally, handle unicode conversions
+        if not ignore_unicode and self.unicode_patterns:
+            text = self.unicode_patterns.sub(
+                lambda m: chr(self.latex2unicode[m.group(0)]), 
+                text
+            )
+        
         return text, match_count
