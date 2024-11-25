@@ -15,6 +15,7 @@ RAW_PATTERNS = OrderedDict([
 
     ('separators', r'\\(?:'
         r'hline|'  # no args
+        r'vspace\s*{([^}]+)}|hspace\s*{([^}]+)}|'  # {length}
         r'cline\s*{([^}]+)}|'  # {n-m}
         r'(?:midrule|toprule|bottomrule)(?:\[\d*[\w-]*\])?|'  # optional [trim]
         r'cmidrule(?:\[([^\]]*)\])?\s*{([^}]+)}|'  # optional [trim] and {n-m}

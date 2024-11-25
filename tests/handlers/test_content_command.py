@@ -73,6 +73,21 @@ def test_handle_references(handler):
         "type": "ref",
         "content": "sec:intro"
     }
+
+    token, pos = handler.handle(r"\cref{sec:intro, fig:fig1}")
+    assert token == {
+        "type": "ref",
+        "content": "sec:intro, fig:fig1"
+    }
+
+    token, pos = handler.handle(r"\autoref{sec:intro}")
+    assert token == {
+        "type": "ref",
+        "content": "sec:intro"
+    }
+    
+    token, pos = handler.handle(r"\Autoref{sec:intro}")
+    assert token is None
     
     # Test hyperref
     token, pos = handler.handle(r"\hyperref[sec:methods]{Methods section}")

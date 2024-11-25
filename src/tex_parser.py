@@ -19,23 +19,22 @@ UNKNOWN_COMMAND_PATTERN = re.compile(r'([ \t\n]*\\[a-zA-Z]+(?:\{(?:[^{}]|{[^{}]*
 def add_token(token: str | Dict, tokens: List[Dict]):
     if not token:
         return
-    if isinstance(token, str):
-        if tokens and tokens[-1] and tokens[-1]['type'] == 'text':
-            tokens[-1]['content'] += token
-        else:
-            tokens.append({
-                "type": "text",
-                "content": token
-            })
+        
+    # Convert string token to dict format
+    token_dict = (
+        {"type": "text", "content": token} 
+        if isinstance(token, str) 
+        else token
+    )
+    
+    # Merge consecutive text tokens
+    if (token_dict.get('type') == 'text' and 
+        tokens and 
+        tokens[-1].get('type') == 'text'):
+        tokens[-1]['content'] += token_dict['content']
     else:
-        if 'type' in token and token['type'] == 'text':
-            if tokens and tokens[-1] and tokens[-1]['type'] == 'text':
-                tokens[-1]['content'] += token['content']
-            else:
-                tokens.append(token)
-        else:
-            tokens.append(token)
-            
+        tokens.append(token_dict)
+
 class LatexParser:
     def __init__(self):
         self.labels = {}
@@ -156,7 +155,12 @@ class LatexParser:
             if handler.can_handle(content):
                 token, end_pos = handler.handle(content)
                 if token:
-                    if token['type'] == 'footnote':
+                    if isinstance(token, str):
+                        token = {
+                            "type": "text",
+                            "content": token
+                        }
+                    elif token['type'] == 'footnote':
                         token["content"] = self._parse_cell(token["content"])
                     elif token['type'] == 'section':
                         self.current_env = token

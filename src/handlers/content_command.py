@@ -20,6 +20,8 @@ RAW_PATTERNS = OrderedDict([
 
     # Simple commands
     ('ref', r'\\ref\s*{'),
+    ('cref', r'\\cref\s*{'), 
+    ('autoref', r'\\autoref\s*{'),
     ('eqref', r'\\eqref\s*{'),
     ('url', r'\\url\s*{'),
     ('includegraphics', r'\\includegraphics\s*(?:\[([^\]]*)\])?\s*{'),
@@ -109,7 +111,7 @@ class ContentCommandHandler(TokenHandler):
                 "content": match.group(1).strip()
             }
         
-        elif matched_type in ['ref', 'eqref']:
+        elif matched_type in ['ref', 'eqref', 'cref', 'autoref']:
             return {
                 "type": "ref",
                 "content": content
