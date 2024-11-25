@@ -25,6 +25,9 @@ class EnvironmentProcessor:
     def __init__(self):
         self.environments: Dict[str, Dict[str, any]] = {}
 
+    def clear(self):
+        self.environments = {}
+
     def process_environment_definition(
         self,
         env_name: str,
@@ -205,9 +208,6 @@ class EnvironmentHandler(BaseEnvironmentHandler):
     def clear(self):
         super().clear()
         self.environment_processor.clear()
-
-    def clear_environments(self):
-        self.environment_processor.environments = {}
     
     def _handle_newenvironment_def(self, content: str, match) -> Tuple[Optional[Dict], int]:
         """Handle \newenvironment definitions"""

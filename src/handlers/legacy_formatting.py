@@ -4,6 +4,7 @@ from typing import Callable, Dict, Optional, Tuple
 import re
 
 from src.handlers.base import TokenHandler
+from src.tex_utils import extract_nested_content
 
 r"""
 % Old Style        Modern Equivalent
@@ -78,21 +79,37 @@ class LegacyFormattingHandler(TokenHandler):
             # Extract the whitespace, command and text
             whitespace = match.group(1)
             command = match.group(2).strip()
-            text = match.group(3).strip()
+
+            # the issue with our regex above is that it fails to handle nested braces properly
+            # e.g. {\tt sss sd \pow{3} aabbcc }, the regex will match {\tt sss sd \pow{3} and stop. 
+            # We need to parse nested content properly from command onwards, in case of closing braces e.g. \pow{3}
+            # so we handle everything after the detected command and parse that instead.
+            
+            # get position after command i.e. match.group(2)
+            next_pos = match.end(2)
+            text, end_pos = extract_nested_content('{' + content[next_pos:])
+            text = text.strip()
+            end_pos = next_pos + end_pos - 1 # -1 to account for the opening brace
+            diff = end_pos - match.end(0)
             
             # Convert to modern format, preserving leading whitespace
             modern_command = LEGACY_FORMAT_MAPPING.get(command)
             if modern_command:
+                if self.process_content_fn:
+                    text = self.process_content_fn(text)
                 output = {
                     'type': 'command',
                     'content': whitespace + r'\\' + modern_command + '{' + text + '}'
                 }
             else:
+                text = content[:next_pos] + text + '}' # close the opening brace
+                if self.process_content_fn:
+                    text = self.process_content_fn(text)
                 output = {
                     'type': 'text',
-                    'content': match.group(0)
+                    'content': text
                 }
-            return output, match.end()
+            return output, match.end(0) + diff
         
         return None, 0
 

@@ -42,8 +42,9 @@ class LatexParser:
 
         # Regex patterns for different LaTeX elements
         self.command_processor = CommandProcessor()
+        self.env_handler = EnvironmentHandler()
 
-        self.legacy_formatting_handler = LegacyFormattingHandler()
+        self.legacy_formatting_handler = LegacyFormattingHandler(self._expand_command)
 
         # handlers
         self.handlers: List[TokenHandler] = [
@@ -57,7 +58,7 @@ class LatexParser:
             FormattingHandler(),
             self.legacy_formatting_handler,
             # make sure to add EnvironmentHandler after equation/tabular or other env related formats, since it will greedily parse any begin/end block. Add as last to be safe
-            EnvironmentHandler() 
+            self.env_handler 
         ]
         self.new_definition_handler = NewDefinitionHandler()
 
@@ -66,6 +67,10 @@ class LatexParser:
     def commands(self):
         return self.command_processor.commands
     
+    @property
+    def environments(self):
+        return self.env_handler.environments
+
     def clear(self):
         self.labels = {}
         self.current_env = None
@@ -283,22 +288,11 @@ class LatexParser:
 if __name__ == "__main__":
 
     text =  r"""
-        \newcommand{\HH}{\mathbb{H}}
-        \newcommand{\I}{\mathbb{I}}
-        \newcommand{\E}{\mathbb{E}}
-        \renewcommand{\P}{\mathbb{P}}
-        \newcommand{\pow}[2][2]{#2^{#1}}
-        \newcommand{\dmodel}{d_{\text{model}}}
 
-        $\pow[5]{3}$ and $\HH$ and $\I$ and $\dmodel$
+    \newcommand{\pow}[2][2]{#2^{#1}}
 
-        \newcommand*{\goodexample}[1]{#1}
-        \goodexample{Single line of text}
-
-        \newcommand{\myedit}[1]{#1 \newline(Edited by me)}
-        \myedit{First paragraph
-
-        Second paragraph}
+    {\tt sss sd \pow{3}   }  hehe
+    \begin{equation}1+1=2\end{equation}
     """
 
     # Example usage

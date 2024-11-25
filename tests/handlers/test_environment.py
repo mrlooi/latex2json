@@ -55,7 +55,7 @@ def test_handle_newenvironment(handler):
         "end_def": r"end{tabular}\end{center}"
     }
 
-    handler.clear_environments()
+    handler.clear()
 
 def test_can_handle_environment(handler):
     assert handler.can_handle(r"\begin{test}HSHSHS\end{test}")
