@@ -143,7 +143,9 @@ class LatexParser:
             if token:
                 if token['type'] == 'newcommand':
                     cmd_name = token['name']
-                    self.command_processor.process_command_definition(cmd_name, token["content"], token["num_args"], token["defaults"])
+                    self.command_processor.process_newcommand(cmd_name, token["content"], token["num_args"], token["defaults"])
+                elif token['type'] == 'def':
+                    self.command_processor.process_newdef(token['name'], token["content"], token["num_args"], token["usage_pattern"])
                 elif token['type'] == 'newtheorem':
                     pass
         
@@ -288,11 +290,9 @@ class LatexParser:
 if __name__ == "__main__":
 
     text =  r"""
-
-    \newcommand{\pow}[2][2]{#2^{#1}}
-
-    {\tt sss sd \pow{3}   }  hehe
-    \begin{equation}1+1=2\end{equation}
+    \def \foo#1{bar #1}
+    
+    \foo{hello}
     """
 
     # Example usage

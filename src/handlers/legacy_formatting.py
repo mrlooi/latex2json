@@ -88,18 +88,19 @@ class LegacyFormattingHandler(TokenHandler):
             # get position after command i.e. match.group(2)
             next_pos = match.end(2)
             text, end_pos = extract_nested_content('{' + content[next_pos:])
-            text = text.strip()
             end_pos = next_pos + end_pos - 1 # -1 to account for the opening brace
             diff = end_pos - match.end(0)
             
             # Convert to modern format, preserving leading whitespace
+            # text = text.strip()
             modern_command = LEGACY_FORMAT_MAPPING.get(command)
             if modern_command:
+                text = whitespace + r'\\' + modern_command + '{' + text.strip() + '}'
                 if self.process_content_fn:
                     text = self.process_content_fn(text)
                 output = {
                     'type': 'command',
-                    'content': whitespace + r'\\' + modern_command + '{' + text + '}'
+                    'content': text
                 }
             else:
                 text = content[:next_pos] + text + '}' # close the opening brace

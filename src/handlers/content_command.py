@@ -8,10 +8,10 @@ from src.patterns import SECTION_LEVELS
 # ASSUMES ORDERD DICT (PYTHON 3.7+)
 RAW_PATTERNS = OrderedDict([
     # 1. Commands that need nested brace handling (simplified patterns)
-    ('section', r'\\(?:(?:sub)*section)\s*{'),
-    ('paragraph', r'\\(?:(?:sub)*paragraph)\s*{'),
-    ('part', r'\\part\s*{'),
-    ('chapter', r'\\chapter\s*{'),
+    ('section', r'\\(?:(?:sub)*section\*?)\s*{'),
+    ('paragraph', r'\\(?:(?:sub)*paragraph\*?)\s*{'),
+    ('part', r'\\part\*?\s*{'),
+    ('chapter', r'\\chapter\*?\s*{'),
     ('footnote', r'\\footnote\s*{'),
     ('caption', r'\\caption\s*{'),
     ('captionof', r'\\captionof\s*{([^}]*?)}\s*{'),

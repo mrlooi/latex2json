@@ -6,39 +6,23 @@ from src.patterns import NEWLINE_PATTERN
 from src.latex_maps.latex_unicode_converter import LatexUnicodeConverter
 from collections import OrderedDict
 
-class CommandProcessor:
-    def __init__(self):
-        self.commands: Dict[str, Dict[str, any]] = {}
-        
-        # Add built-in newline normalization command using pre-compiled pattern
-        self._init_newline_command()
-        
-        # Replace the unicode conversion initialization with LatexUnicodeConverter
-        self.unicode_converter = LatexUnicodeConverter()
+def substitute_args(definition: str, args: List[str]) -> str:
+    """Substitute #1, #2, etc. with the provided arguments in order"""
+    result = definition
+    # Sort in reverse order to handle #10 before #1, etc.
+    for i, arg in enumerate(args, 1):
+        if arg is not None:  # Only substitute if we have a value
+            result = result.replace(f'#{i}', arg)
+    return result
 
-    def _init_newline_command(self):
-        newline_command = {
-            'definition': '\n',
-            'args': {'num_args': 0, 'defaults': [], 'required_args': 0},
-            'pattern': NEWLINE_PATTERN,
-            'handler': lambda m: '\n'
-        }
-        self.commands['newline'] = newline_command
-
-    def clear(self):
-        self.commands = {}
-        self._init_newline_command()
-
-    def has_command(self, command_name: str) -> bool:
-        return command_name in self.commands
-
-    def process_command_definition(
-        self, 
+class NewCommandProcessor:
+    @staticmethod
+    def process( 
         command_name: str, 
         definition: str, 
         num_args: Optional[int] = None, 
         defaults: Optional[List[str]] = []
-    ) -> None:
+    ):
         """Store a new or renewed command definition"""
         command = {'definition': definition}
         
@@ -55,37 +39,29 @@ class CommandProcessor:
 
         command['args'] = args
 
-        # Balance braces and add missing ones
-        stack = []
-        for char in definition:
-            if char == '{':
-                stack.append(char)
-            elif char == '}':
-                if stack:
-                    stack.pop()
-                else:
-                    raise ValueError("Unbalanced closing brace in definition.")
-        if stack:
-            definition += '}' * len(stack)
-
         # Create and store the handler with the command
-        pattern, handler = self._create_command_handler(command_name, command)
+        pattern, handler = NewCommandProcessor.create_command_handler(command_name, command)
         command['pattern'] = pattern
         command['handler'] = handler
 
-        self.commands[command_name] = command
-        return len(stack)
+        return command
+    
+    @staticmethod
+    def expand(text: str, commands: Dict[str, Dict[str, any]]) -> tuple[str, int]:
+        """Recursively expand defined commands in the text until no further expansions are possible."""
+        # First handle all regular command expansions
+        previous_text = None
+        match_count = 0
+        while previous_text != text:
+            previous_text = text
+            for cmd in commands.values():
+                text = cmd['pattern'].sub(cmd['handler'], text)
+                if previous_text != text:
+                    match_count += 1
+        return text, match_count
 
-    def _substitute_args(self, definition: str, args: List[str]) -> str:
-        """Substitute #1, #2, etc. with the provided arguments in order"""
-        result = definition
-        # Sort in reverse order to handle #10 before #1, etc.
-        for i, arg in enumerate(args, 1):
-            if arg is not None:  # Only substitute if we have a value
-                result = result.replace(f'#{i}', arg)
-        return result
-
-    def _create_command_handler(self, cmd_name: str, cmd_info: dict) -> tuple[re.Pattern, callable]:
+    @staticmethod
+    def create_command_handler(cmd_name: str, cmd_info: dict) -> tuple[re.Pattern, callable]:
         """Creates and returns a cached (pattern, handler) tuple for a command"""
         pattern = r'\\' + re.escape(cmd_name)
         num_args = cmd_info['args']['num_args']
@@ -116,21 +92,68 @@ class CommandProcessor:
             # Add required args
             args.extend(groups[num_optional:num_optional + num_required])
             
-            return self._substitute_args(cmd_info['definition'], args)
+            return substitute_args(cmd_info['definition'], args)
 
         return regex, handler
 
+class CommandProcessor:
+    def __init__(self):
+        self.commands: Dict[str, Dict[str, any]] = {}
+
+        # Add built-in newline normalization command using pre-compiled pattern
+        self._init_newline_command()
+        
+        # Replace the unicode conversion initialization with LatexUnicodeConverter
+        self.unicode_converter = LatexUnicodeConverter()
+
+    def _init_newline_command(self):
+        newline_command = {
+            'definition': '\n',
+            'args': {'num_args': 0, 'defaults': [], 'required_args': 0},
+            'pattern': NEWLINE_PATTERN,
+            'handler': lambda m: '\n'
+        }
+        self.commands['newline'] = newline_command
+
+    def clear(self):
+        self.commands = {}
+        self._init_newline_command()
+
+    def has_command(self, command_name: str) -> bool:
+        return command_name in self.commands
+
+    def process_newcommand(
+        self, 
+        command_name: str, 
+        definition: str, 
+        num_args: Optional[int] = None, 
+        defaults: Optional[List[str]] = []
+    ):
+        command = NewCommandProcessor.process(command_name, definition, num_args, defaults)
+        if command:
+            self.commands[command_name] = command
+    
+    def process_newdef(self, command_name: str, definition: str, num_args: int, usage_pattern: str):
+        def handler(match):
+            args = [g for g in match.groups() if g is not None]
+            
+            return substitute_args(definition, args)
+        
+        try: 
+            command = {
+                'definition': definition,
+                'args': {'num_args': num_args },
+                'pattern': re.compile(usage_pattern, re.DOTALL),
+                'handler': handler
+            }
+            self.commands[command_name] = command
+        except Exception as e:
+            print(f"Error processing newdef {command_name}: {e}")
+            raise e
+        
     def expand_commands(self, text: str, ignore_unicode: bool = False) -> tuple[str, int]:
         """Recursively expand defined commands in the text until no further expansions are possible."""
-        # First handle all regular command expansions
-        previous_text = None
-        match_count = 0
-        while previous_text != text:
-            previous_text = text
-            for cmd in self.commands.values():
-                text = cmd['pattern'].sub(cmd['handler'], text)
-                if previous_text != text:
-                    match_count += 1
+        text, match_count = NewCommandProcessor.expand(text, self.commands)
         
         # Handle unicode conversions using the converter
         if not ignore_unicode:

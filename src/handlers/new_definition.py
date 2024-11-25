@@ -3,21 +3,21 @@ from typing import Callable, Dict, Optional, Tuple
 from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content
 
-POST_NEW_COMMAND_PATTERN_STR = r'\*?(?:{\\([^}]+)}|\\([^\s{[]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{'
+POST_NEW_COMMAND_PATTERN_STR = r'\*?\s*(?:{\\([^}]+)}|\\([^\s{[]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{'
 
 # Compile patterns for definition commands
 PATTERNS = {
     # Matches newcommand/renewcommand, supports both {\commandname} and \commandname syntax
-    'newcommand': re.compile(r'\\(?:new|renew|provide)command' + POST_NEW_COMMAND_PATTERN_STR),
+    'newcommand': re.compile(r'\\(?:new|renew|provide)command' + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL),
 
-    'declaremathoperator': re.compile(r'\\DeclareMathOperator' + POST_NEW_COMMAND_PATTERN_STR), # for math mode
-    'declarerobustcommand': re.compile(r'\\DeclareRobustCommand' + POST_NEW_COMMAND_PATTERN_STR),
+    'declaremathoperator': re.compile(r'\\DeclareMathOperator' + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL), # for math mode
+    'declarerobustcommand': re.compile(r'\\DeclareRobustCommand' + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL),
     
     # Matches \def commands - always with backslash before command name
-    'def': re.compile(r'\\def\s*\\([^\s{#]+)(((?:#\d+|[^{])*)\s*{)'),
+    'def': re.compile(r'\\def\s*\\([^\s{#]+)(((?:#\d+|[^{])*)\s*{)', re.DOTALL),
     
     # Matches newtheorem with all its optional arguments
-    'newtheorem': re.compile(r'\\newtheorem{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?'),
+    'newtheorem': re.compile(r'\\newtheorem{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?', re.DOTALL),
 }
 
 class NewDefinitionHandler(TokenHandler):

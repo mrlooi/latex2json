@@ -246,6 +246,35 @@ def test_alt_command_definitions(parser):
     assert equations[0]["content"] == r"\varepsilon"
     assert equations[0]["display"] == "inline"
 
+def test_newdef_definitions(parser):
+    text = r"""
+    \def\foo#1{bar #1}
+    \foo{hello}
+    """
+    parsed_tokens = parser.parse(text)
+    assert parsed_tokens[0]["content"].strip() == "bar hello"
+
+    # test that \newcommand overrides \def
+    text = r"""
+    \def\foo#1{bar #1}
+    \newcommand\foo[1]{NOBAR #1}
+    \foo{hello}
+    """
+    parsed_tokens = parser.parse(text)
+    assert parsed_tokens[0]["content"].strip() == "NOBAR hello"
+
+    text = r"""
+    \newcommand\addme[2]{#1+NONONO+#2}
+    \def\addme#1#2{
+        #1+#2
+    }
+    \begin{equation}
+        \addme{x}{y}
+    \end{equation}
+    """
+    parsed_tokens = parser.parse(text)
+    assert parsed_tokens[0]["content"].strip() == "x+y"
+
 # TestParserEnvironments tests:
 
 def test_nested_environments(parser):
