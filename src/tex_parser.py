@@ -16,29 +16,13 @@ TRAILING_BACKSLASH = re.compile(r'\\+$')
 UNKNOWN_COMMAND_PATTERN = re.compile(r'([ \t\n]*\\[a-zA-Z]+(?:\{(?:[^{}]|{[^{}]*})*\})*[ \t\n]*)')
 
 
-def add_token(token: str | Dict, tokens: List[Dict]):
-    if not token:
-        return
-        
-    # Convert string token to dict format
-    token_dict = (
-        {"type": "text", "content": token} 
-        if isinstance(token, str) 
-        else token
-    )
-    
-    # Merge consecutive text tokens
-    if (token_dict.get('type') == 'text' and 
-        tokens and 
-        tokens[-1].get('type') == 'text'):
-        tokens[-1]['content'] += token_dict['content']
-    else:
-        tokens.append(token_dict)
 
 class LatexParser:
     def __init__(self):
         self.labels = {}
+
         self.current_env = None  # Current environment token (used for associating nested labels)
+        self.current_str = ""
 
         # Regex patterns for different LaTeX elements
         self.command_processor = CommandProcessor()
@@ -73,6 +57,7 @@ class LatexParser:
 
     def clear(self):
         self.labels = {}
+        self.current_str = ""
         self.current_env = None
         self.command_processor.clear()
         # handlers
@@ -119,6 +104,36 @@ class LatexParser:
             return cell[0]
         return cell
 
+    def add_token(self, token: str | Dict, tokens: List[Dict]):
+        # uncomment this if we want to merge self.current_str whitespaces 
+        # if self.current_str:
+        #     if tokens and tokens[-1].get('type') == 'text':
+        #         tokens[-1]['content'] += self.current_str
+        #     else:
+        #         tokens.append({
+        #             "type": "text",
+        #             "content": self.current_str
+        #         })
+
+        self.current_str = ""
+
+        if token:                
+            # Convert string token to dict format
+            token_dict = token
+            if isinstance(token, str):
+                token_dict = {
+                    "type": "text",
+                    "content": token
+                }
+            
+            # Merge consecutive text tokens
+            if (token_dict.get('type') == 'text' and 
+                tokens and 
+                tokens[-1].get('type') == 'text'):
+                tokens[-1]['content'] += token_dict['content']
+            else:
+                tokens.append(token_dict)
+        
     def _handle_unknown_command(self, match) -> Dict[str, str]:
         """Convert unknown LaTeX command into a text token with original syntax"""
         # Get the full matched text to preserve all arguments
@@ -177,7 +192,7 @@ class LatexParser:
                         token["content"] = self.parse(token["content"])
                         self.current_env = prev_env
 
-                    add_token(token, tokens)
+                    self.add_token(token, tokens)
                 return True, end_pos
         return False, 0
 
@@ -197,12 +212,12 @@ class LatexParser:
                     self._handle_label(label, tokens)
                 return True, start_pos + end_pos
             elif matched_type == 'newline' or matched_type == 'break_spacing':
-                add_token(line_break_delimiter, tokens)
+                self.add_token(line_break_delimiter, tokens)
             else:
                 # For all other token types, expand any commands in their content
                 x = match.group(1) if match.groups() else match.group(0)
                 x = self._expand_command(x)
-                add_token({ 
+                self.add_token({ 
                     "type": matched_type,
                     "content": x
                 })
@@ -218,6 +233,7 @@ class LatexParser:
         while current_pos < len(content):
             # Skip whitespace
             while current_pos < len(content) and content[current_pos].isspace():
+                self.current_str += content[current_pos]
                 current_pos += 1
             if current_pos >= len(content):
                 break
@@ -229,7 +245,7 @@ class LatexParser:
                     token, end_pos = self.legacy_formatting_handler.handle(content[current_pos:])
                     current_pos += end_pos
                     if token:
-                        add_token(token, tokens)
+                        self.add_token(token, tokens)
                     continue
 
                 # Find matching closing brace
@@ -254,7 +270,7 @@ class LatexParser:
                     unknown_cmd = UNKNOWN_COMMAND_PATTERN.match(text)
                     if unknown_cmd:
                         text = self._handle_unknown_command(unknown_cmd)
-                    add_token(text, tokens)
+                    self.add_token(text, tokens)
                 current_pos += end_pos
                 if not next_command:
                     break
@@ -279,7 +295,7 @@ class LatexParser:
                 unknown_cmd = UNKNOWN_COMMAND_PATTERN.match(content[current_pos:])
                 if unknown_cmd:
                     text = self._handle_unknown_command(unknown_cmd)
-                    add_token(text, tokens)
+                    self.add_token(text, tokens)
                     # Adjust position by the full match length including whitespace
                     current_pos += len(unknown_cmd.group(0))
                 else:
@@ -290,9 +306,11 @@ class LatexParser:
 if __name__ == "__main__":
 
     text =  r"""
-    \def \foo#1{bar #1}
-    
-    \foo{hello}
+\newcommand{\integral}{ \int_{D_{t,r}^R }} 
+\newcommand{\st}{{S^2}}
+
+    $\integral$
+    \st
     """
 
     # Example usage
