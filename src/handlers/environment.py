@@ -18,6 +18,7 @@ ENV_TYPES = {
     "figure": "figure",
     "subfigure": "figure",
     "subfloat": "figure",  # another common figure subdivision
+    "quote": "quote",
     **{env: "list" for env in LIST_ENVIRONMENTS}
 }
 
@@ -88,7 +89,7 @@ class EnvironmentProcessor:
                     args.append('')  # Empty string for missing required args
             
             # Process begin definition with arguments
-            result = env_info['begin_def']
+            result = env_info['begin_def'] + " " # add trailing space to pad
             for i, arg in enumerate(args, 1):
                 if arg is not None:
                     # Replace unescaped #i with arg, preserve \#

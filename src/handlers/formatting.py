@@ -13,6 +13,9 @@ RAW_PATTERNS = OrderedDict([
     ('page', r'\\(usepackage|centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|nopagebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b'),
     ('make', r'\\(maketitle|makeatletter|makeatother)\b'),
 
+    # New margin and size commands allowing any characters after the number
+    ('margins', r'\\(topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth)\s*([-+]?\d*\.?\d+.*)\b'),
+
     ('separators', r'\\(?:'
         r'hline|'  # no args
         r'vspace\s*{([^}]+)}|hspace\s*{([^}]+)}|'  # {length}
