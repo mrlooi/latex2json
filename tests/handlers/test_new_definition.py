@@ -203,6 +203,15 @@ def test_let_command(handler):
     assert token["name"] == "foo"
     assert token["content"] == r"\bar"
 
+def test_crefname(handler):
+    content = r"\crefname{equation}{333}{aaaa} hahaha"
+    token, pos = handler.handle(content)
+    assert token["type"] == "crefname"
+    assert token["counter"] == "equation"
+    assert token["singular"] == "333"
+    assert token["plural"] == "aaaa"
+
+    assert content[pos:].strip() == "hahaha"
 
 def test_def_usage_outputs(handler):
     def extract_def_args(text, search):

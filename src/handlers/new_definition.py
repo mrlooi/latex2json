@@ -19,6 +19,8 @@ PATTERNS = {
     
     # Matches newtheorem with all its optional arguments
     'newtheorem': re.compile(r'\\newtheorem{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?', re.DOTALL),
+
+    'crefname': re.compile(r'\\crefname{([^}]*)}{([^}]*)}{([^}]*)}', re.DOTALL),
 }
 
 class NewDefinitionHandler(TokenHandler):
@@ -43,8 +45,20 @@ class NewDefinitionHandler(TokenHandler):
                     return self._handle_newtheorem(match)
                 elif pattern_name == 'def':
                     return self._handle_def(content, match)
+                elif pattern_name == 'crefname':
+                    return self._handle_crefname(match)
         
         return None, 0
+    
+    def _handle_crefname(self, match) -> Tuple[Optional[Dict], int]:
+        r"""Handle \crefname definitions"""
+        token = {
+            "type": "crefname",
+            "counter": match.group(1),
+            "singular": match.group(2),
+            "plural": match.group(3)
+        }
+        return token, match.end()
     
     def _handle_let(self, match) -> Tuple[Optional[Dict], int]:
         token = {

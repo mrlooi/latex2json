@@ -49,7 +49,7 @@ RAW_PATTERNS = OrderedDict([
     ('setcounter', r'\\setcounter\s*\{([^}]+)\}\{([^}]+)\}'),
 
     # New margin and size commands allowing any characters after the number
-    ('margins', r'\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth)\s*([-+]?\d*\.?\d+.*)\b'),
+    ('margins', r'\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)\s*([-+]?\d*\.?\d+.*)\b'),
 
     # spacing 
     ('spacing', r'\\(?:'
@@ -70,6 +70,7 @@ RAW_PATTERNS = OrderedDict([
         r'cdashline\s*{([^}]+)}|'  # {n-m}
         r'specialrule\s*{([^}]*)}\s*{([^}]*)}\s*{([^}]*)}|'  # {height}{above}{below}
         r'addlinespace(?:\[([^\]]*)\])?|'  # optional [length]
+        r'rule\s*{[^}]*}\s*{[^}]*}|'  # \rule{width}{height}
         r'morecmidrules'  # no args
         r')'),
     

@@ -162,8 +162,8 @@ class LatexParser:
                     self.command_processor.process_newcommand(cmd_name, token["content"], token["num_args"], token["defaults"])
                 elif token['type'] == 'def':
                     self.command_processor.process_newdef(token['name'], token["content"], token["num_args"], token["usage_pattern"])
-                elif token['type'] == 'newtheorem':
-                    pass
+                # elif token['type'] == 'newtheorem':
+                #     pass
         
             return end_pos
         return 0
