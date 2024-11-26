@@ -50,18 +50,18 @@ def test_handle_equation_environments(handler):
     # Test basic equation environment
     content = r"\begin{equation}x^2\end{equation}"
     token, pos = handler.handle(content)
-    assert token == {"type": "equation", "content": "x^2", "display": "block"}
+    assert token == {"type": "equation", "content": "x^2", "display": "block", "numbered": True}
     assert pos == len(content)
 
     # Test align environment
     content = r"\begin{align}x &= y\end{align}"
     token, pos = handler.handle(content)
-    assert token == {"type": "equation", "content": "x &= y", "display": "block"}
+    assert token == {"type": "equation", "content": "x &= y", "display": "block", "numbered": True}
     assert pos == len(content)
 
 def test_handle_equations_with_labels(handler):
     # Test equation with label
-    content = r"\begin{equation} x^2 \label{eq:square} \end{equation}"
+    content = r"\begin{equation*} x^2 \label{eq:square} \end{equation*}"
     token, pos = handler.handle(content)
     assert token == {
         "type": "equation",

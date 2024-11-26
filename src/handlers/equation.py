@@ -86,12 +86,24 @@ class EquationHandler(TokenHandler):
                     equation = self.process_content_fn(equation)
                 
                 # Create token
+                inline = pattern_name.startswith('equation_inline')
+                display = 'inline' if inline else 'block'
+                # if inline:
+                #     token = {
+                #         "type": "text", 
+                #         "content": "$" + equation + "$ "
+                #     }
+                # else:
                 token = {
                     "type": "equation",
                     "content": equation,
-                    # Set display mode based on pattern name
-                    "display": "inline" if pattern_name.startswith('equation_inline') else "block"
+                    "display": display
                 }
+
+                if pattern_name in equation_env_dict:
+                    numbered = not match.group(0).strip().endswith('*}')
+                    if numbered:
+                        token["numbered"] = True
                 
                 if labels:
                     token["labels"] = labels
@@ -104,10 +116,10 @@ if __name__ == "__main__":
     handler = EquationHandler()
     # print(handler.can_handle("$x^2$"))
     content = r"""
-    \begin{equation} 
+    \begin{equation*} 
     x^2 \label{eq:square} 
     E=mc^2 \label{eq:energy}
-    \end{equation}
+    \end{equation*}
     """.strip()
     token, pos = handler.handle(content)
     print(token)
