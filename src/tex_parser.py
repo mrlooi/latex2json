@@ -40,10 +40,11 @@ class LatexParser:
             ContentCommandHandler(self._expand_command),
             # for tabular, on the first pass we process content and maintain the '\\' delimiter to maintain row integrity
             TabularHandler(process_content_fn=lambda x: self.parse(x, r'\\'), cell_parser_fn=self.parse),
-            FormattingHandler(),
-            self.legacy_formatting_handler,
             # make sure to add EnvironmentHandler after equation/tabular or other env related formats, since it will greedily parse any begin/end block. Add as last to be safe
-            self.env_handler 
+            self.env_handler,
+            # add formatting stuffs last
+            FormattingHandler(), 
+            self.legacy_formatting_handler,
         ]
         self.new_definition_handler = NewDefinitionHandler()
 
@@ -286,6 +287,14 @@ class LatexParser:
                 current_pos += end_pos
                 continue
             
+            # check for user defined commands
+            if self.command_processor.can_handle(content[current_pos:]):
+                text, end_pos = self.command_processor.handle(content[current_pos:])
+                if end_pos > 0:
+                    # replace the matched user command with the expanded text
+                    content = content[:current_pos] + text + content[current_pos + end_pos:]
+                    continue
+
             # try each handler
             matched, end_pos = self._check_handlers(content[current_pos:], tokens)
             current_pos += end_pos

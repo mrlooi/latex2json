@@ -1044,5 +1044,18 @@ Tomoyuki Kaneko and Kunihito Hoki.
     assert parsed_tokens[1]['type'] == 'text'
     assert parsed_tokens[1]['content'].strip() == 'Hi there'
 
+def test_user_defined_commands_override(parser):
+    text = r"""
+    \noindent % should be ignored by formatter
+
+    \def\noindent{NO INDENT TEXT} % but let's redefine it here
+
+    \noindent % should now be NO INDENT TEXT
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]['type'] == 'text'
+    assert parsed_tokens[0]['content'].strip() == 'NO INDENT TEXT'
+
 if __name__ == "__main__":
     pytest.main([__file__])

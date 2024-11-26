@@ -103,25 +103,12 @@ class NewCommandProcessor:
 class CommandProcessor:
     def __init__(self):
         self.commands: Dict[str, Dict[str, any]] = {}
-
-        # Add built-in newline normalization command using pre-compiled pattern
-        self._init_newline_command()
         
         # Replace the unicode conversion initialization with LatexUnicodeConverter
         self.unicode_converter = LatexUnicodeConverter()
 
-    def _init_newline_command(self):
-        newline_command = {
-            'definition': '\n',
-            'args': {'num_args': 0, 'defaults': [], 'required_args': 0},
-            'pattern': NEWLINE_PATTERN,
-            'handler': lambda m: '\n'
-        }
-        self.commands['newline'] = newline_command
-
     def clear(self):
         self.commands = {}
-        self._init_newline_command()
 
     def has_command(self, command_name: str) -> bool:
         return command_name in self.commands
@@ -164,3 +151,19 @@ class CommandProcessor:
             text = self.unicode_converter.convert(text)
         
         return text, match_count
+
+    def can_handle(self, text: str) -> bool:
+        matched = False
+        for cmd in self.commands.values():
+            if cmd['pattern'].match(text):
+                matched = True
+                break
+        return matched
+
+    def handle(self, text: str) -> str:
+        for cmd in self.commands.values():
+            match = cmd['pattern'].match(text)
+            if match:
+                return cmd['handler'](match), match.end()
+        return text, 0
+

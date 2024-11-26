@@ -11,7 +11,7 @@ RAW_PATTERNS = OrderedDict([
     ('label', r'\\label\s*{'),
 
     # Line breaks
-    ('newline', r'\\(?:newline|linebreak)\b'),
+    ('newline', r'\\(?:newline|linebreak)(?![a-zA-Z])'),
     # Line break with optional spacing specification
     ('break_spacing', r'\\\\(?:\s*\[([^]]*)\])?'),  # Added \s* to handle optional whitespace
 ])
