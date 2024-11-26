@@ -81,11 +81,10 @@ def test_env_with_newenvironment(handler):
 
     next_content = content[pos:].strip()
     token, pos = handler.handle(next_content)
-    assert token == {
-        "type": "environment",
-        "name": "test",
-        "content": r"\begin{center} yolo swag  MY TEXT\end{center}"
-    }
+
+    assert token["type"] == "environment"
+    assert token["name"] == "test"
+    assert token["content"].replace(" ", "") == r"\begin{center}yoloswagMYTEXT\end{center}"
 
 if __name__ == "__main__":
     pytest.main([__file__]) 

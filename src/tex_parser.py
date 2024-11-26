@@ -182,8 +182,11 @@ class LatexParser:
                             "type": "text",
                             "content": token
                         }
-                    elif token['type'] == 'footnote':
+                    elif token['type'] in ['footnote', 'caption']:
+                        prev_env = self.current_env
+                        self.current_env = token
                         token["content"] = self._parse_cell(token["content"])
+                        self.current_env = prev_env
                     elif token['type'] == 'section':
                         self.current_env = token
                     elif isinstance(handler, BaseEnvironmentHandler):
@@ -306,11 +309,12 @@ class LatexParser:
 if __name__ == "__main__":
 
     text =  r"""
-\newcommand{\integral}{ \int_{D_{t,r}^R }} 
-\newcommand{\st}{{S^2}}
-
-    $\integral$
-    \st
+\begin{tabular}{|c|c|}
+    \hline
+    Hello & World \\ 
+    color & \color{red} red \\
+    \hline
+\end{tabular}
     """
 
     # Example usage

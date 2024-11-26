@@ -726,8 +726,12 @@ def test_unknown_commands(parser):
     # Check unknown commands in figure caption
     figure = [t for t in parsed_tokens if t['type'] == 'figure'][0]
     caption = [t for t in figure['content'] if t['type'] == 'caption'][0]
-    assert '\\textsc{Small Caps}' in caption['content']
-    assert '\\textsf{Sans Serif}' in caption['content']
+    assert caption["title"] == "Table"
+    assert figure['content'][0]["type"] == "includegraphics"
+
+    caption_content = ''.join(t['content'] for t in caption['content'])
+    assert '\\textsc{Small Caps}' in caption_content
+    assert '\\textsf{Sans Serif}' in caption_content
 
 def test_newcommand_with_unknown_command(parser):
     text = r"""
