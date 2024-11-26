@@ -28,6 +28,9 @@ RAW_PATTERNS = OrderedDict([
     
     # Citations
     ('citation', r'\\(?:cite|citep|citet)(?:\[([^\]]*)\])?\s*{'),
+
+    # Title
+    ('title', r'\\title\s*{'),
 ])
 
 # compile them
@@ -78,6 +81,12 @@ class ContentCommandHandler(TokenHandler):
                 "type": 'section',
                 "title": content,
                 "level": level
+            }
+        
+        elif matched_type == 'title':
+            return {
+                "type": "title",
+                "title": content
             }
         
         elif matched_type == 'caption':

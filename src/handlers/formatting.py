@@ -30,25 +30,29 @@ COLOR_COMMANDS_PATTERN = re.compile(
     re.VERBOSE
 )
 
-
 RAW_PATTERNS = OrderedDict([
     # Comments
     ('comment', r'%([^\n]*)'),
 
-    # Formatting commands
-    ('page', r'\\(centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|nopagebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break)\b'),
-    ('make', r'\\(maketitle|makeatletter|makeatother)\b'),
-
+    # top level commands
+    ('documentclass', r'\\documentclass(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}'),
     ('usepackage', r'\\usepackage(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}'),
 
-    ('pagestyle', r'\\(pagestyle|thispagestyle)\s*\{[^}]*\}'),
-    ('newcolumntype', r'\\(newcolumntype|renewcolumntype)\s*\{[^}]*\}\s*{'),
-    ('newpagestyle', r'\\(newpagestyle|renewpagestyle)\s*\{[^}]*\}\s*{'),
-    ('newsetlength', r'\\(newlength\s*\{[^}]*\})|\\setlength\s*\{([^}]+)\}\{([^}]+)\}'),
+    # Formatting commands
+    ('make', r'\\(?:maketitle|makeatletter|makeatother)\b'),
+    ('page', r'\\(?:centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|nopagebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break|scriptsize)\b'),
+    ('pagestyle', r'\\(?:pagestyle|thispagestyle)\s*\{[^}]*\}'),
+    ('newpagestyle', r'\\(?:newpagestyle|renewpagestyle)\s*\{[^}]*\}\s*{'),
+ 
+    # setters
+    ('newsetlength', r'\\(?:newlength\s*\{[^}]*\})|\\setlength\s*\{([^}]+)\}\{([^}]+)\}'),
+    ('setcounter', r'\\setcounter\s*\{([^}]+)\}\{([^}]+)\}'),
 
     # New margin and size commands allowing any characters after the number
-    ('margins', r'\\(topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth)\s*([-+]?\d*\.?\d+.*)\b'),
+    ('margins', r'\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth)\s*([-+]?\d*\.?\d+.*)\b'),
 
+    # table
+    ('newcolumntype', r'\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}\s*{'),
     ('separators', r'\\(?:'
         r'hline|'  # no args
         r'vspace\s*{([^}]+)}|hspace\s*{([^}]+)}|'  # {length}
@@ -62,7 +66,11 @@ RAW_PATTERNS = OrderedDict([
         r'morecmidrules'  # no args
         r')'),
     
-    ('backslash', r'\\(backslash|textbackslash)\b')
+    ('backslash', r'\\(?:backslash|textbackslash)\b'),
+
+    ('ensuremath', r'\\ensuremath\s*{'),
+
+    ('niceties', r'\\(?:normalsize)\s*{')
 ])
 
 # Then compile them into a new dictionary
@@ -93,6 +101,14 @@ class FormattingHandler(TokenHandler):
                     start_pos = match.end() - 1
                     extracted_content, end_pos = extract_nested_content(content[start_pos:])
                     return None, start_pos + end_pos
+                elif pattern_name == 'ensuremath':
+                    start_pos = match.end() - 1
+                    extracted_content, end_pos = extract_nested_content(content[start_pos:])
+                    return {'type': 'equation', 'content': extracted_content, 'display': 'inline'}, start_pos + end_pos
+                elif pattern_name == 'niceties':
+                    start_pos = match.end() - 1
+                    extracted_content, end_pos = extract_nested_content(content[start_pos:])
+                    return {'type': 'text', 'content': extracted_content}, start_pos + end_pos
                 # ignore formatting commands
                 return None, match.end()
         

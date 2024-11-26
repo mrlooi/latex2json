@@ -12,6 +12,8 @@ LIST_ENVIRONMENTS = ['itemize', 'enumerate', 'description']
 
 # Map environment names to their types
 ENV_TYPES = {
+    "document": "document",
+    "abstract": "abstract",
     "table": "table",
     "subtable": "table",
     "subsubtable": "table",
