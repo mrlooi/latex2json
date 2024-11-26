@@ -69,6 +69,8 @@ class ContentCommandHandler(TokenHandler):
     
     def _create_token(self, matched_type: str, match, content: str) -> Optional[Dict]:
         """Create appropriate token based on command type"""
+
+        content = content.strip()
         
         if matched_type in ['section', 'paragraph', 'chapter', 'part']:
             level = match.group(0).count('sub') + SECTION_LEVELS[matched_type]
