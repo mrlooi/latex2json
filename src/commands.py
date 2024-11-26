@@ -63,7 +63,7 @@ class NewCommandProcessor:
     @staticmethod
     def create_command_handler(cmd_name: str, cmd_info: dict) -> tuple[re.Pattern, callable]:
         """Creates and returns a cached (pattern, handler) tuple for a command"""
-        pattern = r'\\' + re.escape(cmd_name)
+        pattern = r'\\' + re.escape(cmd_name) + r'\b'
         num_args = cmd_info['args']['num_args']
         
         if num_args == 0:
