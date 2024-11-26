@@ -51,11 +51,18 @@ RAW_PATTERNS = OrderedDict([
     # New margin and size commands allowing any characters after the number
     ('margins', r'\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth)\s*([-+]?\d*\.?\d+.*)\b'),
 
+    # spacing 
+    ('spacing', r'\\(?:'
+        r'quad|qquad|,|;|'  # \quad, \qquad, \, \;
+        r'hspace\*?\s*{([^}]+)}|'  # \hspace{length}
+        r'hskip\s*\d*\.?\d+(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b'  # \hskip 10pt
+        r')'),
+
     # table
     ('newcolumntype', r'\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}\s*{'),
     ('separators', r'\\(?:'
         r'hline|'  # no args
-        r'vspace\s*{([^}]+)}|hspace\s*{([^}]+)}|'  # {length}
+        r'vspace\s*{([^}]+)}|'
         r'cline\s*{([^}]+)}|'  # {n-m}
         r'(?:midrule|toprule|bottomrule)(?:\[\d*[\w-]*\])?|'  # optional [trim]
         r'cmidrule(?:\[([^\]]*)\])?\s*{([^}]+)}|'  # optional [trim] and {n-m}
@@ -96,6 +103,8 @@ class FormattingHandler(TokenHandler):
                         'type': 'text',
                         'content': r'\\'
                     }, match.end()
+                elif pattern_name == 'spacing':
+                    return {'type': 'text', 'content': ' '}, match.end()
                 elif pattern_name == 'newcolumntype' or pattern_name == 'newpagestyle':
                     # extracted nested
                     start_pos = match.end() - 1

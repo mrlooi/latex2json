@@ -112,6 +112,21 @@ def test_handle_color_commands(handler):
         # assert token is None
         assert pos > 0
 
+def test_spacing_commands(handler):
+    def check_token(token, pos):
+        assert token["type"] == "text"
+        assert token["content"] == " "
+        assert pos > 0
+
+    token, pos = handler.handle(r"\hspace{10pt}")
+    check_token(token, pos)
+
+    token, pos = handler.handle(r"\quad")
+    check_token(token, pos)
+
+    token, pos = handler.handle(r"\,")
+    check_token(token, pos)
+
 
 if __name__ == "__main__":
     pytest.main([__file__]) 
