@@ -184,7 +184,10 @@ class TabularHandler(TokenHandler):
                     if text:
                         parsed_content = self._parse_cell(text)
                         if parsed_content:
-                            cells.extend(parsed_content)
+                            if isinstance(parsed_content, str):
+                                cells.append({'type': 'text', 'content': parsed_content})
+                            else:
+                                cells.extend(parsed_content)
                 
                 while current_pos < len(content):
                     # Look for the next reference key

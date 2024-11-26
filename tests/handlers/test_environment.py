@@ -86,5 +86,17 @@ def test_env_with_newenvironment(handler):
     assert token["name"] == "test"
     assert token["content"].replace(" ", "") == r"\begin{center}yoloswagMYTEXT\end{center}"
 
+def test_begingroup(handler):
+    content = r"\begingroup\begin{center}Center\end{center}\endgroup hahaha"
+    token, pos = handler.handle(content)
+    assert token is not None
+    assert content[pos:].strip() == "hahaha"
+
+    # test nested groups
+    content = r"\begingroup\begingroup\begin{center}Center\end{center}\endgroup\endgroup hahaha"
+    token, pos = handler.handle(content)
+    assert token is not None
+    assert content[pos:].strip() == "hahaha"
+
 if __name__ == "__main__":
     pytest.main([__file__]) 

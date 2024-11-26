@@ -3,12 +3,16 @@ from typing import Callable, Dict, List, Optional, Tuple
 from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content
 
+BEGIN_GROUP_PATTERN = re.compile(r'\\begingroup\b')
+END_GROUP_PATTERN = re.compile(r'\\endgroup\b')
 
 ENVIRONMENT_PATTERN = re.compile(r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}', re.DOTALL)
 
 NEW_ENVIRONMENT_PATTERN = re.compile(r'\\(?:new|renew|provide)environment\*?\s*{([^}]+)}')
 
 LIST_ENVIRONMENTS = ['itemize', 'enumerate', 'description']
+
+LAYOUT_ENVIRONMENTS = ['group', 'center', 'flushleft', 'flushright', 'minipage', 'adjustbox', 'spacing']
 
 # Map environment names to their types
 ENV_TYPES = {
@@ -22,7 +26,8 @@ ENV_TYPES = {
     "subfigure": "figure",
     "subfloat": "figure",  # another common figure subdivision
     "quote": "quote",
-    **{env: "list" for env in LIST_ENVIRONMENTS}
+    **{env: "list" for env in LIST_ENVIRONMENTS},
+    **{env: "layout" for env in LAYOUT_ENVIRONMENTS}
 }
 
 class EnvironmentProcessor:
@@ -105,6 +110,7 @@ class EnvironmentProcessor:
         
         return text
 
+
 class BaseEnvironmentHandler(TokenHandler):
     def __init__(self):
         super().__init__()
@@ -139,8 +145,39 @@ class BaseEnvironmentHandler(TokenHandler):
             
         return -1 if nesting_level > 0 else current_pos
 
+    def _find_matching_group_end(self, text: str, start_pos: int = 0) -> int:
+        """Find the matching endgroup for a begingroup, handling nested groups"""
+        nesting_level = 1
+        current_pos = start_pos
+        
+        while nesting_level > 0 and current_pos < len(text):
+            begin_match = BEGIN_GROUP_PATTERN.search(text[current_pos:])
+            end_match = END_GROUP_PATTERN.search(text[current_pos:])
+            
+            if not end_match:
+                return -1  # No matching endgroup found
+            
+            # Find which comes first - a begin or an end
+            begin_pos = begin_match.start() if begin_match else float('inf')
+            end_pos = end_match.start()
+            
+            if begin_pos < end_pos:
+                # Found nested begingroup
+                nesting_level += 1
+                current_pos += begin_pos + len('\\begingroup')
+            else:
+                # Found endgroup
+                nesting_level -= 1
+                current_pos += end_pos + len('\\endgroup')
+                if nesting_level == 0:
+                    return current_pos - len('\\endgroup')
+        
+        return -1 if nesting_level > 0 else current_pos
+
     def can_handle(self, content: str) -> bool:
-        return ENVIRONMENT_PATTERN.match(content) is not None
+        return (ENVIRONMENT_PATTERN.match(content) is not None or 
+                BEGIN_GROUP_PATTERN.match(content) is not None)
+
 
     def _handle_environment(self, env_name: str, inner_content: str) -> None:
         token = {
@@ -176,8 +213,8 @@ class BaseEnvironmentHandler(TokenHandler):
         token["content"] = inner_content
 
         return token
-    
-    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
+
+    def _try_match_env(self, content: str) -> Tuple[Optional[Dict], int]:
         match = ENVIRONMENT_PATTERN.match(content)
         if match:
             env_name = match.group(1).strip()
@@ -196,9 +233,40 @@ class BaseEnvironmentHandler(TokenHandler):
 
                 current_pos = end_pos + len(f"\\end{{{env_name}}}")
                 return env_token, current_pos
-        
         return None, 0
+
+    def _try_match_group(self, content: str) -> Tuple[Optional[Dict], int]:
+        # First check for begingroup
+        begin_match = BEGIN_GROUP_PATTERN.match(content)
+        if begin_match:
+            start_pos = begin_match.end()
+            end_pos = self._find_matching_group_end(content, start_pos)
+            
+            if end_pos == -1:
+                # No matching endgroup found, treat as plain text
+                return begin_match.group(0), begin_match.end()
+            
+            # Extract content between begingroup and endgroup
+            inner_content = content[start_pos:end_pos].strip()
+            
+            token = {
+                "type": ENV_TYPES.get("group", "environment"),
+                "name": "group",
+                "content": inner_content
+            }
+            
+            return token, end_pos + len('\\endgroup')
+
+        return None, 0
+
+    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
+        env, end_pos = self._try_match_env(content)
+        if env:
+            return env, end_pos
+        
+        return self._try_match_group(content)
     
+
 class EnvironmentHandler(BaseEnvironmentHandler):
     def __init__(self):
         super().__init__()
@@ -296,6 +364,7 @@ class EnvironmentHandler(BaseEnvironmentHandler):
         if self.environment_processor.has_environment(env_name):
             # check if expanded and changed
             inner_content = self.environment_processor.expand_environments(env_name, inner_content)
+            
             return {
                 "type": "environment",
                 "name": env_name,
