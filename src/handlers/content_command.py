@@ -77,10 +77,12 @@ class ContentCommandHandler(TokenHandler):
         
         if matched_type in ['section', 'paragraph', 'chapter', 'part']:
             level = match.group(0).count('sub') + SECTION_LEVELS[matched_type]
+            numbered = (matched_type + '*') not in match.group(0)
             return {
                 "type": 'section',
                 "title": content,
-                "level": level
+                "level": level,
+                "numbered": numbered
             }
         
         elif matched_type == 'title':

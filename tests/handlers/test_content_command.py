@@ -1,5 +1,6 @@
 import pytest
 from src.handlers.content_command import ContentCommandHandler
+from src.patterns import SECTION_LEVELS
 
 @pytest.fixture
 def handler():
@@ -24,15 +25,17 @@ def test_handle_sections(handler):
     assert token == {
         "type": "section",
         "title": "Introduction",
-        "level": 1
+        "level": SECTION_LEVELS['section'],
+        "numbered": True
     }
     
     # Test subsection
-    token, pos = handler.handle(r"\subsection{Methods}")
+    token, pos = handler.handle(r"\subsection*{Methods}")
     assert token == {
         "type": "section",
         "title": "Methods",
-        "level": 2
+        "level": SECTION_LEVELS['subsection'],
+        "numbered": False
     }
     
     # Test subsubsection
@@ -40,7 +43,8 @@ def test_handle_sections(handler):
     assert token == {
         "type": "section",
         "title": "Results",
-        "level": 3
+        "level": SECTION_LEVELS['subsubsection'],
+        "numbered": True
     }
 
 def test_handle_captions(handler):
@@ -140,11 +144,12 @@ def test_handle_with_expand_fn():
         return content.replace('old', 'new')
     
     handler = ContentCommandHandler(process_content_fn=mock_expand)
-    token, pos = handler.handle(r"\section{old title}")
+    token, pos = handler.handle(r"\paragraph*{old title}")
     assert token == {
         "type": "section",
         "title": "new title",
-        "level": 1
+        "level": SECTION_LEVELS['paragraph'],
+        "numbered": False
     }
 
 def test_handle_nested_content():
@@ -157,7 +162,8 @@ def test_handle_nested_content():
     assert token == {
         "type": "section",
         "title": "Title with bold {hello} text",
-        "level": 1
+        "level": SECTION_LEVELS['section'],
+        "numbered": True
     }
 
 def test_handle_invalid_input(handler):
@@ -173,11 +179,12 @@ def test_handle_invalid_input(handler):
 
 def test_handle_empty_content(handler):
     # Test empty section
-    token, pos = handler.handle(r"\section{}")
+    token, pos = handler.handle(r"\section*{}")
     assert token == {
         "type": "section",
         "title": "",
-        "level": 1
+        "level": SECTION_LEVELS['section'],
+        "numbered": False
     }
 
 if __name__ == "__main__":
