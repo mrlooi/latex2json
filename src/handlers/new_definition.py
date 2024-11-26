@@ -9,6 +9,7 @@ POST_NEW_COMMAND_PATTERN_STR = r'\*?\s*(?:{\\([^}]+)}|\\([^\s{[]+))(?:\s*\[(\d+)
 PATTERNS = {
     # Matches newcommand/renewcommand, supports both {\commandname} and \commandname syntax
     'newcommand': re.compile(r'\\(?:new|renew|provide)command' + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL),
+    'let': re.compile(r'\\let\s*\\([^\s{[=]+)\s*=?\s*((?:\\[^\s{[]+|[^\s{[\\]+))', re.DOTALL),
 
     'declaremathoperator': re.compile(r'\\DeclareMathOperator' + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL), # for math mode
     'declarerobustcommand': re.compile(r'\\DeclareRobustCommand' + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL),
@@ -36,6 +37,8 @@ class NewDefinitionHandler(TokenHandler):
                 # declaremathoperator is for math mde 
                 if pattern_name == 'newcommand' or pattern_name.startswith('declare'):
                     return self._handle_newcommand(content, match)
+                elif pattern_name == 'let':
+                    return self._handle_let(match)
                 elif pattern_name == 'newtheorem':
                     return self._handle_newtheorem(match)
                 elif pattern_name == 'def':
@@ -43,6 +46,16 @@ class NewDefinitionHandler(TokenHandler):
         
         return None, 0
     
+    def _handle_let(self, match) -> Tuple[Optional[Dict], int]:
+        token = {
+            "type": "newcommand",
+            "name": match.group(1),
+            "content": match.group(2).strip(),
+            "num_args": 0,
+            "defaults": []
+        }
+        return token, match.end()
+
     def _handle_newcommand(self, content: str, match) -> Tuple[Optional[Dict], int]:
         """Handle \newcommand and \renewcommand definitions"""
         start_pos = match.end() 
@@ -182,33 +195,10 @@ if __name__ == "__main__":
                     print(clean_groups(match))
         print()
 
-    # check_usage(r"\def\ratio#1:#2{#1 divided by #2}  % Usage: \ratio 3:4", r"\ratio{4}:{42}")
-    # check_usage(r"\def\ratio#1:#2{#1 divided by #2}  % Usage: \ratio 3:4", r"\ratio55:42 ss")
-    # check_usage(r"\def\foo!#1!{shout #1} sss", r"\foo! hello!!")
-    # check_usage(r"\def\foo!#1!{shout #1} sss", r"\foo!{hell  o!}!")
-    # check_usage(r"\def\swap#1#2{#2#1} bbb", r"\swap a b")
-    # check_usage(r"\def\fullname#1#2{#1 #2}  % Usage: \fullname{John}{Doe}", r"\fullname{John}{Doe}")
-    # check_usage(r"\def\pair(#1,#2){#1 and #2} bbb", r"\pair(asd sd ,b)  xx")
-    # check_usage(r"\def\grab#1.#2]{#1 and #2}  % Usage: \grab first.second]", r"\grab first.second]")
-    # check_usage(r"\def\until#1\end#2{This text until #1 #2}", r"\until some \end3 sss")
-    # check_usage(r"\def\gaga{LADY GAGA}", r"\gaga")
-    # check_usage(r"\def\gaga{LADY GAGA}", r"\gagaa")
-    # check_usage(r"\def\fullname#1#2{#1 #2}", r"\fullname32")
-    # check_usage(r"\def\until#1\end#2{This text until #1 #2}", r"\until some \end2")
-    # check_usage(r"\def\norm#1{\left\|#1\right\|}", r"\norm{x}")
-    # check_usage(r"\def\abs#1{\left|#1\right|}", r"\abs{x + y}")
-    # check_usage(r"\def\set#1{\{#1\}}", r"\set{x \in \mathbb{R}}")
+    text = r"""
+    \let\endchangemargin=\endlist 
 
-    # # Multi-parameter math operators
-    # check_usage(r"\def\inner#1#2{\langle#1,#2\rangle}", r"\inner{u}{v}")
-    # check_usage(r"\def\pfrac#1#2{\frac{\partial #1}{\partial #2}}", r"\pfrac{f}{x}")
-    
-    # # Subscript/superscript patterns
-    # check_usage(r"\def\tensor#1_#2^#3{#1_{#2}^{#3}}", r"\tensor{T}_i^j")
-    # check_usage(r"\def\evalat#1|#2{\left.#1\right|_{#2}}", r"\evalat{f(x)}|{x=0}")
-    
-    # # # Common text formatting
-    # check_usage(r"\def\emphtext#1{\textit{\textbf{#1}}}", r"\emphtext{important}")
-    
-    # # Multiple optional parts
-    # check_usage(r"\def\theorem#1[#2]#3{Theorem #1 (#2): #3}", r"\theorem{1}[Name]{Statement}")
+    \newcommand{\bar}{BAR}
+    """.strip()
+
+    print(handler.handle(text))

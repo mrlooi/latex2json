@@ -190,6 +190,19 @@ def test_def_command_usage_patterns(handler):
     assert re.match(pattern, r"\until stuff \end more")
     assert not re.match(pattern, r"\until text")
 
+def test_let_command(handler):
+    content = r"\let\foo=bar"
+    token, _ = handler.handle(content)
+    assert token["type"] == "newcommand"
+    assert token["name"] == "foo"
+    assert token["content"] == "bar"
+
+    content = r"\let\foo=\bar"
+    token, _ = handler.handle(content)
+    assert token["type"] == "newcommand"
+    assert token["name"] == "foo"
+    assert token["content"] == r"\bar"
+
 
 def test_def_usage_outputs(handler):
     def extract_def_args(text, search):

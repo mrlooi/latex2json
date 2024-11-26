@@ -40,7 +40,7 @@ RAW_PATTERNS = OrderedDict([
 
     # Formatting commands
     ('make', r'\\(?:maketitle|makeatletter|makeatother)\b'),
-    ('page', r'\\(?:centering|raggedright|raggedleft|noindent|clearpage|cleardoublepage|newpage|linebreak|nopagebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break|scriptsize)\b'),
+    ('page', r'\\(?:centering|raggedright|raggedleft|noindent|par|clearpage|cleardoublepage|newpage|linebreak|nopagebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break|scriptsize)\b'),
     ('pagestyle', r'\\(?:pagestyle|thispagestyle)\s*\{[^}]*\}'),
     ('newpagestyle', r'\\(?:newpagestyle|renewpagestyle)\s*\{[^}]*\}\s*{'),
  
