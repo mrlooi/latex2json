@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict, Tuple, Union
 
-from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler, TabularHandler, FormattingHandler, ItemHandler, EnvironmentHandler, LegacyFormattingHandler
+from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler, TabularHandler, FormattingHandler, ItemHandler, EnvironmentHandler, LegacyFormattingHandler, BibItemHandler
 from src.handlers.environment import BaseEnvironmentHandler
 from src.patterns import PATTERNS
 from src.commands import CommandProcessor
@@ -36,6 +36,7 @@ class LatexParser:
             EquationHandler(lambda x: self._expand_command(x, ignore_unicode=True)),
             CodeBlockHandler(),
             ItemHandler(),
+            BibItemHandler(),
             ContentCommandHandler(self._expand_command),
             # for tabular, on the first pass we process content and maintain the '\\' delimiter to maintain row integrity
             TabularHandler(process_content_fn=lambda x: self.parse(x, r'\\'), cell_parser_fn=self.parse),

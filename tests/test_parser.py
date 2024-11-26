@@ -1009,5 +1009,36 @@ def test_new_environment(parser):
     assert row[2]['type'] == 'text'
     assert row[2]['content'] == 'the environment.'
 
+def test_bibliography(parser):
+    text =  r"""
+    \begin{thebibliography}{99}
+\bibitem[sss]{KanekoHoki11}
+Tomoyuki Kaneko and Kunihito Hoki.
+\newblock Analysis of evaluation-function learning by comparison of sibling
+  nodes.
+\newblock In {\em Advances in Computer Games - 13th International Conference,
+  {ACG} 2011, Tilburg, The Netherlands, November 20-22, 2011, Revised Selected
+  Papers}, pages 158--169, 2011.
+
+  \bibitem{asdsa}
+  Hi there
+  sadss
+  \end{thebibliography}
+
+    Hi there
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 2
+    bibliography = parsed_tokens[0]
+    assert bibliography['type'] == 'bibliography'
+    assert len(bibliography['content']) == 2
+    assert bibliography['content'][0]['type'] == 'bibitem'
+    assert bibliography['content'][1]['type'] == 'bibitem'
+    assert bibliography['content'][0]['cite_key'] == 'KanekoHoki11'
+    assert bibliography['content'][1]['cite_key'] == 'asdsa'
+
+    assert parsed_tokens[1]['type'] == 'text'
+    assert parsed_tokens[1]['content'].strip() == 'Hi there'
+
 if __name__ == "__main__":
     pytest.main([__file__])

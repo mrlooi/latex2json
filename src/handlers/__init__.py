@@ -8,5 +8,6 @@ from .formatting import FormattingHandler
 from .environment import EnvironmentHandler
 from .item import ItemHandler
 from .legacy_formatting import LegacyFormattingHandler
+from .bibitem import BibItemHandler
 
-__all__ = ['TokenHandler', 'CodeBlockHandler', 'EquationHandler', 'ContentCommandHandler', 'NewDefinitionHandler', 'TabularHandler', 'FormattingHandler', 'EnvironmentHandler', 'ItemHandler', 'LegacyFormattingHandler']
+__all__ = ['TokenHandler', 'CodeBlockHandler', 'EquationHandler', 'ContentCommandHandler', 'NewDefinitionHandler', 'TabularHandler', 'FormattingHandler', 'EnvironmentHandler', 'ItemHandler', 'LegacyFormattingHandler', 'BibItemHandler']

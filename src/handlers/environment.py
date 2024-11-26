@@ -14,6 +14,7 @@ LIST_ENVIRONMENTS = ['itemize', 'enumerate', 'description']
 ENV_TYPES = {
     "document": "document",
     "abstract": "abstract",
+    "thebibliography": "bibliography",
     "table": "table",
     "subtable": "table",
     "subsubtable": "table",
