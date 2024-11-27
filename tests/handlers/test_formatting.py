@@ -135,11 +135,17 @@ def test_header_stuff(handler):
     \usepackage{graphicx}
     \pagestyle{empty}
     \setlength{\marginparwidth}{1in}
+    \numberwithin{equation}{section}
+    \theoremstyle{conjecture}
+    \setcounter{theorem}{0}
+    \vspace{.5em}
+    \noindent
+    \mdseries
     """
     content = [l.strip() for l in text.strip().split('\n') if l.strip()]
     for line in content:
         token, pos = handler.handle(line)
-        assert pos > 0
+        assert pos > 0, f"Failed on line: {line}"
 
 if __name__ == "__main__":
     pytest.main([__file__]) 

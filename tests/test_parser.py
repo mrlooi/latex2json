@@ -1075,5 +1075,17 @@ def test_user_defined_commands_w_legacy_formatting(parser):
     assert content[1] == r'<b>Muhaha</b>'
     assert content[2] == r'\texttt{mamaa}'
 
+    text = r"""
+    \def\arxiv#1{  {\href{http://arxiv.org/abs/#1}
+    {{\mdseries\ttfamily arXiv:#1}}}}
+
+    \arxiv{1234567}
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]['type'] == 'url'
+    assert parsed_tokens[0]['title'] == 'arXiv:1234567'
+    assert parsed_tokens[0]['content'] == 'http://arxiv.org/abs/1234567'
+
 if __name__ == "__main__":
     pytest.main([__file__])

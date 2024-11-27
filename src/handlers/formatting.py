@@ -42,8 +42,9 @@ RAW_PATTERNS = OrderedDict([
     ('setup', r'\\hypersetup\s*{'),
     ('make', r'\\(?:maketitle|makeatletter|makeatother)\b'),
     ('page', r'\\(?:centering|raggedright|raggedleft|noindent|par|clearpage|cleardoublepage|newpage|linebreak|nopagebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break|scriptsize)\b'),
-    ('pagestyle', r'\\(?:pagestyle|thispagestyle)\s*\{[^}]*\}'),
-    ('newpagestyle', r'\\(?:newpagestyle|renewpagestyle)\s*\{[^}]*\}\s*{'),
+    ('style', r'\\(?:pagestyle|thispagestyle|theoremstyle)\s*\{[^}]*\}'),
+    ('newstyle', r'\\(?:newpagestyle|renewpagestyle)\s*\{[^}]*\}\s*{'),
+    ('font', r'\\(?:mdseries|bfseries|itshape|slshape|normalfont|ttfamily)\b'),
  
     # setters
     ('newsetlength', r'\\(?:newlength\s*\{[^}]*\})|\\setlength\s*\{([^}]+)\}\{([^}]+)\}'),
@@ -58,6 +59,9 @@ RAW_PATTERNS = OrderedDict([
         r'hspace\*?\s*{([^}]+)}|'  # \hspace{length}
         r'hskip\s*\d*\.?\d+(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b'  # \hskip 10pt
         r')'),
+    
+    # number
+    ('number', r'\\(?:numberwithin)\s*\{[^}]*\}\s*\{[^}]*\}'),
 
     # table
     ('newcolumntype', r'\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}\s*{'),
@@ -107,7 +111,7 @@ class FormattingHandler(TokenHandler):
                     }, match.end()
                 elif pattern_name == 'spacing':
                     return {'type': 'text', 'content': ' '}, match.end()
-                elif pattern_name in ['newcolumntype', 'newpagestyle', 'setup']:
+                elif pattern_name in ['newcolumntype', 'newstyle', 'setup']:
                     # extracted nested
                     start_pos = match.end() - 1
                     extracted_content, end_pos = extract_nested_content(content[start_pos:])

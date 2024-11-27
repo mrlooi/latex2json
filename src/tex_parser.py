@@ -192,6 +192,9 @@ class LatexParser:
                         self.current_env = token
                         token["content"] = self._parse_cell(token["content"])
                         self.current_env = prev_env
+                    elif token['type'] == 'url':
+                        if 'title' in token:
+                            token['title'] = self._parse_cell(token['title'])
                     elif token['type'] == 'section':
                         self.current_env = token
                     elif isinstance(handler, BaseEnvironmentHandler):
@@ -319,10 +322,10 @@ class LatexParser:
 if __name__ == "__main__":
 
     text =  r"""
-\def\textbf#1{<b>#1</b>\newline}
+\def\arxiv#1{  {\href{http://arxiv.org/abs/#1}
+   {{\mdseries\ttfamily arXiv:#1}}}}
 
-\textbf{Hello}
-{\bf Hello}
+\arxiv{1234567}
     """
 
     # Example usage
