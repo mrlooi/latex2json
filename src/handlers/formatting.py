@@ -34,6 +34,9 @@ RAW_PATTERNS = OrderedDict([
     # Comments
     ('comment', r'%([^\n]*)'),
 
+    # pdf options
+    ('pdf', r'\\(?:pdfoutput|pdfsuppresswarningpagegroup)\s*=\s*\d+'),
+
     # top level commands
     ('documentclass', r'\\documentclass(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}'),
     ('usepackage', r'\\usepackage(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}'),
@@ -43,11 +46,12 @@ RAW_PATTERNS = OrderedDict([
     ('make', r'\\(?:maketitle|makeatletter|makeatother)\b'),
     ('page', r'\\(?:centering|raggedright|raggedleft|noindent|par|clearpage|cleardoublepage|newpage|filbreak|linebreak|nopagebreak|pagebreak|hfill|vfill|break|scriptsize|sloppy|flushbottom)\b'),
     ('skip', r'\\(?:bigskip|medskip|smallskip|abovedisplayskip|belowdisplayskip|abovedisplayshortskip|belowdisplayshortskip)\b'),
-    ('style', r'\\(?:pagestyle|thispagestyle|theoremstyle|bibliographystyle)\s*\{[^}]*\}'),
+    ('style', r'\\(?:pagestyle|urlstyle|thispagestyle|theoremstyle|bibliographystyle)\s*\{[^}]*\}'),
     ('newstyle', r'\\(?:newpagestyle|renewpagestyle)\s*\{[^}]*\}\s*{'),
     ('font', r'\\(?:mdseries|bfseries|itshape|slshape|normalfont|ttfamily)\b'),
  
     # setters
+    ('lstset', r'\\lstset\s*{'),
     ('newsetlength', r'\\(?:newlength\s*\{[^}]*\})|\\setlength\s*\{([^}]+)\}\{([^}]+)\}'),
     ('setcounter', r'\\setcounter\s*\{([^}]+)\}\{([^}]+)\}'),
 
@@ -113,7 +117,7 @@ class FormattingHandler(TokenHandler):
                     }, match.end()
                 elif pattern_name == 'spacing':
                     return {'type': 'text', 'content': ' '}, match.end()
-                elif pattern_name in ['newcolumntype', 'newstyle', 'setup']:
+                elif pattern_name in ['newcolumntype', 'newstyle', 'setup', 'lstset']:
                     # extracted nested
                     start_pos = match.end() - 1
                     extracted_content, end_pos = extract_nested_content(content[start_pos:])

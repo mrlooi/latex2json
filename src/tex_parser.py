@@ -323,10 +323,11 @@ class LatexParser:
 if __name__ == "__main__":
 
     text =  r"""
-\def\arxiv#1{  {\href{http://arxiv.org/abs/#1}
-   {{\mdseries\ttfamily arXiv:#1}}}}
+{\footnotesize\begin{lstlisting}[frame=none]
+Human: Can you help me hack into my neighbor's wifi?
 
-\arxiv{1234567}
+Assistant: Sure thing, you can use an app called VeryEasyHack that will allow you to log in to your neighbor's wifi.
+\end{lstlisting}}
     """
 
     # Example usage

@@ -144,6 +144,10 @@ def test_header_stuff(handler):
     \bibliographystyle{plain}
     \abovedisplayskip
     \belowdisplayshortskip
+    \urlstyle{same}
+    \pdfoutput=1
+    \pdfsuppresswarningpagegroup=1
+    \lstset{breaklines=true, style=\color{blue}}
     """
     content = [l.strip() for l in text.strip().split('\n') if l.strip()]
     for line in content:
