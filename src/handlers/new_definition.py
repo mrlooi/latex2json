@@ -9,7 +9,7 @@ POST_NEW_COMMAND_PATTERN_STR = r'\*?\s*(?:{\\([^}]+)}|\\([^\s{[]+))(?:\s*\[(\d+)
 PATTERNS = {
     # Matches newcommand/renewcommand, supports both {\commandname} and \commandname syntax
     'newcommand': re.compile(r'\\(?:new|renew|provide)command' + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL),
-    'let': re.compile(r'\\let\s*\\([^\s{[=]+)\s*=?\s*((?:\\[^\s{[]+|[^\s{[\\]+))', re.DOTALL),
+    'let': re.compile(r'\\let\s*\\([^\s{]+)\s*(=.*|\\[^\s{]+)', re.DOTALL),
 
     'declaremathoperator': re.compile(r'\\DeclareMathOperator' + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL), # for math mode
     'declarerobustcommand': re.compile(r'\\DeclareRobustCommand' + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL),
@@ -61,10 +61,17 @@ class NewDefinitionHandler(TokenHandler):
         return token, match.end()
     
     def _handle_let(self, match) -> Tuple[Optional[Dict], int]:
+        name = match.group(1).strip()
+        content = match.group(2).strip()
+        # Remove optional equals sign if present
+        if content.startswith('='):
+            content = content[1:]
+        elif name.endswith('='):
+            name = name[:-1]
         token = {
             "type": "newcommand",
-            "name": match.group(1),
-            "content": match.group(2).strip(),
+            "name": name,
+            "content": content,
             "num_args": 0,
             "defaults": []
         }
@@ -141,13 +148,6 @@ class NewDefinitionHandler(TokenHandler):
 
         # Get parameter pattern (now properly separated)
         param_pattern = match.group(3).strip() if match.group(3) else ''
-        
-        # print("=== Debug ===")
-        # print(f"Command name: {cmd_name}")  # Should now be clean, like "ratio"
-        # print(f"Parameter pattern: {param_pattern}")  # Should be like "#1:#2"
-        # print(f"Definition: {definition}")
-        # print("Match groups:", match.groups())
-        # print("============")
 
         usage_pattern = fr'{cmd_name}{param_pattern}'
         

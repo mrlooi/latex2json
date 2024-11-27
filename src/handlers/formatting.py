@@ -39,6 +39,7 @@ RAW_PATTERNS = OrderedDict([
     ('usepackage', r'\\usepackage(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}'),
 
     # Formatting commands
+    ('setup', r'\\hypersetup\s*{'),
     ('make', r'\\(?:maketitle|makeatletter|makeatother)\b'),
     ('page', r'\\(?:centering|raggedright|raggedleft|noindent|par|clearpage|cleardoublepage|newpage|linebreak|nopagebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break|scriptsize)\b'),
     ('pagestyle', r'\\(?:pagestyle|thispagestyle)\s*\{[^}]*\}'),
@@ -106,7 +107,7 @@ class FormattingHandler(TokenHandler):
                     }, match.end()
                 elif pattern_name == 'spacing':
                     return {'type': 'text', 'content': ' '}, match.end()
-                elif pattern_name == 'newcolumntype' or pattern_name == 'newpagestyle':
+                elif pattern_name in ['newcolumntype', 'newpagestyle', 'setup']:
                     # extracted nested
                     start_pos = match.end() - 1
                     extracted_content, end_pos = extract_nested_content(content[start_pos:])

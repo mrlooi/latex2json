@@ -203,6 +203,17 @@ def test_let_command(handler):
     assert token["name"] == "foo"
     assert token["content"] == r"\bar"
 
+    # test without = 
+    content = r"\let\foo\bar"
+    token, _ = handler.handle(content)
+    assert token["type"] == "newcommand"
+    assert token["name"] == "foo"
+    assert token["content"] == r"\bar"
+
+    content = r"\let\foobar"
+    token, _ = handler.handle(content)
+    assert token is None
+
 def test_crefname(handler):
     content = r"\crefname{equation}{333}{aaaa} hahaha"
     token, pos = handler.handle(content)

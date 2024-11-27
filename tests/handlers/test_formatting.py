@@ -127,6 +127,19 @@ def test_spacing_commands(handler):
     token, pos = handler.handle(r"\,")
     check_token(token, pos)
 
+def test_header_stuff(handler):
+    text = r"""
+    \documentclass[12pt,a4paper,reqno]{amsart}
+    \hypersetup{colorlinks,linkcolor={blue},citecolor={blue},urlcolor={red}}  
+    \usepackage[noabbrev,capitalize,nameinlink]{cleveref}
+    \usepackage{graphicx}
+    \pagestyle{empty}
+    \setlength{\marginparwidth}{1in}
+    """
+    content = [l.strip() for l in text.strip().split('\n') if l.strip()]
+    for line in content:
+        token, pos = handler.handle(line)
+        assert pos > 0
 
 if __name__ == "__main__":
     pytest.main([__file__]) 
