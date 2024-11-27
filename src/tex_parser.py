@@ -4,7 +4,7 @@ from typing import List, Dict, Tuple, Union
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler, TabularHandler, FormattingHandler, ItemHandler, EnvironmentHandler, LegacyFormattingHandler, BibItemHandler
+from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler, TabularHandler, FormattingHandler, ItemHandler, EnvironmentHandler, LegacyFormattingHandler, BibItemHandler, AuthorHandler
 from src.handlers.environment import BaseEnvironmentHandler
 from src.patterns import PATTERNS
 from src.commands import CommandProcessor
@@ -35,6 +35,7 @@ class LatexParser:
 
         # handlers
         self.handlers: List[TokenHandler] = [
+            AuthorHandler(),
             # ignore unicode conversion for equations
             EquationHandler(lambda x: self._expand_command(x, ignore_unicode=True)),
             CodeBlockHandler(),

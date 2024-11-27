@@ -5,7 +5,7 @@ from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content
 
 # Compile patterns for code blocks
-TABULAR_PATTERN = re.compile(r'\\begin\{(tabular\*?|tabularx|tabulary)\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{\1\}', re.DOTALL)
+TABULAR_PATTERN = re.compile(r'\\begin\{(tabular\*?|longtable|tabularx|tabulary)\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{\1\}', re.DOTALL)
 
 ROW_SPLIT_PATTERN = re.compile(r'\\\\(?:\s*\[[^\]]*\])?')
 MULTICOLUMN_PATTERN = re.compile(r'\\multicolumn{(\d+)}{[^}]*}{(.*)}')
