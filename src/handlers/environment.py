@@ -6,7 +6,7 @@ from src.tex_utils import extract_nested_content
 BEGIN_GROUP_PATTERN = re.compile(r'\\begingroup\b')
 END_GROUP_PATTERN = re.compile(r'\\endgroup\b')
 
-ENVIRONMENT_PATTERN = re.compile(r'\\begin\{([^}]*)\}(.*?)\\end\{([^}]*)\}', re.DOTALL)
+ENVIRONMENT_PATTERN = re.compile(r'\\begin\{([^}]*?)\}(.*?)\\end\{\1\}', re.DOTALL)  # Make the name capture non-greedy with *?
 
 NEW_ENVIRONMENT_PATTERN = re.compile(r'\\(?:new|renew|provide)environment\*?\s*{([^}]+)}')
 
@@ -28,6 +28,15 @@ ENV_TYPES = {
     "quote": "quote",
     **{env: "list" for env in LIST_ENVIRONMENTS},
     **{env: "layout" for env in LAYOUT_ENVIRONMENTS}
+}
+
+# Add to your environment configurations
+ENV_ARGS = {
+    "thebibliography": {"mandatory": 1},  # Expects 1 mandatory argument
+    "tabular": {"mandatory": 1},          # Expects 1 mandatory argument for column spec
+    "table": {"optional": 1},             # Expects 1 optional argument for placement
+    "figure": {"optional": 1},            # Expects 1 optional argument for placement
+    # ... other environments with known argument patterns
 }
 
 class EnvironmentProcessor:
@@ -122,7 +131,9 @@ class BaseEnvironmentHandler(TokenHandler):
         """Find the matching end{env_name} for a begin{env_name}, handling nested environments"""
         # Cache the compiled pattern for this environment
         if env_name not in self._env_pattern_cache:
-            self._env_pattern_cache[env_name] = re.compile(rf'\\(begin|end)\{{{env_name}}}')
+            # Escape special characters in the environment name
+            escaped_name = re.escape(env_name)
+            self._env_pattern_cache[env_name] = re.compile(rf'\\(begin|end)\{{{escaped_name}}}')
         
         pattern = self._env_pattern_cache[env_name]
         nesting_level = 1
@@ -184,7 +195,9 @@ class BaseEnvironmentHandler(TokenHandler):
             "type": "environment",
             "name": env_name
         }
-     
+
+        env_name = env_name.replace('*', '')
+
         env_type = ENV_TYPES.get(env_name, "environment")
         token["type"] = env_type
         if env_type not in ["list", "table", "figure"]:
@@ -196,10 +209,17 @@ class BaseEnvironmentHandler(TokenHandler):
             inner_content = inner_content[end_pos:]
             token["title"] = title
         
-        # Extract optional arguments
-        args, end_pos = extract_nested_content(inner_content, '{', '}')
-        if args:
-            inner_content = inner_content[end_pos:].strip()
+        # Extract arguments based on environment type
+        if env_name in ENV_ARGS and ENV_ARGS[env_name].get("mandatory", 0) > 0:
+            # Handle as argument
+            arg, end_pos = extract_nested_content(inner_content, '{', '}')
+            if arg:
+                inner_content = inner_content[end_pos:]  # Remove argument from content
+        
+        # # Extract optional arguments
+        # args, end_pos = extract_nested_content(inner_content, '{', '}')
+        # if args:
+        #     inner_content = inner_content[end_pos:].strip()
 
         # DEPRECATED: Label handling is now done independently through _handle_label()
         # # Extract any label if present
@@ -411,5 +431,5 @@ if __name__ == "__main__":
     # token, end_pos = handler.handle(text)
     # print(handler.handle(text[end_pos:].strip()))
 
-    content = r"\newenvironment{test}{begin def}{end def}"
+    content = r"\begin{figure*}[h]\end{figure*}"
     print(handler.handle(content))

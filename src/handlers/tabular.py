@@ -5,7 +5,7 @@ from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content
 
 # Compile patterns for code blocks
-TABULAR_PATTERN = re.compile(r'\\begin\{(tabular\*?|tabularx)\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{\1\}', re.DOTALL)
+TABULAR_PATTERN = re.compile(r'\\begin\{(tabular\*?|tabularx|tabulary)\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{\1\}', re.DOTALL)
 
 ROW_SPLIT_PATTERN = re.compile(r'\\\\(?:\s*\[[^\]]*\])?')
 MULTICOLUMN_PATTERN = re.compile(r'\\multicolumn{(\d+)}{[^}]*}{(.*)}')
@@ -143,7 +143,7 @@ class TabularHandler(TokenHandler):
         
         if column_spec is not None:
             # For tabularx, the first argument is the width
-            if env_type == 'tabularx':
+            if env_type == 'tabularx' or env_type == 'tabulary':
                 width_spec, width_end = extract_nested_content(inner_content)
                 if width_spec is not None:
                     token["width"] = width_spec.strip()
@@ -243,8 +243,8 @@ if __name__ == "__main__":
     handler = TabularHandler(cell_parser_fn=parse_cell)
     
     text = r"""
-    \begin{tabularx}{\textwidth}{|X|X|}
-        Cell 1 & \begin{tabular}{cc} a & b \\ c & d \end{tabular} \\
-    \end{tabularx}
+\begin{tabularx}{5cm}{c}
+4\\
+\end{tabularx}
     """.strip()
     token, end_pos = handler.handle(text.strip())

@@ -554,6 +554,25 @@ def test_item_with_label(parser):
     # Check item with label
     assert items[2]["labels"] == ["special-item"]
 
+def test_figure(parser):
+    content = r"""
+    \begin{figure*}[h]
+    {\includegraphics[width=\textwidth, trim=0 0 0 36, clip]{./vis/making_more_difficult5_new.pdf}}
+    \caption{An example of the attention mechanism following long-distance dependencies in the encoder self-attention in layer 5 of 6. Many of the attention heads attend to a distant dependency of the verb `making', completing the phrase `making...more difficult'.  Attentions here shown only for the word `making'. Different colors represent different heads. Best viewed in color.}
+    \end{figure*}
+
+    finish
+    """.strip()
+    tokens = parser.parse(content)
+    token = tokens[0]
+
+    assert token["type"] == "figure"
+    assert token["name"] == "figure*"
+    assert len(token["content"]) == 2
+
+    assert token["content"][0]["type"] == "includegraphics"
+    assert token["content"][1]["type"] == "caption"
+
 def test_nested_figures(parser):
     text = r"""
     \begin{figure}[htbp]

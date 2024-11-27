@@ -71,6 +71,18 @@ def test_handle_environment(handler):
         "content": "HSHSHS"
     }
 
+def test_handle_environment_with_asterisk(handler):
+    content = r"\begin{table*}[h]HSHSHS\end{table*} muhaha"
+    token, pos = handler.handle(content)
+    assert token == {
+        "type": "table",
+        "name": "table*",
+        "content": "HSHSHS",
+        "title": "h"
+    }
+
+    assert content[pos:].strip() == "muhaha"
+
 def test_env_with_newenvironment(handler):
     content = r"""
     \newenvironment{test}[2]{\begin{center} #1 #2}{\end{center}}
