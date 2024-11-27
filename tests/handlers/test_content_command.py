@@ -70,6 +70,20 @@ def test_handle_footnotes(handler):
         "content": "A footnote text"
     }
 
+    token, pos = handler.handle(r"\footnotemark")
+    assert token == {
+        "type": "footnote",
+        "content": "*"
+    }
+
+    content = r"\footnotemark[1] aaa"
+    token, pos = handler.handle(content)
+    assert token == {
+        "type": "footnote",
+        "content": "1"
+    }
+    assert content[pos:] == " aaa"
+
 def test_handle_references(handler):
     # Test basic ref
     token, pos = handler.handle(r"\ref{sec:intro}")

@@ -141,6 +141,9 @@ def test_header_stuff(handler):
     \vspace{.5em}
     \noindent
     \mdseries
+    \bibliographystyle{plain}
+    \abovedisplayskip
+    \belowdisplayshortskip
     """
     content = [l.strip() for l in text.strip().split('\n') if l.strip()]
     for line in content:

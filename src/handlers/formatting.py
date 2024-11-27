@@ -41,8 +41,9 @@ RAW_PATTERNS = OrderedDict([
     # Formatting commands
     ('setup', r'\\hypersetup\s*{'),
     ('make', r'\\(?:maketitle|makeatletter|makeatother)\b'),
-    ('page', r'\\(?:centering|raggedright|raggedleft|noindent|par|clearpage|cleardoublepage|newpage|linebreak|nopagebreak|pagebreak|bigskip|medskip|smallskip|hfill|vfill|break|scriptsize)\b'),
-    ('style', r'\\(?:pagestyle|thispagestyle|theoremstyle)\s*\{[^}]*\}'),
+    ('page', r'\\(?:centering|raggedright|raggedleft|noindent|par|clearpage|cleardoublepage|newpage|filbreak|linebreak|nopagebreak|pagebreak|hfill|vfill|break|scriptsize|sloppy|flushbottom)\b'),
+    ('skip', r'\\(?:bigskip|medskip|smallskip|abovedisplayskip|belowdisplayskip|abovedisplayshortskip|belowdisplayshortskip)\b'),
+    ('style', r'\\(?:pagestyle|thispagestyle|theoremstyle|bibliographystyle)\s*\{[^}]*\}'),
     ('newstyle', r'\\(?:newpagestyle|renewpagestyle)\s*\{[^}]*\}\s*{'),
     ('font', r'\\(?:mdseries|bfseries|itshape|slshape|normalfont|ttfamily)\b'),
  
@@ -83,7 +84,7 @@ RAW_PATTERNS = OrderedDict([
 
     ('ensuremath', r'\\ensuremath\s*{'),
 
-    ('niceties', r'\\(?:normalsize)\s*{')
+    ('niceties', r'\\(?:normalsize|footnotesize)\s*{')
 ])
 
 # Then compile them into a new dictionary
@@ -93,6 +94,7 @@ PATTERNS = OrderedDict(
 )
 PATTERNS['color'] = COLOR_COMMANDS_PATTERN
 PATTERNS['definecolor'] = DEFINE_COLOR_PATTERN
+# PATTERNS['and'] = re.compile(r'\\and\b', re.IGNORECASE)
 
 
 class FormattingHandler(TokenHandler):

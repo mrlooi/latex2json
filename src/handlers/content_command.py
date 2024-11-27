@@ -31,6 +31,8 @@ RAW_PATTERNS = OrderedDict([
 
     # Title
     ('title', r'\\title\s*{'),
+
+    ('footnotemark', r'\\footnotemark(?:\[([^\]]*)\])?'),
 ])
 
 # compile them
@@ -48,6 +50,12 @@ class ContentCommandHandler(TokenHandler):
         for pattern_name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if match:
+                if pattern_name == 'footnotemark':
+                    return {
+                        "type": "footnote",
+                        "content": match.group(1).strip() if match.group(1) else "*"
+                    }, match.end()
+
                 # Get position after command name
                 start_pos = match.end()
                 
