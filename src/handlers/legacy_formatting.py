@@ -95,7 +95,7 @@ class LegacyFormattingHandler(TokenHandler):
             # text = text.strip()
             modern_command = LEGACY_FORMAT_MAPPING.get(command)
             if modern_command:
-                text = whitespace + r'\\' + modern_command + '{' + text.strip() + '}'
+                text = rf'\{modern_command}' + '{' + text.strip() + '}'
                 if self.process_content_fn:
                     text = self.process_content_fn(text)
                 output = {
@@ -122,4 +122,4 @@ if __name__ == "__main__":
     # print(out)
     # print(text[end_pos:])
 
-    print(handler.handle(r"{\large text}"))
+    print(handler.handle(r"{\bf Hello}"))

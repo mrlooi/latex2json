@@ -1,6 +1,9 @@
 import re
 from typing import List, Dict, Tuple, Union
 
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from src.handlers import CodeBlockHandler, EquationHandler, TokenHandler, ContentCommandHandler, NewDefinitionHandler, TabularHandler, FormattingHandler, ItemHandler, EnvironmentHandler, LegacyFormattingHandler, BibItemHandler
 from src.handlers.environment import BaseEnvironmentHandler
 from src.patterns import PATTERNS
@@ -9,8 +12,8 @@ from src.tex_utils import extract_nested_content
 
 # Add these compiled patterns at module level
 # match $ or % or { or } only if not preceded by \
-# Update DELIM_PATTERN to also match double backslashes and curly braces
-DELIM_PATTERN = re.compile(r'(?<!\\)(?:\\\\|\$|%|(?:^|[ \t])\{|\\\^|\\(?![$%&_#{}^~\\]))')
+# Update DELIM_PATTERN to also match double backslashes and opening braces {
+DELIM_PATTERN = re.compile(r'(?<!\\)(?:\\\\|\$|%|(?:^|[ \t])\{|\s{|\\\^|\\(?![$%&_#{}^~\\]))')
 ESCAPED_AMPERSAND_SPLIT = re.compile(r'(?<!\\)&')
 TRAILING_BACKSLASH = re.compile(r'\\+$')
 UNKNOWN_COMMAND_PATTERN = re.compile(r'([ \t\n]*\\[a-zA-Z]+(?:\{(?:[^{}]|{[^{}]*})*\})*[ \t\n]*)')
@@ -28,7 +31,7 @@ class LatexParser:
         self.command_processor = CommandProcessor()
         self.env_handler = EnvironmentHandler()
 
-        self.legacy_formatting_handler = LegacyFormattingHandler(self._expand_command)
+        self.legacy_formatting_handler = LegacyFormattingHandler()
 
         # handlers
         self.handlers: List[TokenHandler] = [
@@ -44,7 +47,7 @@ class LatexParser:
             self.env_handler,
             # add formatting stuffs last
             FormattingHandler(), 
-            self.legacy_formatting_handler,
+            # self.legacy_formatting_handler,
         ]
         self.new_definition_handler = NewDefinitionHandler()
 
@@ -248,9 +251,7 @@ class LatexParser:
                 # check if legacy formatting
                 if self.legacy_formatting_handler.can_handle(content[current_pos:]):
                     token, end_pos = self.legacy_formatting_handler.handle(content[current_pos:])
-                    current_pos += end_pos
-                    if token:
-                        self.add_token(token, tokens)
+                    content = content[:current_pos] + token['content'] + content[current_pos + end_pos:]
                     continue
 
                 # Find matching closing brace
@@ -264,20 +265,19 @@ class LatexParser:
                     current_pos += end_pos
                     continue
             
-            next_command = DELIM_PATTERN.search(content[current_pos:])
-            
-            # Handle text before the next command (or all remaining text if no command)
-            end_pos = len(content[current_pos:]) if not next_command else next_command.start()
-            if end_pos > 0:
-                # print("NEXT", content[current_pos:current_pos+end_pos])
-                text = content[current_pos:current_pos + end_pos]#.strip()
+            # find the next delimiter
+            # if next delimiter exists, we need to store the text before the next delimiter (or all remaining text if no delimiter)
+            next_delimiter = DELIM_PATTERN.search(content[current_pos:])
+            next_pos = len(content[current_pos:]) if not next_delimiter else next_delimiter.start()
+            if next_pos > 0:
+                text = content[current_pos:current_pos + next_pos]#.strip()
                 if text:
                     unknown_cmd = UNKNOWN_COMMAND_PATTERN.match(text)
                     if unknown_cmd:
                         text = self._handle_unknown_command(unknown_cmd)
                     self.add_token(text, tokens)
-                current_pos += end_pos
-                if not next_command:
+                current_pos += next_pos
+                if not next_delimiter:
                     break
                 continue
             
@@ -319,16 +319,13 @@ class LatexParser:
 if __name__ == "__main__":
 
     text =  r"""
-\begin{tabular}{|c|c|}
-    \hline
-    Hello & World \\ 
-    color & \color{red} red \\
-    \hline
-\end{tabular}
+\def\textbf#1{<b>#1</b>\newline}
+
+\textbf{Hello}
+{\bf Hello}
     """
 
     # Example usage
     parser = LatexParser()
     parsed_tokens = parser.parse(text)
-
     print(parsed_tokens)

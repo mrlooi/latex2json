@@ -17,11 +17,11 @@ def test_can_handle_invalid_commands(handler):
 def test_handle_valid_commands(handler):
     output, _ = handler.handle(r"{\bf text}")
     assert output['type'] == 'command'
-    assert output['content'] == r'\\textbf{text}'
+    assert output['content'] == r'\textbf{text}'
 
     output, _ = handler.handle(r"{\it text}")
     assert output['type'] == 'command'
-    assert output['content'] == r'\\textit{text}'
+    assert output['content'] == r'\textit{text}'
 
 def test_handle_nested_commands(handler):
     output, _ = handler.handle(r"{\tt text with \pow{3}}")

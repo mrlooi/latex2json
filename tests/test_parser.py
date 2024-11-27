@@ -71,16 +71,16 @@ def test_parse_citations(parsed_training_tokens):
     assert len(citations) == 5
     assert citations[0]['content'] == 'DBLP:journals/corr/BritzGLL17'
 
-def test_parse_refs(parsed_training_tokens):
+def test_parse_refs(parser, parsed_training_tokens):
     refs = [token for token in parsed_training_tokens if token["type"] == "ref"]
     assert len(refs) == 1
     assert refs[0]['content'] == 'tab:variations'
 
-def test_parse_labels(parser, parsed_training_tokens):
     labels = parser.labels
     assert len(labels) == 1
     assert 'sec:reg' in labels
 
+    
 # TestParserEquations class becomes:
 
 def test_math_mode_edge_cases(parser):
@@ -1056,6 +1056,24 @@ def test_user_defined_commands_override(parser):
     assert len(parsed_tokens) == 1
     assert parsed_tokens[0]['type'] == 'text'
     assert parsed_tokens[0]['content'].strip() == 'NO INDENT TEXT'
+
+def test_user_defined_commands_w_legacy_formatting(parser):
+    text = r"""
+    \def\textbf#1{<b>#1</b>\newline}
+    \textbf{Hello}
+    {\bf Muhaha}
+    { \tt mamaa}
+    """
+    parsed_tokens = parser.parse(text)
+
+    content = []
+    for t in parsed_tokens:
+        c = t['content']
+        content.extend([l.strip() for l in c.split('\n') if l.strip()])
+    assert len(content) == 3
+    assert content[0] == r'<b>Hello</b>'
+    assert content[1] == r'<b>Muhaha</b>'
+    assert content[2] == r'\texttt{mamaa}'
 
 if __name__ == "__main__":
     pytest.main([__file__])
