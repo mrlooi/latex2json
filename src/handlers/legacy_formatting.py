@@ -34,8 +34,8 @@ r"""
 {\Huge text}       % Note capital H
 """
 
-# Old style to modern LaTeX command mappings
-LEGACY_FORMAT_MAPPING: Dict[str, str] = {
+# Font style mappings
+LEGACY_FONT_MAPPING: Dict[str, str] = {
     "tt": "texttt",
     "bf": "textbf",
     "it": "textit",
@@ -44,6 +44,13 @@ LEGACY_FORMAT_MAPPING: Dict[str, str] = {
     "sf": "textsf",
     "rm": "textrm",
     "cal": "mathcal",
+    "em": "emph",
+    "mit": "mathit",
+    "bold": "textbf",
+}
+
+# Size mappings
+LEGACY_SIZE_MAPPING: Dict[str, str] = {
     "tiny": "texttiny",
     "small": "textsmall",
     "large": "textlarge",
@@ -51,54 +58,70 @@ LEGACY_FORMAT_MAPPING: Dict[str, str] = {
     "LARGE": "textlarge",
     "huge": "texthuge",
     "Huge": "texthuge",
-    "em": "emph",
-    "mit": "mathit",
-    "bold": "textbf",
     "normalsize": "textnormal",
     "footnotesize": "textfootnotesize",
     "scriptsize": "textscriptsize",
 }
 
-
 # Old style patterns
-LEGACY_PATTERNS = re.compile(
-    r"\\("
-    r"tt|bf|it|sl|sc|sf|rm|cal|"  # Basic formatting
-    r"tiny|small|large|huge|"  # Size commands
-    r"em|mit|bold|normalsize|normalfont|"  # Other formatting
-    r"footnotesize|scriptsize|"  # More sizes
-    r"Large|LARGE|Huge"  # Capital variants
-    r")\s*\{?",
-    re.DOTALL,
+# Generate regex patterns from the mappings
+FONT_PATTERN = re.compile(
+    r"\\(" + "|".join(LEGACY_FONT_MAPPING.keys()) + r")\b\s*\{?", re.DOTALL
 )
+
+SIZE_PATTERN = re.compile(
+    r"\\(" + "|".join(LEGACY_SIZE_MAPPING.keys()) + r")\b\s*\{?", re.DOTALL
+)
+
+PATTERNS = {
+    "font": FONT_PATTERN,
+    "size": SIZE_PATTERN,
+}
+
+
+LEGACY_FORMAT_MAPPING: Dict[str, str] = {**LEGACY_FONT_MAPPING, **LEGACY_SIZE_MAPPING}
 
 
 class LegacyFormattingHandler(TokenHandler):
     def can_handle(self, content: str) -> bool:
-        return LEGACY_PATTERNS.match(content) is not None
+        return any(pattern.match(content) for pattern in PATTERNS.values())
 
-    def handle(
-        self, content: str, nesting_level: int = 0
-    ) -> Tuple[Optional[Dict], int]:
-        match = LEGACY_PATTERNS.match(content)
-        if match:
-            command = match.group(1)
-            next_pos = match.end(0)
-            modern_command = LEGACY_FORMAT_MAPPING.get(command)
-            if not modern_command:
-                modern_command = command
-            if match.group(0).endswith("{"):
-                text, end_pos = extract_nested_content("{" + content[next_pos:])
-                text = text.strip()
-                if not command.startswith("normal"):
+    def handle(self, content: str) -> Tuple[str, int]:
+        for pattern_name, pattern in PATTERNS.items():
+            match = pattern.match(content)
+
+            if match:
+                command = match.group(1)
+                next_pos = match.end(0)
+                modern_command = LEGACY_FORMAT_MAPPING.get(command)
+                if not modern_command:
+                    modern_command = command
+                if match.group(0).endswith("{"):
+                    text, end_pos = extract_nested_content("{" + content[next_pos:])
+                    text = text.strip()
+                    # if not command.startswith("normal"):
                     text = rf"\{modern_command}" + "{" + text + "}"
-                return {"type": "text", "content": text}, next_pos + end_pos - 1
-            else:
-                # check for similar patterns
-                next_content = content[next_pos:]
-                match = LEGACY_PATTERNS.search(next_content)
-                # if match:
-                #     return None, next_pos + match.end(0) - 1
+                    return text, next_pos + end_pos - 1
+                else:
+                    next_content = content[next_pos:]
+                    end_pos = len(next_content)
+
+                    # stop until appropriate nested closing brace
+                    text, closing_pos = extract_nested_content("{" + next_content)
+                    if text:
+                        # -2 -> -1 for the extra opening brace, -1 for the final closing brace i.e. capture up to before the closing brace
+                        end_pos = closing_pos - 2
+                        next_content = next_content[:end_pos]
+
+                    # check for similar patterns
+                    match = PATTERNS[pattern_name].search(next_content)
+                    if match:
+                        # if match, we end before this next pattern
+                        end_pos = match.start()
+                        next_content = next_content[:end_pos]
+
+                    text = rf"\{modern_command}" + "{" + next_content + "}"
+                    return text, next_pos + end_pos
 
         return None, 0
 
@@ -111,4 +134,7 @@ if __name__ == "__main__":
     # print(out)
     # print(text[end_pos:])
 
-    print(handler.handle(r"\bf{Hello}"))
+    text = r"\bf Hello my name isssdas {sa} asdsd \tiny asdad"  # } \noindent \tt"
+    out, end_pos = handler.handle(text)
+    print(out)
+    print(text[end_pos:])

@@ -277,7 +277,7 @@ class LatexParser:
         content: str,
         line_break_delimiter: str = "\n",
         handle_unknown_commands: bool = True,
-        nesting_level: int = 0,
+        # nesting_level: int = 0,
     ) -> List[Dict[str, str]]:
         tokens = []
         current_pos = 0
@@ -297,7 +297,7 @@ class LatexParser:
                 if inner_content is not None:
                     # Parse the content within the braces
                     nested_tokens = self.parse(
-                        inner_content, nesting_level=nesting_level + 1
+                        inner_content  # , nesting_level=nesting_level + 1
                     )
                     if nested_tokens:
                         # could use append here but we want to keep flatten it out since {} are used just for basic grouping and don't preserve meaningful structure
@@ -342,13 +342,13 @@ class LatexParser:
 
             # check if legacy formatting
             if self.legacy_formatting_handler.can_handle(content[current_pos:]):
-                token, end_pos = self.legacy_formatting_handler.handle(
-                    content[current_pos:], nesting_level
+                parsed_text, end_pos = self.legacy_formatting_handler.handle(
+                    content[current_pos:]
                 )
                 if end_pos > 0:
                     content = (
                         content[:current_pos]
-                        + token["content"]
+                        + parsed_text
                         + content[current_pos + end_pos :]
                     )
                     continue
@@ -385,7 +385,10 @@ class LatexParser:
 if __name__ == "__main__":
 
     text = r"""
-    \normalfont {sss}
+    {
+    \normalsize sss
+    \bf{Hii} bro
+    }
     Hii
     """
 
