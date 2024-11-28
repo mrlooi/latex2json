@@ -11,4 +11,17 @@ from .legacy_formatting import LegacyFormattingHandler
 from .bibitem import BibItemHandler
 from .author import AuthorHandler
 
-__all__ = ['TokenHandler', 'CodeBlockHandler', 'EquationHandler', 'ContentCommandHandler', 'NewDefinitionHandler', 'TabularHandler', 'FormattingHandler', 'EnvironmentHandler', 'ItemHandler', 'LegacyFormattingHandler', 'BibItemHandler', 'AuthorHandler' ]
+__all__ = [
+    "TokenHandler",
+    "CodeBlockHandler",
+    "EquationHandler",
+    "ContentCommandHandler",
+    "NewDefinitionHandler",
+    "TabularHandler",
+    "FormattingHandler",
+    "EnvironmentHandler",
+    "ItemHandler",
+    "LegacyFormattingHandler",
+    "BibItemHandler",
+    "AuthorHandler",
+]

@@ -3,8 +3,11 @@ import re
 
 from src.handlers.base import TokenHandler
 
-BIBITEM_PATTERN = re.compile(r'\\bibitem\s*(?:\[(.*?)\])?\{(.*?)\}\s*([\s\S]*?)(?=\\bibitem|$)', re.DOTALL)
-NEWBLOCK_PATTERN = re.compile(r'\\newblock\b')
+BIBITEM_PATTERN = re.compile(
+    r"\\bibitem\s*(?:\[(.*?)\])?\{(.*?)\}\s*([\s\S]*?)(?=\\bibitem|$)", re.DOTALL
+)
+NEWBLOCK_PATTERN = re.compile(r"\\newblock\b")
+
 
 class BibItemHandler(TokenHandler):
 
@@ -17,20 +20,21 @@ class BibItemHandler(TokenHandler):
             item = match.group(3).strip()
             if item:
                 # remove newblock
-                item = NEWBLOCK_PATTERN.sub('', item)
+                item = NEWBLOCK_PATTERN.sub("", item)
                 token = {
                     "type": "bibitem",
                     "content": item,
-                    "cite_key": match.group(2).strip()
+                    "cite_key": match.group(2).strip(),
                 }
                 if match.group(1):
                     token["label"] = match.group(1).strip()
                 return token, match.end()
-            
+
             return None, match.end()
-        
+
         return None, 0
-    
+
+
 if __name__ == "__main__":
     item = BibItemHandler()
 

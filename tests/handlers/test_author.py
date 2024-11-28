@@ -1,9 +1,10 @@
 import pytest
 from src.handlers.author import AuthorHandler
 
+
 def test_author_handler():
     item = AuthorHandler()
-    
+
     text = r"""
 \author{
   \AND
@@ -18,11 +19,11 @@ def test_author_handler():
 
 after authors
     """.strip()
-    
+
     authors, end_pos = item.handle(text)
 
-    assert authors['type'] == 'author'
-    authors_list = authors['content']
+    assert authors["type"] == "author"
+    authors_list = authors["content"]
     assert len(authors_list) == 2
     assert authors_list[0].startswith("Ashish Vaswani")
     assert "{avaswani@google.com}" in authors_list[0]

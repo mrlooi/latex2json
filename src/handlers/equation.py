@@ -6,42 +6,43 @@ from src.tex_utils import extract_nested_content
 from src.patterns import LABEL_PATTERN
 
 EQUATION_ENV = {
-    'equation',    # basic numbered equation
-    'align',       # aligned equations
-    'gather',      # centered equations
-    'multline',    # long equation split across lines
-    'eqnarray',    # old style align (deprecated but used)
-    'flalign',     # flush aligned equations
-    'alignat',      # aligned with custom spacing
-    'dmath',       # display math
+    "equation",  # basic numbered equation
+    "align",  # aligned equations
+    "gather",  # centered equations
+    "multline",  # long equation split across lines
+    "eqnarray",  # old style align (deprecated but used)
+    "flalign",  # flush aligned equations
+    "alignat",  # aligned with custom spacing
+    "dmath",  # display math
 }
 
-RAW_PATTERNS = OrderedDict([
-    ('equation_display_$$', re.compile(r'\$\$([\s\S]*?)\$\$', re.DOTALL)),
-    ('equation_inline_$', re.compile(r'\$([^$]*)\$')),
-    ('equation_display_brackets', re.compile(r'\\\[(.*?)\\\]', re.DOTALL)),
-    ('equation_inline_brackets', re.compile(r'\\\((.*?)\\\)')),
-])
+RAW_PATTERNS = OrderedDict(
+    [
+        ("equation_display_$$", re.compile(r"\$\$([\s\S]*?)\$\$", re.DOTALL)),
+        ("equation_inline_$", re.compile(r"\$([^$]*)\$")),
+        ("equation_display_brackets", re.compile(r"\\\[(.*?)\\\]", re.DOTALL)),
+        ("equation_inline_brackets", re.compile(r"\\\((.*?)\\\)")),
+    ]
+)
 
 # Add equation patterns dynamically
 equation_env_dict = {
-    name: rf'\\begin\{{{name}\*?\}}(.*?)\\end\{{{name}(?:\*)?\}}'
+    name: rf"\\begin\{{{name}\*?\}}(.*?)\\end\{{{name}(?:\*)?\}}"
     for name in EQUATION_ENV
 }
 
 PATTERNS = OrderedDict(
-    (key, re.compile(pattern, re.DOTALL))
-    for key, pattern in equation_env_dict.items()
+    (key, re.compile(pattern, re.DOTALL)) for key, pattern in equation_env_dict.items()
 )
 PATTERNS.update(RAW_PATTERNS)
 
 
 class EquationHandler(TokenHandler):
-  
+
     def can_handle(self, content: str) -> bool:
         # Check each pattern individually
         return any(pattern.match(content) for pattern in PATTERNS.values())
-    
+
     def _handle_labels(self, equation: str) -> Tuple[str, list[str]]:
         # Find all labels in the equation
         labels = []
@@ -49,11 +50,11 @@ class EquationHandler(TokenHandler):
 
         # Find all label matches
         label_matches = list(LABEL_PATTERN.finditer(equation))
-        
+
         # If no labels found, return original equation
         if not label_matches:
             return parsed_equation, labels
-        
+
         # Extract labels and remove them from equation (reversed is used to maintain string indices)
         for match in reversed(label_matches):
             start_pos = match.end() - 1  # -1 to account for the opening '{'
@@ -61,15 +62,18 @@ class EquationHandler(TokenHandler):
             if label:
                 labels.append(label)
                 # Remove the entire \label{...} command
-                parsed_equation = parsed_equation[:match.start()] + parsed_equation[start_pos + end_pos:]
-        
+                parsed_equation = (
+                    parsed_equation[: match.start()]
+                    + parsed_equation[start_pos + end_pos :]
+                )
+
         # Clean up any double spaces and trim
         parsed_equation = parsed_equation.strip()
-        
+
         return parsed_equation, list(reversed(labels))
-    
+
     def handle(self, content: str) -> Tuple[Optional[Dict], int]:
-        
+
         # Try each pattern until we find a match
         for pattern_name, pattern in PATTERNS.items():
             match = pattern.match(content)
@@ -77,41 +81,38 @@ class EquationHandler(TokenHandler):
                 equation = match.group(1).strip()
                 if not equation:
                     return None, match.end()
-                
+
                 # Extract label if present
                 equation, labels = self._handle_labels(equation)
 
                 # Expand any commands in the equation
                 if self.process_content_fn:
                     equation = self.process_content_fn(equation)
-                
+
                 # Create token
-                inline = pattern_name.startswith('equation_inline')
-                display = 'inline' if inline else 'block'
+                inline = pattern_name.startswith("equation_inline")
+                display = "inline" if inline else "block"
                 # if inline:
                 #     token = {
-                #         "type": "text", 
+                #         "type": "text",
                 #         "content": "$" + equation + "$ "
                 #     }
                 # else:
-                token = {
-                    "type": "equation",
-                    "content": equation,
-                    "display": display
-                }
+                token = {"type": "equation", "content": equation, "display": display}
 
                 if pattern_name in equation_env_dict:
-                    numbered = not match.group(0).strip().endswith('*}')
+                    numbered = not match.group(0).strip().endswith("*}")
                     if numbered:
                         token["numbered"] = True
-                
+
                 if labels:
                     token["labels"] = labels
-                
+
                 return token, match.end()
-        
+
         return None, 0
-    
+
+
 if __name__ == "__main__":
     handler = EquationHandler()
     # print(handler.can_handle("$x^2$"))

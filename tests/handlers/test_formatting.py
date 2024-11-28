@@ -1,9 +1,11 @@
 import pytest
 from src.handlers.formatting import FormattingHandler
 
+
 @pytest.fixture
 def handler():
     return FormattingHandler()
+
 
 def test_can_handle_formatting(handler):
     # Test formatting commands
@@ -16,10 +18,12 @@ def test_can_handle_formatting(handler):
     assert handler.can_handle(r"\bigskip")
     assert not handler.can_handle("regular text")
 
+
 def test_can_handle_comments(handler):
     assert handler.can_handle("% This is a comment")
     assert handler.can_handle("%Another comment")
     assert not handler.can_handle("Not a % comment")
+
 
 def test_can_handle_separators(handler):
     # Test various separator commands
@@ -37,6 +41,7 @@ def test_can_handle_separators(handler):
     assert handler.can_handle(r"\addlinespace[5pt]")
     assert handler.can_handle(r"\morecmidrules")
 
+
 def test_handle_formatting_commands(handler):
     # Test handling of formatting commands
     token, pos = handler.handle(r"\centering Some text")
@@ -47,18 +52,20 @@ def test_handle_formatting_commands(handler):
     # assert token is None
     assert pos == len(r"\noindent")  # Length of "\noindent"
 
+
 def test_handle_comments(handler):
     # Test handling of comments
     comment = "% This is a comment\nNext line"
     token, pos = handler.handle(comment)
     # assert token is None
-    assert pos == len(comment.split('\n')[0])  # Length of comment up to \n
+    assert pos == len(comment.split("\n")[0])  # Length of comment up to \n
+
 
 def test_handle_separators(handler):
     # Test handling of separator commands
     token, pos = handler.handle(r"\hline some text")
     # assert token is None
-    assert pos == len(r"\hline") 
+    assert pos == len(r"\hline")
 
     token, pos = handler.handle(r"\cline{2-4} text")
     # assert token is None
@@ -67,6 +74,7 @@ def test_handle_separators(handler):
     token, pos = handler.handle(r"\midrule[2pt] text")
     # assert token is None
     assert pos == len(r"\midrule[2pt]")
+
 
 def test_handle_invalid_input(handler):
     # Test with non-command content
@@ -105,12 +113,17 @@ def test_handle_color_commands(handler):
 \color{blue!20}              % 20% blue, 80% white
 """
 
-    lines = color_text.strip().split('\n')
-    lines = [line.strip() for line in lines if line.strip() and not line.strip().startswith('%')]
+    lines = color_text.strip().split("\n")
+    lines = [
+        line.strip()
+        for line in lines
+        if line.strip() and not line.strip().startswith("%")
+    ]
     for line in lines:
         token, pos = handler.handle(line)
         # assert token is None
         assert pos > 0
+
 
 def test_spacing_commands(handler):
     def check_token(token, pos):
@@ -126,6 +139,7 @@ def test_spacing_commands(handler):
 
     token, pos = handler.handle(r"\,")
     check_token(token, pos)
+
 
 def test_header_stuff(handler):
     text = r"""
@@ -149,10 +163,11 @@ def test_header_stuff(handler):
     \pdfsuppresswarningpagegroup=1
     \lstset{breaklines=true, style=\color{blue}}
     """
-    content = [l.strip() for l in text.strip().split('\n') if l.strip()]
+    content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
         token, pos = handler.handle(line)
         assert pos > 0, f"Failed on line: {line}"
 
+
 if __name__ == "__main__":
-    pytest.main([__file__]) 
+    pytest.main([__file__])
