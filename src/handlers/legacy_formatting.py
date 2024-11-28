@@ -98,10 +98,8 @@ class LegacyFormattingHandler(TokenHandler):
                     modern_command = command
                 if match.group(0).endswith("{"):
                     text, end_pos = extract_nested_content("{" + content[next_pos:])
-                    text = text.strip()
-                    # if not command.startswith("normal"):
-                    text = rf"\{modern_command}" + "{" + text + "}"
-                    return text, next_pos + end_pos - 1
+                    content_to_format = text.strip()
+                    total_pos = next_pos + end_pos - 1
                 else:
                     next_content = content[next_pos:]
                     end_pos = len(next_content)
@@ -114,14 +112,17 @@ class LegacyFormattingHandler(TokenHandler):
                         next_content = next_content[:end_pos]
 
                     # check for similar patterns
-                    match = PATTERNS[pattern_name].search(next_content)
+                    match = pattern.search(next_content)
                     if match:
                         # if match, we end before this next pattern
                         end_pos = match.start()
                         next_content = next_content[:end_pos]
 
-                    text = rf"\{modern_command}" + "{" + next_content + "}"
-                    return text, next_pos + end_pos
+                    content_to_format = next_content
+                    total_pos = next_pos + end_pos
+
+                formatted_text = rf"\{modern_command}" + "{" + content_to_format + "}"
+                return formatted_text, total_pos
 
         return None, 0
 
