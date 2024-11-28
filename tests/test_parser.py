@@ -1085,7 +1085,7 @@ def test_user_defined_commands_w_legacy_formatting(parser):
 
     text = r"""
     \def\arxiv#1{  {\href{http://arxiv.org/abs/#1}
-    {{\mdseries\ttfamily arXiv:#1}}}}
+    {{arXiv:#1}}}}
 
     \arxiv{1234567}
     """

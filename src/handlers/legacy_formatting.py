@@ -34,8 +34,10 @@ r"""
 {\Huge text}       % Note capital H
 """
 
-# Old style to modern LaTeX command mappings
-LEGACY_FORMAT_MAPPING: Dict[str, str] = {
+# Font style mappings
+# NOTE: we IGNORE math mode ones
+LEGACY_FONT_MAPPING: Dict[str, str] = {
+    # Basic text style commands
     "tt": "texttt",
     "bf": "textbf",
     "it": "textit",
@@ -43,72 +45,106 @@ LEGACY_FORMAT_MAPPING: Dict[str, str] = {
     "sc": "textsc",
     "sf": "textsf",
     "rm": "textrm",
-    "cal": "mathcal",
+    "em": "emph",
+    "bold": "textbf",
+    # Font family declarations
+    "rmfamily": "textrm",
+    "sffamily": "textsf",
+    "ttfamily": "texttt",
+    # Font shape declarations
+    "itshape": "textit",
+    "scshape": "textsc",  # Added scshape
+    "upshape": "textrm",  # Added upshape (upright shape)
+    "slshape": "textsl",  # Added slshape (slanted shape)
+    # Font series declarations
+    "bfseries": "textbf",
+    "mdseries": "textrm",  # Changed to textrm as it's the closest equivalent
+    # Font combinations and resets
+    "normalfont": "textrm",  # Changed to textrm as it's the closest equivalent
+    # Additional text mode variants
+    "textup": "textrm",
+    "textnormal": "textrm",
+    "textmd": "textrm",
+}
+
+# Size mappings
+LEGACY_SIZE_MAPPING: Dict[str, str] = {
+    # Basic size commands
     "tiny": "texttiny",
+    "scriptsize": "textscriptsize",
+    "footnotesize": "textfootnotesize",
     "small": "textsmall",
+    "normalsize": "textnormal",
     "large": "textlarge",
     "Large": "textlarge",
     "LARGE": "textlarge",
     "huge": "texthuge",
     "Huge": "texthuge",
-    "em": "emph",
-    "mit": "mathit",
-    "bold": "textbf",
-    "normalsize": "textnormal",
-    "footnotesize": "textfootnotesize",
-    "scriptsize": "textscriptsize",
+    # Additional size declarations
+    "smaller": "textsmall",
+    "larger": "textlarge",
+}
+
+# Old style patterns
+# Generate regex patterns from the mappings
+FONT_PATTERN = re.compile(
+    r"\\(" + "|".join(LEGACY_FONT_MAPPING.keys()) + r")\b\s*\{?", re.DOTALL
+)
+
+SIZE_PATTERN = re.compile(
+    r"\\(" + "|".join(LEGACY_SIZE_MAPPING.keys()) + r")\b\s*\{?", re.DOTALL
+)
+
+PATTERNS = {
+    "font": FONT_PATTERN,
+    "size": SIZE_PATTERN,
 }
 
 
-# Old style patterns
-LEGACY_PATTERNS = re.compile(
-    r"(\s*){[\s\\]*("
-    r"tt|bf|it|sl|sc|sf|rm|cal|"  # Basic formatting
-    r"tiny|small|large|huge|"  # Size commands
-    r"em|mit|bold|normalsize|"  # Other formatting
-    r"footnotesize|scriptsize|"  # More sizes
-    r"Large|LARGE|Huge"  # Capital variants
-    r")\s*([^}]+)}",
-    re.DOTALL,
-)
+LEGACY_FORMAT_MAPPING: Dict[str, str] = {**LEGACY_FONT_MAPPING, **LEGACY_SIZE_MAPPING}
 
 
 class LegacyFormattingHandler(TokenHandler):
     def can_handle(self, content: str) -> bool:
-        return LEGACY_PATTERNS.match(content) is not None
+        return any(pattern.match(content) for pattern in PATTERNS.values())
 
-    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
-        match = LEGACY_PATTERNS.match(content)
-        if match:
-            # Extract the whitespace, command and text
-            whitespace = match.group(1)
-            command = match.group(2).strip()
+    def handle(self, content: str) -> Tuple[str, int]:
+        for pattern_name, pattern in PATTERNS.items():
+            match = pattern.match(content)
 
-            # the issue with our regex above is that it fails to handle nested braces properly
-            # e.g. {\tt sss sd \pow{3} aabbcc }, the regex will match {\tt sss sd \pow{3} and stop.
-            # We need to parse nested content properly from command onwards, in case of closing braces e.g. \pow{3}
-            # so we handle everything after the detected command and parse that instead.
+            if match:
+                command = match.group(1)
+                next_pos = match.end(0)
+                modern_command = LEGACY_FORMAT_MAPPING.get(command)
+                if not modern_command:
+                    modern_command = command
+                if match.group(0).endswith("{"):
+                    text, end_pos = extract_nested_content("{" + content[next_pos:])
+                    content_to_format = text.strip()
+                    total_pos = next_pos + end_pos - 1
+                else:
+                    next_content = content[next_pos:]
+                    end_pos = len(next_content)
 
-            # get position after command i.e. match.group(2)
-            next_pos = match.end(2)
-            text, end_pos = extract_nested_content("{" + content[next_pos:])
-            end_pos = next_pos + end_pos - 1  # -1 to account for the opening brace
-            diff = end_pos - match.end(0)
+                    # stop until appropriate nested closing brace
+                    text, closing_pos = extract_nested_content("{" + next_content)
+                    if text:
+                        # -2 -> -1 for the extra opening brace, -1 for the final closing brace i.e. capture up to before the closing brace
+                        end_pos = closing_pos - 2
+                        next_content = next_content[:end_pos]
 
-            # Convert to modern format, preserving leading whitespace
-            # text = text.strip()
-            modern_command = LEGACY_FORMAT_MAPPING.get(command)
-            if modern_command:
-                text = rf"\{modern_command}" + "{" + text.strip() + "}"
-                if self.process_content_fn:
-                    text = self.process_content_fn(text)
-                output = {"type": "command", "content": text}
-            else:
-                text = content[:next_pos] + text + "}"  # close the opening brace
-                if self.process_content_fn:
-                    text = self.process_content_fn(text)
-                output = {"type": "text", "content": text}
-            return output, match.end(0) + diff
+                    # check for similar patterns
+                    match = pattern.search(next_content)
+                    if match:
+                        # if match, we end before this next pattern
+                        end_pos = match.start()
+                        next_content = next_content[:end_pos]
+
+                    content_to_format = next_content
+                    total_pos = next_pos + end_pos
+
+                formatted_text = rf"\{modern_command}" + "{" + content_to_format + "}"
+                return formatted_text, total_pos
 
         return None, 0
 
@@ -121,4 +157,7 @@ if __name__ == "__main__":
     # print(out)
     # print(text[end_pos:])
 
-    print(handler.handle(r"{\bf Hello}"))
+    text = r"\bf Hello my name isssdas {sa} asdsd \tiny asdad"  # } \noindent \tt"
+    out, end_pos = handler.handle(text)
+    print(out)
+    print(text[end_pos:])

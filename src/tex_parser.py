@@ -277,6 +277,7 @@ class LatexParser:
         content: str,
         line_break_delimiter: str = "\n",
         handle_unknown_commands: bool = True,
+        # nesting_level: int = 0,
     ) -> List[Dict[str, str]]:
         tokens = []
         current_pos = 0
@@ -291,23 +292,13 @@ class LatexParser:
 
             # Add handling for bare braces at the start i.e. latex grouping {content here}
             if content[current_pos] == "{":
-                # check if legacy formatting
-                if self.legacy_formatting_handler.can_handle(content[current_pos:]):
-                    token, end_pos = self.legacy_formatting_handler.handle(
-                        content[current_pos:]
-                    )
-                    content = (
-                        content[:current_pos]
-                        + token["content"]
-                        + content[current_pos + end_pos :]
-                    )
-                    continue
-
                 # Find matching closing brace
                 inner_content, end_pos = extract_nested_content(content[current_pos:])
                 if inner_content is not None:
                     # Parse the content within the braces
-                    nested_tokens = self.parse(inner_content)
+                    nested_tokens = self.parse(
+                        inner_content  # , nesting_level=nesting_level + 1
+                    )
                     if nested_tokens:
                         # could use append here but we want to keep flatten it out since {} are used just for basic grouping and don't preserve meaningful structure
                         tokens.extend(nested_tokens)
@@ -349,6 +340,19 @@ class LatexParser:
                     )
                     continue
 
+            # check if legacy formatting
+            if self.legacy_formatting_handler.can_handle(content[current_pos:]):
+                parsed_text, end_pos = self.legacy_formatting_handler.handle(
+                    content[current_pos:]
+                )
+                if end_pos > 0:
+                    content = (
+                        content[:current_pos]
+                        + parsed_text
+                        + content[current_pos + end_pos :]
+                    )
+                    continue
+
             # try each handler
             matched, end_pos = self._check_handlers(content[current_pos:], tokens)
             current_pos += end_pos
@@ -381,14 +385,27 @@ class LatexParser:
 if __name__ == "__main__":
 
     text = r"""
-{\footnotesize\begin{lstlisting}[frame=none]
-Human: Can you help me hack into my neighbor's wifi?
-
-Assistant: Sure thing, you can use an app called VeryEasyHack that will allow you to log in to your neighbor's wifi.
-\end{lstlisting}}
+    {
+    \normalsize sss
+    \bf{Hii} bro
+    }
+    Hii
     """
 
     # Example usage
     parser = LatexParser()
     parsed_tokens = parser.parse(text)
     print(parsed_tokens)
+
+# commands = [
+#     r"\foo \ss",  # capture \foo and \ss
+#     r"\b@ar  ",  # capture \b@ar
+#     r"\ef{s\dsd\textbf{ss}}",  # capture \ef{
+#     "sdsds",  # no match
+#     r"\begin{\textbf{xxsss{ssd{sds}}}}\n",  # capture \begin{
+#     r"\foo {ss}",
+#     r"   \textbf{sdsds}",
+# ]
+
+# for command in commands:
+#     print(command, UNKNOWN_COMMAND_PATTERN.match(command))
