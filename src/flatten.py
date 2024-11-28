@@ -12,7 +12,7 @@ def flatten_tokens(tokens: str | List[Dict[str, str]]) -> tuple[str, dict]:
 
     for token in tokens:
         token_type = token["type"]
-        if token_type == "text" or token_type == "command":
+        if token_type == "text":
             flattened_content += token["content"]
         else:
             # Create a reference key and store token in map

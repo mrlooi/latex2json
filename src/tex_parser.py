@@ -32,9 +32,7 @@ DELIM_PATTERN = re.compile(
 )
 ESCAPED_AMPERSAND_SPLIT = re.compile(r"(?<!\\)&")
 TRAILING_BACKSLASH = re.compile(r"\\+$")
-UNKNOWN_COMMAND_PATTERN = re.compile(
-    r"([ \t\n]*\\[a-zA-Z]+(?:\{(?:[^{}]|{[^{}]*})*\})*[ \t\n]*)"
-)
+UNKNOWN_COMMAND_PATTERN = re.compile(r"(\\[@a-zA-Z*]+\s*\{?)", re.DOTALL)
 
 
 class LatexParser:
@@ -63,7 +61,9 @@ class LatexParser:
             ContentCommandHandler(self._expand_command),
             # for tabular, on the first pass we process content and maintain the '\\' delimiter to maintain row integrity
             TabularHandler(
-                process_content_fn=lambda x: self.parse(x, r"\\"),
+                process_content_fn=lambda x: self.parse(
+                    x, r"\\", handle_unknown_commands=False
+                ),
                 cell_parser_fn=self.parse,
             ),
             # make sure to add EnvironmentHandler after equation/tabular or other env related formats, since it will greedily parse any begin/end block. Add as last to be safe
@@ -160,22 +160,33 @@ class LatexParser:
             else:
                 tokens.append(token_dict)
 
-    def _handle_unknown_command(self, match) -> Dict[str, str]:
+    def _check_unknown_command(
+        self, content: str, tokens: List[Dict]
+    ) -> Tuple[bool, int]:
         """Convert unknown LaTeX command into a text token with original syntax"""
         # Get the full matched text to preserve all arguments
-        content = match.group(0)
+        match = UNKNOWN_COMMAND_PATTERN.match(content)
+        if match:
+            command = match.group(0).strip()
+            end_pos = match.end()
 
-        if content:
-            content, matched = self.command_processor.expand_commands(content)
-            # Only parse if the content changed during expansion
-            if r"\begin{" in content and content != match.group(0):
-                content = self._parse_cell(content)
-                return content
+            inner_content = None
+            if command.endswith("{"):
+                command = command[:-1]
+                inner_content, inner_end_pos = extract_nested_content(
+                    content[end_pos - 1 :]
+                )
+                end_pos += inner_end_pos - 1
+                inner_content = self.parse(inner_content)
 
-        return {
-            "type": "command" if content.startswith("\\") else "text",
-            "content": content,
-        }
+            token = {"type": "command", "command": command}
+            if inner_content:
+                token["content"] = inner_content
+
+            self.add_token(token, tokens)
+            return True, end_pos
+
+        return False, 0
 
     def _check_for_new_definitions(self, content: str) -> None:
         """Check for new definitions in the content and process them"""
@@ -262,7 +273,10 @@ class LatexParser:
         return False, 0
 
     def parse(
-        self, content: str, line_break_delimiter: str = "\n"
+        self,
+        content: str,
+        line_break_delimiter: str = "\n",
+        handle_unknown_commands: bool = True,
     ) -> List[Dict[str, str]]:
         tokens = []
         current_pos = 0
@@ -300,7 +314,8 @@ class LatexParser:
                     current_pos += end_pos
                     continue
 
-            # find the next delimiter
+            # find the next delimiter (this block allows us to quickly identify and process chunks of text between special LaTeX delimiters
+            # without it, we would have to parse the entire content string character by character. which would be slower.)
             # if next delimiter exists, we need to store the text before the next delimiter (or all remaining text if no delimiter)
             next_delimiter = DELIM_PATTERN.search(content[current_pos:])
             next_pos = (
@@ -309,11 +324,9 @@ class LatexParser:
                 else next_delimiter.start()
             )
             if next_pos > 0:
+                # convert text before next delimiter to tokens
                 text = content[current_pos : current_pos + next_pos]  # .strip()
                 if text:
-                    unknown_cmd = UNKNOWN_COMMAND_PATTERN.match(text)
-                    if unknown_cmd:
-                        text = self._handle_unknown_command(unknown_cmd)
                     self.add_token(text, tokens)
                 current_pos += next_pos
                 if not next_delimiter:
@@ -342,20 +355,25 @@ class LatexParser:
             if matched:
                 continue
 
+            # check remaining patterns
             matched, end_pos = self._check_remaining_patterns(
                 content[current_pos:], tokens, line_break_delimiter
             )
             current_pos += end_pos
+            if matched:
+                continue
 
-            if not matched:
-                unknown_cmd = UNKNOWN_COMMAND_PATTERN.match(content[current_pos:])
-                if unknown_cmd:
-                    text = self._handle_unknown_command(unknown_cmd)
-                    self.add_token(text, tokens)
-                    # Adjust position by the full match length including whitespace
-                    current_pos += len(unknown_cmd.group(0))
-                else:
-                    current_pos += 1
+            # check for unknown command
+            if handle_unknown_commands:
+                matched, end_pos = self._check_unknown_command(
+                    content[current_pos:], tokens
+                )
+                current_pos += end_pos
+                if matched:
+                    continue
+
+            self.add_token(content[current_pos], tokens)
+            current_pos += 1
 
         return tokens
 
