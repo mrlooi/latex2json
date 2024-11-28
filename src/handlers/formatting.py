@@ -55,7 +55,7 @@ RAW_PATTERNS = OrderedDict(
             r"\\(?:pagestyle|urlstyle|thispagestyle|theoremstyle|bibliographystyle)\s*\{[^}]*\}",
         ),
         ("newstyle", r"\\(?:newpagestyle|renewpagestyle)\s*\{[^}]*\}\s*{"),
-        ("font", r"\\(?:mdseries|bfseries|itshape|slshape|normalfont|ttfamily)\b"),
+        # ("font", r"\\(?:mdseries|bfseries|itshape|slshape|normalfont|ttfamily)\b"),
         # setters
         ("lstset", r"\\lstset\s*{"),
         (

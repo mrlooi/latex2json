@@ -35,7 +35,9 @@ r"""
 """
 
 # Font style mappings
+# NOTE: we IGNORE math mode ones
 LEGACY_FONT_MAPPING: Dict[str, str] = {
+    # Basic text style commands
     "tt": "texttt",
     "bf": "textbf",
     "it": "textit",
@@ -43,24 +45,44 @@ LEGACY_FONT_MAPPING: Dict[str, str] = {
     "sc": "textsc",
     "sf": "textsf",
     "rm": "textrm",
-    "cal": "mathcal",
     "em": "emph",
-    "mit": "mathit",
     "bold": "textbf",
+    # Font family declarations
+    "rmfamily": "textrm",
+    "sffamily": "textsf",
+    "ttfamily": "texttt",
+    # Font shape declarations
+    "itshape": "textit",
+    "scshape": "textsc",  # Added scshape
+    "upshape": "textrm",  # Added upshape (upright shape)
+    "slshape": "textsl",  # Added slshape (slanted shape)
+    # Font series declarations
+    "bfseries": "textbf",
+    "mdseries": "textrm",  # Changed to textrm as it's the closest equivalent
+    # Font combinations and resets
+    "normalfont": "textrm",  # Changed to textrm as it's the closest equivalent
+    # Additional text mode variants
+    "textup": "textrm",
+    "textnormal": "textrm",
+    "textmd": "textrm",
 }
 
 # Size mappings
 LEGACY_SIZE_MAPPING: Dict[str, str] = {
+    # Basic size commands
     "tiny": "texttiny",
+    "scriptsize": "textscriptsize",
+    "footnotesize": "textfootnotesize",
     "small": "textsmall",
+    "normalsize": "textnormal",
     "large": "textlarge",
     "Large": "textlarge",
     "LARGE": "textlarge",
     "huge": "texthuge",
     "Huge": "texthuge",
-    "normalsize": "textnormal",
-    "footnotesize": "textfootnotesize",
-    "scriptsize": "textscriptsize",
+    # Additional size declarations
+    "smaller": "textsmall",
+    "larger": "textlarge",
 }
 
 # Old style patterns

@@ -154,7 +154,6 @@ def test_header_stuff(handler):
     \setcounter{theorem}{0}
     \vspace{.5em}
     \noindent
-    \mdseries
     \bibliographystyle{plain}
     \abovedisplayskip
     \belowdisplayshortskip
