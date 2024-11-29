@@ -189,6 +189,23 @@ def test_other(handler):
     assert token == {"type": "abstract", "content": "THIS IS MY ABSTRACT"}
     assert text[pos:] == " After Intro"
 
+    text = r"\pdfbookmark[1]{My bookmark}{my:bookmark} POST BOOKMARK"
+    token, pos = handler.handle(text)
+    assert token == {
+        "type": "ref",
+        "title": "My bookmark",
+        "content": "my:bookmark",
+    }
+    assert text[pos:] == " POST BOOKMARK"
+
+    text = r"\bookmark[1]{My bookmark} post"
+    token, pos = handler.handle(text)
+    assert token == {
+        "type": "ref",
+        "content": "My bookmark",
+    }
+    assert text[pos:] == " post"
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

@@ -166,6 +166,7 @@ def test_header_stuff(handler):
     \value{section}
     \allowdisplaybreaks
     \RequirePackage{ifpdf}
+    \itemsep=0pt
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

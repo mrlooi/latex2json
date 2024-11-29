@@ -5,7 +5,6 @@ from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content
 from src.patterns import SECTION_LEVELS
 
-# ASSUMES ORDERD DICT (PYTHON 3.7+)
 RAW_PATTERNS = OrderedDict(
     [
         # 1. Commands that need nested brace handling (simplified patterns)
@@ -17,14 +16,22 @@ RAW_PATTERNS = OrderedDict(
         ("footnote", r"\\footnote\s*{"),
         ("caption", r"\\caption\s*{"),
         ("captionof", r"\\captionof\s*{([^}]*?)}\s*{"),
+        # REFs
+        ("ref", r"\\[Rr]ef\s*{"),
         ("hyperref", r"\\hyperref\s*\[([^]]*)\]\s*{"),
         ("href", r"\\href\s*{([^}]*)}\s*{"),
-        # Simple commands with case variations
-        ("ref", r"\\[Rr]ef\s*{"),
         ("cref", r"\\[Cc]ref\s*{"),
         ("autoref", r"\\[Aa]utoref\s*{"),
         ("eqref", r"\\eqref\s*{"),
+        # bookmarks (similar to refs?)
+        ("bookmark", r"\\bookmark\s*(?:\[([^\]]*)\])?\s*{"),
+        (
+            "pdfbookmark",
+            r"\\(?:below|current)?pdfbookmark\s*(?:\[([^\]]*)\])?\s*{([^}]*)}\s*{",
+        ),
+        # URLs
         ("url", r"\\url\s*{"),
+        # Graphics
         ("includegraphics", r"\\includegraphics\s*(?:\[([^\]]*)\])?\s*{"),
         # Citations
         ("citation", r"\\(?:cite|citep|citet)(?:\[([^\]]*)\])?\s*{"),
@@ -121,7 +128,7 @@ class ContentCommandHandler(TokenHandler):
         elif matched_type == "href":
             return {"type": "url", "title": content, "content": match.group(1).strip()}
 
-        elif matched_type in ["ref", "eqref", "cref", "autoref"]:
+        elif matched_type in ["ref", "eqref", "cref", "autoref", "bookmark"]:
             return {"type": "ref", "content": content}
 
         elif matched_type == "citation":
@@ -136,6 +143,13 @@ class ContentCommandHandler(TokenHandler):
 
         elif matched_type == "url":
             return {"type": "url", "content": content}
+
+        elif matched_type == "pdfbookmark":
+            return {
+                "type": "ref",
+                "title": match.group(2).strip(),  # The display text
+                "content": content,  # The internal reference label
+            }
 
         return {"type": matched_type, "content": content}
 

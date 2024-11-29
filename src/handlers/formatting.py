@@ -48,6 +48,7 @@ RAW_PATTERNS = OrderedDict(
         ("comment", r"%([^\n]*)"),
         # pdf options
         ("pdf", r"\\(?:pdfoutput|pdfsuppresswarningpagegroup)\s*=\s*\d+"),
+        ("itemsep", r"\\itemsep\s*=\s*-?\d*\.?\d+\w+?\b"),
         # top level commands
         ("documentclass", r"\\documentclass(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}"),
         (
