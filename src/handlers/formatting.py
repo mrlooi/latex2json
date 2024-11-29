@@ -50,13 +50,16 @@ RAW_PATTERNS = OrderedDict(
         ("pdf", r"\\(?:pdfoutput|pdfsuppresswarningpagegroup)\s*=\s*\d+"),
         # top level commands
         ("documentclass", r"\\documentclass(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}"),
-        ("usepackage", r"\\usepackage(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}"),
+        (
+            "usepackage",
+            r"\\(usepackage|RequirePackage)(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}",
+        ),
         # Formatting commands
         ("setup", r"\\hypersetup\s*{"),
         ("make", r"\\(?:maketitle|makeatletter|makeatother)\b"),
         (
             "page",
-            r"\\(?:centering|raggedright|raggedleft|noindent|par|clearpage|cleardoublepage|newpage|filbreak|linebreak|nopagebreak|pagebreak|hfill|vfill|break|scriptsize|sloppy|flushbottom)\b",
+            r"\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|FirstPageHeading|noindent|par|clearpage|cleardoublepage|newpage|filbreak|linebreak|nopagebreak|pagebreak|hfill|vfill|break|scriptsize|sloppy|flushbottom)\b",
         ),
         (
             "skip",

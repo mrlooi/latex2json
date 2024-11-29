@@ -9,7 +9,7 @@ from src.patterns import SECTION_LEVELS
 RAW_PATTERNS = OrderedDict(
     [
         # 1. Commands that need nested brace handling (simplified patterns)
-        ("abstract", r"\\abstract\s*{"),
+        ("abstract", r"\\[Aa]bstract\s*{"),
         ("section", r"\\(?:(?:sub)*section\*?)\s*{"),
         ("paragraph", r"\\(?:(?:sub)*paragraph\*?)\s*{"),
         ("part", r"\\part\*?\s*{"),
@@ -19,10 +19,10 @@ RAW_PATTERNS = OrderedDict(
         ("captionof", r"\\captionof\s*{([^}]*?)}\s*{"),
         ("hyperref", r"\\hyperref\s*\[([^]]*)\]\s*{"),
         ("href", r"\\href\s*{([^}]*)}\s*{"),
-        # Simple commands
-        ("ref", r"\\ref\s*{"),
-        ("cref", r"\\cref\s*{"),
-        ("autoref", r"\\autoref\s*{"),
+        # Simple commands with case variations
+        ("ref", r"\\[Rr]ef\s*{"),
+        ("cref", r"\\[Cc]ref\s*{"),
+        ("autoref", r"\\[Aa]utoref\s*{"),
         ("eqref", r"\\eqref\s*{"),
         ("url", r"\\url\s*{"),
         ("includegraphics", r"\\includegraphics\s*(?:\[([^\]]*)\])?\s*{"),

@@ -34,7 +34,7 @@ int main() {
 }
 \end{lstlisting}"""
     token, pos = handler.handle(content)
-    assert token == {"type": "code", "content": "\nint main() {\n    return 0;\n}\n"}
+    assert token == {"type": "code", "content": "int main() {\n    return 0;\n}"}
 
     # Test lstlisting with title/parameters
     content = r"""\begin{lstlisting}[language=Python]
@@ -44,7 +44,7 @@ def example():
     token, pos = handler.handle(content)
     assert token == {
         "type": "code",
-        "content": "\ndef example():\n    pass\n",
+        "content": "def example():\n    pass",
         "title": "language=Python",
     }
 

@@ -5,7 +5,7 @@ from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content
 
 
-AUTHOR_PATTERN = re.compile(r"\\author(?:\s*\[(.*?)\])?\s*{", re.DOTALL)
+AUTHOR_PATTERN = re.compile(r"\\[Aa]uthor(?:\s*\[(.*?)\])?\s*{", re.DOTALL)
 AND_PATTERN = re.compile(r"\\and\b", re.IGNORECASE)
 BACKSLASH_PATTERN = re.compile(r"\\\\")
 

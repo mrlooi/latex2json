@@ -144,6 +144,7 @@ def test_spacing_commands(handler):
 def test_header_stuff(handler):
     text = r"""
     \documentclass[12pt,a4paper,reqno]{amsart}
+    \documentclass{XXX}
     \hypersetup{colorlinks,linkcolor={blue},citecolor={blue},urlcolor={red}}  
     \usepackage[noabbrev,capitalize,nameinlink]{cleveref}
     \usepackage{graphicx}
@@ -163,6 +164,8 @@ def test_header_stuff(handler):
     \lstset{breaklines=true, style=\color{blue}}
     \fboxsep{1pt}
     \value{section}
+    \allowdisplaybreaks
+    \RequirePackage{ifpdf}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
