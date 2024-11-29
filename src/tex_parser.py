@@ -128,7 +128,7 @@ class LatexParser:
         if len(cell) == 0:
             return None
         elif len(cell) == 1:
-            if cell[0]["type"] == "text":
+            if cell[0]["type"] == "text" and "styles" not in cell[0]:
                 return cell[0]["content"]
             return cell[0]
         return cell
@@ -187,9 +187,14 @@ class LatexParser:
             expanded = self._expand_command(total_content)
 
             if expanded.startswith("\\"):
-                token = {"type": "command", "command": expanded}
                 if inner_content:
-                    token["content"] = inner_content
+                    token = {
+                        "type": "command",
+                        "command": expanded.replace("{" + inner_content + "}", ""),
+                        "content": inner_content,
+                    }
+                else:
+                    token = {"type": "command", "command": expanded}
             else:
                 token = {"type": "text", "content": expanded}
 
@@ -243,6 +248,9 @@ class LatexParser:
                             token["title"] = self._parse_cell(token["title"])
                     elif token["type"] == "section":
                         self.current_env = token
+                    elif isinstance(handler, FormattingHandler):
+                        if token["type"] == "box":
+                            token = self._parse_cell(token["content"])
                     elif isinstance(handler, BaseEnvironmentHandler):
                         prev_env = self.current_env
                         self.current_env = token
@@ -326,8 +334,8 @@ class LatexParser:
                         inner_content  # , nesting_level=nesting_level + 1
                     )
                     if nested_tokens:
-                        # could use append here but we want to keep flatten it out since {} are used just for basic grouping and don't preserve meaningful structure
-                        tokens.extend(nested_tokens)
+                        for token in nested_tokens:
+                            self.add_token(token, tokens)
                     current_pos += end_pos
                     continue
 
@@ -413,19 +421,12 @@ class LatexParser:
 if __name__ == "__main__":
 
     text = r"""
-    
-    \def\foo{bar}
+\begin{tabular}{|c|c|}
+\parbox[c][3cm]{5cm}{Center aligned with fixed height}  \\
+sdsds 
+\end{tabular}
 
-    \begin{tabular}{|c|c|}
-        \hline
-        {
-            \normalsize sss
-            \bf{Hii} bro 
-            \foo
-        } & 2nd block \\
-        \noindent & \begin{equation} x=1 & wer \end{equation} \\
-        \hline
-    \end{tabular}
+\parbox[c][3cm]{5cm}{\textbf{Center aligned with fixed height}}
     """
 
     # Example usage

@@ -30,6 +30,18 @@ COLOR_COMMANDS_PATTERN = re.compile(
     re.VERBOSE,
 )
 
+BOX_PATTERN = re.compile(
+    r"""
+    \\(?:
+        parbox(?:\s*\[[^\]]*\])*\s*{[^}]*}\s*{| # \parbox[pos][height][inner-pos]{width}{text}
+        makebox(?:\s*\[[^\]]*\])*\s*{| # \makebox[width][pos]
+        framebox(?:\s*\[[^\]]*\])*\s*{| # \framebox[width][pos]
+        raisebox\s*{[^}]+}(?:\s*\[[^\]]*\])*\s*{ # \raisebox{raise}[height][depth]
+    )
+    """,
+    re.VERBOSE | re.DOTALL,
+)
+
 RAW_PATTERNS = OrderedDict(
     [
         # Comments
@@ -99,7 +111,6 @@ RAW_PATTERNS = OrderedDict(
         ),
         ("backslash", r"\\(?:backslash|textbackslash)\b"),
         ("ensuremath", r"\\ensuremath\s*{"),
-        ("niceties", r"\\(?:normalsize|footnotesize)\s*{"),
     ]
 )
 
@@ -109,6 +120,7 @@ PATTERNS = OrderedDict(
 )
 PATTERNS["color"] = COLOR_COMMANDS_PATTERN
 PATTERNS["definecolor"] = DEFINE_COLOR_PATTERN
+PATTERNS["box"] = BOX_PATTERN
 # PATTERNS['and'] = re.compile(r'\\and\b', re.IGNORECASE)
 
 
@@ -142,16 +154,16 @@ class FormattingHandler(TokenHandler):
                         "content": extracted_content,
                         "display": "inline",
                     }, start_pos + end_pos
-                elif pattern_name == "niceties":
+                elif pattern_name == "box":
                     start_pos = match.end() - 1
                     extracted_content, end_pos = extract_nested_content(
                         content[start_pos:]
                     )
                     return {
-                        "type": "text",
-                        "content": extracted_content,
+                        "type": "box",
+                        "content": extracted_content
+                        + "\n",  # add newline to end of box?
                     }, start_pos + end_pos
-                # ignore formatting commands
                 return None, match.end()
 
         return None, 0
