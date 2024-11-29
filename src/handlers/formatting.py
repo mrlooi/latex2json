@@ -18,13 +18,10 @@ COLOR_COMMANDS_PATTERN = re.compile(
     r"""
     \\(?:
         color\*?{[^}]*}                      # \color{..}
-        # |textcolor\*?{[^}]*}{[^}]*}          # \textcolor{color}{text}
-        |colorbox\*?{[^}]*}{[^}]*}           # \colorbox{color}{text}
-        |fcolorbox\*?{[^}]*}{[^}]*}{[^}]*}   # \fcolorbox{border}{bg}{text}
         |(?:row|column|cell)color\*?{[^}]*}   # \rowcolor, \columncolor, \cellcolor
         |pagecolor\*?{[^}]*}                  # \pagecolor{..}
         |normalcolor                          # \normalcolor
-        |color{[^}]*![^}]*}                  # color mixing like \color{red!50!blue}
+        |color\s*{[^}]*![^}]*}                  # color mixing like \color{red!50!blue}
     )
     """,
     re.VERBOSE,
@@ -36,7 +33,10 @@ BOX_PATTERN = re.compile(
         parbox(?:\s*\[[^\]]*\])*\s*{[^}]*}\s*{| # \parbox[pos][height][inner-pos]{width}{text}
         makebox(?:\s*\[[^\]]*\])*\s*{| # \makebox[width][pos]
         framebox(?:\s*\[[^\]]*\])*\s*{| # \framebox[width][pos]
-        raisebox\s*{[^}]+}(?:\s*\[[^\]]*\])*\s*{ # \raisebox{raise}[height][depth]
+        raisebox\s*{[^}]+}(?:\s*\[[^\]]*\])*\s*{| # \raisebox{raise}[height][depth]
+        fbox\s*{| # \fbox{text}
+        colorbox\s*{[^}]*}\s*{|           # \colorbox{color}{text}
+        fcolorbox\s*{[^}]*}\s*{[^}]*}\s*{   # \fcolorbox{border}{bg}{text}
     )
     """,
     re.VERBOSE | re.DOTALL,
@@ -72,7 +72,7 @@ RAW_PATTERNS = OrderedDict(
         ("lstset", r"\\lstset\s*{"),
         (
             "newsetlength",
-            r"\\(?:newlength\s*\{[^}]*\})|\\setlength\s*\{([^}]+)\}\{([^}]+)\}",
+            r"\\(?:newlength\s*\{[^}]*\})|\\setlength\s*(?:\{([^}]+)\}|\\[a-zA-Z]+)\s*\{([^}]+)\}",
         ),
         ("setcounter", r"\\setcounter\s*\{([^}]+)\}\{([^}]+)\}"),
         # New margin and size commands allowing any characters after the number
@@ -106,7 +106,8 @@ RAW_PATTERNS = OrderedDict(
             r"specialrule\s*{([^}]*)}\s*{([^}]*)}\s*{([^}]*)}|"  # {height}{above}{below}
             r"addlinespace(?:\[([^\]]*)\])?|"  # optional [length]
             r"rule\s*{[^}]*}\s*{[^}]*}|"  # \rule{width}{height}
-            r"morecmidrules"  # no args
+            r"morecmidrules|"  # no args
+            r"fboxsep\s*{([^}]+)}"  # {length}
             r")",
         ),
         ("backslash", r"\\(?:backslash|textbackslash)\b"),

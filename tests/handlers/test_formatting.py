@@ -161,6 +161,7 @@ def test_header_stuff(handler):
     \pdfoutput=1
     \pdfsuppresswarningpagegroup=1
     \lstset{breaklines=true, style=\color{blue}}
+    \fboxsep{1pt}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
@@ -178,6 +179,8 @@ def test_box_commands(handler):
         (r"\framebox[3cm][l]{Left in frame}", "Left in frame"),
         (r"\parbox{5cm}{Simple parbox text}", "Simple parbox text"),
         (r"\parbox[t][3cm][s]{5cm}{Stretched vertically}", "Stretched vertically"),
+        (r"\fbox{Framed text}", "Framed text"),
+        (r"\colorbox{yellow}{Colored box}", "Colored box"),
         (
             r"\parbox[c][3cm]{5cm}{Center aligned with fixed height}",
             "Center aligned with fixed height",
