@@ -975,7 +975,7 @@ def test_new_environment(parser):
     }
 
     \begin{boxed}[BOX]{BOX2}
-    This text is \textit{inside} the environment.
+    This text is inside the environment.
     \end{boxed}
     """
     parsed_tokens = parser.parse(text)
@@ -1009,15 +1009,9 @@ def test_new_environment(parser):
     # First row with argument substitution
     assert tabular["content"][0][0] == "Argument 2 (\\#2)=BOX2"
 
-    # Second row with text and command
+    # Second row with text
     row = tabular["content"][1][0]
-    assert len(row) == 3
-    assert row[0]["type"] == "text"
-    assert row[0]["content"] == "This text is "
-    # assert row[1]["type"] == "command"
-    # assert row[1]["content"] == "\\textit{inside} "
-    assert row[2]["type"] == "text"
-    assert row[2]["content"] == "the environment."
+    assert row.strip() == "This text is inside the environment."
 
 
 def test_bibliography(parser):

@@ -47,3 +47,15 @@ def test_handle_valid_commands(handler):
     out, end_pos = handler.handle(text)
     assert out == r"\textsmall{Hello my name {sa} \sc something }"
     assert text[end_pos:] == r"\large large"
+
+    # test with numbers etc after
+    text = r"\bf1 hello } ejje"
+    out, end_pos = handler.handle(text)
+    assert out == r"\textbf{1 hello }"
+    assert text[end_pos:] == "} ejje"
+
+    # test with numbers etc after
+    text = r"\bf123 { hello }"
+    out, end_pos = handler.handle(text)
+    assert out == r"\textbf{123 { hello }}"
+    assert text[end_pos:] == ""

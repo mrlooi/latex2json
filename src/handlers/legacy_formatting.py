@@ -88,11 +88,11 @@ LEGACY_SIZE_MAPPING: Dict[str, str] = {
 # Old style patterns
 # Generate regex patterns from the mappings
 FONT_PATTERN = re.compile(
-    r"\\(" + "|".join(LEGACY_FONT_MAPPING.keys()) + r")\b\s*\{?", re.DOTALL
+    r"\\(" + "|".join(LEGACY_FONT_MAPPING.keys()) + r")(?![a-zA-Z])\s*\{?", re.DOTALL
 )
 
 SIZE_PATTERN = re.compile(
-    r"\\(" + "|".join(LEGACY_SIZE_MAPPING.keys()) + r")\b\s*\{?", re.DOTALL
+    r"\\(" + "|".join(LEGACY_SIZE_MAPPING.keys()) + r")(?![a-zA-Z])\s*\{?", re.DOTALL
 )
 
 PATTERNS = {
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     # print(out)
     # print(text[end_pos:])
 
-    text = r"\bf Hello my name isssdas {sa} asdsd \tiny asdad"  # } \noindent \tt"
+    text = r"\bf1 hello } ejje"  # } \noindent \tt"
     out, end_pos = handler.handle(text)
     print(out)
     print(text[end_pos:])

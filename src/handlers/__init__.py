@@ -10,6 +10,7 @@ from .item import ItemHandler
 from .legacy_formatting import LegacyFormattingHandler
 from .bibitem import BibItemHandler
 from .author import AuthorHandler
+from .text_formatting import TextFormattingHandler
 
 __all__ = [
     "TokenHandler",
@@ -24,4 +25,5 @@ __all__ = [
     "LegacyFormattingHandler",
     "BibItemHandler",
     "AuthorHandler",
+    "TextFormattingHandler",
 ]

@@ -18,6 +18,7 @@ from src.handlers import (
     LegacyFormattingHandler,
     BibItemHandler,
     AuthorHandler,
+    TextFormattingHandler,
 )
 from src.handlers.environment import BaseEnvironmentHandler
 from src.patterns import PATTERNS
@@ -69,6 +70,7 @@ class LatexParser:
             # make sure to add EnvironmentHandler after equation/tabular or other env related formats, since it will greedily parse any begin/end block. Add as last to be safe
             self.env_handler,
             # add formatting stuffs last
+            TextFormattingHandler(),
             FormattingHandler(),
             # self.legacy_formatting_handler,
         ]
@@ -155,6 +157,8 @@ class LatexParser:
                 token_dict.get("type") == "text"
                 and tokens
                 and tokens[-1].get("type") == "text"
+                and "styles" not in token_dict
+                and "styles" not in tokens[-1]
             ):
                 tokens[-1]["content"] += token_dict["content"]
             else:
@@ -238,6 +242,22 @@ class LatexParser:
                         self.current_env = token
                         token["content"] = self.parse(token["content"])
                         self.current_env = prev_env
+                    elif isinstance(handler, TextFormattingHandler):
+                        # Parse inner first
+                        inner_content = self.parse(token["content"])
+                        # Maintain token metadata
+                        styled_token = {
+                            **token,
+                            "content": inner_content,
+                        }
+                        processed_tokens = (
+                            TextFormattingHandler.process_style_in_tokens(
+                                [styled_token]
+                            )
+                        )
+                        tokens.extend(processed_tokens)
+
+                        return True, end_pos
 
                     self.add_token(token, tokens)
                 return True, end_pos
@@ -385,11 +405,19 @@ class LatexParser:
 if __name__ == "__main__":
 
     text = r"""
-    {
-    \normalsize sss
-    \bf{Hii} bro
-    }
-    Hii
+    
+    \def\foo{bar}
+
+    \begin{tabular}{|c|c|}
+        \hline
+        {
+            \normalsize sss
+            \bf{Hii} bro 
+            \foo
+        } & 2nd block \\
+        \noindent & \begin{equation} x=1 & wer \end{equation} \\
+        \hline
+    \end{tabular}
     """
 
     # Example usage

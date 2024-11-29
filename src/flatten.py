@@ -11,8 +11,11 @@ def flatten_tokens(tokens: str | List[Dict[str, str]]) -> tuple[str, dict]:
         return tokens, {}
 
     for token in tokens:
-        token_type = token["type"]
-        if token_type == "text":
+        if (
+            token["type"] == "text"
+            and isinstance(token["content"], str)
+            and "styles" not in token
+        ):
             flattened_content += token["content"]
         else:
             # Create a reference key and store token in map
