@@ -74,7 +74,7 @@ RAW_PATTERNS = OrderedDict(
             "newsetlength",
             r"\\(?:newlength\s*\{[^}]*\})|\\setlength\s*(?:\{([^}]+)\}|\\[a-zA-Z]+)\s*\{([^}]+)\}",
         ),
-        ("setcounter", r"\\setcounter\s*\{([^}]+)\}\{([^}]+)\}"),
+        ("counter", r"\\(?:setcounter\s*\{([^}]+)\}\{([^}]+)\}|value\s*\{([^}]+)\})"),
         # New margin and size commands allowing any characters after the number
         (
             "margins",

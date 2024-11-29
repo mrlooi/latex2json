@@ -162,6 +162,7 @@ def test_header_stuff(handler):
     \pdfsuppresswarningpagegroup=1
     \lstset{breaklines=true, style=\color{blue}}
     \fboxsep{1pt}
+    \value{section}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
