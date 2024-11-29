@@ -11,6 +11,7 @@ from .legacy_formatting import LegacyFormattingHandler
 from .bibitem import BibItemHandler
 from .author import AuthorHandler
 from .text_formatting import TextFormattingHandler
+from .if_else_statements import IfElseBlockHandler
 
 __all__ = [
     "TokenHandler",
@@ -26,4 +27,5 @@ __all__ = [
     "BibItemHandler",
     "AuthorHandler",
     "TextFormattingHandler",
+    "IfElseBlockHandler",
 ]
