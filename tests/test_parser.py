@@ -681,6 +681,8 @@ def test_nested_figures(parser):
 
 def test_complex_table(parser):
     text = r"""
+    \newcommand{\HELLO}[1]{HELLO #1}
+
     \begin{table}[htbp]
     \centering
     \begin{tabular}{|c|c|c|c|}
@@ -695,6 +697,7 @@ def test_complex_table(parser):
         \multirow{2}{*}{South} & Urban & 200 & \begin{align} \label{eq:1} E = mc^2 \\ $F = ma$ \end{align} \\
         & & 130 & 160 \\
         Thing with \cite{elon_musk} & SpaceX & Tesla & Neuralink \\
+        \H{o} & \HELLO{WORLD} & \textyen\textdollar & \unknown \\
         \hline
     \end{tabular}
     \caption{Regional Sales Distribution}
@@ -754,6 +757,13 @@ def test_complex_table(parser):
     assert cells[6][0] == [
         {"type": "text", "content": "Thing with"},
         {"type": "citation", "content": "elon_musk"},
+    ]
+
+    assert cells[7] == [
+        "ő",
+        "HELLO WORLD",
+        "¥$",
+        [{"type": "command", "command": "\\unknown"}],
     ]
 
     # Check caption
@@ -921,21 +931,20 @@ def test_escaped_special_chars(parser):
 
     # Check that special characters are preserved
     expected_patterns = [
-        r"\$100.00",
-        r"25\%",
-        r"A \& B",
-        r"x\_1",
-        r"\#5",
-        r"\{braces\}",
-        # r'\^{superscript}',
-        r"\~{n}",
-        r"100\%",
-        r"200\$",
-        r"\#1",
-        r"x\_2",
-        r"\{a\}",
-        # r'\^{2}',
-        r"\~{n}",
+        r"$100.00",
+        r"25%",
+        r"A & B",
+        r"x_1",
+        r"#5",
+        r"{braces}",
+        # r"\^{superscript}",
+        r"100%",
+        r"200$",
+        r"#1",
+        r"x_2",
+        r"{a}",
+        # r"\^{2}",
+        r"ñ",
         r"textbackslash",
     ]
 
@@ -996,7 +1005,7 @@ def test_new_environment(parser):
     # Check argument substitution text
     arg_text = center["content"][0]
     assert arg_text["type"] == "text"
-    assert arg_text["content"].strip() == "Argument 1 (\\#1)=BOX"
+    assert arg_text["content"].strip() == "Argument 1 (#1)=BOX"
 
     # Check tabular
     tabular = center["content"][1]
@@ -1007,7 +1016,7 @@ def test_new_environment(parser):
     assert len(tabular["content"]) == 2
 
     # First row with argument substitution
-    assert tabular["content"][0][0] == "Argument 2 (\\#2)=BOX2"
+    assert tabular["content"][0][0] == "Argument 2 (#2)=BOX2"
 
     # Second row with text
     row = tabular["content"][1][0]

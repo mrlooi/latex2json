@@ -175,17 +175,23 @@ class LatexParser:
             end_pos = match.end()
 
             inner_content = None
+            total_content = command
             if command.endswith("{"):
                 command = command[:-1]
                 inner_content, inner_end_pos = extract_nested_content(
                     content[end_pos - 1 :]
                 )
                 end_pos += inner_end_pos - 1
-                inner_content = self.parse(inner_content)
+                total_content += inner_content + "}"
 
-            token = {"type": "command", "command": command}
-            if inner_content:
-                token["content"] = inner_content
+            expanded = self._expand_command(total_content)
+
+            if expanded.startswith("\\"):
+                token = {"type": "command", "command": expanded}
+                if inner_content:
+                    token["content"] = inner_content
+            else:
+                token = {"type": "text", "content": expanded}
 
             self.add_token(token, tokens)
             return True, end_pos
@@ -338,6 +344,8 @@ class LatexParser:
                 # convert text before next delimiter to tokens
                 text = content[current_pos : current_pos + next_pos]  # .strip()
                 if text:
+                    if handle_unknown_commands:
+                        text = self._expand_command(text)
                     self.add_token(text, tokens)
                 current_pos += next_pos
                 if not next_delimiter:
