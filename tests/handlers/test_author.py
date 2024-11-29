@@ -31,3 +31,17 @@ after authors
     assert "noam@google.com" in authors_list[1]
 
     assert text[end_pos:].strip() == "after authors"
+
+
+def test_date_handler():
+    item = AuthorHandler()
+
+    text = r"\date{2024-11-29} sss"
+    token, end_pos = item.handle(text)
+    assert token == {"type": "date", "content": "2024-11-29"}
+    assert text[end_pos:] == " sss"
+
+    text = r"\date{} sss"
+    token, end_pos = item.handle(text)
+    assert token == {"type": "date", "content": ""}
+    assert text[end_pos:] == " sss"

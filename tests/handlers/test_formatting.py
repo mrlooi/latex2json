@@ -167,6 +167,14 @@ def test_header_stuff(handler):
     \allowdisplaybreaks
     \RequirePackage{ifpdf}
     \itemsep=0pt
+    \LastPageEnding
+
+    \topmargin 0.0cm
+    \oddsidemargin 0.2cm
+    \textwidth 16cm 
+    \textheight 21cm
+    \footskip 1.0cm
+    \newcolumntype{S}{>{\hsize=.3\hsize}X}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

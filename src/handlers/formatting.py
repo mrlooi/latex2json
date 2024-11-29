@@ -60,7 +60,7 @@ RAW_PATTERNS = OrderedDict(
         ("make", r"\\(?:maketitle|makeatletter|makeatother)\b"),
         (
             "page",
-            r"\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|FirstPageHeading|noindent|par|clearpage|cleardoublepage|newpage|filbreak|linebreak|nopagebreak|pagebreak|hfill|vfill|break|scriptsize|sloppy|flushbottom)\b",
+            r"\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|FirstPageHeading|LastPageEnding|noindent|par|clearpage|cleardoublepage|newpage|filbreak|linebreak|nopagebreak|pagebreak|hfill|vfill|break|scriptsize|sloppy|flushbottom)\b",
         ),
         (
             "skip",
