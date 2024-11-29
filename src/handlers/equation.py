@@ -8,6 +8,7 @@ from src.patterns import LABEL_PATTERN
 EQUATION_ENV = {
     "equation",  # basic numbered equation
     "align",  # aligned equations
+    "aligned",  # aligned equations
     "gather",  # centered equations
     "multline",  # long equation split across lines
     "eqnarray",  # old style align (deprecated but used)
@@ -99,6 +100,9 @@ class EquationHandler(TokenHandler):
                 #     }
                 # else:
                 token = {"type": "equation", "content": equation, "display": display}
+
+                if "align" in pattern_name:
+                    token["align"] = True
 
                 if pattern_name in equation_env_dict:
                     numbered = not match.group(0).strip().endswith("*}")

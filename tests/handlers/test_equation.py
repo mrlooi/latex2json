@@ -74,6 +74,7 @@ def test_handle_equation_environments(handler):
         "content": "x &= y",
         "display": "block",
         "numbered": True,
+        "align": True,
     }
     assert pos == len(content)
 

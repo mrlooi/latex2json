@@ -78,7 +78,7 @@ RAW_PATTERNS = OrderedDict(
         # New margin and size commands allowing any characters after the number
         (
             "margins",
-            r"\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)\s*([-+]?\d*\.?\d+.*)\b",
+            r"\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)\b",
         ),
         # spacing
         (
