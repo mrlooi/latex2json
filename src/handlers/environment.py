@@ -46,6 +46,7 @@ ENV_TYPES = {
 # Add to your environment configurations
 ENV_ARGS = {
     "thebibliography": {"mandatory": 1},  # Expects 1 mandatory argument
+    "minipage": {"mandatory": 1},  # Expects 1 mandatory argument
     # "tabular": {"mandatory": 1},          # Expects 1 mandatory argument for column spec
     "table": {"optional": 1},  # Expects 1 optional argument for placement
     "figure": {"optional": 1},  # Expects 1 optional argument for placement

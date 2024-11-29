@@ -31,12 +31,15 @@ class CodeBlockHandler(TokenHandler):
                     }, match.end()
 
                 elif pattern_name == "verb_command":
-                    return {"type": "code", "content": match.group(2)}, match.end()
+                    return {
+                        "type": "code",
+                        "content": match.group(2).strip(),
+                    }, match.end()
 
                 elif pattern_name == "lstlisting":
                     token = {
                         "type": "code",
-                        "content": match.group(2),
+                        "content": match.group(2).strip(),
                     }
                     if match.group(1):  # Optional title/parameters
                         token["title"] = match.group(1).strip()
