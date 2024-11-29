@@ -9,6 +9,7 @@ from src.patterns import SECTION_LEVELS
 RAW_PATTERNS = OrderedDict(
     [
         # 1. Commands that need nested brace handling (simplified patterns)
+        ("abstract", r"\\abstract\s*{"),
         ("section", r"\\(?:(?:sub)*section\*?)\s*{"),
         ("paragraph", r"\\(?:(?:sub)*paragraph\*?)\s*{"),
         ("part", r"\\part\*?\s*{"),
@@ -136,7 +137,7 @@ class ContentCommandHandler(TokenHandler):
         elif matched_type == "url":
             return {"type": "url", "content": content}
 
-        return None
+        return {"type": matched_type, "content": content}
 
 
 if __name__ == "__main__":

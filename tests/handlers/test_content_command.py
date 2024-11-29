@@ -183,5 +183,12 @@ def test_handle_empty_content(handler):
     }
 
 
+def test_other(handler):
+    text = r"\abstract{ THIS IS MY ABSTRACT } After Intro"
+    token, pos = handler.handle(text)
+    assert token == {"type": "abstract", "content": "THIS IS MY ABSTRACT"}
+    assert text[pos:] == " After Intro"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
