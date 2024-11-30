@@ -1099,9 +1099,58 @@ def test_user_defined_commands_w_legacy_formatting(parser):
     assert parsed_tokens[0]["content"] == "http://arxiv.org/abs/1234567"
 
 
+def test_if_else_statements(parser):
+    text = r"""
+    \if{cond1}
+        \begin{tabular}{|c|c|}
+            \hline
+            a & b \\
+            \hline
+        \end{tabular}
+    \elseif{cond2}
+        content2
+    \else
+        content3
+    \fi
+
+    More after this
+    """
+    parsed_tokens = parser.parse(text)
+
+    assert len(parsed_tokens) == 2
+    assert parsed_tokens[0]["type"] == "tabular"
+    tabular = parsed_tokens[0]
+    assert tabular["content"][0][0].strip() == "a"
+    assert tabular["content"][0][1].strip() == "b"
+
+    assert parsed_tokens[1]["type"] == "text"
+    assert parsed_tokens[1]["content"].strip() == "More after this"
+
+    # with iffalse
+    text = r"""
+    \iffalse
+        false statement
+    \else
+        true statement
+    \fi
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "true statement"
+
+    # test unclosed if
+    text = r"""
+    \if{cond1} 
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "command"
+    assert parsed_tokens[0]["content"].strip() == "cond1"
+
+
 # TODO
-# def test_unknown_commands_preservation(parser):
-#     """Test that unknown commands are preserved exactly as they appear"""
+# def test_text_commands(parser):
 #     test_cases = [
 #         r"\textbf{bold}",
 #         r"\textcolor{red}{Colored text}",

@@ -101,9 +101,13 @@ class IfElseBlockHandler(TokenHandler):
         if match:
             condition = match.group(1)
             start_pos = match.end()
-            if_content, else_content, elsif_branches, end_pos = extract_nested_if_else(
-                content[start_pos:]
-            )
+            try:
+                if_content, else_content, elsif_branches, end_pos = (
+                    extract_nested_if_else(content[start_pos:])
+                )
+            except ValueError as e:
+                print(ValueError(f"Unclosed conditional block: {e}"))
+                return None, 0
             return {
                 "type": "conditional",
                 "condition": condition,
