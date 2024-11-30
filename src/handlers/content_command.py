@@ -16,6 +16,8 @@ RAW_PATTERNS = OrderedDict(
         ("footnote", r"\\footnote\s*{"),
         ("caption", r"\\caption\s*{"),
         ("captionof", r"\\captionof\s*{([^}]*?)}\s*{"),
+        # input
+        ("input", r"\\input\s*{"),
         # REFs
         ("ref", r"\\[Rr]ef\s*{"),
         ("hyperref", r"\\hyperref\s*\[([^]]*)\]\s*{"),
@@ -106,6 +108,8 @@ class ContentCommandHandler(TokenHandler):
                 "level": level,
                 "numbered": numbered,
             }
+        elif matched_type == "input":
+            return {"type": "input", "content": content}
 
         elif matched_type == "title":
             return {"type": "title", "title": content}

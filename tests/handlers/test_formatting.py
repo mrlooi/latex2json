@@ -212,6 +212,8 @@ def test_misc_formatting_commands(handler):
     \protect\foo
     \protect\command{arg}
     \specialrule{.2em}{.1em}{.1em}
+    \addtocounter{figure}{-2}
+    \colrule
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

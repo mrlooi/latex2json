@@ -112,12 +112,13 @@ RAW_PATTERNS = OrderedDict(
             r"specialrule\s*{([^}]*)}\s*{([^}]*)}\s*{([^}]*)}|"  # {height}{above}{below}
             r"addlinespace(?:\[([^\]]*)\])?|"  # optional [length]
             r"rule\s*{[^}]*}\s*{[^}]*}|"  # \rule{width}{height}
-            r"morecmidrules|"  # no args
-            r"fboxsep\s*{([^}]+)}"  # {length}
+            r"morecmidrules\b|"  # no args
+            r"fboxsep\s*{([^}]+)}|"  # {length}
+            r"colrule\b"
             r")",
         ),
         ("protect", r"\\protect\\[a-zA-Z]+(?:\s*(?:\[[^\]]*\]|\{[^}]*\})*)?"),
-        ("addtocontents", r"\\addtocontents\s*\{[^}]*\s*\}\s*{"),
+        ("addtocontents", r"\\(?:addtocontents|addtocounter)\s*\{[^}]*\s*\}\s*{"),
         ("backslash", r"\\(?:backslash|textbackslash)\b"),
         ("ensuremath", r"\\ensuremath\s*{"),
     ]
