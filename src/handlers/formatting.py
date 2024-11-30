@@ -116,7 +116,7 @@ RAW_PATTERNS = OrderedDict(
             r"fboxsep\s*{([^}]+)}"  # {length}
             r")",
         ),
-        ("protect", r"\\protect\\[a-zA-Z]+(?:\s*{[^}]*})*"),
+        ("protect", r"\\protect\\[a-zA-Z]+(?:\s*(?:\[[^\]]*\]|\{[^}]*\})*)?"),
         ("addtocontents", r"\\addtocontents\s*\{[^}]*\s*\}\s*{"),
         ("backslash", r"\\(?:backslash|textbackslash)\b"),
         ("ensuremath", r"\\ensuremath\s*{"),
