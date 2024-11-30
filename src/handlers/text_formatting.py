@@ -56,10 +56,13 @@ class TextFormattingHandler(TokenHandler):
             if next_content.endswith("{"):
                 next_pos = match.end(2)
                 text, end_pos = extract_nested_content("{" + content[next_pos:])
-                if not text:
+                if text is None:
                     # should not happen if there is proper closing brace
                     content_to_format = "{"
                     total_pos = next_pos
+                elif text.strip() == "":
+                    # ignore empty \text{} i.e. return None since there's nothing to format
+                    return None, next_pos + end_pos - 1
                 else:
                     content_to_format = text
                     total_pos = next_pos + end_pos - 1
@@ -102,7 +105,11 @@ class TextFormattingHandler(TokenHandler):
                 current_styles.append(token["style"])
             elif "styles" in token:
                 current_styles.extend(token["styles"])
-            processed_token["styles"] = current_styles
+
+            # remove duplicates via dict
+            processed_token["styles"] = list(
+                OrderedDict.fromkeys(current_styles)
+            )  # Pre-3.7 compatible
 
             # Recursively process content if it's a list
             if "content" in processed_token and isinstance(

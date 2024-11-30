@@ -76,6 +76,13 @@ def test_handle_outputs(handler):
     }
     assert text[end_pos:] == ""
 
+    # test empty content
+    text = r"\textbf{   } afterwards"
+    out, end_pos = handler.handle(text)
+    assert out is None
+    assert text[end_pos:] == " afterwards"
+
+    # different command
     text = r"\textbfsss{}"
     out, end_pos = handler.handle(text)
     assert out is None

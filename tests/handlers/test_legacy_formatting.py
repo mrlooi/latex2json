@@ -59,3 +59,48 @@ def test_handle_valid_commands(handler):
     out, end_pos = handler.handle(text)
     assert out == r"\textbf{123 { hello }}"
     assert text[end_pos:] == ""
+
+    text = r"\tiny tiny \large large X"
+    out, end_pos = handler.handle(text)
+    assert out == r"\texttiny{tiny }"
+    assert text[end_pos:] == r"\large large X"
+
+    text = text[end_pos:]
+    out, end_pos = handler.handle(text)
+    assert out == r"\textlarge{large X}"
+    assert text[end_pos:] == ""
+
+
+def test_complex_non_nested_cases(handler):
+    # here, \large is not competing with the inner \tiny, because \tiny is nested inside \textbf
+    text = r"\large \textbf{\tiny inner} middle \huge last_huge"
+    out, end_pos = handler.handle(text)
+    assert out == r"\textlarge{\textbf{\tiny inner} middle }"
+
+    assert text[end_pos:] == r"\huge last_huge"
+
+    # first \large and 2nd \tiny are useless here due to 3rd \large
+    text = r"""
+    \large
+    \tiny
+    \large {
+    \sc{hello}
+    }
+
+    Outside block
+    """.strip()
+    out, end_pos = handler.handle(text)
+    assert out == r"\textlarge{}"
+    assert text[end_pos:].startswith(r"\tiny")
+
+    text = text[end_pos:]
+    out, end_pos = handler.handle(text)
+    assert out == r"\texttiny{}"
+    assert text[end_pos:].startswith(r"\large")
+
+    text = text[end_pos:]
+    out, end_pos = handler.handle(text)
+    assert out.replace("\n", "").strip() == r"\textlarge{\sc{hello}}"
+    # assert out == r"\textlarge{}"
+
+    assert text[end_pos:].strip() == "Outside block"

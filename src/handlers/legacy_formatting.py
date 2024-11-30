@@ -133,12 +133,26 @@ class LegacyFormattingHandler(TokenHandler):
                         end_pos = closing_pos - 2
                         next_content = next_content[:end_pos]
 
-                    # check for similar patterns
-                    match = pattern.search(next_content)
-                    if match:
-                        # if match, we end before this next pattern
-                        end_pos = match.start()
-                        next_content = next_content[:end_pos]
+                    # check for similar patterns that aren't nested in braces
+                    pos = 0
+                    while pos < len(next_content):
+                        # Skip escaped braces
+                        if pos > 0 and next_content[pos - 1 : pos + 1] == r"\{":
+                            pos += 1
+                            continue
+                        # Check for opening brace
+                        if next_content[pos] == "{":
+                            # Skip the entire nested block
+                            _, skip_len = extract_nested_content(next_content[pos:])
+                            pos += skip_len
+                        else:
+                            # Look for pattern match only in non-nested content
+                            match = pattern.match(next_content[pos:])
+                            if match:
+                                end_pos = pos
+                                next_content = next_content[:end_pos]
+                                break
+                            pos += 1
 
                     content_to_format = next_content
                     total_pos = next_pos + end_pos
