@@ -1,0 +1,134 @@
+import pytest
+from src.handlers.if_else_statements import IfElseBlockHandler, extract_nested_if_else
+
+
+@pytest.fixture
+def handler():
+    return IfElseBlockHandler()
+
+
+def test_simple_if_else():
+    text = r"""
+\ifsomecondition1
+    content1
+\else
+    content2
+\fi
+
+Post IF
+""".strip()
+    handler = IfElseBlockHandler()
+    result, pos = handler.handle(text)
+
+    assert result["type"] == "conditional"
+    assert result["condition"] == "somecondition1"
+    assert result["if_content"] == "content1"
+    assert result["else_content"] == "content2"
+    assert result["elsif_branches"] == []
+
+    assert text[pos:].strip() == "Post IF"
+
+
+def test_if_elsif_else():
+    text = r"""
+\if{cond1}
+    content1
+\elseif{cond2}
+    content2
+\elseif{cond3}
+    LAST ELIF
+\else
+    content4
+\fi
+""".strip()
+    handler = IfElseBlockHandler()
+    result, pos = handler.handle(text)
+
+    assert result["condition"] == "{cond1}"
+    assert result["if_content"].strip() == "content1"
+    assert result["else_content"].strip() == "content4"
+    assert len(result["elsif_branches"]) == 2
+    assert result["elsif_branches"][0][0] == "{cond2}"
+    assert result["elsif_branches"][0][1].strip() == "content2"
+    assert result["elsif_branches"][1][0] == "{cond3}"
+    assert result["elsif_branches"][1][1].strip() == "LAST ELIF"
+
+
+def test_nested_if_in_elsif():
+    text = r"""
+\if{outer}
+    outer_content
+\elseif{middle}
+    \if{inner}
+        inner_content
+    \else
+        inner_else
+    \fi
+    after_nested
+\else
+    final_else
+\fi
+""".strip()
+    handler = IfElseBlockHandler()
+    result, pos = handler.handle(text)
+
+    assert result["condition"] == "{outer}"
+    assert result["if_content"].strip() == "outer_content"
+    assert result["else_content"].strip() == "final_else"
+    assert len(result["elsif_branches"]) == 1
+
+    elsif_content = result["elsif_branches"][0][1]
+    assert r"\if{inner}" in elsif_content
+    assert "inner_content" in elsif_content
+    assert "inner_else" in elsif_content
+    assert "after_nested" in elsif_content
+
+
+def test_error_unclosed_if():
+    text = r"""
+\if{unclosed}
+    content
+\else
+    more content
+""".strip()
+    handler = IfElseBlockHandler()
+    token, pos = handler.handle(text)
+    assert token is None
+    assert pos == 0
+
+
+def test_nested_complex_structure():
+    text = r"""
+\if{level1}
+    \if{level2a}
+        nested1
+    \else
+        nested2
+    \fi
+\elseif{level1b}
+    \if{level2b}
+        more_nested
+    \elseif{level2c}
+        even_more
+    \else
+        nested_else
+    \fi
+    after_nested
+\else
+    final
+\fi
+""".strip()
+    handler = IfElseBlockHandler()
+    result, pos = handler.handle(text)
+
+    assert result["condition"] == "{level1}"
+    assert r"\if{level2a}" in result["if_content"]
+    assert "nested1" in result["if_content"]
+    assert "nested2" in result["if_content"]
+
+    elsif_content = result["elsif_branches"][0][1]
+    assert r"\if{level2b}" in elsif_content
+    assert "more_nested" in elsif_content
+    assert "even_more" in elsif_content
+    assert "nested_else" in elsif_content
+    assert "after_nested" in elsif_content

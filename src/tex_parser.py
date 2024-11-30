@@ -19,6 +19,7 @@ from src.handlers import (
     BibItemHandler,
     AuthorHandler,
     TextFormattingHandler,
+    IfElseBlockHandler,
 )
 from src.handlers.environment import BaseEnvironmentHandler
 from src.patterns import PATTERNS
@@ -50,7 +51,7 @@ class LatexParser:
         self.env_handler = EnvironmentHandler()
 
         self.legacy_formatting_handler = LegacyFormattingHandler()
-
+        self.if_else_block_handler = IfElseBlockHandler()
         # handlers
         self.handlers: List[TokenHandler] = [
             AuthorHandler(),
@@ -360,6 +361,22 @@ class LatexParser:
                     break
                 continue
 
+            # check for if else blocks
+            if self.if_else_block_handler.can_handle(content[current_pos:]):
+                token, end_pos = self.if_else_block_handler.handle(
+                    content[current_pos:]
+                )
+                if end_pos > 0:
+                    block = (
+                        token["if_content"]
+                        if token["condition"] != "false"
+                        else token["else_content"]
+                    )
+                    content = (
+                        content[:current_pos] + block + content[current_pos + end_pos :]
+                    )
+                    continue
+
             # check for new definition commands
             end_pos = self._check_for_new_definitions(content[current_pos:])
             if end_pos > 0:
@@ -421,12 +438,18 @@ class LatexParser:
 if __name__ == "__main__":
 
     text = r"""
-\begin{tabular}{|c|c|}
-\parbox[c][3cm]{5cm}{Center aligned with fixed height}  \\
-sdsds 
-\end{tabular}
 
-\parbox[c][3cm]{5cm}{\textbf{Center aligned with fixed height}}
+PRE IF BLOCK
+
+\iffalse
+    \begin{tabular}{|c|c|}
+        \hline
+        a & b \\
+        \hline
+    \end{tabular}
+\fi
+
+POST IF BLOCK
     """
 
     # Example usage
