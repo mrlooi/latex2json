@@ -206,6 +206,12 @@ def test_other(handler):
     }
     assert text[pos:] == " post"
 
+    # appendix
+    text = r"\appendix POST APPENDIX"
+    token, pos = handler.handle(text)
+    assert token == {"type": "appendix"}
+    assert text[pos:] == " POST APPENDIX"
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

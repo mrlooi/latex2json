@@ -175,6 +175,9 @@ def test_header_stuff(handler):
     \textheight 21cm
     \footskip 1.0cm
     \newcolumntype{S}{>{\hsize=.3\hsize}X}
+    \linewidth
+    \addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
+    \protect\setcounter{tocdepth}{1}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

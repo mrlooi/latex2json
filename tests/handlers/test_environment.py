@@ -72,6 +72,14 @@ def test_handle_environment(handler):
     token, pos = handler.handle(content)
     assert token == {"type": "environment", "name": "test", "content": "HSHSHS"}
 
+    # appendix
+    content = r"\begin{appendices}HSHSHS\end{appendices} POST APPENDIX"
+    token, pos = handler.handle(content)
+    assert token["type"] == "appendix"
+    assert token["content"] == "HSHSHS"
+    assert token["name"] == "appendices"
+    assert content[pos:] == " POST APPENDIX"
+
 
 def test_handle_environment_with_asterisk(handler):
     content = r"\begin{table*}[h]HSHSHS\end{table*} muhaha"

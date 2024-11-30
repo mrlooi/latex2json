@@ -29,6 +29,7 @@ RAW_PATTERNS = OrderedDict(
             "pdfbookmark",
             r"\\(?:below|current)?pdfbookmark\s*(?:\[([^\]]*)\])?\s*{([^}]*)}\s*{",
         ),
+        ("footnotemark", r"\\footnotemark(?:\[([^\]]*)\])?"),
         # URLs
         ("url", r"\\url\s*{"),
         # Graphics
@@ -37,7 +38,8 @@ RAW_PATTERNS = OrderedDict(
         ("citation", r"\\(?:cite|citep|citet)(?:\[([^\]]*)\])?\s*{"),
         # Title
         ("title", r"\\title\s*{"),
-        ("footnotemark", r"\\footnotemark(?:\[([^\]]*)\])?"),
+        # appendix
+        ("appendix", r"\\appendix\b"),
     ]
 )
 
@@ -61,6 +63,8 @@ class ContentCommandHandler(TokenHandler):
                         "type": "footnote",
                         "content": match.group(1).strip() if match.group(1) else "*",
                     }, match.end()
+                elif pattern_name == "appendix":
+                    return {"type": "appendix"}, match.end()
 
                 # Get position after command name
                 start_pos = match.end()

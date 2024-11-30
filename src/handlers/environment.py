@@ -32,6 +32,8 @@ ENV_TYPES = {
     "document": "document",
     "abstract": "abstract",
     "thebibliography": "bibliography",
+    "appendix": "appendix",
+    "appendices": "appendix",
     "table": "table",
     "subtable": "table",
     "subsubtable": "table",
