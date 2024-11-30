@@ -82,8 +82,10 @@ RAW_PATTERNS = OrderedDict(
         # New margin and size commands allowing any characters after the number
         (
             "margins",
-            r"\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|linewidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)\b",
+            r"\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)\s*-?\d*\.?\d+\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b",
         ),
+        # Add new pattern for dimension expansions
+        ("dimension", r"\\(?:linewidth|columnwidth|textwidth)\b"),
         # spacing
         (
             "spacing",
@@ -114,8 +116,8 @@ RAW_PATTERNS = OrderedDict(
             r"fboxsep\s*{([^}]+)}"  # {length}
             r")",
         ),
-        ("protect", r"\\protect(?=[\\{]|\s|[^a-zA-Z])"),
-        ("addtocontents", r"\\addtocontents\s*\{[^}]*\s*\}\s*\{[^}]*\}"),
+        ("protect", r"\\protect\\[a-zA-Z]+(?:\s*{[^}]*})*"),
+        ("addtocontents", r"\\addtocontents\s*\{[^}]*\s*\}\s*{"),
         ("backslash", r"\\(?:backslash|textbackslash)\b"),
         ("ensuremath", r"\\ensuremath\s*{"),
     ]
@@ -144,7 +146,13 @@ class FormattingHandler(TokenHandler):
                     return {"type": "text", "content": r"\\"}, match.end()
                 elif pattern_name == "spacing":
                     return {"type": "text", "content": " "}, match.end()
-                elif pattern_name in ["newcolumntype", "newstyle", "setup", "lstset"]:
+                elif pattern_name in [
+                    "newcolumntype",
+                    "newstyle",
+                    "setup",
+                    "lstset",
+                    "addtocontents",
+                ]:
                     # extracted nested
                     start_pos = match.end() - 1
                     extracted_content, end_pos = extract_nested_content(

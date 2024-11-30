@@ -178,11 +178,12 @@ def test_header_stuff(handler):
     \linewidth
     \addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
     \protect\setcounter{tocdepth}{1}
+    \specialrule{.2em}{.1em}{.1em}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
         token, pos = handler.handle(line)
-        assert pos > 0, f"Failed on line: {line}"
+        assert pos == len(line), f"Failed on line: {line}"
 
 
 def test_box_commands(handler):
