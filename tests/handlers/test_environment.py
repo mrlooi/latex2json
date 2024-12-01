@@ -125,5 +125,27 @@ def test_begingroup(handler):
     assert content[pos:].strip() == "hahaha"
 
 
+def test_nested_identical_environments(handler):
+    content = r"""
+    \begin{block}
+    BLOCK 1 PRE
+    \begin{block}
+    BLOCK 2
+    \end{block}
+    BLOCK 1 POST
+    \end{block}
+
+    AFTER END
+    """.strip()
+
+    token, pos = handler.handle(content)
+    assert token is not None
+
+    c = token["content"].strip()
+    assert c.endswith("BLOCK 1 POST")
+
+    assert content[pos:].strip() == "AFTER END"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
