@@ -219,6 +219,15 @@ def test_let_command(handler):
     token, _ = handler.handle(content)
     assert token is None
 
+    content = r"""
+    \let\arXiv\arxiv
+    \def\doi
+    """.strip()
+
+    token, _ = handler.handle(content)
+    assert token["name"] == "arXiv"
+    assert token["content"] == r"\arxiv"
+
 
 def test_crefname(handler):
     content = r"\crefname{equation}{333}{aaaa} hahaha"

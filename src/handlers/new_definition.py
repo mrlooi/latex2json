@@ -13,7 +13,7 @@ PATTERNS = {
     "newcommand": re.compile(
         r"\\(?:new|renew|provide)command" + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL
     ),
-    "let": re.compile(r"\\let\s*\\([^\s{]+)\s*(=.*|\\[^\s{]+)", re.DOTALL),
+    "let": re.compile(r"\\let\s*\\([^\s{\\]+)\s*(=.*|\\[^\s{]+)", re.DOTALL),
     "declaremathoperator": re.compile(
         r"\\DeclareMathOperator" + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL
     ),  # for math mode
@@ -217,9 +217,8 @@ if __name__ == "__main__":
         print()
 
     text = r"""
-    \let\endchangemargin=\endlist 
-
-    \newcommand{\bar}{BAR}
+    \let\arXiv\arxiv
+    \def\doi
     """.strip()
 
     print(handler.handle(text))
