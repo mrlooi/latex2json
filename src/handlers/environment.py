@@ -1,13 +1,13 @@
 import re
 from typing import Callable, Dict, List, Optional, Tuple
 from src.handlers.base import TokenHandler
-from src.tex_utils import extract_nested_content
+from src.tex_utils import extract_nested_content, find_matching_env_block
 
 BEGIN_GROUP_PATTERN = re.compile(r"\\begingroup\b")
 END_GROUP_PATTERN = re.compile(r"\\endgroup\b")
 
 ENVIRONMENT_PATTERN = re.compile(
-    r"\\begin\{([^}]*?)\}(.*?)\\end\{\1\}", re.DOTALL
+    r"\\begin\s*\{([^}]*?)\}", re.DOTALL
 )  # Make the name capture non-greedy with *?
 
 NEW_ENVIRONMENT_PATTERN = re.compile(
@@ -141,42 +141,6 @@ class BaseEnvironmentHandler(TokenHandler):
     def __init__(self):
         super().__init__()
 
-        # Precompile frequently used patterns
-        self._env_pattern_cache = {}  # Cache for environment patterns
-
-    def _find_matching_env_block(
-        self, text: str, env_name: str, start_pos: int = 0
-    ) -> int:
-        """Find the matching end{env_name} for a begin{env_name}, handling nested environments"""
-        # Cache the compiled pattern for this environment
-        if env_name not in self._env_pattern_cache:
-            # Escape special characters in the environment name
-            escaped_name = re.escape(env_name)
-            self._env_pattern_cache[env_name] = re.compile(
-                rf"\\(begin|end)\{{{escaped_name}}}"
-            )
-
-        pattern = self._env_pattern_cache[env_name]
-        nesting_level = 1
-        current_pos = start_pos
-
-        while nesting_level > 0 and current_pos < len(text):
-            match = re.search(pattern, text[current_pos:])
-            if not match:
-                return -1  # No matching end found
-
-            current_pos += match.start() + 1
-            if match.group(1) == "begin":
-                nesting_level += 1
-            else:  # 'end'
-                nesting_level -= 1
-
-            if nesting_level == 0:
-                return current_pos - 1
-            current_pos += len(match.group(0)) - 1
-
-        return -1 if nesting_level > 0 else current_pos
-
     def _find_matching_group_end(self, text: str, start_pos: int = 0) -> int:
         """Find the matching endgroup for a begingroup, handling nested groups"""
         nesting_level = 1
@@ -253,13 +217,19 @@ class BaseEnvironmentHandler(TokenHandler):
 
         return token
 
-    def _try_match_env(self, content: str) -> Tuple[Optional[Dict], int]:
-        match = ENVIRONMENT_PATTERN.match(content)
-        if match:
+    def _try_match_env(
+        self, content: str, match: Optional[re.Match] = None
+    ) -> Tuple[Optional[Dict], int]:
+        """Try to match an environment pattern"""
+        if not match:
+            match = ENVIRONMENT_PATTERN.match(content)
+        if (
+            match and match.re.pattern == ENVIRONMENT_PATTERN.pattern
+        ):  # Verify it's an environment match
             env_name = match.group(1).strip()
             # Find the correct ending position for this environment
-            start_pos = match.start(2)
-            end_pos = self._find_matching_env_block(content, env_name, start_pos)
+            start_pos = match.end(1) + 1
+            end_pos = find_matching_env_block(content, env_name, start_pos)
 
             if end_pos == -1:
                 # No matching end found, treat as plain text
@@ -274,16 +244,21 @@ class BaseEnvironmentHandler(TokenHandler):
                 return env_token, current_pos
         return None, 0
 
-    def _try_match_group(self, content: str) -> Tuple[Optional[Dict], int]:
-        # First check for begingroup
-        begin_match = BEGIN_GROUP_PATTERN.match(content)
-        if begin_match:
-            start_pos = begin_match.end()
+    def _try_match_group(
+        self, content: str, match: Optional[re.Match] = None
+    ) -> Tuple[Optional[Dict], int]:
+        """Try to match a group pattern"""
+        if not match:
+            match = BEGIN_GROUP_PATTERN.match(content)
+        if (
+            match and match.re.pattern == BEGIN_GROUP_PATTERN.pattern
+        ):  # Verify it's a group match
+            start_pos = match.end()
             end_pos = self._find_matching_group_end(content, start_pos)
 
             if end_pos == -1:
                 # No matching endgroup found, treat as plain text
-                return begin_match.group(0), begin_match.end()
+                return match.group(0), match.end()
 
             # Extract content between begingroup and endgroup
             inner_content = content[start_pos:end_pos].strip()
@@ -304,6 +279,22 @@ class BaseEnvironmentHandler(TokenHandler):
             return env, end_pos
 
         return self._try_match_group(content)
+
+    def search(self, content: str) -> Optional[re.Match]:
+        """Search for the next environment or group pattern match"""
+        # search both to see which one appears first
+        env_match = ENVIRONMENT_PATTERN.search(content)
+        group_match = BEGIN_GROUP_PATTERN.search(content)
+
+        # Return the first match found (or None if neither found)
+        if not env_match and not group_match:
+            return None
+        elif not env_match:
+            return group_match
+        elif not group_match:
+            return env_match
+        # Return whichever match appears first
+        return env_match if env_match.start() < group_match.start() else group_match
 
 
 class EnvironmentHandler(BaseEnvironmentHandler):

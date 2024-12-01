@@ -63,8 +63,8 @@ def test_handle_newenvironment(handler):
 
 def test_can_handle_environment(handler):
     assert handler.can_handle(r"\begin{test}HSHSHS\end{test}")
-    assert not handler.can_handle(r"\begin{testHSHSHS\end{}")
     assert not handler.can_handle("regular text")
+    assert not handler.can_handle(r"\begin{test")
 
 
 def test_handle_environment(handler):

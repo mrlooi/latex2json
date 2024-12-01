@@ -1149,6 +1149,73 @@ def test_if_else_statements(parser):
     assert parsed_tokens[0]["content"].strip() == "cond1"
 
 
+def test_nested_items_with_environments(parser):
+    text = r"""
+    \begin{itemize}
+    \item First item with equation:
+        \begin{equation}
+        E = mc^2
+        \end{equation}
+    \item Second item with nested list:
+        \begin{enumerate}
+        \item[a)] Nested item with math $F=ma$
+        \item[b)] Another nested item with:
+            \begin{itemize}
+            \item Deep nested item 1
+            \item Deep nested item 2 with equation:
+                \begin{equation}
+                \nabla \cdot \mathbf{E} = \frac{\rho}{\epsilon_0}
+                \end{equation}
+            \end{itemize}
+        \end{enumerate}
+    \end{itemize}
+    """
+    parsed_tokens = parser.parse(text)
+    
+    # Check outer itemize
+    assert len(parsed_tokens) == 1
+    outer_list = parsed_tokens[0]
+    assert outer_list["type"] == "list"
+    assert outer_list["name"] == "itemize"
+    
+    # Check first item with equation
+    items = [t for t in outer_list["content"] if t["type"] == "item"]
+    assert len(items) == 2
+    
+    first_item = items[0]
+    assert first_item["type"] == "item"
+    equation = [t for t in first_item["content"] if t["type"] == "equation"][0]
+    assert equation["content"] == "E = mc^2"
+    assert equation["display"] == "block"
+    
+    # Check second item with nested enumerate
+    second_item = items[1]
+    nested_list = [t for t in second_item["content"] if t["type"] == "list"][0]
+    assert nested_list["name"] == "enumerate"
+    
+    # Check nested items
+    nested_items = [t for t in nested_list["content"] if t["type"] == "item"]
+    assert len(nested_items) == 2
+    assert nested_items[0]["label"] == "a)"
+    
+    # Check math in first nested item
+    math = [t for t in nested_items[0]["content"] if t["type"] == "equation"][0]
+    assert math["content"] == "F=ma"
+    assert math["display"] == "inline"
+    
+    # Check deeply nested itemize
+    deep_list = [t for t in nested_items[1]["content"] if t["type"] == "list"][0]
+    assert deep_list["name"] == "itemize"
+    
+    # Check deep nested items
+    deep_items = [t for t in deep_list["content"] if t["type"] == "item"]
+    assert len(deep_items) == 2
+    
+    # Check equation in last deep item
+    last_equation = [t for t in deep_items[1]["content"] if t["type"] == "equation"][0]
+    assert last_equation["display"] == "block"
+    assert "\\nabla" in last_equation["content"]
+
 # TODO
 # def test_text_commands(parser):
 #     test_cases = [
@@ -1165,6 +1232,15 @@ def test_if_else_statements(parser):
 #         assert (
 #             cmd == parsed[0]["content"]
 #         ), f"Command not preserved exactly: expected '{cmd}', got '{parsed[0]['content']}'"
+
+# def test_legacy_formatting(parser):
+#     text = r"""
+#     \tt 
+#     """
+#     parsed_tokens = parser.parse(text)
+#     assert len(parsed_tokens) == 0
+
+
 
 
 if __name__ == "__main__":

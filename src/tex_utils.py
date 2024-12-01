@@ -1,4 +1,5 @@
 from typing import Tuple
+import re
 
 
 def find_matching_delimiter(
@@ -54,3 +55,29 @@ def extract_nested_content(
     # Return content without the delimiters and the next position to process
     content = text[start_pos + 1 : end_pos]
     return content, end_pos + 1
+
+
+def find_matching_env_block(text: str, env_name: str, start_pos: int = 0) -> int:
+    """Find the matching end{env_name} for a begin{env_name}, handling nested environments"""
+    escaped_name = re.escape(env_name)
+    pattern = re.compile(rf"\\(begin|end)\{{{escaped_name}}}")
+
+    nesting_level = 1
+    current_pos = start_pos
+
+    while nesting_level > 0 and current_pos < len(text):
+        match = re.search(pattern, text[current_pos:])
+        if not match:
+            return -1  # No matching end found
+
+        current_pos += match.start() + 1
+        if match.group(1) == "begin":
+            nesting_level += 1
+        else:  # 'end'
+            nesting_level -= 1
+
+        if nesting_level == 0:
+            return current_pos - 1
+        current_pos += len(match.group(0)) - 1
+
+    return -1 if nesting_level > 0 else current_pos
