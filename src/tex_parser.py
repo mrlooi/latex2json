@@ -297,6 +297,8 @@ class LatexParser:
                 return True, start_pos + end_pos
             elif matched_type == "newline" or matched_type == "break_spacing":
                 self.add_token(line_break_delimiter, tokens)
+            elif matched_type == "line_continuation":
+                return True, match.end()
             else:
                 # For all other token types, expand any commands in their content
                 x = match.group(1) if match.groups() else match.group(0)
@@ -439,33 +441,15 @@ if __name__ == "__main__":
 
     text = r"""
 
-PRE IF BLOCK
+\
 
-\iffalse
-    \begin{tabular}{|c|c|}
-        \hline
-        a & b \\
-        \hline
-    \end{tabular}
-\fi
-
-POST IF BLOCK
+haha
     """
 
     # Example usage
     parser = LatexParser()
     parsed_tokens = parser.parse(text)
     print(parsed_tokens)
-
-# commands = [
-#     r"\foo \ss",  # capture \foo and \ss
-#     r"\b@ar  ",  # capture \b@ar
-#     r"\ef{s\dsd\textbf{ss}}",  # capture \ef{
-#     "sdsds",  # no match
-#     r"\begin{\textbf{xxsss{ssd{sds}}}}\n",  # capture \begin{
-#     r"\foo {ss}",
-#     r"   \textbf{sdsds}",
-# ]
 
 # for command in commands:
 #     print(command, UNKNOWN_COMMAND_PATTERN.match(command))

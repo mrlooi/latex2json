@@ -17,6 +17,10 @@ RAW_PATTERNS = OrderedDict(
             "break_spacing",
             r"\\\\(?:\s*\[([^]]*)\])?",
         ),  # Added \s* to handle optional whitespace
+        (
+            "line_continuation",
+            r"\\(?:\s|$)",
+        ),  # Single backslash followed by whitespace or end of string
     ]
 )
 
