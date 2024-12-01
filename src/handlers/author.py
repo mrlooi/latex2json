@@ -10,6 +10,9 @@ BACKSLASH_PATTERN = re.compile(r"\\\\")
 PATTERNS = {
     "author": re.compile(r"\\[Aa]uthor(?:\s*\[(.*?)\])?\s*{", re.DOTALL),
     "date": re.compile(r"\\date\s*{", re.DOTALL),
+    "email": re.compile(r"\\email\s*{", re.DOTALL),
+    "affiliation": re.compile(r"\\affiliation\s*{", re.DOTALL),
+    "address": re.compile(r"\\address\s*{", re.DOTALL),
 }
 
 
@@ -51,11 +54,11 @@ class AuthorHandler(TokenHandler):
                         "type": "author",
                         "content": self._parse_author_content(author_content),
                     }, start_pos + end_pos
-                elif name == "date":
+                else:
                     start_pos = match.end() - 1
                     date_content, end_pos = extract_nested_content(content[start_pos:])
                     return {
-                        "type": "date",
+                        "type": name,
                         "content": date_content,
                     }, start_pos + end_pos
 
