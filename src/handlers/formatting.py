@@ -82,7 +82,7 @@ RAW_PATTERNS = OrderedDict(
         # New margin and size commands allowing any characters after the number
         (
             "margins",
-            r"\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)\s*-?\d*\.?\d+\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b",
+            r"\\(?:rightmargin|leftmargin)\b|\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)\s*-?\d*\.?\d+\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b",
         ),
         # Add new pattern for dimension expansions
         ("dimension", r"\\(?:linewidth|columnwidth|textwidth)\b"),

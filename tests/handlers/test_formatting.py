@@ -214,6 +214,8 @@ def test_misc_formatting_commands(handler):
     \specialrule{.2em}{.1em}{.1em}
     \addtocounter{figure}{-2}
     \colrule
+    \rightmargin
+    \leftmargin
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
