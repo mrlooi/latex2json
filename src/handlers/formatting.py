@@ -128,6 +128,7 @@ RAW_PATTERNS = OrderedDict(
         ("ensuremath", r"\\ensuremath\s*{"),
         # Handle vspace separately
         ("vspace", r"\\vspace\*?\s*{[^}]+}"),
+        ("phantom", r"\\(?:hphantom|vphantom)\s*{"),
     ]
 )
 
@@ -208,6 +209,17 @@ class FormattingHandler(TokenHandler):
                     }, start_pos + end_pos
                 elif pattern_name == "vspace":
                     return {"type": "text", "content": "\n"}, match.end()
+                elif pattern_name == "phantom":
+                    start_pos = match.end() - 1
+                    extracted_content, end_pos = extract_nested_content(
+                        content[start_pos:]
+                    )
+                    # Create spaces matching the length of the phantom content
+                    phantom_spaces = " " * len(extracted_content)
+                    return {
+                        "type": "text",
+                        "content": phantom_spaces,
+                    }, start_pos + end_pos
                 return None, match.end()
 
         return None, 0
