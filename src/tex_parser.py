@@ -265,11 +265,14 @@ class LatexParser:
                     elif isinstance(handler, TextFormattingHandler):
                         inner_content = self.parse(token["content"])
                         # if inner content is just a single token, we can merge styles and flatten this token
-                        if len(inner_content) == 1 and isinstance(inner_content[0], dict):
+                        if len(inner_content) == 1 and isinstance(
+                            inner_content[0], dict
+                        ):
                             new_token = inner_content[0]
                             new_token_styles = new_token.get("styles", [])
                             if "styles" in token:
-                                new_token_styles.extend(token["styles"])
+                                # Prepend parent styles before child styles
+                                new_token_styles = token["styles"] + new_token_styles
                             # remove duplicates
                             new_token["styles"] = list(
                                 OrderedDict.fromkeys(new_token_styles)
