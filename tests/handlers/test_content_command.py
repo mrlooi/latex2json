@@ -212,6 +212,17 @@ def test_other(handler):
     assert token == {"type": "appendix"}
     assert text[pos:] == " POST APPENDIX"
 
+    # include/input
+    text = r"\input{file.tex} POST INPUT"
+    token, pos = handler.handle(text)
+    assert token == {"type": "input", "content": "file.tex"}
+    assert text[pos:] == " POST INPUT"
+
+    text = text.replace(r"\input", r"\include")
+    token, pos = handler.handle(text)
+    assert token == {"type": "input", "content": "file.tex"}
+    assert text[pos:] == " POST INPUT"
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

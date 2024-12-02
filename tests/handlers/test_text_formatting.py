@@ -87,3 +87,8 @@ def test_handle_outputs(handler):
     out, end_pos = handler.handle(text)
     assert out is None
     assert end_pos == 0
+
+    text = r"\text{sds} pos"
+    out, end_pos = handler.handle(text)
+    assert out == {"type": "text", "content": "sds"}
+    assert text[end_pos:] == " pos"

@@ -25,6 +25,7 @@ FRONTEND_STYLE_MAPPING: Dict[str, str] = {
     "textnormal": "medium",
     "textlarge": "large",
     "texthuge": "xx-large",
+    "text": None,
 }
 
 TEXT_COMMANDS = "|".join(FRONTEND_STYLE_MAPPING.keys())
@@ -48,7 +49,7 @@ class TextFormattingHandler(TokenHandler):
             return None, 0
 
         command = match.group(1)
-        style = FRONTEND_STYLE_MAPPING.get(command, command)
+        style = FRONTEND_STYLE_MAPPING.get(command)
 
         content_to_format = ""
         next_content = match.group(2)
@@ -81,6 +82,9 @@ class TextFormattingHandler(TokenHandler):
 
         if self.process_content_fn:
             content_to_format = self.process_content_fn(content_to_format)
+
+        if style is None:
+            return {"type": "text", "content": content_to_format}, total_pos
 
         return {
             "type": "styled",
@@ -120,12 +124,14 @@ class TextFormattingHandler(TokenHandler):
                 )
 
                 # If this is a styled token, flatten it by extending new_tokens with processed_content
-                if processed_token.get("type") == "styled":
+                if processed_token.get("type") in ["styled", "text"]:
                     new_tokens.extend(processed_content)
                     continue
 
                 processed_token["content"] = processed_content
 
+            if len(processed_token["styles"]) == 0:
+                del processed_token["styles"]
             new_tokens.append(processed_token)
 
         return new_tokens

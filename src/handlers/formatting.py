@@ -1,3 +1,4 @@
+import datetime
 import re
 from collections import OrderedDict
 from typing import Callable, Dict, Optional, Tuple
@@ -48,7 +49,9 @@ RAW_PATTERNS = OrderedDict(
         ("comment", r"%([^\n]*)"),
         # pdf options
         ("pdf", r"\\(?:pdfoutput|pdfsuppresswarningpagegroup)\s*=\s*\d+"),
-        ("itemsep", r"\\itemsep\s*=\s*-?\d*\.?\d+\w+?\b"),
+        # date
+        ("date", r"\\date\s*\{"),
+        ("today", r"\\today\b"),
         # top level commands
         ("documentclass", r"\\documentclass(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}"),
         (
@@ -99,11 +102,12 @@ RAW_PATTERNS = OrderedDict(
         ("number", r"\\(?:numberwithin)\s*\{[^}]*\}\s*\{[^}]*\}"),
         # table
         ("newcolumntype", r"\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}\s*{"),
+        # separators
+        ("itemsep", r"\\itemsep\s*=\s*-?\d*\.?\d+\w+?\b"),
         (
             "separators",
             r"\\(?:"
             r"hline|"  # no args
-            r"vspace\s*{([^}]+)}|"
             r"cline\s*{([^}]+)}|"  # {n-m}
             r"(?:midrule|toprule|bottomrule)(?:\[\d*[\w-]*\])?|"  # optional [trim]
             r"cmidrule(?:\[([^\]]*)\])?\s*{([^}]+)}|"  # optional [trim] and {n-m}
@@ -121,6 +125,8 @@ RAW_PATTERNS = OrderedDict(
         ("addtocontents", r"\\(?:addtocontents|addtocounter)\s*\{[^}]*\s*\}\s*{"),
         ("backslash", r"\\(?:backslash|textbackslash)\b"),
         ("ensuremath", r"\\ensuremath\s*{"),
+        # Handle vspace separately
+        ("vspace", r"\\vspace\*?\s*{[^}]+}"),
     ]
 )
 
@@ -170,6 +176,20 @@ class FormattingHandler(TokenHandler):
                         "content": extracted_content,
                         "display": "inline",
                     }, start_pos + end_pos
+                elif pattern_name == "date":
+                    start_pos = match.end() - 1
+                    extracted_content, end_pos = extract_nested_content(
+                        content[start_pos:]
+                    )
+                    return {
+                        "type": "date",
+                        "content": extracted_content,
+                    }, start_pos + end_pos
+                elif pattern_name == "today":
+                    return {
+                        "type": "date",
+                        "content": datetime.datetime.now().strftime("%Y-%m-%d"),
+                    }, match.end()
                 elif pattern_name == "box":
                     start_pos = match.end() - 1
                     extracted_content, end_pos = extract_nested_content(
@@ -180,6 +200,8 @@ class FormattingHandler(TokenHandler):
                         "content": extracted_content
                         + "\n",  # add newline to end of box?
                     }, start_pos + end_pos
+                elif pattern_name == "vspace":
+                    return {"type": "text", "content": "\n"}, match.end()
                 return None, match.end()
 
         return None, 0

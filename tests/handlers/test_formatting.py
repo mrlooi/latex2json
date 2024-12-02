@@ -1,3 +1,4 @@
+import datetime
 import pytest
 from src.handlers.formatting import FormattingHandler
 
@@ -126,9 +127,9 @@ def test_handle_color_commands(handler):
 
 
 def test_spacing_commands(handler):
-    def check_token(token, pos):
+    def check_token(token, pos, s=" "):
         assert token["type"] == "text"
-        assert token["content"] == " "
+        assert token["content"] == s
         assert pos > 0
 
     token, pos = handler.handle(r"\hspace{10pt}")
@@ -139,6 +140,32 @@ def test_spacing_commands(handler):
 
     token, pos = handler.handle(r"\,")
     check_token(token, pos)
+
+    text = r"\vspace{10pt} postvspace"
+    token, pos = handler.handle(text)
+    check_token(token, pos, "\n")
+    assert text[pos:] == " postvspace"
+
+
+def test_date_command(handler):
+
+    text = r"\date{2024-11-29} sss"
+    token, end_pos = handler.handle(text)
+    assert token == {"type": "date", "content": "2024-11-29"}
+    assert text[end_pos:] == " sss"
+
+    text = r"\date{} sss"
+    token, end_pos = handler.handle(text)
+    assert token == {"type": "date", "content": ""}
+    assert text[end_pos:] == " sss"
+
+    text = r"\today sss"
+    token, end_pos = handler.handle(text)
+    assert token == {
+        "type": "date",
+        "content": datetime.datetime.now().strftime("%Y-%m-%d"),
+    }
+    assert text[end_pos:] == " sss"
 
 
 def test_box_commands(handler):
@@ -184,7 +211,6 @@ def test_misc_formatting_commands(handler):
     \numberwithin{equation}{section}
     \theoremstyle{conjecture}
     \setcounter{theorem}{0}
-    \vspace{.5em}
     \noindent
     \bibliographystyle{plain}
     \abovedisplayskip

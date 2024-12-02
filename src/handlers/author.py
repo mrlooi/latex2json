@@ -9,7 +9,6 @@ BACKSLASH_PATTERN = re.compile(r"\\\\")
 
 PATTERNS = {
     "author": re.compile(r"\\[Aa]uthor(?:\s*\[(.*?)\])?\s*{", re.DOTALL),
-    "date": re.compile(r"\\date\s*{", re.DOTALL),
     "email": re.compile(r"\\email\s*{", re.DOTALL),
     "affiliation": re.compile(r"\\affiliation\s*{", re.DOTALL),
     "address": re.compile(r"\\address\s*{", re.DOTALL),

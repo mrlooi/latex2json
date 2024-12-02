@@ -17,7 +17,7 @@ RAW_PATTERNS = OrderedDict(
         ("caption", r"\\caption\s*{"),
         ("captionof", r"\\captionof\s*{([^}]*?)}\s*{"),
         # input
-        ("input", r"\\input\s*{"),
+        ("input", r"\\(?:input|include)\s*{"),
         # REFs
         ("ref", r"\\[Rr]ef\s*{"),
         ("hyperref", r"\\hyperref\s*\[([^]]*)\]\s*{"),
