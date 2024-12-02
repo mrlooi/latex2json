@@ -264,11 +264,8 @@ class LatexParser:
                         self.current_env = prev_env
                     elif isinstance(handler, TextFormattingHandler):
                         inner_content = self.parse(token["content"])
-                        # if inner content is just a text token, we can merge styles and flatten this token
-                        if (
-                            len(inner_content) == 1
-                            and inner_content[0]["type"] == "text"
-                        ):
+                        # if inner content is just a single token, we can merge styles and flatten this token
+                        if len(inner_content) == 1 and isinstance(inner_content[0], dict):
                             new_token = inner_content[0]
                             new_token_styles = new_token.get("styles", [])
                             if "styles" in token:
