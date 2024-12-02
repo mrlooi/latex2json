@@ -764,7 +764,7 @@ def test_complex_table(parser):
         "ő",
         "HELLO WORLD",
         "¥$",
-        [{"type": "command", "command": "\\unknown"}],
+        {"type": "command", "command": "\\unknown"},
     ]
 
     # Check caption
@@ -1256,10 +1256,67 @@ def test_complex_frac(parser):
     assert token["content"].strip() == "TEST hi, ASDSD / cell 1 cell 2 bold italic"
 
 
+def test_legacy_formatting(parser):
+    text = r"""
+    \tt hello there peopleeee
+    \large LARGE BOY
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+
+    # note that the top \tt command monospace is the first root
+    assert parsed_tokens[0]["styles"] == [FRONTEND_STYLE_MAPPING["texttt"]]
+    content = parsed_tokens[0]["content"]
+
+    assert len(content) == 2
+    assert content[0]["content"].strip() == "hello there peopleeee"
+    assert content[1]["content"].strip() == "LARGE BOY"
+    assert content[1]["styles"] == [FRONTEND_STYLE_MAPPING["textlarge"]]
+
+    # test legacy formatting inside tabular
+    text = r"""
+    \begin{tabular}{c}
+        \tt aaa & \large bbb \\ 
+        \sc eee & {\em 444} + 333
+    \end{tabular}
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+
+    tabular_content = parsed_tokens[0]["content"]
+    assert len(tabular_content) == 2
+    assert tabular_content[0][0] == {
+        "type": "text",
+        "content": "aaa",
+        "styles": [FRONTEND_STYLE_MAPPING["texttt"]],
+    }, tabular_content[0][0]
+    assert tabular_content[0][1] == {
+        "type": "text",
+        "content": "bbb",
+        "styles": [FRONTEND_STYLE_MAPPING["textlarge"]],
+    }
+    assert tabular_content[1][0] == {
+        "type": "text",
+        "content": "eee",
+        "styles": [FRONTEND_STYLE_MAPPING["textsc"]],
+    }
+    assert tabular_content[1][1] == [
+        {
+            "type": "text",
+            "content": "444",
+            "styles": [FRONTEND_STYLE_MAPPING["emph"]],
+        },
+        {
+            "type": "text",
+            "content": "+ 333",
+        },
+    ]
+
+
+# def test_text_commands(parser):
 # def test_text_commands(parser):
 #     test_cases = [
 #         r"\textbf{bold}",
-#         r"\textcolor{red}{Colored text}",
 #         r"\textsc{Small Caps}",
 #         r"\textbf{\textit{nested}}",
 #         r"\command{with}{multiple}{args}",
@@ -1271,13 +1328,6 @@ def test_complex_frac(parser):
 #         assert (
 #             cmd == parsed[0]["content"]
 #         ), f"Command not preserved exactly: expected '{cmd}', got '{parsed[0]['content']}'"
-
-# def test_legacy_formatting(parser):
-#     text = r"""
-#     \tt
-#     """
-#     parsed_tokens = parser.parse(text)
-#     assert len(parsed_tokens) == 0
 
 
 if __name__ == "__main__":

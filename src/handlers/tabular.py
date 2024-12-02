@@ -118,12 +118,17 @@ class TabularHandler(TokenHandler):
     def can_handle(self, content: str) -> bool:
         return bool(re.match(TABULAR_PATTERN, content))
 
-    def _clean_cell(self, cell: List[Dict] | str) -> List[Dict]:
+    def _clean_cell(self, cell: List | Dict | str) -> List[Dict]:
         if isinstance(cell, list):
-            if len(cell) == 1 and "type" in cell[0] and cell[0]["type"] == "text":
-                return cell[0]["content"]
+            if len(cell) == 1:
+                return self._clean_cell(cell[0])
             elif len(cell) == 0:
                 return None
+        elif isinstance(cell, str):
+            return cell
+        elif isinstance(cell, dict):
+            if "content" in cell and cell["type"] == "text" and "styles" not in cell:
+                return cell["content"]
         return cell
 
     def _parse_cell(self, content: str) -> List[Dict]:
@@ -225,16 +230,30 @@ class TabularHandler(TokenHandler):
                     # Handle text before the reference key
                     if next_ref_pos > current_pos:
                         text_before = content[current_pos:next_ref_pos].strip()
-                        parse_and_add_to_cell(text_before)
+                        if text_before:  # Only parse if there's actual text before
+                            parse_and_add_to_cell(text_before)
 
                     # Handle the reference key if found
                     if next_ref:
                         cells.append(reference_map[next_ref])
                         current_pos = next_ref_pos + len(next_ref)
+
+                        # Handle any text after the reference until the next reference or end
+                        next_ref_start = len(content)
+                        for ref_key in reference_map:
+                            pos = content.find(ref_key, current_pos)
+                            if pos != -1 and pos < next_ref_start:
+                                next_ref_start = pos
+
+                        if current_pos < next_ref_start:
+                            text_after = content[current_pos:next_ref_start].strip()
+                            if text_after:
+                                parse_and_add_to_cell(text_after)
+                            current_pos = next_ref_start
                     else:
-                        # No more references found, only parse remaining content if we haven't reached the end
-                        if current_pos < len(content):
-                            remaining = content[current_pos:].strip()
+                        # No more references found, handle remaining content
+                        remaining = content[current_pos:].strip()
+                        if remaining:
                             parse_and_add_to_cell(remaining)
                         break
 

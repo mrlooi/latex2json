@@ -66,7 +66,10 @@ class LatexParser:
             # for tabular, on the first pass we process content and maintain the '\\' delimiter to maintain row integrity
             TabularHandler(
                 process_content_fn=lambda x: self.parse(
-                    x, r"\\", handle_unknown_commands=False
+                    x,
+                    r"\\",
+                    handle_unknown_commands=False,
+                    handle_legacy_formatting=False,
                 ),
                 cell_parser_fn=self.parse,
             ),
@@ -131,7 +134,7 @@ class LatexParser:
     def _clean_cell(self, cell: List[Dict]) -> List[Dict]:
         if len(cell) == 0:
             return None
-        elif len(cell) == 1:
+        elif len(cell) == 1 and isinstance(cell[0], dict):
             if cell[0]["type"] == "text" and "styles" not in cell[0]:
                 return cell[0]["content"]
             return cell[0]
@@ -201,6 +204,7 @@ class LatexParser:
                     }
                 else:
                     token = {"type": "command", "command": expanded}
+                # raise ValueError(f"Unknown command: {expanded}")
             else:
                 token = {"type": "text", "content": expanded}
 
@@ -303,7 +307,7 @@ class LatexParser:
         content: str,
         line_break_delimiter: str = "\n",
         handle_unknown_commands: bool = True,
-        # nesting_level: int = 0,
+        handle_legacy_formatting: bool = True,
     ) -> List[Dict[str, str]]:
         tokens = []
         current_pos = 0
@@ -322,9 +326,7 @@ class LatexParser:
                 inner_content, end_pos = extract_nested_content(content[current_pos:])
                 if inner_content is not None:
                     # Parse the content within the braces
-                    nested_tokens = self.parse(
-                        inner_content  # , nesting_level=nesting_level + 1
-                    )
+                    nested_tokens = self.parse(inner_content)
                     if nested_tokens:
                         for token in nested_tokens:
                             self.add_token(token, tokens)
@@ -385,7 +387,9 @@ class LatexParser:
                     continue
 
             # check if legacy formatting
-            if self.legacy_formatting_handler.can_handle(content[current_pos:]):
+            if handle_legacy_formatting and self.legacy_formatting_handler.can_handle(
+                content[current_pos:]
+            ):
                 parsed_text, end_pos = self.legacy_formatting_handler.handle(
                     content[current_pos:]
                 )
@@ -428,18 +432,17 @@ class LatexParser:
 
 if __name__ == "__main__":
 
-    text = r"""
-    \texorpdfstring{v1}{
-        \begin{itemize}
-            \item 1 \vec333 + \ddot aaaa + \H{XXX}
-            \item 2 \i
-            \item 3 \mbox{John Smith \\ bnoatcj}
-        \end{itemize}
-    }
-    
-    """
+    # with open("papers/arXiv-2212.08073v1/main.tex", "r") as f:
+    #     text = f.read()
 
+    text = r"""
+    \begin{tabular}{c}
+        \tt aaa & \large bbb \\ 
+        \sc eee & {\tt 444} + 333
+    \end{tabular}
+    """
     # Example usage
+    # text = r"""\tt aaa"""
     parser = LatexParser()
     parsed_tokens = parser.parse(text)
     print(parsed_tokens)
