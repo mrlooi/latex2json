@@ -21,6 +21,11 @@ PATTERNS = {
 
 class AuthorHandler(TokenHandler):
 
+    last_thanks_token = None
+
+    def clear(self):
+        self.last_thanks_token = None
+
     def can_handle(self, content: str) -> bool:
         for pattern in PATTERNS.values():
             if pattern.match(content):
@@ -47,8 +52,10 @@ class AuthorHandler(TokenHandler):
             match = pattern.match(content)
             if match:
                 if name == "samethanks":
+                    if self.last_thanks_token:
+                        return self.last_thanks_token, match.end()
                     return {"type": "samethanks"}, match.end()
-                if name == "author":
+                elif name == "author":
                     # short_author = match.group(1)  # Will be None if no [] present
                     start_pos = match.end() - 1
                     author_content, end_pos = extract_nested_content(
@@ -76,10 +83,14 @@ class AuthorHandler(TokenHandler):
                     content, end_pos = extract_nested_content(content[start_pos:])
                     if self.process_content_fn:
                         content = self.process_content_fn(content)
-                    return {
+
+                    token = {
                         "type": name,
                         "content": content,
-                    }, start_pos + end_pos
+                    }
+                    if name == "thanks":
+                        self.last_thanks_token = token
+                    return token, start_pos + end_pos
 
         return None, 0
 
