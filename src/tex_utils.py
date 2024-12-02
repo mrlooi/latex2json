@@ -81,3 +81,16 @@ def find_matching_env_block(text: str, env_name: str, start_pos: int = 0) -> int
         current_pos += len(match.group(0)) - 1
 
     return -1 if nesting_level > 0 else current_pos
+
+
+def strip_latex_newlines(latex_str: str) -> str:
+    # Replace LaTeX line break commands with a space
+    latex_str = re.sub(r"\\\\|\\newline", " ", latex_str)
+
+    # Remove any remaining newline characters
+    latex_str = latex_str.replace("\n", " ")
+
+    # Optionally, collapse multiple spaces into a single space
+    latex_str = re.sub(r"\s+", " ", latex_str)
+
+    return latex_str.strip()

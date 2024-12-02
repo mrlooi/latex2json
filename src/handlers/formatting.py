@@ -3,7 +3,7 @@ import re
 from collections import OrderedDict
 from typing import Callable, Dict, Optional, Tuple
 from src.handlers.base import TokenHandler
-from src.tex_utils import extract_nested_content
+from src.tex_utils import extract_nested_content, strip_latex_newlines
 
 
 DEFINE_COLOR_PATTERN = re.compile(
@@ -37,7 +37,8 @@ BOX_PATTERN = re.compile(
         raisebox\s*{[^}]+}(?:\s*\[[^\]]*\])*\s*{| # \raisebox{raise}[height][depth]
         fbox\s*{| # \fbox{text}
         colorbox\s*{[^}]*}\s*{|           # \colorbox{color}{text}
-        fcolorbox\s*{[^}]*}\s*{[^}]*}\s*{   # \fcolorbox{border}{bg}{text}
+        fcolorbox\s*{[^}]*}\s*{[^}]*}\s*{|   # \fcolorbox{border}{bg}{text}
+        mbox\s*{ # \mbox{text}
     )
     """,
     re.VERBOSE | re.DOTALL,
@@ -195,10 +196,15 @@ class FormattingHandler(TokenHandler):
                     extracted_content, end_pos = extract_nested_content(
                         content[start_pos:]
                     )
+                    if match.group(0).startswith("\\mbox"):
+                        # make everything into one line
+                        extracted_content = strip_latex_newlines(extracted_content)
+                    else:
+                        # add newline to end of box?
+                        extracted_content = extracted_content + "\n"
                     return {
                         "type": "box",
-                        "content": extracted_content
-                        + "\n",  # add newline to end of box?
+                        "content": extracted_content,
                     }, start_pos + end_pos
                 elif pattern_name == "vspace":
                     return {"type": "text", "content": "\n"}, match.end()

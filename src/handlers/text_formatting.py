@@ -4,7 +4,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 import re
 
 from src.handlers.base import TokenHandler
-from src.tex_utils import extract_nested_content
+from src.tex_utils import extract_nested_content, strip_latex_newlines
 
 
 # Add this new mapping for frontend styles
@@ -16,6 +16,7 @@ FRONTEND_STYLE_MAPPING: Dict[str, str] = {
     "textsf": "sans-serif",
     "texttt": "monospace",
     "textrm": "normal",
+    "textup": "normal",
     "emph": "italic",
     # Size mappings
     "texttiny": "xx-small",
@@ -121,8 +122,8 @@ class TextFormattingHandler(TokenHandler):
         first, second, end_pos = out
 
         # Replace newlines and collapse multiple spaces into single spaces
-        first = " ".join(first.replace("\n", " ").split()).strip()
-        second = " ".join(second.replace("\n", " ").split()).strip()
+        first = strip_latex_newlines(first)
+        second = strip_latex_newlines(second)
 
         return {
             "type": "text",

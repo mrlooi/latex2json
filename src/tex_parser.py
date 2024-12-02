@@ -156,7 +156,9 @@ class LatexParser:
                 token_dict = {"type": "text", "content": token}
 
             # Merge consecutive text tokens
-            if (
+            if isinstance(token_dict, list):
+                tokens.extend(token_dict)
+            elif (
                 token_dict.get("type") == "text"
                 and tokens
                 and tokens[-1].get("type") == "text"
@@ -442,7 +444,14 @@ class LatexParser:
 if __name__ == "__main__":
 
     text = r"""
-    \vec333 + \H{x}
+    \texorpdfstring{v1}{
+        \begin{itemize}
+            \item 1 \vec333 + \ddot aaaa + \H{XXX}
+            \item 2 \i
+            \item 3 \mbox{John Smith \\ bnoatcj}
+        \end{itemize}
+    }
+    
     """
 
     # Example usage

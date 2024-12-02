@@ -37,11 +37,22 @@ RAW_PATTERNS = OrderedDict(
         # Graphics
         ("includegraphics", r"\\includegraphics\s*(?:\[([^\]]*)\])?\s*{"),
         # Citations
-        ("citation", r"\\(?:cite|citep|citet)(?:\[([^\]]*)\])?\s*{"),
+        (
+            "citation",
+            r"\\(?:(?:[Cc])(?:ite|itep|itet|itealt|itealp|iteauthor))(?:\[([^\]]*)\])?\s*{",
+        ),
+        # Citations with just braces
+        ("citetext", r"\\(?:citetext|citenum)\s*{"),
+        # Citations with two braces
+        ("defcitealias", r"\\defcitealias\s*{([^}]*)}\s*{"),
+        # Citations with optional brackets (year/author specific)
+        ("citeyear", r"\\(?:citeyear|citeyearpar|citefullauthor)(?:\[([^\]]*)\])?\s*{"),
         # Title
         ("title", r"\\title\s*{"),
         # appendix
         ("appendix", r"\\appendix\b"),
+        # keywords
+        ("keywords", r"\\keywords\s*{"),
     ]
 )
 
@@ -139,8 +150,26 @@ class ContentCommandHandler(TokenHandler):
         elif matched_type in ["ref", "eqref", "cref", "autoref", "bookmark"]:
             return {"type": "ref", "content": content}
 
+        # Citations
         elif matched_type == "citation":
             token = {"type": "citation", "content": content}
+            optional_text = match.group(1) if match.group(1) else None
+            if optional_text:
+                token["title"] = optional_text.strip()
+            return token
+
+        elif matched_type == "citetext":
+            return {"type": "citation", "content": content}
+
+        elif matched_type == "defcitealias":
+            return {
+                "type": "citation",
+                "content": match.group(1).strip(),
+                "alias": content,
+            }
+
+        elif matched_type == "citeyear":
+            token = {"type": "citation", "subtype": "year", "content": content}
             optional_text = match.group(1) if match.group(1) else None
             if optional_text:
                 token["title"] = optional_text.strip()
