@@ -55,7 +55,7 @@ class LatexParser:
         self.if_else_block_handler = IfElseBlockHandler()
         # handlers
         self.handlers: List[TokenHandler] = [
-            AuthorHandler(),
+            AuthorHandler(self._parse_cell),
             # ignore unicode conversion for equations
             EquationHandler(lambda x: self._expand_command(x, ignore_unicode=True)),
             CodeBlockHandler(),

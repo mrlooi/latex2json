@@ -53,6 +53,8 @@ RAW_PATTERNS = OrderedDict(
         ("appendix", r"\\appendix\b"),
         # keywords
         ("keywords", r"\\keywords\s*{"),
+        # bibliography
+        ("bibliography", r"\\bibliography\s*{"),
     ]
 )
 

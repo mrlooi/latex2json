@@ -12,6 +12,10 @@ PATTERNS = {
     "email": re.compile(r"\\email\s*{", re.DOTALL),
     "affiliation": re.compile(r"\\affiliation\s*{", re.DOTALL),
     "address": re.compile(r"\\address\s*{", re.DOTALL),
+    "thanks": re.compile(
+        r"\\thanks\s*{", re.DOTALL
+    ),  # usually found inside author block
+    "samethanks": re.compile(r"\\samethanks\b", re.DOTALL),  # Add this pattern
 }
 
 
@@ -42,6 +46,8 @@ class AuthorHandler(TokenHandler):
         for name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if match:
+                if name == "samethanks":
+                    return {"type": "samethanks"}, match.end()
                 if name == "author":
                     # short_author = match.group(1)  # Will be None if no [] present
                     start_pos = match.end() - 1
@@ -49,16 +55,30 @@ class AuthorHandler(TokenHandler):
                         content[start_pos:]
                     )
 
+                    tokens = self._parse_author_content(author_content)
+                    if self.process_content_fn:
+                        parsed_tokens = []
+                        for token in tokens:
+                            processed = self.process_content_fn(token)
+                            if processed:
+                                if isinstance(processed, list):
+                                    parsed_tokens.extend(processed)
+                                else:
+                                    parsed_tokens.append(processed)
+                        tokens = parsed_tokens
+
                     return {
                         "type": "author",
-                        "content": self._parse_author_content(author_content),
+                        "content": tokens,
                     }, start_pos + end_pos
                 else:
                     start_pos = match.end() - 1
-                    date_content, end_pos = extract_nested_content(content[start_pos:])
+                    content, end_pos = extract_nested_content(content[start_pos:])
+                    if self.process_content_fn:
+                        content = self.process_content_fn(content)
                     return {
                         "type": name,
-                        "content": date_content,
+                        "content": content,
                     }, start_pos + end_pos
 
         return None, 0
