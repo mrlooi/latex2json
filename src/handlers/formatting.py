@@ -214,12 +214,19 @@ class FormattingHandler(TokenHandler):
                     extracted_content, end_pos = extract_nested_content(
                         content[start_pos:]
                     )
-                    # Create spaces matching the length of the phantom content
-                    phantom_spaces = " " * len(extracted_content)
-                    return {
-                        "type": "text",
-                        "content": phantom_spaces,
-                    }, start_pos + end_pos
+                    # Check if it's hphantom or vphantom
+                    if match.group(0).startswith("\\hphantom"):
+                        # Horizontal phantom - create spaces matching content width
+                        return {
+                            "type": "text",
+                            "content": " " * len(extracted_content),
+                        }, start_pos + end_pos
+                    else:  # vphantom
+                        # Vertical phantom - create line break without horizontal space
+                        return {
+                            "type": "text",
+                            "content": "\n",
+                        }, start_pos + end_pos
                 return None, match.end()
 
         return None, 0
