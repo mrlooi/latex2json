@@ -92,3 +92,30 @@ def test_handle_outputs(handler):
     out, end_pos = handler.handle(text)
     assert out == {"type": "text", "content": "sds"}
     assert text[end_pos:] == " pos"
+
+
+def test_frac(handler):
+    text = r"\frac{1}{2} postfrac"
+    out, end_pos = handler.handle(text)
+    assert out == {"type": "text", "content": "1 / 2"}
+    assert text[end_pos:] == " postfrac"
+
+    text = r"""
+    \nicefrac{
+        FIRST    
+        BLOCK
+    } {
+        SECOND
+        BLOCK
+    }
+    after frac
+""".strip()
+    out, end_pos = handler.handle(text)
+    assert out == {"type": "text", "content": "FIRST BLOCK / SECOND BLOCK"}
+    assert text[end_pos:].strip() == "after frac"
+
+    # frac in frac
+    text = r"\textfrac{1}{\frac{2}{3}} postfrac"
+    out, end_pos = handler.handle(text)
+    assert out == {"type": "text", "content": r"1 / \frac{2}{3}"}
+    assert text[end_pos:].strip() == "postfrac"

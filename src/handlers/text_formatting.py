@@ -33,6 +33,13 @@ TEXT_PATTERN = re.compile(
     rf"\\({TEXT_COMMANDS})" + r"(?![a-zA-Z])(\s*(\{)|.*)?", re.DOTALL
 )
 
+PATTERNS = {
+    "styled": TEXT_PATTERN,
+    "frac": re.compile(
+        r"\\(?:frac|nicefrac|textfrac)\s*\{", re.DOTALL
+    ),  # Updated to match both sets of braces
+}
+
 
 # Method 2: Using str.lstrip() with len comparison
 def find_first_nonspace(s):
@@ -41,13 +48,9 @@ def find_first_nonspace(s):
 
 class TextFormattingHandler(TokenHandler):
     def can_handle(self, content: str) -> bool:
-        return TEXT_PATTERN.match(content) is not None
+        return any(pattern.match(content) for pattern in PATTERNS.values())
 
-    def handle(self, content: str) -> Tuple[str, int]:
-        match = TEXT_PATTERN.match(content)
-        if not match:
-            return None, 0
-
+    def _handle_styled(self, content: str, match: re.Match) -> Tuple[str, int]:
         command = match.group(1)
         style = FRONTEND_STYLE_MAPPING.get(command)
 
@@ -91,6 +94,43 @@ class TextFormattingHandler(TokenHandler):
             "style": style,
             "content": content_to_format,
         }, total_pos
+
+    def _handle_frac(self, content: str, match: re.Match) -> Tuple[str, int]:
+        first_brace_start = match.end(0) - 1
+        first, first_brace_end = extract_nested_content(content[first_brace_start:])
+        first_brace_end = first_brace_start + first_brace_end
+        if not first:
+            return None, 0
+        has_second_brace = content[first_brace_end:].strip()[0] == "{"
+        if not has_second_brace:
+            return None, 0
+        second_brace_start = first_brace_end + content[first_brace_end:].find("{")
+        second, second_brace_end = extract_nested_content(content[second_brace_start:])
+        if not second:
+            return None, 0
+
+        end_pos = second_brace_start + second_brace_end
+
+        # Replace newlines and collapse multiple spaces into single spaces
+        first = " ".join(first.replace("\n", " ").split()).strip()
+        second = " ".join(second.replace("\n", " ").split()).strip()
+
+        return {
+            "type": "text",
+            "content": "%s / %s" % (first, second),
+        }, end_pos
+
+    def handle(self, content: str) -> Tuple[str, int]:
+        for name, pattern in PATTERNS.items():
+            match = pattern.match(content)
+            if not match:
+                continue
+            if name == "styled":
+                return self._handle_styled(content, match)
+            elif name == "frac":
+                return self._handle_frac(content, match)
+
+        return None, 0
 
     @staticmethod
     def process_style_in_tokens(tokens: List[Dict], parent_styles: List[str] = []):
@@ -152,21 +192,33 @@ if __name__ == "__main__":
     # for text in text_blocks:
     #     check(text)
 
-    tokens = [
-        {
-            "type": "styled",
-            "style": "normal",
-            "content": [
-                {"type": "text", "content": "sss\n    "},
-                {
-                    "type": "styled",
-                    "style": "bold",
-                    "content": [{"type": "text", "content": "Hii"}],
-                },
-                {"type": "text", "content": "bro"},
-            ],
-        }
-    ]
+    text = r"""
+    \nicefrac{
+        FIRST    
+        BLOCK
+    } {
+        SECOND
+        BLOCK
+    }
+    after frac
+""".strip()
+    print(handler.handle(text))
 
-    out = TextFormattingHandler.process_style_in_tokens(tokens)
-    print(out)
+    # tokens = [
+    #     {
+    #         "type": "styled",
+    #         "style": "normal",
+    #         "content": [
+    #             {"type": "text", "content": "sss\n    "},
+    #             {
+    #                 "type": "styled",
+    #                 "style": "bold",
+    #                 "content": [{"type": "text", "content": "Hii"}],
+    #             },
+    #             {"type": "text", "content": "bro"},
+    #         ],
+    #     }
+    # ]
+
+    # out = TextFormattingHandler.process_style_in_tokens(tokens)
+    # print(out)
