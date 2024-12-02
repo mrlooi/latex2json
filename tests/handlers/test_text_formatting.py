@@ -19,15 +19,12 @@ def test_can_handle_invalid(handler):
     assert not handler.can_handle(r"{\text")
 
 
-OUTPUT_TYPE = "styled"
-
-
 def test_handle_outputs(handler):
     text = r"\textbf{hello} sss"
     out, end_pos = handler.handle(text)
     assert out == {
-        "type": OUTPUT_TYPE,
-        "style": FRONTEND_STYLE_MAPPING["textbf"],
+        "type": "text",
+        "styles": [FRONTEND_STYLE_MAPPING["textbf"]],
         "content": "hello",
     }
     assert text[end_pos:] == " sss"
@@ -35,8 +32,8 @@ def test_handle_outputs(handler):
     text = r"\textsc ABC"
     out, end_pos = handler.handle(text)
     assert out == {
-        "type": OUTPUT_TYPE,
-        "style": FRONTEND_STYLE_MAPPING["textsc"],
+        "type": "text",
+        "styles": [FRONTEND_STYLE_MAPPING["textsc"]],
         "content": "A",
     }
     assert text[end_pos:] == "BC"
@@ -50,8 +47,8 @@ def test_handle_outputs(handler):
     text = r"\textbf123 {sds}"
     out, end_pos = handler.handle(text)
     assert out == {
-        "type": OUTPUT_TYPE,
-        "style": FRONTEND_STYLE_MAPPING["textbf"],
+        "type": "text",
+        "styles": [FRONTEND_STYLE_MAPPING["textbf"]],
         "content": "1",
     }
     assert text[end_pos:] == "23 {sds}"
@@ -60,8 +57,8 @@ def test_handle_outputs(handler):
     text = r"\textbf {sds"
     out, end_pos = handler.handle(text)
     assert out == {
-        "type": OUTPUT_TYPE,
-        "style": FRONTEND_STYLE_MAPPING["textbf"],
+        "type": "text",
+        "styles": [FRONTEND_STYLE_MAPPING["textbf"]],
         "content": "{",
     }
     assert text[end_pos:] == "sds"
@@ -70,8 +67,8 @@ def test_handle_outputs(handler):
     text = r"\textbf"
     out, end_pos = handler.handle(text)
     assert out == {
-        "type": OUTPUT_TYPE,
-        "style": FRONTEND_STYLE_MAPPING["textbf"],
+        "type": "text",
+        "styles": [FRONTEND_STYLE_MAPPING["textbf"]],
         "content": "",
     }
     assert text[end_pos:] == ""

@@ -4,7 +4,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 import re
 
 from src.handlers.base import TokenHandler
-from src.tex_utils import extract_nested_content, strip_latex_newlines
+from src.tex_utils import extract_nested_content, flatten, strip_latex_newlines
 
 
 # Add this new mapping for frontend styles
@@ -105,14 +105,11 @@ class TextFormattingHandler(TokenHandler):
         if self.process_content_fn:
             content_to_format = self.process_content_fn(content_to_format)
 
-        if style is None:
-            return {"type": "text", "content": content_to_format}, total_pos
+        token = {"type": "text", "content": content_to_format}
+        if style is not None:
+            token["styles"] = [style]
 
-        return {
-            "type": "styled",
-            "style": style,
-            "content": content_to_format,
-        }, total_pos
+        return token, total_pos
 
     def _handle_frac(self, content: str, match: re.Match) -> Tuple[str, int]:
         out = parse_dual_braces_content(content, match.end(0) - 1)
@@ -155,50 +152,6 @@ class TextFormattingHandler(TokenHandler):
                 return self._handle_texorpdfstring(content, match)
 
         return None, 0
-
-    @staticmethod
-    def process_style_in_tokens(tokens: List[Dict], parent_styles: List[str] = []):
-        new_tokens = []
-        for i, token in enumerate(tokens):
-            if isinstance(token, str):
-                new_tokens.append(token)
-                continue
-
-            # Create a copy of the token to modify
-            processed_token = token.copy()
-
-            # Handle style inheritance
-            current_styles = parent_styles.copy()
-            if "style" in token:
-                current_styles.append(token["style"])
-            elif "styles" in token:
-                current_styles.extend(token["styles"])
-
-            # remove duplicates via dict
-            processed_token["styles"] = list(
-                OrderedDict.fromkeys(current_styles)
-            )  # Pre-3.7 compatible
-
-            # Recursively process content if it's a list
-            if "content" in processed_token and isinstance(
-                processed_token["content"], list
-            ):
-                processed_content = TextFormattingHandler.process_style_in_tokens(
-                    processed_token["content"], processed_token["styles"]
-                )
-
-                # If this is a styled token, flatten it by extending new_tokens with processed_content
-                if processed_token.get("type") in ["styled", "text"]:
-                    new_tokens.extend(processed_content)
-                    continue
-
-                processed_token["content"] = processed_content
-
-            if len(processed_token["styles"]) == 0:
-                del processed_token["styles"]
-            new_tokens.append(processed_token)
-
-        return new_tokens
 
 
 if __name__ == "__main__":

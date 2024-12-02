@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import re
 from typing import List, Dict, Tuple, Union
 
@@ -262,21 +263,24 @@ class LatexParser:
                         token["content"] = self.parse(token["content"])
                         self.current_env = prev_env
                     elif isinstance(handler, TextFormattingHandler):
-                        # Parse inner first
                         inner_content = self.parse(token["content"])
-                        # Maintain token metadata
-                        styled_token = {
-                            **token,
-                            "content": inner_content,
-                        }
-                        processed_tokens = (
-                            TextFormattingHandler.process_style_in_tokens(
-                                [styled_token]
+                        # if inner content is just a text token, we can merge styles and flatten this token
+                        if (
+                            len(inner_content) == 1
+                            and inner_content[0]["type"] == "text"
+                        ):
+                            new_token = inner_content[0]
+                            new_token_styles = new_token.get("styles", [])
+                            if "styles" in token:
+                                new_token_styles.extend(token["styles"])
+                            # remove duplicates
+                            new_token["styles"] = list(
+                                OrderedDict.fromkeys(new_token_styles)
                             )
-                        )
-                        tokens.extend(processed_tokens)
-
-                        return True, end_pos
+                            token = new_token
+                        else:
+                            token["type"] = "styled"
+                            token["content"] = inner_content
 
                     self.add_token(token, tokens)
                 return True, end_pos
