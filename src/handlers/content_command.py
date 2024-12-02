@@ -36,6 +36,7 @@ RAW_PATTERNS = OrderedDict(
         ("url", r"\\url\s*{"),
         # Graphics
         ("includegraphics", r"\\includegraphics\s*(?:\[([^\]]*)\])?\s*{"),
+        ("graphicspath", r"\\graphicspath\s*{"),  # ignore?
         # Citations
         (
             "citation",
@@ -189,6 +190,9 @@ class ContentCommandHandler(TokenHandler):
                 "title": match.group(2).strip(),  # The display text
                 "content": content,  # The internal reference label
             }
+
+        elif matched_type == "graphicspath":
+            return None
 
         return {"type": matched_type, "content": content}
 

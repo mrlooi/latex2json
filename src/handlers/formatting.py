@@ -60,7 +60,7 @@ RAW_PATTERNS = OrderedDict(
             r"\\(usepackage|RequirePackage)(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}",
         ),
         # Formatting commands
-        ("setup", r"\\hypersetup\s*{"),
+        ("setup", r"\\(?:hypersetup|captionsetup\[([^\]]*)\])\s*{"),
         ("make", r"\\(?:maketitle|makeatletter|makeatother)\b"),
         (
             "page",

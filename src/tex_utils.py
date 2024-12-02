@@ -94,3 +94,13 @@ def strip_latex_newlines(latex_str: str) -> str:
     latex_str = re.sub(r"\s+", " ", latex_str)
 
     return latex_str.strip()
+
+def flatten(lst):
+    """Recursively flatten nested lists/tuples, preserving dictionaries as single elements."""
+    result = []
+    for item in lst:
+        if isinstance(item, (list, tuple)):
+            result.extend(flatten(item))
+        else:
+            result.append(item)
+    return result
