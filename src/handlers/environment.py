@@ -25,6 +25,7 @@ LAYOUT_ENVIRONMENTS = [
     "adjustbox",
     "spacing",
     "small",
+    "subequations",
 ]
 
 # Map environment names to their types

@@ -11,12 +11,13 @@ def test_basic_conversion(converter):
     assert converter.convert(r"\textbackslash") == "\\"
     assert converter.convert(r"\#") == "#"
     assert converter.convert(r"\$") == "$"
+    assert converter.convert(r"\textpm") == "±"
 
 
 def test_accented_characters(converter):
     assert converter.convert(r"\H{o}") == "ő"
     assert converter.convert(r"\v{l}") == "ľ"
-    assert converter.convert(r"\'{A}") == "Ά"
+    assert converter.convert(r"\'{A}") == "Á"
 
 
 def test_special_letters(converter):

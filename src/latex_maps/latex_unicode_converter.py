@@ -1,28 +1,13 @@
 import re
-from collections import OrderedDict
-from src.latex_maps._uni2latexmap import uni2latex
-from src.latex_maps._uni2latexmap_xml import uni2latex as uni2latex_xml
+
+from src.latex_maps._latex2unicode_map import latex2unicode
 
 
 class LatexUnicodeConverter:
     def __init__(self):
-        self.latex2unicode = self._create_latex_to_unicode_map()
+        # create copy of latex2unicode
+        self.latex2unicode = latex2unicode.copy()
         self.patterns = self._create_categorized_regex_patterns()
-
-    def _create_latex_to_unicode_map(self):
-        latex2unicode = OrderedDict()
-
-        for k, v in uni2latex_xml.items():
-            latex2unicode[v] = k
-
-        for k, v in uni2latex.items():
-            if v in latex2unicode:
-                continue
-            # ignore ensuremath
-            if not v.startswith("\\ensuremath"):
-                latex2unicode[v] = k
-
-        return latex2unicode
 
     def _create_categorized_regex_patterns(self):
         patterns = {"ensuremath": [], "text": [], "math": [], "font": [], "other": []}
