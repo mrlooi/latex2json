@@ -94,7 +94,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "spacing",
             r"\\(?:"
-            r"quad|qquad|,|;|"  # \quad, \qquad, \, \;
+            r"quad|qquad|,|;|:|"  # \quad, \qquad, \, \; \:
             r"hspace\*?\s*{([^}]+)}|"  # \hspace{length}
             r"hskip\s*\d*\.?\d+(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b"  # \hskip 10pt
             r")",
