@@ -12,6 +12,7 @@ from .bibitem import BibItemHandler
 from .author import AuthorHandler
 from .text_formatting import TextFormattingHandler
 from .if_else_statements import IfElseBlockHandler
+from .diacritics import DiacriticsHandler
 
 __all__ = [
     "TokenHandler",
@@ -28,4 +29,5 @@ __all__ = [
     "AuthorHandler",
     "TextFormattingHandler",
     "IfElseBlockHandler",
+    "DiacriticsHandler",
 ]

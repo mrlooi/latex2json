@@ -109,18 +109,17 @@ def test_frac(handler):
     } {
         SECOND
         BLOCK
-    }
-    after frac
+    }after frac
 """.strip()
     out, end_pos = handler.handle(text)
     assert out == {"type": "text", "content": "FIRST BLOCK / SECOND BLOCK"}
-    assert text[end_pos:].strip() == "after frac"
+    assert text[end_pos:] == "after frac"
 
     # frac in frac
     text = r"\textfrac{1}{\frac{2}{3}} postfrac"
     out, end_pos = handler.handle(text)
     assert out == {"type": "text", "content": r"1 / \frac{2}{3}"}
-    assert text[end_pos:].strip() == "postfrac"
+    assert text[end_pos:] == " postfrac"
 
 
 def test_texorpdfstring(handler):
@@ -129,4 +128,4 @@ def test_texorpdfstring(handler):
     text = r"\texorpdfstring{pdf version}{text version} postfrac"
     out, end_pos = handler.handle(text)
     assert out == {"type": "text", "content": "text version"}
-    assert text[end_pos:].strip() == "postfrac"
+    assert text[end_pos:] == " postfrac"

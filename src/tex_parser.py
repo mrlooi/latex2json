@@ -20,6 +20,7 @@ from src.handlers import (
     AuthorHandler,
     TextFormattingHandler,
     IfElseBlockHandler,
+    DiacriticsHandler,
 )
 from src.handlers.environment import BaseEnvironmentHandler
 from src.patterns import PATTERNS
@@ -73,6 +74,7 @@ class LatexParser:
             # add formatting stuffs last
             TextFormattingHandler(),
             FormattingHandler(),
+            DiacriticsHandler(),
             # self.legacy_formatting_handler,
         ]
         self.new_definition_handler = NewDefinitionHandler()
@@ -440,10 +442,7 @@ class LatexParser:
 if __name__ == "__main__":
 
     text = r"""
-
-\
-
-haha
+    \vec333 + \H{x}
     """
 
     # Example usage
