@@ -2,11 +2,11 @@ import re
 from typing import Callable, Dict, List, Optional, Tuple
 from src.flatten import flatten_tokens
 from src.handlers.base import TokenHandler
-from src.tex_utils import extract_nested_content
+from src.tex_utils import extract_nested_content, find_matching_env_block
 
 # Compile patterns for code blocks
 TABULAR_PATTERN = re.compile(
-    r"\\begin\{(tabular\*?|longtable|tabularx|tabulary)\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\{\1\}",
+    r"\\begin\s*\{(tabular\*?|longtable|tabularx|tabulary)\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\s*\{\1\}",
     re.DOTALL,
 )
 
@@ -143,11 +143,14 @@ class TabularHandler(TokenHandler):
             return None, 0
 
         env_type = match.group(1)  # tabular, tabular*, or tabularx
-        inner_content = match.group(0)
         # Strip out the beginning and end tags dynamically using the matched environment type
-        inner_content = inner_content[
-            len(r"\begin{" + env_type + r"}") : -len(r"\end{" + env_type + r"}")
-        ]
+
+        start_pos, end_pos, inner_content = find_matching_env_block(content, env_type)
+        if start_pos == -1:
+            return None, 0
+
+        # Extract content between begin and end
+        inner_content = inner_content.strip()
 
         token = {
             "type": "tabular",

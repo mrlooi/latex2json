@@ -226,7 +226,7 @@ def test_command_with_environments(parser):
         \newcommand{\Fma}{$F=ma$}
 
         \newcommand{\myenv}[2]{
-            \begin{equation*}
+            \begin {equation*}
                 #1 = #2 
                 \Fma
             \end{equation*}
@@ -306,7 +306,7 @@ def test_nested_environments(parser):
     \begin{equation}\label{t-bound}
     \t = O_{\eps}(X^\delta).
     \end{equation}
-    \end{lemma}
+    \end  {lemma}
     """
     parsed_tokens = parser.parse(text)
 
@@ -686,7 +686,7 @@ def test_complex_table(parser):
 
     \begin{table}[htbp]
     \centering
-    \begin{tabular}{|c|c|c|c|}
+    \begin {tabular}{|c|c|c|c|}
         \hline
         \multicolumn{2}{|c|}{\multirow{2}{*}{Region}} & \multicolumn{2}{c|}{Sales} \\
         \cline{3-4}
@@ -980,7 +980,7 @@ def test_new_environment(parser):
     }
     { 
         \\\\\hline
-        \end{tabular} 
+        \end {tabular} 
         \end{center}
     }
 
@@ -1107,7 +1107,7 @@ def test_if_else_statements(parser):
             \hline
             a & b \\
             \hline
-        \end{tabular}
+        \end {tabular}
     \elseif{cond2}
         content2
     \else

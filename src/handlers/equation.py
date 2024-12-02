@@ -28,7 +28,7 @@ RAW_PATTERNS = OrderedDict(
 
 # Add equation patterns dynamically
 equation_env_dict = {
-    name: rf"\\begin\{{{name}\*?\}}(.*?)\\end\{{{name}(?:\*)?\}}"
+    name: rf"\\begin\s*\{{{name}\*?\}}(.*?)\\end\s*\{{{name}(?:\*)?\}}"
     for name in EQUATION_ENV
 }
 

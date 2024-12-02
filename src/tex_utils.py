@@ -57,30 +57,48 @@ def extract_nested_content(
     return content, end_pos + 1
 
 
-def find_matching_env_block(text: str, env_name: str, start_pos: int = 0) -> int:
-    """Find the matching end{env_name} for a begin{env_name}, handling nested environments"""
+def find_matching_env_block(
+    text: str, env_name: str, start_pos: int = 0
+) -> Tuple[int, int, str]:
+    r"""Find the matching \end{env_name} for a \begin{env_name}, handling nested environments.
+    Returns a tuple of (start_pos, end_pos, inner_content) where:
+        - start_pos is the position of the beginning of \begin{env_name}
+        - end_pos is the position of the end of \end{env_name}
+        - inner_content is the text between \begin{env_name} and \end{env_name}
+    Returns (-1, -1, "") if no valid match is found.
+    """
     escaped_name = re.escape(env_name)
-    pattern = re.compile(rf"\\(begin|end)\{{{escaped_name}}}")
+    pattern = re.compile(r"\\(begin|end)\s*\{" + escaped_name + "}", re.DOTALL)
+
+    # Find the first \begin
+    match = pattern.search(text, start_pos)
+    if not match or match.group(1) != "begin":
+        return -1, -1, ""
+
+    begin_pos = match.start()
+    content_start = match.end()
 
     nesting_level = 1
-    current_pos = start_pos
+    current_pos = content_start
 
     while nesting_level > 0 and current_pos < len(text):
-        match = re.search(pattern, text[current_pos:])
+        match = pattern.search(text, current_pos)
         if not match:
-            return -1  # No matching end found
+            return -1, -1, ""  # No matching end found
 
-        current_pos += match.start() + 1
         if match.group(1) == "begin":
             nesting_level += 1
         else:  # 'end'
             nesting_level -= 1
 
         if nesting_level == 0:
-            return current_pos - 1
-        current_pos += len(match.group(0)) - 1
+            end_pos = match.end()
+            inner_content = text[content_start : match.start()].strip()
+            return begin_pos, end_pos, inner_content
 
-    return -1 if nesting_level > 0 else current_pos
+        current_pos = match.end()
+
+    return -1, -1, ""  # No match found or unmatched begin
 
 
 def strip_latex_newlines(latex_str: str) -> str:
@@ -94,6 +112,7 @@ def strip_latex_newlines(latex_str: str) -> str:
     latex_str = re.sub(r"\s+", " ", latex_str)
 
     return latex_str.strip()
+
 
 def flatten(lst):
     """Recursively flatten nested lists/tuples, preserving dictionaries as single elements."""

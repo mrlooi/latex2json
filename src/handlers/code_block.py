@@ -4,9 +4,12 @@ from src.handlers.base import TokenHandler
 
 # Compile patterns for code blocks
 PATTERNS = {
-    "verbatim_env": re.compile(r"\\begin\{verbatim\}(.*?)\\end\{verbatim\}", re.DOTALL),
+    "verbatim_env": re.compile(
+        r"\\begin\s*\{verbatim\}(.*?)\\end\s*\{verbatim\}", re.DOTALL
+    ),
     "lstlisting": re.compile(
-        r"\\begin\{lstlisting\}(?:\[([^\]]*)\])?(.*?)\\end\{lstlisting\}", re.DOTALL
+        r"\\begin\s*\{lstlisting\}(?:\[([^\]]*)\])?(.*?)\\end\s*\{lstlisting\}",
+        re.DOTALL,
     ),
     "verb_command": re.compile(
         r"\\verb\*?([^a-zA-Z])(.*?)\1"

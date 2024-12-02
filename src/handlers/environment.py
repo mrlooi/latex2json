@@ -229,20 +229,16 @@ class BaseEnvironmentHandler(TokenHandler):
         ):  # Verify it's an environment match
             env_name = match.group(1).strip()
             # Find the correct ending position for this environment
-            start_pos = match.end(1) + 1
-            end_pos = find_matching_env_block(content, env_name, start_pos)
+            start_pos, end_pos, inner_content = find_matching_env_block(
+                content, env_name
+            )
 
             if end_pos == -1:
                 # No matching end found, treat as plain text
                 return match.group(0), match.end()
             else:
-                # Extract content between begin and end
-                inner_content = content[start_pos:end_pos].strip()
-
                 env_token = self._handle_environment(env_name, inner_content)
-
-                current_pos = end_pos + len(f"\\end{{{env_name}}}")
-                return env_token, current_pos
+                return env_token, end_pos
         return None, 0
 
     def _try_match_group(
