@@ -1,4 +1,5 @@
 import pytest
+from src.handlers.text_formatting import FRONTEND_STYLE_MAPPING
 from src.patterns import SECTION_LEVELS
 from src.tex_parser import LatexParser
 from tests.latex_samples_data import TRAINING_SECTION_TEXT
@@ -1234,7 +1235,27 @@ def test_diacritics(parser):
     assert parsed_tokens[0]["content"] == "3⃗33 + äaaa + X̋XX"
 
 
-# TODO
+def test_complex_frac(parser):
+    text = r"""
+    \newcommand{\test}[1]{TEST #1}
+
+    \frac{
+        \test{hi}, \textbf{ASDSD}
+    }{
+        \begin{tabular}{c}
+            cell 1 & cell 2 \\
+            \textbf{bold} & \textit{italic}
+        \end{tabular}
+    }
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+
+    token = parsed_tokens[0]
+    assert token["type"] == "text"
+    assert token["content"].strip() == "TEST hi, ASDSD / cell 1 cell 2 bold italic"
+
+
 # def test_text_commands(parser):
 #     test_cases = [
 #         r"\textbf{bold}",

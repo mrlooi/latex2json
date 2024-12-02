@@ -73,7 +73,7 @@ class LatexParser:
             # make sure to add EnvironmentHandler after equation/tabular or other env related formats, since it will greedily parse any begin/end block. Add as last to be safe
             self.env_handler,
             # add formatting stuffs last
-            TextFormattingHandler(),
+            TextFormattingHandler(self.parse),
             FormattingHandler(),
             DiacriticsHandler(),
             # self.legacy_formatting_handler,
@@ -262,25 +262,6 @@ class LatexParser:
                         self.current_env = token
                         token["content"] = self.parse(token["content"])
                         self.current_env = prev_env
-                    elif isinstance(handler, TextFormattingHandler):
-                        inner_content = self.parse(token["content"])
-                        # if inner content is just a single token, we can merge styles and flatten this token
-                        if len(inner_content) == 1 and isinstance(
-                            inner_content[0], dict
-                        ):
-                            new_token = inner_content[0]
-                            new_token_styles = new_token.get("styles", [])
-                            if "styles" in token:
-                                # Prepend parent styles before child styles
-                                new_token_styles = token["styles"] + new_token_styles
-                            # remove duplicates
-                            new_token["styles"] = list(
-                                OrderedDict.fromkeys(new_token_styles)
-                            )
-                            token = new_token
-                        else:
-                            token["type"] = "styled"
-                            token["content"] = inner_content
 
                     self.add_token(token, tokens)
                 return True, end_pos
