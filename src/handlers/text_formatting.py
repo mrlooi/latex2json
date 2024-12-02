@@ -35,15 +35,33 @@ TEXT_PATTERN = re.compile(
 
 PATTERNS = {
     "styled": TEXT_PATTERN,
-    "frac": re.compile(
-        r"\\(?:frac|nicefrac|textfrac)\s*\{", re.DOTALL
-    ),  # Updated to match both sets of braces
+    "frac": re.compile(r"\\(?:frac|nicefrac|textfrac)\s*\{", re.DOTALL),  # \frac{}{}
+    "texorpdfstring": re.compile(
+        r"\\texorpdfstring\s*\{", re.DOTALL
+    ),  # \texorpdfstring{pdf version}{text version}
 }
 
 
 # Method 2: Using str.lstrip() with len comparison
 def find_first_nonspace(s):
     return len(s) - len(s.lstrip())
+
+
+def parse_dual_braces_content(content: str, first_brace_start: int) -> Tuple[str, int]:
+    first, first_brace_end = extract_nested_content(content[first_brace_start:])
+    if not first:
+        return None, 0
+    first_brace_end = first_brace_start + first_brace_end
+    has_second_brace = content[first_brace_end:].strip()[0] == "{"
+    if not has_second_brace:
+        return None, 0
+    second_brace_start = first_brace_end + content[first_brace_end:].find("{")
+    second, second_brace_end = extract_nested_content(content[second_brace_start:])
+    if not second:
+        return None, 0
+
+    end_pos = second_brace_start + second_brace_end
+    return first, second, end_pos
 
 
 class TextFormattingHandler(TokenHandler):
@@ -96,20 +114,11 @@ class TextFormattingHandler(TokenHandler):
         }, total_pos
 
     def _handle_frac(self, content: str, match: re.Match) -> Tuple[str, int]:
-        first_brace_start = match.end(0) - 1
-        first, first_brace_end = extract_nested_content(content[first_brace_start:])
-        first_brace_end = first_brace_start + first_brace_end
-        if not first:
-            return None, 0
-        has_second_brace = content[first_brace_end:].strip()[0] == "{"
-        if not has_second_brace:
-            return None, 0
-        second_brace_start = first_brace_end + content[first_brace_end:].find("{")
-        second, second_brace_end = extract_nested_content(content[second_brace_start:])
-        if not second:
+        out = parse_dual_braces_content(content, match.end(0) - 1)
+        if out[0] is None:
             return None, 0
 
-        end_pos = second_brace_start + second_brace_end
+        first, second, end_pos = out
 
         # Replace newlines and collapse multiple spaces into single spaces
         first = " ".join(first.replace("\n", " ").split()).strip()
@@ -118,6 +127,18 @@ class TextFormattingHandler(TokenHandler):
         return {
             "type": "text",
             "content": "%s / %s" % (first, second),
+        }, end_pos
+
+    def _handle_texorpdfstring(self, content: str, match: re.Match) -> Tuple[str, int]:
+        out = parse_dual_braces_content(content, match.end(0) - 1)
+        if out[0] is None:
+            return None, 0
+        first, second, end_pos = out
+
+        # choose 2nd one in texorpdfstring
+        return {
+            "type": "text",
+            "content": second,
         }, end_pos
 
     def handle(self, content: str) -> Tuple[str, int]:
@@ -129,6 +150,8 @@ class TextFormattingHandler(TokenHandler):
                 return self._handle_styled(content, match)
             elif name == "frac":
                 return self._handle_frac(content, match)
+            elif name == "texorpdfstring":
+                return self._handle_texorpdfstring(content, match)
 
         return None, 0
 

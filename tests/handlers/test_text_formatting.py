@@ -95,6 +95,8 @@ def test_handle_outputs(handler):
 
 
 def test_frac(handler):
+    assert not handler.can_handle(r"\fracsss{pdf version}{text version}")
+
     text = r"\frac{1}{2} postfrac"
     out, end_pos = handler.handle(text)
     assert out == {"type": "text", "content": "1 / 2"}
@@ -118,4 +120,13 @@ def test_frac(handler):
     text = r"\textfrac{1}{\frac{2}{3}} postfrac"
     out, end_pos = handler.handle(text)
     assert out == {"type": "text", "content": r"1 / \frac{2}{3}"}
+    assert text[end_pos:].strip() == "postfrac"
+
+
+def test_texorpdfstring(handler):
+    assert not handler.can_handle(r"\texorpdfstringssss{pdf version}{text version}")
+
+    text = r"\texorpdfstring{pdf version}{text version} postfrac"
+    out, end_pos = handler.handle(text)
+    assert out == {"type": "text", "content": "text version"}
     assert text[end_pos:].strip() == "postfrac"
