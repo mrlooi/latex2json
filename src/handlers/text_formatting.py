@@ -34,12 +34,31 @@ TEXT_PATTERN = re.compile(
     rf"\\({TEXT_COMMANDS})" + r"(?![a-zA-Z])(\s*(\{)|.*)?", re.DOTALL
 )
 
+BOX_PATTERN = re.compile(
+    r"""
+    \\(?:
+        parbox(?:\s*\[[^\]]*\])*\s*{[^}]*}\s*{| # \parbox[pos][height][inner-pos]{width}{text}
+        makebox(?:\s*\[[^\]]*\])*\s*{| # \makebox[width][pos]
+        framebox(?:\s*\[[^\]]*\])*\s*{| # \framebox[width][pos]
+        raisebox\s*{[^}]+}(?:\s*\[[^\]]*\])*\s*{| # \raisebox{raise}[height][depth]
+        fbox\s*{| # \fbox{text}
+        colorbox\s*{[^}]*}\s*{|           # \colorbox{color}{text}
+        fcolorbox\s*{[^}]*}\s*{[^}]*}\s*{|   # \fcolorbox{border}{bg}{text}
+        scalebox\s*{[^}]*}\s*{|  # \scalebox{scale}{text}
+        mbox\s*{ # \mbox{text}
+    )
+    """,
+    re.VERBOSE | re.DOTALL,
+)
+
+
 PATTERNS = {
     "styled": TEXT_PATTERN,
     "frac": re.compile(r"\\(?:frac|nicefrac|textfrac)\s*\{", re.DOTALL),  # \frac{}{}
     "texorpdfstring": re.compile(
         r"\\texorpdfstring\s*\{", re.DOTALL
     ),  # \texorpdfstring{pdf version}{text version}
+    "box": BOX_PATTERN,
 }
 
 
@@ -65,7 +84,10 @@ def parse_dual_braces_content(content: str, first_brace_start: int) -> Tuple[str
     return first, second, end_pos
 
 
-def flatten_all_to_string(tokens: List[Dict | str | List]) -> str:
+def flatten_all_to_string(tokens: List[Dict | str | List] | str) -> str:
+    if isinstance(tokens, str):
+        return tokens
+
     def flatten_token(token):
         if isinstance(token, str):
             return token
@@ -177,6 +199,27 @@ class TextFormattingHandler(TokenHandler):
             "content": second,
         }, end_pos
 
+    def _handle_box(self, content: str, match: re.Match) -> Tuple[str, int]:
+        start_pos = match.end() - 1
+        extracted_content, end_pos = extract_nested_content(content[start_pos:])
+        extracted_content = extracted_content + "\n"  # add newline to end of box?
+
+        one_liner = match.group(0).startswith("\\mbox")
+
+        if self.process_content_fn:
+            extracted_content = self.process_content_fn(extracted_content)
+
+        if one_liner:
+            # make everything into one line
+            extracted_content = strip_latex_newlines(
+                flatten_all_to_string(extracted_content)
+            )
+
+        return {
+            "type": "layout",
+            "content": extracted_content,
+        }, start_pos + end_pos
+
     def handle(self, content: str) -> Tuple[str, int]:
         for name, pattern in PATTERNS.items():
             match = pattern.match(content)
@@ -188,6 +231,8 @@ class TextFormattingHandler(TokenHandler):
                 return self._handle_frac(content, match)
             elif name == "texorpdfstring":
                 return self._handle_texorpdfstring(content, match)
+            elif name == "box":
+                return self._handle_box(content, match)
 
         return None, 0
 

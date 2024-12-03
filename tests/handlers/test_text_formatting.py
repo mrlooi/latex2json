@@ -126,3 +126,41 @@ def test_texorpdfstring(handler):
     out, end_pos = handler.handle(text)
     assert out == {"type": "text", "content": "text version"}
     assert text[end_pos:] == " postfrac"
+
+
+def test_box_commands(handler):
+    # Test that box commands only return their text content
+    test_cases = [
+        (r"\makebox{Simple text}", "Simple text"),
+        (r"\framebox{Simple text}", "Simple text"),
+        (r"\raisebox{2pt}{Raised text}", "Raised text"),
+        (r"\makebox[3cm]{Fixed width}", "Fixed width"),
+        (r"\framebox[3cm][l]{Left in frame}", "Left in frame"),
+        (r"\parbox{5cm}{Simple parbox text}", "Simple parbox text"),
+        (r"\parbox[t][3cm][s]{5cm}{Stretched vertically}", "Stretched vertically"),
+        (r"\fbox{Framed text}", "Framed text"),
+        (r"\colorbox{yellow}{Colored box}", "Colored box"),
+        (
+            r"\parbox[c][3cm]{5cm}{Center aligned with fixed height}",
+            "Center aligned with fixed height",
+        ),
+        (
+            r"""\mbox{
+            All
+            One line ajajaja
+            }""",
+            "All One line ajajaja",
+        ),
+    ]
+
+    for command, expected_text in test_cases:
+        token, pos = handler.handle(command)
+        assert token and token["content"].strip() == expected_text
+        assert pos > 0  # Should advance past the command
+
+    text = r"""
+    \parbox[c][3cm]{5cm}{Center aligned with fixed height} STUFF AFTER
+    """.strip()
+    token, pos = handler.handle(text)
+    assert token and token["content"].strip() == "Center aligned with fixed height"
+    assert text[pos:] == " STUFF AFTER"

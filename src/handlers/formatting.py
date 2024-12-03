@@ -3,7 +3,7 @@ import re
 from collections import OrderedDict
 from typing import Callable, Dict, Optional, Tuple
 from src.handlers.base import TokenHandler
-from src.tex_utils import extract_nested_content, strip_latex_newlines
+from src.tex_utils import extract_nested_content
 
 
 DEFINE_COLOR_PATTERN = re.compile(
@@ -28,21 +28,6 @@ COLOR_COMMANDS_PATTERN = re.compile(
     re.VERBOSE,
 )
 
-BOX_PATTERN = re.compile(
-    r"""
-    \\(?:
-        parbox(?:\s*\[[^\]]*\])*\s*{[^}]*}\s*{| # \parbox[pos][height][inner-pos]{width}{text}
-        makebox(?:\s*\[[^\]]*\])*\s*{| # \makebox[width][pos]
-        framebox(?:\s*\[[^\]]*\])*\s*{| # \framebox[width][pos]
-        raisebox\s*{[^}]+}(?:\s*\[[^\]]*\])*\s*{| # \raisebox{raise}[height][depth]
-        fbox\s*{| # \fbox{text}
-        colorbox\s*{[^}]*}\s*{|           # \colorbox{color}{text}
-        fcolorbox\s*{[^}]*}\s*{[^}]*}\s*{|   # \fcolorbox{border}{bg}{text}
-        mbox\s*{ # \mbox{text}
-    )
-    """,
-    re.VERBOSE | re.DOTALL,
-)
 
 RAW_PATTERNS = OrderedDict(
     [
@@ -138,7 +123,6 @@ PATTERNS = OrderedDict(
 )
 PATTERNS["color"] = COLOR_COMMANDS_PATTERN
 PATTERNS["definecolor"] = DEFINE_COLOR_PATTERN
-PATTERNS["box"] = BOX_PATTERN
 # PATTERNS['and'] = re.compile(r'\\and\b', re.IGNORECASE)
 
 
@@ -194,21 +178,6 @@ class FormattingHandler(TokenHandler):
                         "type": "date",
                         "content": datetime.datetime.now().strftime("%Y-%m-%d"),
                     }, match.end()
-                elif pattern_name == "box":
-                    start_pos = match.end() - 1
-                    extracted_content, end_pos = extract_nested_content(
-                        content[start_pos:]
-                    )
-                    if match.group(0).startswith("\\mbox"):
-                        # make everything into one line
-                        extracted_content = strip_latex_newlines(extracted_content)
-                    else:
-                        # add newline to end of box?
-                        extracted_content = extracted_content + "\n"
-                    return {
-                        "type": "box",
-                        "content": extracted_content,
-                    }, start_pos + end_pos
                 elif pattern_name == "vspace":
                     return {"type": "text", "content": "\n"}, match.end()
                 elif pattern_name == "phantom":

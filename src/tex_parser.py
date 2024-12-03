@@ -51,6 +51,9 @@ class LatexParser:
     def __init__(self, logger: logging.Logger = None):
         self.logger = logger or logging.getLogger(__name__)
 
+        # for logging
+        self._unknown_commands = {}
+
         self.labels = {}
 
         self.current_env = (
@@ -104,6 +107,7 @@ class LatexParser:
 
     def clear(self):
         self.labels = {}
+        self._unknown_commands = {}
         self.current_str = ""
         self.current_env = None
         self.command_processor.clear()
@@ -264,9 +268,6 @@ class LatexParser:
                             token["title"] = self._parse_cell(token["title"])
                     elif token["type"] == "section":
                         self.current_env = token
-                    elif isinstance(handler, FormattingHandler):
-                        if token["type"] == "box":
-                            token = self._parse_cell(token["content"])
                     elif isinstance(handler, BaseEnvironmentHandler):
                         prev_env = self.current_env
                         self.current_env = token
@@ -428,9 +429,16 @@ class LatexParser:
                 if token:
                     self.add_token(token, tokens)
                     if token["type"] == "command":
-                        self.logger.warning(
-                            f"\n*****\nUnknown command: Token: {token}\n Surrounding content: {content[max(0, current_pos-50):current_pos+50]}\n*****"
-                        )
+                        cmd_name = token["command"]
+                        if cmd_name not in self._unknown_commands:
+                            self._unknown_commands[cmd_name] = token
+                            self.logger.warning(
+                                f"\n*****\nUnknown command: Token: {token}\n***Surrounding content***\n{content[max(0, current_pos-100):current_pos+100]}\n*****"
+                            )
+                        else:
+                            self.logger.warning(
+                                f"\n*****(Again) Unknown command token: {token}\n*****"
+                            )
                     continue
 
             self.add_token(content[current_pos], tokens)
@@ -455,18 +463,21 @@ if __name__ == "__main__":
     )
     logging.getLogger("asyncio").setLevel(logging.WARNING)
 
-    # with open("papers/arXiv-2212.08073v1/main.tex", "r") asf:
+    logger = logging.getLogger(__name__)
+
+    # file = "papers/arXiv-1712.01815v1/main.tex"
+    # logger.info(f"Parsing file: {file}")
+    # with open(file, "r") as f:
     #     text = f.read()
 
-    text = r"""
-    THIS IS SOME SCRAZY  \unksno SA DJS IJS IJ SI
-    """
-
     # Example usage
-    # text = r"""\tt aaa"""
-    parser = LatexParser()
+    text = r"""
+    \newcommand{\test}[1]{TEST THIS: #1}
+    \scalebox{3}{\textbf{sdsds \test{FCCKK}} + sss}
+    """
+    parser = LatexParser(logger=logger)
     parsed_tokens = parser.parse(text)
-    print(parsed_tokens)
+    # print(parsed_tokens)
 
 # for command in commands:
 #     print(command, UNKNOWN_COMMAND_PATTERN.match(command))
