@@ -1,10 +1,18 @@
 from collections import OrderedDict
 import re
 from typing import List, Dict, Tuple, Union
-
 import sys, os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+import logging
+
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(levelname)s: %(message)s",
+    force=True,  # This ensures the config is applied even if another module has configured logging
+)
 
 from src.handlers import (
     CodeBlockHandler,
@@ -40,7 +48,9 @@ UNKNOWN_COMMAND_PATTERN = re.compile(r"(\\[@a-zA-Z*]+\s*\{?)", re.DOTALL)
 
 
 class LatexParser:
-    def __init__(self):
+    def __init__(self, logger: logging.Logger = None):
+        self.logger = logger or logging.getLogger(__name__)
+
         self.labels = {}
 
         self.current_env = (
@@ -173,9 +183,7 @@ class LatexParser:
             else:
                 tokens.append(token_dict)
 
-    def _check_unknown_command(
-        self, content: str, tokens: List[Dict]
-    ) -> Tuple[bool, int]:
+    def _check_unknown_command(self, content: str) -> Tuple[bool, int]:
         """Convert unknown LaTeX command into a text token with original syntax"""
         # Get the full matched text to preserve all arguments
         match = UNKNOWN_COMMAND_PATTERN.match(content)
@@ -204,14 +212,12 @@ class LatexParser:
                     }
                 else:
                     token = {"type": "command", "command": expanded}
-                # raise ValueError(f"Unknown command: {expanded}")
             else:
                 token = {"type": "text", "content": expanded}
 
-            self.add_token(token, tokens)
-            return True, end_pos
+            return token, end_pos
 
-        return False, 0
+        return None, 0
 
     def _check_for_new_definitions(self, content: str) -> None:
         """Check for new definitions in the content and process them"""
@@ -417,11 +423,14 @@ class LatexParser:
 
             # check for unknown command
             if handle_unknown_commands:
-                matched, end_pos = self._check_unknown_command(
-                    content[current_pos:], tokens
-                )
+                token, end_pos = self._check_unknown_command(content[current_pos:])
                 current_pos += end_pos
-                if matched:
+                if token:
+                    self.add_token(token, tokens)
+                    if token["type"] == "command":
+                        self.logger.warning(
+                            f"\n*****\nUnknown command: Token: {token}\n Surrounding content: {content[max(0, current_pos-50):current_pos+50]}\n*****"
+                        )
                     continue
 
             self.add_token(content[current_pos], tokens)
@@ -432,15 +441,27 @@ class LatexParser:
 
 if __name__ == "__main__":
 
-    # with open("papers/arXiv-2212.08073v1/main.tex", "r") as f:
+    # More detailed logging configuration for direct script execution
+    logging.basicConfig(
+        level=logging.DEBUG,  # More verbose when running directly
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        force=True,
+        handlers=[
+            logging.FileHandler(
+                "logs/tex_parser.log"
+            ),  # Output to a file named 'tex_parser.log'
+            logging.StreamHandler(),  # Optional: also output to console
+        ],
+    )
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
+
+    # with open("papers/arXiv-2212.08073v1/main.tex", "r") asf:
     #     text = f.read()
 
     text = r"""
-    \begin{tabular}{c}
-        \tt aaa & \large bbb \\ 
-        \sc eee & {\tt 444} + 333
-    \end{tabular}
+    THIS IS SOME SCRAZY  \unksno SA DJS IJS IJ SI
     """
+
     # Example usage
     # text = r"""\tt aaa"""
     parser = LatexParser()
