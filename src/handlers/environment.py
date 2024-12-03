@@ -180,12 +180,16 @@ class BaseEnvironmentHandler(TokenHandler):
     def _handle_environment(self, env_name: str, inner_content: str) -> None:
         token = {"type": "environment", "name": env_name}
 
+        contains_asterisk = "*" in env_name
         env_name = env_name.replace("*", "")
 
         env_type = ENV_TYPES.get(env_name, "environment")
         token["type"] = env_type
         if env_type not in ["list", "table", "figure"]:
             token["name"] = env_name
+
+        if not contains_asterisk and env_type in ["table", "figure"]:
+            token["numbered"] = True
 
         # Extract title if present (text within square brackets after environment name)
         title, end_pos = extract_nested_content(inner_content, "[", "]")

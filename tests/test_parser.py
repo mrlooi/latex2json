@@ -712,6 +712,7 @@ def test_complex_table(parser):
     assert table["type"] == "table"
     assert table["title"] == "htbp"
     assert table["labels"] == ["tab:sales"]
+    assert table["numbered"] == True
 
     # Check tabular content
     tabular = table["content"][0]
@@ -804,6 +805,7 @@ def test_newcommand_and_grouping(parser):
     figure = parsed_tokens[0]
     assert figure["type"] == "figure"
     assert figure["title"] == "h"
+    assert figure["numbered"] == True
     assert len(figure["content"]) == 2
 
     # Check equation inside figure
