@@ -202,7 +202,6 @@ def test_misc_formatting_commands(handler):
     \allowdisplaybreaks
     \RequirePackage{ifpdf}
     \itemsep=0pt
-    \LastPageEnding
 
     \topmargin 0.0cm
     \oddsidemargin 0.2cm
@@ -221,6 +220,22 @@ def test_misc_formatting_commands(handler):
     \rightmargin
     \leftmargin
     \captionsetup[figure]{labelsep=quad}
+    \thispagestyle{empty}
+
+    \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
+    \ProcessOptions
+    \PassOptionsToPackage{fleqn}{amsmath}
+    \PassOptionsToClass{fleqn}{amsmath}
+
+    \NeedsTeXFormat{LaTeX2e}
+    \ProvidesClass{sigma}[2012/01/18]
+    \LoadClass[fleqn,11pt,twoside]{article}
+    \vskip
+    \vskip 10pt
+    \vskip10pt
+    \labelsep
+    \topsep
+    \relax
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

@@ -721,6 +721,7 @@ latex2unicode = {
     '\\ni': 8715,
     '\\not\\ni': 8716,
     '\\blacksquare': 8718,
+    '\\qed': 8718,
     '\\prod': 8719,
     '\\coprod': 8720,
     '\\sum': 8721,

@@ -37,15 +37,17 @@ TEXT_PATTERN = re.compile(
 BOX_PATTERN = re.compile(
     r"""
     \\(?:
+        [fhv]box\s*{| # \fbox{text} hbox vbox 
         parbox(?:\s*\[[^\]]*\])*\s*{[^}]*}\s*{| # \parbox[pos][height][inner-pos]{width}{text}
         makebox(?:\s*\[[^\]]*\])*\s*{| # \makebox[width][pos]
         framebox(?:\s*\[[^\]]*\])*\s*{| # \framebox[width][pos]
         raisebox\s*{[^}]+}(?:\s*\[[^\]]*\])*\s*{| # \raisebox{raise}[height][depth]
-        fbox\s*{| # \fbox{text}
         colorbox\s*{[^}]*}\s*{|           # \colorbox{color}{text}
         fcolorbox\s*{[^}]*}\s*{[^}]*}\s*{|   # \fcolorbox{border}{bg}{text}
         scalebox\s*{[^}]*}\s*{|  # \scalebox{scale}{text}
-        mbox\s*{ # \mbox{text}
+        mbox\s*{| # \mbox{text}
+        hbox\s+to\s+.+\s*{| # \hbox to \hsize{text}
+        sbox\b\s*.+\s*{ # \sbox\@tempboxa{text}
     )
     """,
     re.VERBOSE | re.DOTALL,

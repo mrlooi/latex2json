@@ -33,6 +33,14 @@ RAW_PATTERNS = OrderedDict(
     [
         # Comments
         ("comment", r"%([^\n]*)"),
+        # Class and package setup commands
+        (
+            "class_setup",
+            re.compile(
+                r"\\(?:NeedsTeXFormat\s*\{([^}]+)\}|LoadClass\s*\[([^\]]*)\]\s*\{([^}]+)\}|ProvidesClass\s*\{([^}]+)\}\s*\[)",
+                re.DOTALL,
+            ),
+        ),
         # pdf options
         ("pdf", r"\\(?:pdfoutput|pdfsuppresswarningpagegroup)\s*=\s*\d+"),
         # date
@@ -42,18 +50,21 @@ RAW_PATTERNS = OrderedDict(
         ("documentclass", r"\\documentclass(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}"),
         (
             "usepackage",
-            r"\\(usepackage|RequirePackage)(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}",
+            re.compile(
+                r"\\(usepackage|RequirePackage)(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}",
+                re.DOTALL,
+            ),
         ),
         # Formatting commands
         ("setup", r"\\(?:hypersetup|captionsetup\[([^\]]*)\])\s*{"),
         ("make", r"\\(?:maketitle|makeatletter|makeatother)\b"),
         (
             "page",
-            r"\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|FirstPageHeading|LastPageEnding|noindent|par|clearpage|cleardoublepage|newpage|filbreak|linebreak|nopagebreak|pagebreak|hfill|vfill|break|scriptsize|sloppy|flushbottom)\b",
+            r"\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|newpage|filbreak|linebreak|nopagebreak|pagebreak|hfill|hfil|vfill|break|scriptsize|sloppy|flushbottom)\b",
         ),
         (
             "skip",
-            r"\\(?:bigskip|medskip|smallskip|abovedisplayskip|belowdisplayskip|abovedisplayshortskip|belowdisplayshortskip)\b",
+            r"\\(?:vskip(?:\s*-?\d*\.?\d+(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)|\b)|bigskip|medskip|smallskip|abovedisplayskip|belowdisplayskip|abovedisplayshortskip|belowdisplayshortskip|abovecaptionskip|belowcaptionskip)\b",
         ),
         (
             "style",
@@ -73,8 +84,8 @@ RAW_PATTERNS = OrderedDict(
             "margins",
             r"\\(?:rightmargin|leftmargin)\b|\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)\s*-?\d*\.?\d+\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b",
         ),
-        # Add new pattern for dimension expansions
-        ("dimension", r"\\(?:linewidth|columnwidth|textwidth)\b"),
+        # width
+        ("width", r"\\(?:linewidth|columnwidth|textwidth|hsize|wd)\b"),
         # spacing
         (
             "spacing",
@@ -83,6 +94,11 @@ RAW_PATTERNS = OrderedDict(
             r"hspace\*?\s*{([^}]+)}|"  # \hspace{length}
             r"hskip\s*\d*\.?\d+(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b"  # \hskip 10pt
             r")",
+        ),
+        # options
+        (
+            "options",
+            r"\\(?:ProcessOptions\b|(PassOptionsToPackage|PassOptionsToClass)\s*\{[^}]*\}\s*\{[^}]*\}|DeclareOption\*?\s*\{)",
         ),
         # number
         ("number", r"\\(?:numberwithin)\s*\{[^}]*\}\s*\{[^}]*\}"),
@@ -95,6 +111,8 @@ RAW_PATTERNS = OrderedDict(
             r"\\(?:"
             r"hline|"  # no args
             r"cline\s*{([^}]+)}|"  # {n-m}
+            r"topsep\s*\{?([^\}]*)\}?|"
+            r"labelsep\s*\{?([^\}]*)\}?|"
             r"(?:midrule|toprule|bottomrule)(?:\[\d*[\w-]*\])?|"  # optional [trim]
             r"cmidrule(?:\[([^\]]*)\])?\s*{([^}]+)}|"  # optional [trim] and {n-m}
             r"hdashline(?:\[[\d,\s]*\])?|"  # optional [length,space]
@@ -114,12 +132,14 @@ RAW_PATTERNS = OrderedDict(
         # Handle vspace separately
         ("vspace", r"\\vspace\*?\s*{[^}]+}"),
         ("phantom", r"\\(?:hphantom|vphantom)\s*{"),
+        ("other", r"\\(?:ignorespaces|relax)\b"),
     ]
 )
 
 # Then compile them into a new dictionary
 PATTERNS = OrderedDict(
-    (key, re.compile(pattern)) for key, pattern in RAW_PATTERNS.items()
+    (key, pattern if isinstance(pattern, re.Pattern) else re.compile(pattern))
+    for key, pattern in RAW_PATTERNS.items()
 )
 PATTERNS["color"] = COLOR_COMMANDS_PATTERN
 PATTERNS["definecolor"] = DEFINE_COLOR_PATTERN
@@ -180,6 +200,22 @@ class FormattingHandler(TokenHandler):
                     }, match.end()
                 elif pattern_name == "vspace":
                     return {"type": "text", "content": "\n"}, match.end()
+                elif pattern_name == "options":
+                    if match.group(0).endswith("{"):
+                        start_pos = match.end() - 1
+                        extracted_content, end_pos = extract_nested_content(
+                            content[start_pos:]
+                        )
+                        return None, start_pos + end_pos
+                    return None, match.end()
+                elif pattern_name == "class_setup":
+                    if match.group(0).endswith("["):
+                        start_pos = match.end() - 1
+                        extracted_content, end_pos = extract_nested_content(
+                            content[start_pos:], "[", "]"
+                        )
+                        return None, start_pos + end_pos
+                    return None, match.end()
                 elif pattern_name == "phantom":
                     start_pos = match.end() - 1
                     extracted_content, end_pos = extract_nested_content(

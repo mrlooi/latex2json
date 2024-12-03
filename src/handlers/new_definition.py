@@ -21,7 +21,9 @@ PATTERNS = {
         r"\\DeclareRobustCommand" + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL
     ),
     # Matches \def commands - always with backslash before command name
-    "def": re.compile(r"\\def\s*\\([^\s{#]+)(((?:#\d+|[^{])*)\s*{)", re.DOTALL),
+    "def": re.compile(
+        r"(?:\\long)?\\def\s*\\([^\s{#]+)(((?:#\d+|[^{])*)\s*{)", re.DOTALL
+    ),
     # Matches newtheorem with all its optional arguments
     "newtheorem": re.compile(
         r"\\newtheorem{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?", re.DOTALL

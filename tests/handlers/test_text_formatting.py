@@ -151,6 +151,8 @@ def test_box_commands(handler):
             }""",
             "All One line ajajaja",
         ),
+        (r"\hbox to 3in{Some text}", "Some text"),
+        (r"\sbox\@tempboxa{Some text}", "Some text"),
     ]
 
     for command, expected_text in test_cases:

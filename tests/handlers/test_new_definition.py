@@ -256,6 +256,10 @@ def test_def_usage_outputs(handler):
         r"\def\ratio#1:#2{#1 divided by #2}", r"\ratio{4}:{42}"
     ) == ("4", "42")
 
+    assert extract_def_args(
+        r"\long\def\ratio#1:#2{#1 divided by #2}", r"\ratio{4}:{42}"
+    ) == ("4", "42")
+
     # for 2nd arg, only 4 is captured (like in latex) since it is not in braces
     assert extract_def_args(r"\def\ratio#1:#2{#1 divided by #2}", r"\ratio55:42") == (
         "55",
