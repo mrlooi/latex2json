@@ -47,7 +47,7 @@ BOX_PATTERN = re.compile(
         scalebox\s*{[^}]*}\s*{|  # \scalebox{scale}{text}
         mbox\s*{| # \mbox{text}
         hbox\s+to\s+.+\s*{| # \hbox to \hsize{text}
-        sbox\b\s*.+\s*{ # \sbox\@tempboxa{text}
+        sbox\b\s*[^{]+\s*{ # \sbox\@tempboxa{text}
     )
     """,
     re.VERBOSE | re.DOTALL,

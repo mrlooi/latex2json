@@ -132,7 +132,7 @@ RAW_PATTERNS = OrderedDict(
         # Handle vspace separately
         ("vspace", r"\\vspace\*?\s*{[^}]+}"),
         ("phantom", r"\\(?:hphantom|vphantom)\s*{"),
-        ("other", r"\\(?:ignorespaces|relax)\b"),
+        ("other", r"\\(?:ignorespaces|relax|\@tempboxa|box)\b"),
     ]
 )
 
