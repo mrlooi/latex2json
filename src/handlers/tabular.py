@@ -149,6 +149,8 @@ class TabularHandler(TokenHandler):
         if start_pos == -1:
             return None, 0
 
+        total_pos = end_pos
+
         # Extract content between begin and end
         inner_content = inner_content.strip()
 
@@ -270,7 +272,7 @@ class TabularHandler(TokenHandler):
             if result:
                 token["content"] = result
 
-        return token, match.end()
+        return token, total_pos
 
 
 if __name__ == "__main__":

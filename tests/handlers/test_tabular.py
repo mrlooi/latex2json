@@ -132,3 +132,21 @@ def test_nested_tabulars(handler):
     assert len(token["content"]) == 2
     assert token["content"][0][0] == "Cell 1"
     assert token["content"][0][1].startswith(r"\begin{tabular}{cc}")
+
+    # tabular in a tabular
+    text = r"""
+    \begin{tabular}{c}
+        \tt aaa & \large bbb \\ 
+        \begin{tabular}{c}
+            1 & 2 \\
+            3 & 4
+        \end{tabular} & {\tt 444} + 333
+    \end{tabular}
+
+    END OF TABLE
+    """.strip()
+    token, end_pos = handler.handle(text)
+
+    assert token is not None
+    assert token["type"] == "tabular"
+    assert text[end_pos:].strip() == "END OF TABLE"
