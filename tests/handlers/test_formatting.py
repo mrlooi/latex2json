@@ -147,6 +147,11 @@ def test_spacing_commands(handler):
     token, pos = handler.handle(r"\;")
     check_token(token, pos)
 
+    text = r"\!  aaa"
+    token, pos = handler.handle(text)
+    assert token is None
+    assert text[pos:] == "  aaa"
+
     text = r"\vspace{10pt} postvspace"
     token, pos = handler.handle(text)
     check_token(token, pos, "\n")

@@ -94,7 +94,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "spacing",
             r"\\(?:"
-            r"quad|qquad|,|;|:|"  # \quad, \qquad, \, \; \:
+            r"quad|qquad|,|;|:|\!|"  # \quad, \qquad, \, \; \:
             r"hspace\*?\s*{([^}]+)}|"  # \hspace{length}
             r"hskip\s*\d*\.?\d+(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b"  # \hskip 10pt
             r")",
@@ -154,6 +154,8 @@ class FormattingHandler(TokenHandler):
                 if pattern_name == "backslash":
                     return {"type": "text", "content": r"\\"}, match.end()
                 elif pattern_name == "spacing":
+                    if match.group(0) == r"\!":
+                        return None, match.end()
                     return {"type": "text", "content": " "}, match.end()
                 elif pattern_name in [
                     "newcolumntype",
