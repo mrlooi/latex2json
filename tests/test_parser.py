@@ -1353,6 +1353,46 @@ def test_newcounter(parser):
     assert "newcounter:counterX" in parser.commands
 
 
+def test_renew_abstract(parser):
+    text = r"""
+    \renewenvironment{abstract}%
+{%
+  \vskip 0.075in%
+  \centerline%
+  {\large\bf Abstract}%
+  \vspace{0.5ex}%
+  \begin{quote}%
+}
+{
+  \par%
+  \end{quote}%
+  \vskip 1ex%
+}
+
+\begin{abstract}
+  Abstract text \textbf{BOLD}
+\end{abstract}
+
+"""
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "abstract"
+    contents = parsed_tokens[0]["content"]
+
+    assert contents[0]["type"] == "text"
+    assert contents[0]["content"] == "Abstract"
+    assert contents[0]["styles"] == [
+        FRONTEND_STYLE_MAPPING["textlarge"],
+        FRONTEND_STYLE_MAPPING["textbf"],
+    ]
+
+    q = contents[-1]
+    assert q["type"] == "quote"
+    qc = q["content"]
+    assert qc[0]["content"].strip() == "Abstract text"
+    assert qc[1]["content"] == "BOLD"
+
+
 # def test_text_commands(parser):
 # def test_text_commands(parser):
 #     test_cases = [
