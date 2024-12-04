@@ -31,6 +31,7 @@ PATTERNS = {
     "crefname": re.compile(r"\\crefname{([^}]*)}{([^}]*)}{([^}]*)}", re.DOTALL),
     "newif": re.compile(r"\\(?:re)?newif\s*\\if([^\s{\\]+)", re.DOTALL),
     "newlength": re.compile(r"\\(?:re)?newlength\s*\{([^}]+)\}", re.DOTALL),
+    "newcounter": re.compile(r"\\(?:re)?newcounter\s*\{([^}]+)\}", re.DOTALL),
 }
 
 
@@ -60,6 +61,8 @@ class NewDefinitionHandler(TokenHandler):
                     return self._handle_newif(match)
                 elif pattern_name == "newlength":
                     return self._handle_newlength(match)
+                elif pattern_name == "newcounter":
+                    return self._handle_newcounter(match)
                 else:
                     return None, match.end()
 
@@ -76,6 +79,12 @@ class NewDefinitionHandler(TokenHandler):
         var_name = match.group(1).strip()
         var_name = var_name.replace("\\", "")
         token = {"type": "newlength", "name": var_name}
+        return token, match.end()
+
+    def _handle_newcounter(self, match) -> Tuple[Optional[Dict], int]:
+        r"""Handle \newcounter definitions"""
+        var_name = match.group(1).strip()
+        token = {"type": "newcounter", "name": var_name}
         return token, match.end()
 
     def _handle_crefname(self, match) -> Tuple[Optional[Dict], int]:

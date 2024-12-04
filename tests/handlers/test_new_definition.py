@@ -101,6 +101,13 @@ def test_handle_newlength(handler):
         assert content[pos:] == " after"
 
 
+def test_handle_newcounter(handler):
+    content = r"\newcounter{counter} aaa"
+    token, pos = handler.handle(content)
+    assert token == {"type": "newcounter", "name": "counter"}
+    assert content[pos:] == " aaa"
+
+
 def test_handle_invalid_input(handler):
     # Test with non-command content
     token, pos = handler.handle("regular text")

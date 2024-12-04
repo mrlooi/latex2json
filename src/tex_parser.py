@@ -244,6 +244,8 @@ class LatexParser:
                     self.command_processor.process_newif(token["name"])
                 elif token["type"] == "newlength":
                     self.command_processor.process_newlength(token["name"])
+                elif token["type"] == "newcounter":
+                    self.command_processor.process_newcounter(token["name"])
                 # elif token['type'] == 'newtheorem':
                 #     pass
 

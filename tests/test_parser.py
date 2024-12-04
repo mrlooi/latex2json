@@ -1328,6 +1328,7 @@ def test_new_if(parser):
     assert parsed_tokens[0]["content"].strip() == "Stuff after"
     assert "newif:var" in parser.commands
 
+
 def test_newlength(parser):
     text = r"""\newlength{\lenny}
     
@@ -1339,6 +1340,18 @@ def test_newlength(parser):
     assert len(parsed_tokens) == 1
     assert parsed_tokens[0]["content"].strip() == "More text"
     assert "newlength:lenny" in parser.commands
+
+
+def test_newcounter(parser):
+    text = r"""\newcounter{counterX} 
+    
+    \thecounterX
+    aaa"""
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["content"].strip() == "aaa"
+    assert "newcounter:counterX" in parser.commands
+
 
 # def test_text_commands(parser):
 # def test_text_commands(parser):

@@ -190,6 +190,19 @@ class CommandProcessor:
         }
         self.commands["newlength:" + var_name] = command
 
+    def process_newcounter(self, var_name: str):
+        def handler(match):
+            # return empty str to ignore?
+            return "", match.end()
+
+        command = {
+            "definition": "",
+            "args": {"num_args": 0},
+            "pattern": re.compile(r"\\the" + var_name + r"\b"),
+            "handler": handler,
+        }
+        self.commands["newcounter:" + var_name] = command
+
     def expand_commands(
         self, text: str, ignore_unicode: bool = False
     ) -> tuple[str, int]:
