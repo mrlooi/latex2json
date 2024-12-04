@@ -232,7 +232,7 @@ def test_misc_formatting_commands(handler):
     \NeedsTeXFormat{LaTeX2e}
     \ProvidesClass{sigma}[2012/01/18]
     \LoadClass[fleqn,11pt,twoside]{article}
-    \vskip
+    \vskip -\parskip
     \vskip 10pt
     \vskip10pt
     \labelsep

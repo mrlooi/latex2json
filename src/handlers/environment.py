@@ -185,8 +185,6 @@ class BaseEnvironmentHandler(TokenHandler):
 
         env_type = ENV_TYPES.get(env_name, "environment")
         token["type"] = env_type
-        if env_type not in ["list", "table", "figure"]:
-            token["name"] = env_name
 
         if not contains_asterisk and env_type in ["table", "figure"]:
             token["numbered"] = True
@@ -373,7 +371,7 @@ class EnvironmentHandler(BaseEnvironmentHandler):
         )
         if begin_def is None:
             return None, current_pos
-        token["begin_def"] = begin_def.strip()
+        token["begin_def"] = begin_def
 
         first_end = current_pos + next_brace + first_end
 
@@ -387,7 +385,7 @@ class EnvironmentHandler(BaseEnvironmentHandler):
         if end_def is None:
             return None, first_end
 
-        token["end_def"] = end_def.strip()
+        token["end_def"] = end_def
         final_end = next_pos + final_end
 
         return token, final_end
@@ -405,7 +403,8 @@ class EnvironmentHandler(BaseEnvironmentHandler):
                 env_name, inner_content
             )
 
-            return {"type": "environment", "name": env_name, "content": inner_content}
+            env_type = ENV_TYPES.get(env_name, "environment")
+            return {"type": env_type, "name": env_name, "content": inner_content}
 
         return super()._handle_environment(env_name, inner_content)
 

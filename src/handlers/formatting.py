@@ -60,15 +60,19 @@ RAW_PATTERNS = OrderedDict(
         ("make", r"\\(?:maketitle|makeatletter|makeatother)\b"),
         (
             "page",
-            r"\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hfill|hfil|vfill|break|scriptsize|sloppy|flushbottom)\b",
+            r"\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|break|scriptsize|sloppy|flushbottom)\b",
         ),
         (
             "pagebreak",
             r"\\(?:pagebreak|filbreak|newpage|break)\b|\\linebreak(?:\[\d+\])?",
         ),
         (
+            "vskip",
+            r"\\vskip\s*-?(?:\d*\.?\d+\w+\b|\\[@a-zA-Z]+|\b)",
+        ),
+        (
             "skip",
-            r"\\(?:vskip(?:\s*-?\d*\.?\d+(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)|\b)|bigskip|medskip|smallskip|(above|below)(display|caption)(short)?skip)\b",
+            r"\\(?:bigskip|medskip|smallskip|(above|below)(display|caption)(short)?skip)\b",
         ),
         (
             "style",
@@ -86,7 +90,7 @@ RAW_PATTERNS = OrderedDict(
         # New margin and size commands allowing any characters after the number
         (
             "margins",
-            r"\\(?:rightmargin|leftmargin)\b|\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)\s*-?\d*\.?\d+\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b",
+            r"\\(?:rightmargin|leftmargin|parskip)\b|\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)\s*-?\d*\.?\d+\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b",
         ),
         # width
         ("width", r"\\(?:linewidth|columnwidth|textwidth|hsize|wd)\b"),
@@ -117,6 +121,7 @@ RAW_PATTERNS = OrderedDict(
             "separators",
             r"\\(?:"
             r"hline|"  # no args
+            r"centerline|"  # no args
             r"cline\s*{([^}]+)}|"  # {n-m}
             r"topsep\s*\{?([^\}]*)\}?|"
             r"labelsep\s*\{?([^\}]*)\}?|"
