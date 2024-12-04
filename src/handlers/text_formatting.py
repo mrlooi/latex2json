@@ -53,6 +53,7 @@ BOX_PATTERN = re.compile(
     re.VERBOSE | re.DOTALL,
 )
 
+brace_content_pattern = r"\{([^}]+)\}"
 
 PATTERNS = {
     "styled": TEXT_PATTERN,
@@ -61,6 +62,10 @@ PATTERNS = {
         r"\\texorpdfstring\s*\{", re.DOTALL
     ),  # \texorpdfstring{pdf version}{text version}
     "box": BOX_PATTERN,
+    # custom fonts (that we want to ignore)
+    "fontsize": re.compile(r"\\fontsize" + (r"\s*" + brace_content_pattern) * 2),
+    "selectfont": re.compile(r"\\selectfont\b"),
+    "usefont": re.compile(r"\\usefont" + (r"\s*" + brace_content_pattern) * 4),
 }
 
 
@@ -235,6 +240,8 @@ class TextFormattingHandler(TokenHandler):
                 return self._handle_texorpdfstring(content, match)
             elif name == "box":
                 return self._handle_box(content, match)
+            else:
+                return None, match.end()
 
         return None, 0
 

@@ -60,7 +60,11 @@ RAW_PATTERNS = OrderedDict(
         ("make", r"\\(?:maketitle|makeatletter|makeatother)\b"),
         (
             "page",
-            r"\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|newpage|filbreak|linebreak|nopagebreak|pagebreak|hfill|hfil|vfill|break|scriptsize|sloppy|flushbottom)\b",
+            r"\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hfill|hfil|vfill|break|scriptsize|sloppy|flushbottom)\b",
+        ),
+        (
+            "pagebreak",
+            r"\\(?:pagebreak|filbreak|linebreak|newpage|break)\b",
         ),
         (
             "skip",
@@ -98,7 +102,10 @@ RAW_PATTERNS = OrderedDict(
         # options
         (
             "options",
-            r"\\(?:ProcessOptions\b|(PassOptionsToPackage|PassOptionsToClass)\s*\{[^}]*\}\s*\{[^}]*\}|DeclareOption\*?\s*\{)",
+            re.compile(
+                r"\\(?:ProcessOptions\b|(PassOptionsToPackage|PassOptionsToClass)\s*\{[^}]*\}\s*\{[^}]*\}|DeclareOption\*?\s*\{)",
+                re.DOTALL,
+            ),
         ),
         # number
         ("number", r"\\(?:numberwithin)\s*\{[^}]*\}\s*\{[^}]*\}"),
@@ -120,6 +127,7 @@ RAW_PATTERNS = OrderedDict(
             r"specialrule\s*{([^}]*)}\s*{([^}]*)}\s*{([^}]*)}|"  # {height}{above}{below}
             r"addlinespace(?:\[([^\]]*)\])?|"  # optional [length]
             r"rule\s*{[^}]*}\s*{[^}]*}|"  # \rule{width}{height}
+            r"hrule|"
             r"morecmidrules\b|"  # no args
             r"fboxsep\s*{([^}]+)}|"  # {length}
             r"colrule\b"
@@ -132,7 +140,7 @@ RAW_PATTERNS = OrderedDict(
         # Handle vspace separately
         ("vspace", r"\\vspace\*?\s*{[^}]+}"),
         ("phantom", r"\\(?:hphantom|vphantom)\s*{"),
-        ("other", r"\\(?:ignorespaces|relax|\@tempboxa|box)\b"),
+        ("other", r"\\(?:ignorespaces|relax|\@tempboxa|box|global)\b"),
     ]
 )
 
@@ -198,16 +206,10 @@ class FormattingHandler(TokenHandler):
                         "type": "date",
                         "content": datetime.datetime.now().strftime("%Y-%m-%d"),
                     }, match.end()
-                elif pattern_name == "vspace":
+                elif pattern_name in ["vspace", "pagebreak"]:
                     return {"type": "text", "content": "\n"}, match.end()
                 elif pattern_name == "options":
-                    if match.group(0).endswith("{"):
-                        start_pos = match.end() - 1
-                        extracted_content, end_pos = extract_nested_content(
-                            content[start_pos:]
-                        )
-                        return None, start_pos + end_pos
-                    return None, match.end()
+                    return self._handle_options(content, match)
                 elif pattern_name == "class_setup":
                     if match.group(0).endswith("["):
                         start_pos = match.end() - 1
@@ -237,6 +239,25 @@ class FormattingHandler(TokenHandler):
                 return None, match.end()
 
         return None, 0
+
+    def _handle_options(
+        self, content: str, match: re.Match
+    ) -> Tuple[Optional[Dict], int]:
+        out = match.group(0)
+        if out.endswith("{"):
+            start_pos = match.end() - 1
+            _, end_pos = extract_nested_content(content[start_pos:])
+
+            end_pos += start_pos
+            if out.startswith("\\DeclareOption"):
+                # check for next {
+                next_match = re.match(r"\s*\{", content[end_pos:])
+                if next_match:
+                    next_start_pos = end_pos + next_match.end() - 1
+                    _, next_end_pos = extract_nested_content(content[next_start_pos:])
+                    return None, next_start_pos + next_end_pos
+            return None, end_pos
+        return None, match.end()
 
 
 if __name__ == "__main__":

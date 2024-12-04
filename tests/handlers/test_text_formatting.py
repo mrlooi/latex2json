@@ -166,3 +166,20 @@ def test_box_commands(handler):
     token, pos = handler.handle(text)
     assert token and token["content"].strip() == "Center aligned with fixed height"
     assert text[pos:] == " STUFF AFTER"
+
+
+def test_ignore_custom_fonts(handler):
+    text = r"\usefont{T1}{phv}{b}{n} This text s"
+    token, pos = handler.handle(text)
+    assert token is None
+    assert text[pos:] == " This text s"
+
+    text = r"\selectfont This text s"
+    token, pos = handler.handle(text)
+    assert token is None
+    assert text[pos:] == " This text s"
+
+    text = r"\fontsize{12pt}{14pt} This text s"
+    token, pos = handler.handle(text)
+    assert token is None
+    assert text[pos:] == " This text s"

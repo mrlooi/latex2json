@@ -19,12 +19,9 @@ RAW_PATTERNS = OrderedDict(
         # input
         ("input", r"\\(?:input|include)\s*{"),
         # REFs
-        ("ref", r"\\[Rr]ef\s*{"),
+        ("ref", r"\\(?:[Cc]|[Aa]uto|eq)*[Rr]ef\s*{"),
         ("hyperref", r"\\hyperref\s*\[([^]]*)\]\s*{"),
         ("href", r"\\href\s*{([^}]*)}\s*{"),
-        ("cref", r"\\[Cc]ref\s*{"),
-        ("autoref", r"\\[Aa]utoref\s*{"),
-        ("eqref", r"\\eqref\s*{"),
         # bookmarks (similar to refs?)
         ("bookmark", r"\\bookmark\s*(?:\[([^\]]*)\])?\s*{"),
         (
@@ -150,7 +147,7 @@ class ContentCommandHandler(TokenHandler):
         elif matched_type == "href":
             return {"type": "url", "title": content, "content": match.group(1).strip()}
 
-        elif matched_type in ["ref", "eqref", "cref", "autoref", "bookmark"]:
+        elif matched_type in ["ref", "bookmark"]:
             return {"type": "ref", "content": content}
 
         # Citations

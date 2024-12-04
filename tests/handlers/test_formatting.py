@@ -223,6 +223,8 @@ def test_misc_formatting_commands(handler):
     \thispagestyle{empty}
 
     \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
+    \DeclareOption{tocmacros}{\AtEndOfClass{\toc@setup@predefines}}
+
     \ProcessOptions
     \PassOptionsToPackage{fleqn}{amsmath}
     \PassOptionsToClass{fleqn}{amsmath}

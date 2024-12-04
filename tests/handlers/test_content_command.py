@@ -90,6 +90,9 @@ def test_handle_references(handler):
     token, pos = handler.handle(r"\autoref{sec:intro}")
     assert token == {"type": "ref", "content": "sec:intro"}
 
+    token, pos = handler.handle(r"\eqref{EQ1}")
+    assert token == {"type": "ref", "content": "EQ1"}
+
     token, pos = handler.handle(r"\autorefe{sec:intro}")
     assert token is None
 
