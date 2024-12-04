@@ -3,7 +3,7 @@ import unicodedata
 import re
 
 from src.handlers.base import TokenHandler
-from src.tex_utils import extract_nested_content
+from src.tex_utils import extract_nested_content, substitute_patterns
 
 # Unicode combining characters for various LaTeX accent commands
 ACCENT_MAP = {
@@ -93,24 +93,7 @@ def convert_tex_diacritics(text: str) -> str:
     Convert LaTeX diacritic commands to Unicode characters.
     """
     # Handle regular accents
-    for accent_name, pattern in ACCENT_PATTERNS.items():
-        current_pos = 0
-        match = pattern.search(text)
-        while match:
-            start_pos = current_pos + match.start()
-
-            converted, end_pos = parse_diacritic_match(
-                text[current_pos:], match, accent_name
-            )
-            end_pos += current_pos
-
-            diff = len(converted) - (end_pos - start_pos)
-            text = text[:start_pos] + converted + text[end_pos:]
-            current_pos = end_pos + diff
-
-            match = pattern.search(text[current_pos:])
-
-    return text
+    return substitute_patterns(text, ACCENT_PATTERNS, parse_diacritic_match)
 
 
 def parse_diacritic_match(

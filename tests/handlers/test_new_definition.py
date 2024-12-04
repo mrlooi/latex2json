@@ -80,6 +80,13 @@ def test_handle_newtheorem(handler):
     }
 
 
+def test_handle_newif(handler):
+    content = r"\newif\ifvar\after"
+    token, pos = handler.handle(content)
+    assert token == {"type": "newif", "name": "var"}
+    assert content[pos:] == r"\after"
+
+
 def test_handle_invalid_input(handler):
     # Test with non-command content
     token, pos = handler.handle("regular text")

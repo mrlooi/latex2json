@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Callable, Dict, Tuple
 import re
 
 
@@ -123,3 +123,29 @@ def flatten(lst):
         else:
             result.append(item)
     return result
+
+
+def substitute_patterns(
+    text: str,
+    patterns: Dict[str, re.Pattern],
+    substitute_fn: Callable[[str, re.Match, str], Tuple[str, int]],
+) -> str:
+    """
+    Substitute patterns in text with their handlers.
+    """
+    for key, pattern in patterns.items():
+        current_pos = 0
+        match = pattern.search(text)
+        while match:
+            start_pos = current_pos + match.start()
+
+            converted, end_pos = substitute_fn(text[current_pos:], match, key)
+            current_pos += end_pos
+
+            diff = len(converted) - (current_pos - start_pos)
+            text = text[:start_pos] + converted + text[current_pos:]
+            current_pos += diff
+
+            match = pattern.search(text[current_pos:])
+
+    return text

@@ -1315,6 +1315,20 @@ def test_legacy_formatting(parser):
     ]
 
 
+def test_new_if(parser):
+    text = r"""
+    \newif\ifvar\varfalse
+
+    \vartrue
+
+    Stuff after
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["content"].strip() == "Stuff after"
+    assert "var_conditional" in parser.commands
+
+
 # def test_text_commands(parser):
 # def test_text_commands(parser):
 #     test_cases = [

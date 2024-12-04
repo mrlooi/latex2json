@@ -240,6 +240,8 @@ class LatexParser:
                         token["num_args"],
                         token["usage_pattern"],
                     )
+                elif token["type"] == "newif":
+                    self.command_processor.process_newif(token["name"])
                 # elif token['type'] == 'newtheorem':
                 #     pass
 
@@ -465,19 +467,21 @@ if __name__ == "__main__":
 
     logger = logging.getLogger(__name__)
 
-    # file = "papers/arXiv-1712.01815v1/main.tex"
+    # file = "papers/arXiv-1509.05363v6/taodiscrepancy.tex"
     # logger.info(f"Parsing file: {file}")
     # with open(file, "r") as f:
     #     text = f.read()
 
     # Example usage
     text = r"""
-    \newcommand{\test}[1]{TEST THIS: #1}
-    \scalebox{3}{\textbf{sdsds \test{FCCKK}} + sss}
+    \newif\ifvar\varfalse
+
+    \vartrue
     """
     parser = LatexParser(logger=logger)
     parsed_tokens = parser.parse(text)
-    # print(parsed_tokens)
+    # print(len(parsed_tokens))
+    print(parsed_tokens)
 
 # for command in commands:
 #     print(command, UNKNOWN_COMMAND_PATTERN.match(command))

@@ -6,6 +6,8 @@ from src.patterns import NEWLINE_PATTERN
 from src.latex_maps.latex_unicode_converter import LatexUnicodeConverter
 from collections import OrderedDict
 
+from src.tex_utils import substitute_patterns
+
 
 def substitute_args(definition: str, args: List[str]) -> str:
     """Substitute #1, #2, etc. with the provided arguments in order"""
@@ -53,15 +55,22 @@ class NewCommandProcessor:
     @staticmethod
     def expand(text: str, commands: Dict[str, Dict[str, any]]) -> tuple[str, int]:
         """Recursively expand defined commands in the text until no further expansions are possible."""
-        # First handle all regular command expansions
-        previous_text = None
         match_count = 0
-        while previous_text != text:
-            previous_text = text
-            for cmd in commands.values():
-                text = cmd["pattern"].sub(cmd["handler"], text)
-                if previous_text != text:
-                    match_count += 1
+
+        command2pattern = {name: cmd["pattern"] for name, cmd in commands.items()}
+
+        def sub_fn(text, match, cmd_name):
+            nonlocal match_count
+            match_count += 1
+            if cmd_name not in commands:
+                return match.group(0), match.end()
+            handler = commands[cmd_name]["handler"]
+            return handler(match)
+
+        prev_text = None
+        while prev_text != text:
+            prev_text = text
+            text = substitute_patterns(text, command2pattern, sub_fn)
         return text, match_count
 
     @staticmethod
@@ -78,7 +87,7 @@ class NewCommandProcessor:
 
         if num_args == 0:
             regex = re.compile(pattern)
-            handler = lambda m: cmd_info["definition"]
+            handler = lambda m: (cmd_info["definition"], m.end())
             return regex, handler
 
         # Build pattern for commands with arguments
@@ -104,7 +113,7 @@ class NewCommandProcessor:
             # Add required args
             args.extend(groups[num_optional : num_optional + num_required])
 
-            return substitute_args(cmd_info["definition"], args)
+            return substitute_args(cmd_info["definition"], args), match.end()
 
         return regex, handler
 
@@ -141,7 +150,7 @@ class CommandProcessor:
         def handler(match):
             args = [g for g in match.groups() if g is not None]
 
-            return substitute_args(definition, args)
+            return substitute_args(definition, args), match.end()
 
         try:
             command = {
@@ -154,6 +163,19 @@ class CommandProcessor:
         except Exception as e:
             print(f"Error processing newdef {command_name}: {e}")
             raise e
+
+    def process_newif(self, var_name: str):
+        def handler(match):
+            # return empty str to ignore?
+            return "", match.end()
+
+        command = {
+            "definition": "",
+            "args": {"num_args": 0},
+            "pattern": re.compile(r"\\" + var_name + r"(?:true|false)"),
+            "handler": handler,
+        }
+        self.commands[var_name + "_conditional"] = command
 
     def expand_commands(
         self, text: str, ignore_unicode: bool = False
@@ -179,5 +201,6 @@ class CommandProcessor:
         for cmd in self.commands.values():
             match = cmd["pattern"].match(text)
             if match:
-                return cmd["handler"](match), match.end()
+                out, end_pos = cmd["handler"](match)
+                return out, end_pos
         return text, 0

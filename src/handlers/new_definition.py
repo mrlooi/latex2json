@@ -29,12 +29,11 @@ PATTERNS = {
         r"\\newtheorem{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?", re.DOTALL
     ),
     "crefname": re.compile(r"\\crefname{([^}]*)}{([^}]*)}{([^}]*)}", re.DOTALL),
+    "newif": re.compile(r"\\newif\s*\\if([^\s{\\]+)", re.DOTALL),
 }
 
 
 class NewDefinitionHandler(TokenHandler):
-    def __init__(self):
-        pass
 
     def can_handle(self, content: str) -> bool:
         """Check if the content contains any definition commands"""
@@ -56,8 +55,18 @@ class NewDefinitionHandler(TokenHandler):
                     return self._handle_def(content, match)
                 elif pattern_name == "crefname":
                     return self._handle_crefname(match)
+                elif pattern_name == "newif":
+                    return self._handle_newif(match)
+                else:
+                    return None, match.end()
 
         return None, 0
+
+    def _handle_newif(self, match) -> Tuple[Optional[Dict], int]:
+        r"""Handle \newif definitions"""
+        var_name = match.group(1)
+        token = {"type": "newif", "name": var_name}
+        return token, match.end()
 
     def _handle_crefname(self, match) -> Tuple[Optional[Dict], int]:
         r"""Handle \crefname definitions"""
