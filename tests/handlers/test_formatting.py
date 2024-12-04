@@ -185,7 +185,6 @@ def test_misc_formatting_commands(handler):
     \usepackage[noabbrev,capitalize,nameinlink]{cleveref}
     \usepackage{graphicx}
     \pagestyle{empty}
-    \setlength{\marginparwidth}{1in}
     \numberwithin{equation}{section}
     \theoremstyle{conjecture}
     \setcounter{theorem}{0}
@@ -248,6 +247,9 @@ def test_misc_formatting_commands(handler):
     \enlargethispage{2\baselineskip}
     \baselineskip
     2\baselineskip
+    \advance\@tempskipa-\@tempdimb
+    \advance\section@level-\subsection@level
+    \advance\leftmargin by -\rightmargin
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

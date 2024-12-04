@@ -3,6 +3,7 @@ import re
 from collections import OrderedDict
 from typing import Callable, Dict, Optional, Tuple
 from src.handlers.base import TokenHandler
+from src.patterns import NUMBER_PATTERN
 from src.tex_utils import extract_nested_content
 
 
@@ -28,7 +29,7 @@ COLOR_COMMANDS_PATTERN = re.compile(
     re.VERBOSE,
 )
 
-number_regex = r"[-+]?\d*\.?\d+"
+number_regex = NUMBER_PATTERN
 
 RAW_PATTERNS = OrderedDict(
     [
@@ -83,10 +84,6 @@ RAW_PATTERNS = OrderedDict(
         # ("font", r"\\(?:mdseries|bfseries|itshape|slshape|normalfont|ttfamily)\b"),
         # setters
         ("lstset", r"\\lstset\s*{"),
-        (
-            "setlength",
-            r"\\setlength\s*(?:\{([^}]+)\}|\\[a-zA-Z]+)\s*\{([^}]+)\}",
-        ),
         ("counter", r"\\(?:setcounter\s*\{([^}]+)\}\{([^}]+)\}|value\s*\{([^}]+)\})"),
         # New margin and size commands allowing any characters after the number
         (
@@ -97,7 +94,7 @@ RAW_PATTERNS = OrderedDict(
             + r"|(%s)?\\baselineskip" % (number_regex),
         ),
         # width
-        ("width", r"\\(?:linewidth|columnwidth|textwidth|hsize|wd)\b"),
+        ("width", r"\\(?:linewidth|columnwidth|textwidth|hsize|labelwidth|wd)\b"),
         # spacing
         (
             "spacing",
@@ -129,7 +126,7 @@ RAW_PATTERNS = OrderedDict(
             r"hline|"  # no args
             r"centerline|"  # no args
             r"cline\s*{([^}]+)}|"  # {n-m}
-            r"topsep\s*\{?([^\}]*)\}?|"
+            r"topsep|parsep|"
             r"labelsep\s*\{?([^\}]*)\}?|"
             r"(?:midrule|toprule|bottomrule)(?:\[\d*[\w-]*\])?|"  # optional [trim]
             r"cmidrule(?:\[([^\]]*)\])?\s*{([^}]+)}|"  # optional [trim] and {n-m}
@@ -155,8 +152,9 @@ RAW_PATTERNS = OrderedDict(
             "other",
             r"\\(?:ignorespaces|relax|\@tempboxa|box|global|fnsymbol|@plus|@minus)\b",
         ),  # ignore fnsymbol
-        ("pz@", r"(?:%s|)\\[pz]@(?![a-zA-Z])" % number_regex),
+        ("pz@", r"(?:%s)?\\[pz]@(?![a-zA-Z@])" % number_regex),
         ("slash", r"\\/"),  # \/ (in latex, this is like an empty space)
+        ("advance", r"\\advance\\[a-zA-Z@*\d]+(?:\s+by)?(?:\s*-)?\\[a-zA-Z@*\d]+"),
     ]
 )
 

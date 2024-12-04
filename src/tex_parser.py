@@ -478,9 +478,27 @@ if __name__ == "__main__":
 
     # Example usage
     text = r"""
-    \newif\ifvar\varfalse
 
-    \vartrue
+\setlength{\topsep       }{4\p@ \@plus 1\p@   \@minus 2\p@}
+\setlength{\partopsep    }{1\p@ \@plus 0.5\p@ \@minus 0.5\p@}
+\setlength{\itemsep      }{2\p@ \@plus 1\p@   \@minus 0.5\p@}
+\setlength{\parsep       }{2\p@ \@plus 1\p@   \@minus 0.5\p@}
+\setlength{\leftmargin   }{3pc}
+\setlength{\leftmargini  }{\leftmargin}
+\setlength{\leftmarginii }{2em}
+\setlength{\leftmarginiii}{1.5em}
+\setlength{\leftmarginiv }{1.0em}
+\setlength{\leftmarginv  }{0.5em}
+\def\@listi  {\leftmargin\leftmargini}
+\def\@listii {\leftmargin\leftmarginii
+              \labelwidth\leftmarginii
+              \advance\labelwidth-\labelsep
+              \topsep  2\p@ \@plus 1\p@    \@minus 0.5\p@
+              \parsep  1\p@ \@plus 0.5\p@ \@minus 0.5\p@
+              \itemsep \parsep}
+
+\@listii
+
     """
     parser = LatexParser(logger=logger)
     parsed_tokens = parser.parse(text)

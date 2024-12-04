@@ -1,6 +1,7 @@
 import re
 from typing import Callable, Dict, Optional, Tuple
 from src.handlers.base import TokenHandler
+from src.patterns import BRACE_CONTENT_PATTERN
 from src.tex_utils import extract_nested_content
 
 POST_NEW_COMMAND_PATTERN_STR = (
@@ -30,8 +31,20 @@ PATTERNS = {
     ),
     "crefname": re.compile(r"\\crefname{([^}]*)}{([^}]*)}{([^}]*)}", re.DOTALL),
     "newif": re.compile(r"\\(?:re)?newif\s*\\if([^\s{\\]+)", re.DOTALL),
-    "newlength": re.compile(r"\\(?:re)?newlength\s*\{([^}]+)\}", re.DOTALL),
-    "newcounter": re.compile(r"\\(?:re)?newcounter\s*\{([^}]+)\}", re.DOTALL),
+    "newlength": re.compile(
+        r"\\(?:re)?newlength\s*" + BRACE_CONTENT_PATTERN, re.DOTALL
+    ),
+    "setlength": re.compile(
+        r"\\setlength\s*%s\s*%s" % (BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN),
+        re.DOTALL,
+    ),
+    "newcounter": re.compile(
+        r"\\(?:re)?newcounter\s*" + BRACE_CONTENT_PATTERN, re.DOTALL
+    ),
+    "setcounter": re.compile(
+        r"\\setcounter\s*%s\s*%s" % (BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN),
+        re.DOTALL,
+    ),
 }
 
 
@@ -59,9 +72,9 @@ class NewDefinitionHandler(TokenHandler):
                     return self._handle_crefname(match)
                 elif pattern_name == "newif":
                     return self._handle_newif(match)
-                elif pattern_name == "newlength":
+                elif pattern_name == "newlength" or pattern_name == "setlength":
                     return self._handle_newlength(match)
-                elif pattern_name == "newcounter":
+                elif pattern_name == "newcounter" or pattern_name == "setcounter":
                     return self._handle_newcounter(match)
                 else:
                     return None, match.end()

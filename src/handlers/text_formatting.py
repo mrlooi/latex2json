@@ -4,6 +4,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 import re
 
 from src.handlers.base import TokenHandler
+from src.patterns import BRACE_CONTENT_PATTERN
 from src.tex_utils import extract_nested_content, flatten, strip_latex_newlines
 
 
@@ -53,8 +54,6 @@ BOX_PATTERN = re.compile(
     re.VERBOSE | re.DOTALL,
 )
 
-brace_content_pattern = r"\{([^}]+)\}"
-
 PATTERNS = {
     "styled": TEXT_PATTERN,
     "frac": re.compile(r"\\(?:frac|nicefrac|textfrac)\s*\{", re.DOTALL),  # \frac{}{}
@@ -63,9 +62,9 @@ PATTERNS = {
     ),  # \texorpdfstring{pdf version}{text version}
     "box": BOX_PATTERN,
     # custom fonts (that we want to ignore)
-    "fontsize": re.compile(r"\\fontsize" + (r"\s*" + brace_content_pattern) * 2),
+    "fontsize": re.compile(r"\\fontsize" + (r"\s*" + BRACE_CONTENT_PATTERN) * 2),
     "selectfont": re.compile(r"\\selectfont\b"),
-    "usefont": re.compile(r"\\usefont" + (r"\s*" + brace_content_pattern) * 4),
+    "usefont": re.compile(r"\\usefont" + (r"\s*" + BRACE_CONTENT_PATTERN) * 4),
 }
 
 

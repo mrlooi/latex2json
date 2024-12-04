@@ -94,7 +94,11 @@ def test_handle_newif(handler):
 
 def test_handle_newlength(handler):
 
-    contents = [r"\newlength{\len} after", r"\renewlength{\len} after"]
+    contents = [
+        r"\newlength{\len} after",
+        r"\renewlength{\len} after",
+        r"\setlength{\len}{10pt} after",
+    ]
     for content in contents:
         token, pos = handler.handle(content)
         assert token == {"type": "newlength", "name": "len"}

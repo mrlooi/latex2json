@@ -2,6 +2,9 @@ import re
 from collections import OrderedDict
 
 
+BRACE_CONTENT_PATTERN = r"\{([^}]+)\}"
+NUMBER_PATTERN = r"[-+]?\d*\.?\d+"
+
 # NOTE: THESE patterns are primarily for content inside document environments already. i.e. no bibliography, etc
 # NOTE: Don't handle text related commands e.g. \text, \textbf, \textit, \mathbb etc. We will process them on render
 # NOTE: We also ignore itemlist containers e.g. \enumerate, \itemize, \description since we parse them as regular env and label as lists via env_name check
