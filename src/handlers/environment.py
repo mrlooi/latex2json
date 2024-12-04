@@ -403,8 +403,7 @@ class EnvironmentHandler(BaseEnvironmentHandler):
                 env_name, inner_content
             )
 
-            env_type = ENV_TYPES.get(env_name, "environment")
-            return {"type": env_type, "name": env_name, "content": inner_content}
+            return {"type": "environment", "name": env_name, "content": inner_content}
 
         return super()._handle_environment(env_name, inner_content)
 
@@ -414,13 +413,15 @@ class EnvironmentHandler(BaseEnvironmentHandler):
             token, end_pos = self._handle_newenvironment_def(content, new_env_match)
             if token:
                 env_name = token["name"]
-                self.environment_processor.process_environment_definition(
-                    env_name,
-                    token["begin_def"],
-                    token["end_def"],
-                    len(token["args"]),
-                    token["optional_args"],
-                )
+                # DO NOT OVERRIDE EXISTING (IMPORTANT) ENVIRONMENTS
+                if env_name not in ENV_TYPES.values():
+                    self.environment_processor.process_environment_definition(
+                        env_name,
+                        token["begin_def"],
+                        token["end_def"],
+                        len(token["args"]),
+                        token["optional_args"],
+                    )
             return None, end_pos
 
         return super().handle(content)

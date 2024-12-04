@@ -7,6 +7,7 @@ from src.latex_maps.latex_unicode_converter import LatexUnicodeConverter
 from collections import OrderedDict
 
 from src.tex_utils import substitute_patterns
+from src.handlers.content_command import RAW_PATTERNS as CONTENT_COMMANDS
 
 
 def substitute_args(definition: str, args: List[str]) -> str:
@@ -138,6 +139,9 @@ class CommandProcessor:
         num_args: Optional[int] = None,
         defaults: Optional[List[str]] = [],
     ):
+        if command_name in CONTENT_COMMANDS:
+            return
+
         command = NewCommandProcessor.process(
             command_name, definition, num_args, defaults
         )
@@ -147,6 +151,9 @@ class CommandProcessor:
     def process_newdef(
         self, command_name: str, definition: str, num_args: int, usage_pattern: str
     ):
+        if command_name in CONTENT_COMMANDS:
+            return
+
         def handler(match):
             args = [g for g in match.groups() if g is not None]
 

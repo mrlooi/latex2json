@@ -241,6 +241,13 @@ def test_misc_formatting_commands(handler):
     \linenumbers
     \linebreak
     \linebreak[1]
+    \p@
+    \z@
+    5\p@
+    10\z@
+    \enlargethispage{2\baselineskip}
+    \baselineskip
+    2\baselineskip
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

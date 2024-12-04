@@ -28,6 +28,7 @@ COLOR_COMMANDS_PATTERN = re.compile(
     re.VERBOSE,
 )
 
+number_regex = r"[-+]?\d*\.?\d+"
 
 RAW_PATTERNS = OrderedDict(
     [
@@ -60,7 +61,7 @@ RAW_PATTERNS = OrderedDict(
         ("make", r"\\(?:maketitle|makeatletter|makeatother)\b"),
         (
             "page",
-            r"\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|break|scriptsize|sloppy|flushbottom)\b",
+            r"\\enlargethispage\s*\{[^}]*\}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|break|scriptsize|sloppy|flushbottom)\b",
         ),
         (
             "pagebreak",
@@ -68,7 +69,7 @@ RAW_PATTERNS = OrderedDict(
         ),
         (
             "vskip",
-            r"\\vskip\s*-?(?:\d*\.?\d+\w+\b|\\[@a-zA-Z]+|\b)",
+            r"\\vskip\s*(?:" + number_regex + r"\w+\b|-?\\[@a-zA-Z]+|\b)",
         ),
         (
             "skip",
@@ -90,7 +91,10 @@ RAW_PATTERNS = OrderedDict(
         # New margin and size commands allowing any characters after the number
         (
             "margins",
-            r"\\(?:rightmargin|leftmargin|parskip)\b|\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)\s*-?\d*\.?\d+\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b",
+            r"\\(?:rightmargin|leftmargin|parskip)\b|\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)\s*"
+            + number_regex
+            + r"(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b"
+            + r"|(%s)?\\baselineskip" % (number_regex),
         ),
         # width
         ("width", r"\\(?:linewidth|columnwidth|textwidth|hsize|wd)\b"),
@@ -100,7 +104,9 @@ RAW_PATTERNS = OrderedDict(
             r"\\(?:"
             r"quad|qquad|,|;|:|\!|"  # \quad, \qquad, \, \; \:
             r"hspace\*?\s*{([^}]+)}|"  # \hspace{length}
-            r"hskip\s*\d*\.?\d+(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b"  # \hskip 10pt
+            r"hskip\s*"
+            + number_regex
+            + r"(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b"  # \hskip 10pt
             r")",
         ),
         # options
@@ -147,8 +153,9 @@ RAW_PATTERNS = OrderedDict(
         ("phantom", r"\\(?:hphantom|vphantom)\s*{"),
         (
             "other",
-            r"\\(?:ignorespaces|relax|\@tempboxa|box|global|fnsymbol)\b",
+            r"\\(?:ignorespaces|relax|\@tempboxa|box|global|fnsymbol|@plus|@minus)\b",
         ),  # ignore fnsymbol
+        ("pz@", r"(?:%s|)\\[pz]@(?![a-zA-Z])" % number_regex),
         ("slash", r"\\/"),  # \/ (in latex, this is like an empty space)
     ]
 )

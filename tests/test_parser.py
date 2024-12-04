@@ -1353,9 +1353,9 @@ def test_newcounter(parser):
     assert "newcounter:counterX" in parser.commands
 
 
-def test_renew_abstract(parser):
+def test_renew_env(parser):
     text = r"""
-    \renewenvironment{abstract}%
+    \renewenvironment{XX}%
 {%
   \vskip 0.075in%
   \centerline%
@@ -1369,14 +1369,15 @@ def test_renew_abstract(parser):
   \vskip 1ex%
 }
 
-\begin{abstract}
+\begin{XX}
   Abstract text \textbf{BOLD}
-\end{abstract}
+\end{XX}
 
 """
     parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) == 1
-    assert parsed_tokens[0]["type"] == "abstract"
+    assert parsed_tokens[0]["type"] == "environment"
+    assert parsed_tokens[0]["name"] == "XX"
     contents = parsed_tokens[0]["content"]
 
     assert contents[0]["type"] == "text"
