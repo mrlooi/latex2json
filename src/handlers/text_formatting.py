@@ -167,6 +167,9 @@ class TextFormattingHandler(TokenHandler):
                 token["type"] = "styled"
                 token["content"] = inner_content
 
+            if not inner_content:
+                return None, total_pos
+
         return token, total_pos
 
     def _handle_frac(self, content: str, match: re.Match) -> Tuple[str, int]:

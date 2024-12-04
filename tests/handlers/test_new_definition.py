@@ -86,6 +86,20 @@ def test_handle_newif(handler):
     assert token == {"type": "newif", "name": "var"}
     assert content[pos:] == r"\after"
 
+    content = r"\renewif\ifxx@@x x"
+    token, pos = handler.handle(content)
+    assert token == {"type": "newif", "name": "xx@@x"}
+    assert content[pos:] == " x"
+
+
+def test_handle_newlength(handler):
+
+    contents = [r"\newlength{\len} after", r"\renewlength{\len} after"]
+    for content in contents:
+        token, pos = handler.handle(content)
+        assert token == {"type": "newlength", "name": "len"}
+        assert content[pos:] == " after"
+
 
 def test_handle_invalid_input(handler):
     # Test with non-command content

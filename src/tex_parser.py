@@ -192,7 +192,7 @@ class LatexParser:
         # Get the full matched text to preserve all arguments
         match = UNKNOWN_COMMAND_PATTERN.match(content)
         if match:
-            command = match.group(0).strip()
+            command = match.group(0)
             end_pos = match.end()
 
             inner_content = None
@@ -242,6 +242,8 @@ class LatexParser:
                     )
                 elif token["type"] == "newif":
                     self.command_processor.process_newif(token["name"])
+                elif token["type"] == "newlength":
+                    self.command_processor.process_newlength(token["name"])
                 # elif token['type'] == 'newtheorem':
                 #     pass
 
@@ -353,7 +355,7 @@ class LatexParser:
             )
             if next_pos > 0:
                 # convert text before next delimiter to tokens
-                text = content[current_pos : current_pos + next_pos]  # .strip()
+                text = content[current_pos : current_pos + next_pos]
                 if text:
                     if handle_unknown_commands:
                         text = self._expand_command(text)

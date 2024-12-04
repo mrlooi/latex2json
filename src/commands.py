@@ -175,7 +175,20 @@ class CommandProcessor:
             "pattern": re.compile(r"\\" + var_name + r"(?:true|false)"),
             "handler": handler,
         }
-        self.commands[var_name + "_conditional"] = command
+        self.commands["newif:" + var_name] = command
+
+    def process_newlength(self, var_name: str):
+        def handler(match):
+            # return empty str to ignore?
+            return "", match.end()
+
+        command = {
+            "definition": "",
+            "args": {"num_args": 0},
+            "pattern": re.compile(r"\\" + var_name + r"\b"),
+            "handler": handler,
+        }
+        self.commands["newlength:" + var_name] = command
 
     def expand_commands(
         self, text: str, ignore_unicode: bool = False

@@ -37,7 +37,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "class_setup",
             re.compile(
-                r"\\(?:NeedsTeXFormat\s*\{([^}]+)\}|LoadClass\s*\[([^\]]*)\]\s*\{([^}]+)\}|ProvidesClass\s*\{([^}]+)\}\s*\[)",
+                r"\\(?:NeedsTeXFormat\s*\{([^}]+)\}|LoadClass\s*\[([^\]]*)\]\s*\{([^}]+)\}|(?:ProvidesClass|ProvidesPackage)\s*\{([^}]+)\}\s*\[)",
                 re.DOTALL,
             ),
         ),
@@ -64,11 +64,11 @@ RAW_PATTERNS = OrderedDict(
         ),
         (
             "pagebreak",
-            r"\\(?:pagebreak|filbreak|linebreak|newpage|break)\b",
+            r"\\(?:pagebreak|filbreak|newpage|break)\b|\\linebreak(?:\[\d+\])?",
         ),
         (
             "skip",
-            r"\\(?:vskip(?:\s*-?\d*\.?\d+(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)|\b)|bigskip|medskip|smallskip|abovedisplayskip|belowdisplayskip|abovedisplayshortskip|belowdisplayshortskip|abovecaptionskip|belowcaptionskip)\b",
+            r"\\(?:vskip(?:\s*-?\d*\.?\d+(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)|\b)|bigskip|medskip|smallskip|(above|below)(display|caption)(short)?skip)\b",
         ),
         (
             "style",
@@ -79,8 +79,8 @@ RAW_PATTERNS = OrderedDict(
         # setters
         ("lstset", r"\\lstset\s*{"),
         (
-            "newsetlength",
-            r"\\(?:newlength\s*\{[^}]*\})|\\setlength\s*(?:\{([^}]+)\}|\\[a-zA-Z]+)\s*\{([^}]+)\}",
+            "setlength",
+            r"\\setlength\s*(?:\{([^}]+)\}|\\[a-zA-Z]+)\s*\{([^}]+)\}",
         ),
         ("counter", r"\\(?:setcounter\s*\{([^}]+)\}\{([^}]+)\}|value\s*\{([^}]+)\})"),
         # New margin and size commands allowing any characters after the number
@@ -108,7 +108,7 @@ RAW_PATTERNS = OrderedDict(
             ),
         ),
         # number
-        ("number", r"\\(?:numberwithin)\s*\{[^}]*\}\s*\{[^}]*\}"),
+        ("numbers", r"\\linenumbers\b|\\(?:numberwithin)\s*\{[^}]*\}\s*\{[^}]*\}"),
         # table
         ("newcolumntype", r"\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}\s*{"),
         # separators
@@ -140,7 +140,11 @@ RAW_PATTERNS = OrderedDict(
         # Handle vspace separately
         ("vspace", r"\\vspace\*?\s*{[^}]+}"),
         ("phantom", r"\\(?:hphantom|vphantom)\s*{"),
-        ("other", r"\\(?:ignorespaces|relax|\@tempboxa|box|global)\b"),
+        (
+            "other",
+            r"\\(?:ignorespaces|relax|\@tempboxa|box|global|fnsymbol)\b",
+        ),  # ignore fnsymbol
+        ("slash", r"\\/"),  # \/ (in latex, this is like an empty space)
     ]
 )
 
