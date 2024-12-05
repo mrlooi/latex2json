@@ -95,11 +95,20 @@ class NewDefinitionHandler(TokenHandler):
                     return self._handle_newcommand(content, match)
                 elif pattern_name == "let":
                     return self._handle_def_prefix(
-                        content, match, LET_COMMAND_PATTERN, self._handle_let, False
+                        content,
+                        match,
+                        LET_COMMAND_PATTERN,
+                        self._handle_let,
+                        False,
+                        max_csname_blocks=2,
                     )
                 elif pattern_name == "def":
                     return self._handle_def_prefix(
-                        content, match, DEF_COMMAND_PATTERN, self._handle_def
+                        content,
+                        match,
+                        DEF_COMMAND_PATTERN,
+                        self._handle_def,
+                        max_csname_blocks=1,
                     )
                 elif pattern_name == "newtheorem":
                     return self._handle_newtheorem(match)
@@ -235,6 +244,7 @@ class NewDefinitionHandler(TokenHandler):
         full_pattern: re.Pattern,
         handler: Callable[[str, re.Match], Tuple[Optional[Dict], int]],
         add_usage_suffix=True,
+        max_csname_blocks=1,
     ) -> Tuple[Optional[Dict], int]:
         prefix = match.group(0)
         if prefix:
@@ -246,18 +256,22 @@ class NewDefinitionHandler(TokenHandler):
 
             inner_csnames = []
             while start_pos < len(content):
-                # strip out all expandafter patterns
-                _match = expand_after_pattern.match(content[start_pos:])
-                if _match:
-                    start_pos += _match.end()
-                    continue
 
                 # extract inner inside \csname <INNER> \endcsname
-                inner, next_pos = extract_and_concat_nested_csname(content[start_pos:])
-                if next_pos != -1:
-                    start_pos += next_pos
-                    inner_csnames.append(inner)
-                    continue
+                if len(inner_csnames) < max_csname_blocks:
+                    # strip out all expandafter patterns
+                    _match = expand_after_pattern.match(content[start_pos:])
+                    if _match:
+                        start_pos += _match.end()
+                        continue
+
+                    inner, next_pos = extract_and_concat_nested_csname(
+                        content[start_pos:]
+                    )
+                    if next_pos != -1:
+                        start_pos += next_pos
+                        inner_csnames.append(inner)
+                        continue
 
                 cmd_str = "\\"
                 if inner_csnames:

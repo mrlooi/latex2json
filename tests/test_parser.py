@@ -1443,7 +1443,7 @@ def test_csname_and_expandafter_commands(parser):
 
     # TEST FLOATING UNDEFINED CSNAME
     text = r"""
-    \csname \csname foo2boo3! \endcsname \endcsname
+    \csname \csname foo2boo3! \expandafter\endcsname \endcsname
     Post text
     """
     parsed_tokens = parser.parse(text)
