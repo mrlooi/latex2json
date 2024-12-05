@@ -239,6 +239,7 @@ class LatexParser:
                         token["content"],
                         token["num_args"],
                         token["usage_pattern"],
+                        token["is_edef"],
                     )
                 elif token["type"] == "newif":
                     self.command_processor.process_newif(token["name"])
