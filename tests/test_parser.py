@@ -1451,6 +1451,17 @@ def test_csname_and_expandafter_commands(parser):
     assert parsed_tokens[0]["type"] == "text"
     assert parsed_tokens[0]["content"].strip() == "Post text"
 
+    # TEST double csname blocks
+    text = r"""
+    \def\school{SCHOOL IS COOL}
+    \expandafter\let\csname oldschool\expandafter\endcsname\csname school\endcsname
+    \oldschool % -> \school -> SCHOOL IS COOL
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "SCHOOL IS COOL"
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

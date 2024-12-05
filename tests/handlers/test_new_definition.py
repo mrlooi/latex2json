@@ -384,6 +384,19 @@ def test_with_csname_and_expandafter(handler):
     token, pos = handler.handle(content)
     assert content[pos:] == " POST"
 
+    # with let (double csname blocks)
+    content = (
+        r"\let\csname oldschool\expandafter\endcsname\csname school\endcsname POST"
+    )
+    token, pos = handler.handle(content)
+    assert token["type"] == "newcommand"
+    assert token["name"] == "oldschool"
+    assert token["content"] == r"\school"
+    pattern = re.compile(token["usage_pattern"])
+    assert pattern.match(r"\csname oldschool\endcsname")
+    assert not pattern.match(r"\csname oldschool   \endcsname")
+    assert content[pos:] == " POST"
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

@@ -28,7 +28,7 @@ PATTERNS = {
     "newcommand": re.compile(
         r"\\(?:new|renew|provide)command" + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL
     ),
-    "let": LET_COMMAND_PATTERN,
+    "let": re.compile(LET_COMMAND_PREFIX),
     "declaremathoperator": re.compile(
         r"\\DeclareMathOperator" + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL
     ),  # for math mode
@@ -97,11 +97,15 @@ class NewDefinitionHandler(TokenHandler):
                 if pattern_name == "newcommand" or pattern_name.startswith("declare"):
                     return self._handle_newcommand(content, match)
                 elif pattern_name == "let":
-                    return self._handle_let(match)
+                    return self._handle_def_prefix(
+                        content, match, LET_COMMAND_PATTERN, self._handle_let, False
+                    )
+                elif pattern_name == "def":
+                    return self._handle_def_prefix(
+                        content, match, DEF_COMMAND_PATTERN, self._handle_def
+                    )
                 elif pattern_name == "newtheorem":
                     return self._handle_newtheorem(match)
-                elif pattern_name == "def":
-                    return self._handle_def_prefix(content, match)
                 elif pattern_name == "crefname":
                     return self._handle_crefname(match)
                 elif pattern_name == "newif":
@@ -159,7 +163,7 @@ class NewDefinitionHandler(TokenHandler):
         }
         return token, match.end()
 
-    def _handle_let(self, match) -> Tuple[Optional[Dict], int]:
+    def _handle_let(self, content: str, match) -> Tuple[Optional[Dict], int]:
         name = match.group(1).strip()
         content = match.group(2).strip()
         # Remove optional equals sign if present
@@ -173,6 +177,7 @@ class NewDefinitionHandler(TokenHandler):
             "content": content,
             "num_args": 0,
             "defaults": [],
+            "usage_pattern": r"\\" + name + r"(?![a-zA-Z@])",
         }
         return token, match.end()
 
@@ -237,7 +242,14 @@ class NewDefinitionHandler(TokenHandler):
 
         return token, match.end()
 
-    def _handle_def_prefix(self, content: str, match) -> Tuple[Optional[Dict], int]:
+    def _handle_def_prefix(
+        self,
+        content: str,
+        match: re.Match,
+        full_pattern: re.Pattern,
+        handler: Callable[[str, re.Match], Tuple[Optional[Dict], int]],
+        add_usage_suffix=True,
+    ) -> Tuple[Optional[Dict], int]:
         prefix = match.group(0)
         if prefix:
             # remove last backslash
@@ -246,34 +258,44 @@ class NewDefinitionHandler(TokenHandler):
 
             expand_after_pattern = re.compile(r"\s*" + EXPANDAFTER_PATTERN.pattern)
 
-            inner_command = ""
+            inner_csnames = []
             while start_pos < len(content):
                 # strip out all expandafter patterns
-                match = expand_after_pattern.match(content[start_pos:])
-                if match:
-                    start_pos += match.end()
+                _match = expand_after_pattern.match(content[start_pos:])
+                if _match:
+                    start_pos += _match.end()
                     continue
 
                 # extract inner inside \csname <INNER> \endcsname
                 inner, next_pos = extract_and_concat_nested_csname(content[start_pos:])
                 if next_pos != -1:
                     start_pos += next_pos
-                    inner_command += inner
+                    inner_csnames.append(inner)
                     continue
 
-                cmd_str = "\\" + inner_command.replace(" ", "")
+                cmd_str = "\\"
+                if inner_csnames:
+                    cmd_str = ""
+                    for inner in inner_csnames:
+                        cmd_str += "\\" + inner.replace(" ", "")
+
                 search_prefix = prefix + cmd_str
                 if content[start_pos] == "\\":
                     start_pos += 1
                 search_text = search_prefix + content[start_pos:]
-                full_match = DEF_COMMAND_PATTERN.match(search_text)
+                full_match = full_pattern.match(search_text)
                 if full_match:
-                    token, end_pos = self._handle_def(search_text, full_match)
-                    if token and inner_command:  # allow csname regex compile
+                    token, end_pos = handler(search_text, full_match)
+                    if token and inner_csnames:  # allow csname regex compile
+                        first_inner = inner_csnames[0]
                         # Partition the usage_pattern to remove up to and including cmd_str
-                        _, _, usage_suffix = token["usage_pattern"].partition(cmd_str)
+                        usage_suffix = r"(?![a-zA-Z@])"
+                        if add_usage_suffix:
+                            _, _, usage_suffix = token["usage_pattern"].partition(
+                                "\\" + first_inner.replace(" ", "")
+                            )
                         inner_csname_regex = (
-                            r"\\csname" + inner_command + r"\\endcsname" + usage_suffix
+                            r"\\csname" + first_inner + r"\\endcsname" + usage_suffix
                         )
                         token["usage_pattern"] = (
                             token["usage_pattern"] + "|" + inner_csname_regex
