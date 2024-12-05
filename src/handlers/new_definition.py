@@ -58,9 +58,6 @@ PATTERNS = {
         re.DOTALL,
     ),
     "expandafter": EXPANDAFTER_PATTERN,
-    "csname": re.compile(
-        START_CSNAME_PATTERN.pattern + r"(.*)" + END_CSNAME_PATTERN.pattern
-    ),
 }
 
 
@@ -118,20 +115,9 @@ class NewDefinitionHandler(TokenHandler):
                     next_pos = match.end()
                     token, end_pos = self.handle(content[next_pos:])
                     return token, next_pos + end_pos
-                elif pattern_name == "csname":
-                    return self._handle_csname(content, match)
                 else:
                     return None, match.end()
 
-        return None, 0
-
-    def _handle_csname(self, content: str, match) -> Tuple[Optional[Dict], int]:
-        r"""Handle \csname definitions"""
-        if match:
-            start_pos = match.start()
-            inner, next_pos = extract_and_concat_nested_csname(content[start_pos:])
-            if next_pos != -1:
-                return None, start_pos + next_pos
         return None, 0
 
     def _handle_newif(self, match) -> Tuple[Optional[Dict], int]:

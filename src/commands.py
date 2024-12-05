@@ -8,6 +8,11 @@ from collections import OrderedDict
 
 from src.tex_utils import substitute_patterns
 from src.handlers.content_command import RAW_PATTERNS as CONTENT_COMMANDS
+from src.handlers.new_definition import (
+    END_CSNAME_PATTERN,
+    START_CSNAME_PATTERN,
+    extract_and_concat_nested_csname,
+)
 
 
 def substitute_args(definition: str, args: List[str]) -> str:
@@ -18,6 +23,11 @@ def substitute_args(definition: str, args: List[str]) -> str:
         if arg is not None:  # Only substitute if we have a value
             result = result.replace(f"#{i}", arg)
     return result
+
+
+CSNAME_PATTERN = re.compile(
+    START_CSNAME_PATTERN.pattern + r"(.*)" + END_CSNAME_PATTERN.pattern
+)
 
 
 class CommandProcessor:
@@ -168,17 +178,28 @@ class CommandProcessor:
         return text, match_count
 
     def can_handle(self, text: str) -> bool:
-        matched = False
         for cmd in self.commands.values():
             if cmd["pattern"].match(text):
-                matched = True
-                break
-        return matched
+                return True
+        return CSNAME_PATTERN.match(text) is not None
+
+    def _handle_csname(self, text: str) -> tuple[str, int]:
+        match = CSNAME_PATTERN.match(text)
+        if match:
+            nested, end_pos = extract_and_concat_nested_csname(text)
+            if nested:
+                for cmd in self.commands.values():
+                    match = cmd["pattern"].match(text)
+                    if match:
+                        out, _ = cmd["handler"](match)
+                        return out, end_pos
+                return "", end_pos
+        return text, 0
 
     def handle(self, text: str) -> str:
         for cmd in self.commands.values():
             match = cmd["pattern"].match(text)
             if match:
-                out, end_pos = cmd["handler"](match)
-                return out, end_pos
-        return text, 0
+                return cmd["handler"](match)
+
+        return self._handle_csname(text)

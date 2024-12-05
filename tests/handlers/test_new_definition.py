@@ -380,10 +380,6 @@ def test_with_csname_and_expandafter(handler):
     match = pattern.match(r"\csname test \endcsname{1}")  # invalid, watch for spacing
     assert match is None
 
-    content = r"\csname test\endcsname POST"
-    token, pos = handler.handle(content)
-    assert content[pos:] == " POST"
-
     # with let (double csname blocks)
     content = (
         r"\let\csname oldschool\expandafter\endcsname\csname school\endcsname POST"
