@@ -3,7 +3,7 @@ import re
 from src.handlers.environment import BaseEnvironmentHandler
 
 ITEM_PATTERN = re.compile(
-    r"\\item\b(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item\b|$)", re.DOTALL
+    r"\\item\b\s*(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item\b|$)", re.DOTALL
 )
 
 

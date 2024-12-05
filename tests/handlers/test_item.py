@@ -32,7 +32,7 @@ def test_basic_item(handler):
 def test_multiple_items(handler):
     content = r"""
     \item First
-    \item Second
+    \item [] Second
     \item Third
     """.strip()
 
