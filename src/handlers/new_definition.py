@@ -2,11 +2,25 @@ import re
 from typing import Callable, Dict, Optional, Tuple
 from src.handlers.base import TokenHandler
 from src.patterns import BRACE_CONTENT_PATTERN
-from src.tex_utils import extract_nested_content
+from src.tex_utils import extract_nested_content, extract_nested_content_pattern
 
 POST_NEW_COMMAND_PATTERN_STR = (
     r"\*?\s*(?:{\\([^}]+)}|\\([^\s{[]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{"
 )
+
+DEF_COMMAND_PREFIX = r"(?:\\long)?\\(?:e)?def\s*\\"
+LET_COMMAND_PREFIX = r"\\let\s*\\"
+
+DEF_COMMAND_PATTERN = re.compile(
+    r"%s([^\s{#]+)(((?:#\d+|[^{])*)\s*{)" % (DEF_COMMAND_PREFIX), re.DOTALL
+)
+LET_COMMAND_PATTERN = re.compile(
+    r"%s([^\s{\\]+)\s*(=.*|\\[^\s{]+)" % (LET_COMMAND_PREFIX), re.DOTALL
+)
+
+EXPANDAFTER_PATTERN = re.compile(r"\\expandafter(?![a-zA-Z])")
+START_CSNAME_PATTERN = re.compile(r"\\csname(?![a-zA-Z])")
+END_CSNAME_PATTERN = re.compile(r"\\endcsname(?![a-zA-Z])")
 
 # Compile patterns for definition commands
 PATTERNS = {
@@ -14,7 +28,7 @@ PATTERNS = {
     "newcommand": re.compile(
         r"\\(?:new|renew|provide)command" + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL
     ),
-    "let": re.compile(r"\\let\s*\\([^\s{\\]+)\s*(=.*|\\[^\s{]+)", re.DOTALL),
+    "let": LET_COMMAND_PATTERN,
     "declaremathoperator": re.compile(
         r"\\DeclareMathOperator" + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL
     ),  # for math mode
@@ -22,9 +36,7 @@ PATTERNS = {
         r"\\DeclareRobustCommand" + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL
     ),
     # Matches \def commands - always with backslash before command name
-    "def": re.compile(
-        r"(?:\\long)?\\(?:e)?def\s*\\([^\s{#]+)(((?:#\d+|[^{])*)\s*{)", re.DOTALL
-    ),
+    "def": re.compile(DEF_COMMAND_PREFIX),
     # Matches newtheorem with all its optional arguments
     "newtheorem": re.compile(
         r"\\newtheorem{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?", re.DOTALL
@@ -45,8 +57,29 @@ PATTERNS = {
         r"\\setcounter\s*%s\s*%s" % (BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN),
         re.DOTALL,
     ),
-    "expandafter": re.compile(r"\\expandafter\b"),
+    "expandafter": EXPANDAFTER_PATTERN,
+    "csname": re.compile(
+        START_CSNAME_PATTERN.pattern + r"(.*)" + END_CSNAME_PATTERN.pattern
+    ),
 }
+
+
+def extract_and_concat_nested_csname(content: str) -> Tuple[str, int]:
+    match = START_CSNAME_PATTERN.match(content)
+    if match:
+        _, next_end_pos, inner = extract_nested_content_pattern(
+            content, START_CSNAME_PATTERN, END_CSNAME_PATTERN
+        )
+        if next_end_pos == -1:
+            return "", -1
+
+        # Remove the start and end patterns
+        inner = START_CSNAME_PATTERN.sub("", inner)
+        inner = END_CSNAME_PATTERN.sub("", inner)
+        inner = EXPANDAFTER_PATTERN.sub("", inner)
+
+        return inner, next_end_pos
+    return "", -1
 
 
 class NewDefinitionHandler(TokenHandler):
@@ -68,7 +101,7 @@ class NewDefinitionHandler(TokenHandler):
                 elif pattern_name == "newtheorem":
                     return self._handle_newtheorem(match)
                 elif pattern_name == "def":
-                    return self._handle_def(content, match)
+                    return self._handle_def_prefix(content, match)
                 elif pattern_name == "crefname":
                     return self._handle_crefname(match)
                 elif pattern_name == "newif":
@@ -81,9 +114,20 @@ class NewDefinitionHandler(TokenHandler):
                     next_pos = match.end()
                     token, end_pos = self.handle(content[next_pos:])
                     return token, next_pos + end_pos
+                elif pattern_name == "csname":
+                    return self._handle_csname(content, match)
                 else:
                     return None, match.end()
 
+        return None, 0
+
+    def _handle_csname(self, content: str, match) -> Tuple[Optional[Dict], int]:
+        r"""Handle \csname definitions"""
+        if match:
+            start_pos = match.start()
+            inner, next_pos = extract_and_concat_nested_csname(content[start_pos:])
+            if next_pos != -1:
+                return None, start_pos + next_pos
         return None, 0
 
     def _handle_newif(self, match) -> Tuple[Optional[Dict], int]:
@@ -184,6 +228,53 @@ class NewDefinitionHandler(TokenHandler):
 
         return token, match.end()
 
+    def _handle_def_prefix(self, content: str, match) -> Tuple[Optional[Dict], int]:
+        prefix = match.group(0)
+        if prefix:
+            # remove last backslash
+            prefix = prefix[:-1]
+            start_pos = match.end() - 1
+
+            expand_after_pattern = re.compile(r"\s*" + EXPANDAFTER_PATTERN.pattern)
+
+            inner_command = ""
+            while start_pos < len(content):
+                # strip out all expandafter patterns
+                match = expand_after_pattern.match(content[start_pos:])
+                if match:
+                    start_pos += match.end()
+                    continue
+
+                # extract inner inside \csname <INNER> \endcsname
+                inner, next_pos = extract_and_concat_nested_csname(content[start_pos:])
+                if next_pos != -1:
+                    start_pos += next_pos
+                    inner_command += inner
+                    continue
+
+                cmd_str = "\\" + inner_command.replace(" ", "")
+                search_prefix = prefix + cmd_str
+                if content[start_pos] == "\\":
+                    start_pos += 1
+                search_text = search_prefix + content[start_pos:]
+                full_match = DEF_COMMAND_PATTERN.match(search_text)
+                if full_match:
+                    token, end_pos = self._handle_def(search_text, full_match)
+                    if token and inner_command:  # allow csname regex compile
+                        # Partition the usage_pattern to remove up to and including cmd_str
+                        _, _, usage_suffix = token["usage_pattern"].partition(cmd_str)
+                        inner_csname_regex = (
+                            r"\\csname" + inner_command + r"\\endcsname" + usage_suffix
+                        )
+                        token["usage_pattern"] = (
+                            token["usage_pattern"] + "|" + inner_csname_regex
+                        )
+                    return token, start_pos + end_pos - len(search_prefix)
+
+                break
+
+        return None, 0
+
     # parse \def\command(?#1#2){definition}
     # where #1, #2 are optional parameter markers
     # we need to make regex for usage pattern
@@ -230,9 +321,9 @@ class NewDefinitionHandler(TokenHandler):
         if current_pos < len(usage_pattern):
             parts.append(re.escape(usage_pattern[current_pos:]))
 
-        usage_pattern = "".join(parts)
+        parts = "".join(parts)
         # Add check at the very end to prevent partial matches (e.g., \foo matching \foobar)
-        usage_pattern = r"\\" + usage_pattern + r"(?![a-zA-Z@])"
+        usage_pattern = r"\\" + parts + r"(?![a-zA-Z@])"
 
         token = {
             "type": "def",

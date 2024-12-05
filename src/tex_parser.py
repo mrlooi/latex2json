@@ -3,6 +3,8 @@ import re
 from typing import List, Dict, Tuple, Union
 import sys, os
 
+from src.handlers.new_definition import extract_and_concat_nested_csname
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
@@ -368,6 +370,22 @@ class LatexParser:
                     break
                 continue
 
+            # check for user defined commands (important to check before new definitions in case of floating \csname)
+            if self.command_processor.can_handle(content[current_pos:]):
+                text, end_pos = self.command_processor.handle(content[current_pos:])
+                if end_pos > 0:
+                    # replace the matched user command with the expanded text
+                    content = (
+                        content[:current_pos] + text + content[current_pos + end_pos :]
+                    )
+                    continue
+
+            # check for new definition commands
+            end_pos = self._check_for_new_definitions(content[current_pos:])
+            if end_pos > 0:
+                current_pos += end_pos
+                continue
+
             # check for if else blocks
             if self.if_else_block_handler.can_handle(content[current_pos:]):
                 token, end_pos = self.if_else_block_handler.handle(
@@ -381,22 +399,6 @@ class LatexParser:
                     )
                     content = (
                         content[:current_pos] + block + content[current_pos + end_pos :]
-                    )
-                    continue
-
-            # check for new definition commands
-            end_pos = self._check_for_new_definitions(content[current_pos:])
-            if end_pos > 0:
-                current_pos += end_pos
-                continue
-
-            # check for user defined commands
-            if self.command_processor.can_handle(content[current_pos:]):
-                text, end_pos = self.command_processor.handle(content[current_pos:])
-                if end_pos > 0:
-                    # replace the matched user command with the expanded text
-                    content = (
-                        content[:current_pos] + text + content[current_pos + end_pos :]
                     )
                     continue
 
@@ -498,8 +500,15 @@ if __name__ == "__main__":
               \parsep  1\p@ \@plus 0.5\p@ \@minus 0.5\p@
               \itemsep \parsep}
 
-\@listii
+% \@listii
+"""
 
+    text = r"""
+    \expandafter\def\expandafter\csname\csname foo2  \expandafter\endcsname boo3! \expandafter\endcsname#1{hello #1}
+    \foo2boo3!{MA BOII}
+    \csname foo2   boo3! \endcsname{YOLO}
+    \newline
+    \csname foo2boo3! \endcsname{NO}  % not valid
     """
     parser = LatexParser(logger=logger)
     parsed_tokens = parser.parse(text)

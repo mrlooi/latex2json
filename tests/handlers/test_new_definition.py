@@ -366,5 +366,28 @@ def test_def_usage_outputs(handler):
     ) == ("1", "Name", "Statement")
 
 
+def test_with_csname_and_expandafter(handler):
+    content = r"\def \csname \expandafter test\endcsname#1{VALID COMMAND #1} POST"
+    token, pos = handler.handle(content)
+    assert token["type"] == "def"
+    assert token["name"] == "test"
+    assert token["num_args"] == 1
+    assert token["content"] == "VALID COMMAND #1"
+    assert content[pos:] == " POST"
+
+    pattern = re.compile(token["usage_pattern"])
+    match = pattern.match(r"\test{1}")
+    assert match is not None
+    match = pattern.match(r"\csname  test\endcsname{1}")  # valid (check spacing)
+    assert match is not None
+
+    match = pattern.match(r"\csname test \endcsname{1}")  # invalid, watch for spacing
+    assert match is None
+
+    content = r"\csname test\endcsname POST"
+    token, pos = handler.handle(content)
+    assert content[pos:] == " POST"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

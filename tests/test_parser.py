@@ -1424,21 +1424,32 @@ def test_renew_env(parser):
     assert qc[1]["content"] == "BOLD"
 
 
-# def test_text_commands(parser):
-# def test_text_commands(parser):
-#     test_cases = [
-#         r"\textbf{bold}",
-#         r"\textsc{Small Caps}",
-#         r"\textbf{\textit{nested}}",
-#         r"\command{with}{multiple}{args}",
-#     ]
+def test_csname_and_expandafter_commands(parser):
+    text = r"""
+    \expandafter\def\expandafter\csname\csname foo2  \expandafter\endcsname boo3! \expandafter\endcsname#1{VALID COMMAND #1}
+    \foo2boo3!{MA BOII}
+    \csname foo2   boo3! \endcsname{YOLO} \newline
+    \csname foo2boo3! \endcsname{NO}  % not valid
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1  # all test
+    token = parsed_tokens[0]
+    assert token["type"] == "text"
+    # split all newlines and strip whitespace
+    lines = [line.strip() for line in token["content"].strip().split("\n")]
+    assert lines[0] == "VALID COMMAND MA BOII"
+    assert lines[1] == "VALID COMMAND YOLO"
+    assert lines[2] == "NO"
 
-#     for cmd in test_cases:
-#         parsed = parser.parse(cmd)
-#         assert 1 == len(parsed), f"Expected single token for {cmd}"
-#         assert (
-#             cmd == parsed[0]["content"]
-#         ), f"Command not preserved exactly: expected '{cmd}', got '{parsed[0]['content']}'"
+    # TEST FLOATING UNDEFINED CSNAME
+    text = r"""
+    \csname \csname foo2boo3! \endcsname \endcsname
+    Post text
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "Post text"
 
 
 if __name__ == "__main__":
