@@ -192,25 +192,34 @@ class NewDefinitionHandler(TokenHandler):
         ):  # Handle case where command name starts with backslash
             cmd_name = cmd_name[1:]
 
+        # Add number of arguments if specified
+        num_args = 0
+        if match.group(3):
+            num_args = int(match.group(3))
+
+        # Add default values if present
+        defaults = []
+        if match.group(4):
+            for default in re.finditer(r"\[(.*?)\]", match.group(4)):
+                defaults.append(default.group(1))
+
+        pattern = r"\\" + re.escape(cmd_name) + r"(?![a-zA-Z])"
+
+        if num_args >= 1:
+            # Build pattern for commands with arguments
+            num_optional = len(defaults)
+            pattern += "".join(r"(?:\[(.*?)\])?" for _ in range(num_optional))
+            num_required = num_args - num_optional
+            pattern += "".join(r"\{(.*?)\}" for _ in range(num_required))
+
         token = {
             "type": "newcommand",
             "name": cmd_name,
             "content": definition,
-            "num_args": 0,
-            "defaults": [],
+            "num_args": num_args,
+            "defaults": defaults,
+            "usage_pattern": pattern,
         }
-
-        # Add number of arguments if specified
-        if match.group(3):
-            token["num_args"] = int(match.group(3))
-
-        # Add default values if present
-        if match.group(4):
-            defaults = []
-            for default in re.finditer(r"\[(.*?)\]", match.group(4)):
-                defaults.append(default.group(1))
-            if defaults:
-                token["defaults"] = defaults
 
         return token, start_pos + end_pos - 1
 

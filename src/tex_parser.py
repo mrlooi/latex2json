@@ -231,9 +231,12 @@ class LatexParser:
             token, end_pos = self.new_definition_handler.handle(content)
             if token:
                 if token["type"] == "newcommand":
-                    cmd_name = token["name"]
                     self.command_processor.process_newcommand(
-                        cmd_name, token["content"], token["num_args"], token["defaults"]
+                        token["name"],
+                        token["content"],
+                        token["num_args"],
+                        token["defaults"],
+                        token["usage_pattern"],
                     )
                 elif token["type"] == "def":
                     self.command_processor.process_newdef(

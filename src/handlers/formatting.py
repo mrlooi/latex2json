@@ -123,10 +123,10 @@ RAW_PATTERNS = OrderedDict(
         (
             "separators",
             r"\\(?:"
-            r"hline|"  # no args
-            r"centerline|"  # no args
+            r"hline\b|"  # no args
+            r"centerline\b|"  # no args
             r"cline\s*{([^}]+)}|"  # {n-m}
-            r"topsep|parsep|"
+            r"topsep\b|parsep\b|"
             r"labelsep\s*\{?([^\}]*)\}?|"
             r"(?:midrule|toprule|bottomrule)(?:\[\d*[\w-]*\])?|"  # optional [trim]
             r"cmidrule(?:\[([^\]]*)\])?\s*{([^}]+)}|"  # optional [trim] and {n-m}
@@ -135,7 +135,7 @@ RAW_PATTERNS = OrderedDict(
             r"specialrule\s*{([^}]*)}\s*{([^}]*)}\s*{([^}]*)}|"  # {height}{above}{below}
             r"addlinespace(?:\[([^\]]*)\])?|"  # optional [length]
             r"rule\s*{[^}]*}\s*{[^}]*}|"  # \rule{width}{height}
-            r"hrule|"
+            r"hrule\b|"
             r"morecmidrules\b|"  # no args
             r"fboxsep\s*{([^}]+)}|"  # {length}
             r"colrule\b"

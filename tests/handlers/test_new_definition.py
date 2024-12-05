@@ -33,15 +33,11 @@ def test_handle_newcommand(handler):
     assert token["content"] == "arg1=#1, arg2=#2"
 
     # Test with default values
-    content = r"\newcommand{\cmd}[2][default]{arg1=#1, arg2=#2}"
+    content = r"\newcommand{\cmd}[2][default]{arg1=#1, arg2=#2} POST"
     token, pos = handler.handle(content)
-    assert token == {
-        "type": "newcommand",
-        "name": "cmd",
-        "num_args": 2,
-        "defaults": ["default"],
-        "content": "arg1=#1, arg2=#2",
-    }
+    assert token["defaults"] == ["default"]
+    assert token["content"] == "arg1=#1, arg2=#2"
+    assert content[pos:] == " POST"
 
 
 def test_handle_renewcommand(handler):

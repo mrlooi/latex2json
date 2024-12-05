@@ -19,7 +19,7 @@ RAW_PATTERNS = OrderedDict(
         # input
         ("input", r"\\(?:input|include)\s*{"),
         # REFs
-        ("ref", r"\\(?:[Cc]|[Aa]uto|eq)*[Rr]ef\s*{"),
+        ("ref", r"\\(?:[Cc]|[Aa]uto|eq|page)?[Rr]ef\*?\s*{"),
         ("hyperref", r"\\hyperref\s*\[([^]]*)\]\s*{"),
         ("href", r"\\href\s*{([^}]*)}\s*{"),
         # bookmarks (similar to refs?)
