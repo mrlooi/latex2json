@@ -59,12 +59,14 @@ def extract_nested_content(
 
 def extract_nested_content_pattern(
     text: str, begin_pattern: re.Pattern | str, end_pattern: re.Pattern | str
-) -> Tuple[str | None, int]:
+) -> Tuple[int, int, str]:
     """
     Extract content between regex patterns, handling nesting.
-    Returns a tuple of (content, next_position) where:
-        - content is the text between patterns (or None if not found)
-        - next_position is the position after the end pattern (or 0 if not found)
+    Returns a tuple of (start_pos, end_pos, content) where:
+        - start_pos is the position of the beginning pattern
+        - end_pos is the position after the end pattern
+        - content is the text between patterns
+    Returns (-1, -1, "") if no valid match is found.
     """
     # Convert string patterns to compiled regex if needed
     if isinstance(begin_pattern, str):
@@ -75,33 +77,31 @@ def extract_nested_content_pattern(
     # Find the first beginning pattern
     begin_match = begin_pattern.search(text)
     if not begin_match:
-        return None, 0
+        return -1, -1, ""
 
     nesting_level = 1
     current_pos = begin_match.end()
     content_start = current_pos
+    start_pos = begin_match.start()
 
     while nesting_level > 0 and current_pos < len(text):
-        # Look for both patterns from current position
         begin_match = begin_pattern.search(text, current_pos)
         end_match = end_pattern.search(text, current_pos)
 
-        # If no end pattern found, return None
         if not end_match:
-            return None, 0
+            return -1, -1, ""
 
-        # If no begin pattern found or end pattern comes first
         if not begin_match or end_match.start() < begin_match.start():
             nesting_level -= 1
             if nesting_level == 0:
                 content = text[content_start : end_match.start()]
-                return content, end_match.end()
+                return start_pos, end_match.end(), content
             current_pos = end_match.end()
         else:
             nesting_level += 1
             current_pos = begin_match.end()
 
-    return None, 0
+    return -1, -1, ""
 
 
 def find_matching_env_block(
@@ -118,20 +118,16 @@ def find_matching_env_block(
     begin_pattern = r"\\begin\s*\{" + escaped_name + "}"
     end_pattern = r"\\end\s*\{" + escaped_name + "}"
 
-    # Find the first \begin
-    begin_match = re.search(begin_pattern, text[start_pos:])
-    if not begin_match:
-        return -1, -1, ""
-
-    absolute_start = start_pos + begin_match.start()
-    content, end_pos = extract_nested_content_pattern(
-        text[start_pos:], begin_pattern, end_pattern
+    # Adjust for start_pos by slicing the text and adjusting returned positions
+    text_slice = text[start_pos:]
+    start, end, content = extract_nested_content_pattern(
+        text_slice, begin_pattern, end_pattern
     )
 
-    if content is None:
+    if start == -1:
         return -1, -1, ""
 
-    return absolute_start, start_pos + end_pos, content.strip()
+    return start + start_pos, end + start_pos, content.strip()
 
 
 def strip_latex_newlines(latex_str: str) -> str:

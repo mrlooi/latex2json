@@ -48,39 +48,50 @@ def test_find_matching_env_block():
 def test_extract_nested_content_pattern():
     # Basic test with string patterns
     text = "((inner)) post"
-    content, pos = extract_nested_content_pattern(text, r"\(", r"\)")
+    start, end, content = extract_nested_content_pattern(text, r"\(", r"\)")
+    assert start == 0
+    assert text[end:] == " post"
     assert content == "(inner)"
-    assert text[pos:] == " post"
 
     # Test with compiled patterns
     begin_pat = re.compile(r"\(")
     end_pat = re.compile(r"\)")
-    content, pos = extract_nested_content_pattern(text, begin_pat, end_pat)
+    start, end, content = extract_nested_content_pattern(text, begin_pat, end_pat)
+    assert start == 0
+    assert text[end:] == " post"
     assert content == "(inner)"
-    assert text[pos:] == " post"
 
     # Test with multiple nesting levels
     text = "((a(b)c)) post"
-    content, pos = extract_nested_content_pattern(text, r"\(", r"\)")
+    start, end, content = extract_nested_content_pattern(text, r"\(", r"\)")
+    assert start == 0
+    assert text[end:] == " post"
     assert content == "(a(b)c)"
-    assert text[pos:] == " post"
 
     # Test with no match
     text = "(unclosed"
-    content, pos = extract_nested_content_pattern(text, r"\(", r"\)")
-    assert content is None
-    assert pos == 0
+    start, end, content = extract_nested_content_pattern(text, r"\(", r"\)")
+    assert (start, end, content) == (-1, -1, "")
 
     # Test with no begin pattern
     text = "no patterns here"
-    content, pos = extract_nested_content_pattern(text, r"\(", r"\)")
-    assert content is None
-    assert pos == 0
+    start, end, content = extract_nested_content_pattern(text, r"\(", r"\)")
+    assert (start, end, content) == (-1, -1, "")
 
     # Test with LaTeX-style environments
     text = r"\begin{test}content\begin{inner}nested\end{inner}more\end{test}"
-    content, pos = extract_nested_content_pattern(
+    start, end, content = extract_nested_content_pattern(
         text, r"\\begin\{test\}", r"\\end\{test\}"
     )
+    assert start == 0
+    assert end == len(text)
     assert content == r"content\begin{inner}nested\end{inner}more"
-    assert pos == len(text)
+
+    # real csname test
+    text = r"\def \csname test\endcsname POST"
+    start, end, content = extract_nested_content_pattern(
+        text, r"\\csname", r"\\endcsname"
+    )
+    assert start == text.index(r"\csname")
+    assert text[end:] == " POST"
+    assert content.strip() == "test"
