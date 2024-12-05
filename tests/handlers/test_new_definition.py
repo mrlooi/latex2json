@@ -298,8 +298,8 @@ def test_def_usage_outputs(handler):
         "4",
     )
 
-    assert extract_def_args(r"\def\foo!#1!{shout #1}", r"\foo! hello!") == ("hello",)
-    assert extract_def_args(r"\def\foo!#1!{shout #1}", r"\foo!{hell  o!}!") == (
+    assert extract_def_args(r"\edef\foo!#1!{shout #1}", r"\foo! hello!") == ("hello",)
+    assert extract_def_args(r"\edef\foo!#1!{shout #1}", r"\foo!{hell  o!}!") == (
         "hell  o!",
     )
     assert extract_def_args(r"\def\swap#1#2{#2#1}", r"\swap a b") == ("a", "b")
@@ -311,7 +311,7 @@ def test_def_usage_outputs(handler):
         "asd sd ",
         "b",
     )
-    assert extract_def_args(r"\def\grab#1.#2]{#1 and #2}", r"\grab first.second]") == (
+    assert extract_def_args(r"\edef\grab#1.#2]{#1 and #2}", r"\grab first.second]") == (
         "first",
         "second",
     )
@@ -321,7 +321,7 @@ def test_def_usage_outputs(handler):
     assert extract_def_args(
         r"\def\until#1\end#2{This text until #1 #2}", r"\until some \end {333}"
     ) == ("some ", "333")
-    assert extract_def_args(r"\def\gaga{LADY GAGA}", r"\gaga") is not None
+    assert extract_def_args(r"\edef\gaga{LADY GAGA}", r"\gaga") is not None
 
     assert extract_def_args(r"\def\gaga{LADY GAGA}", r"\gagaa") is None
     assert extract_def_args(r"\def\fullname#1#2{#1 #2}", r"\fullname") is None

@@ -23,7 +23,7 @@ PATTERNS = {
     ),
     # Matches \def commands - always with backslash before command name
     "def": re.compile(
-        r"(?:\\long)?\\def\s*\\([^\s{#]+)(((?:#\d+|[^{])*)\s*{)", re.DOTALL
+        r"(?:\\long)?\\(?:e)?def\s*\\([^\s{#]+)(((?:#\d+|[^{])*)\s*{)", re.DOTALL
     ),
     # Matches newtheorem with all its optional arguments
     "newtheorem": re.compile(
@@ -45,6 +45,7 @@ PATTERNS = {
         r"\\setcounter\s*%s\s*%s" % (BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN),
         re.DOTALL,
     ),
+    "expandafter": re.compile(r"\\expandafter\b"),
 }
 
 
@@ -76,6 +77,10 @@ class NewDefinitionHandler(TokenHandler):
                     return self._handle_newlength(match)
                 elif pattern_name == "newcounter" or pattern_name == "setcounter":
                     return self._handle_newcounter(match)
+                elif pattern_name == "expandafter":
+                    next_pos = match.end()
+                    token, end_pos = self.handle(content[next_pos:])
+                    return token, next_pos + end_pos
                 else:
                     return None, match.end()
 
@@ -191,6 +196,8 @@ class NewDefinitionHandler(TokenHandler):
         if definition is None:
             return None, start_pos
 
+        is_edef = r"\edef" in content[: match.start(1) or match.start(2)]
+
         # Get command name (will be clean now, without parameters)
         cmd_name = match.group(1) or match.group(2)
         if cmd_name.startswith("\\"):
@@ -233,6 +240,7 @@ class NewDefinitionHandler(TokenHandler):
             "content": definition,
             "num_args": param_count,
             "usage_pattern": usage_pattern,
+            "is_edef": is_edef,
         }
 
         return token, start_pos + end_pos - 1

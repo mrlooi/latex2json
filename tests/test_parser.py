@@ -1353,6 +1353,36 @@ def test_newcounter(parser):
     assert "newcounter:counterX" in parser.commands
 
 
+def test_nested_newcommands(parser):
+    text = r"""
+    \newcommand*\ppp[1]{
+        \def\foo#1{FOO}
+        \foo#1
+    }
+    \ppp{bar}
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["content"].strip() == "FOO"
+    assert "foobar" in parser.commands
+
+    text = r"""
+    \def\x{world}
+    \def\cmd{hello \x}     % stores "hello \x"
+    \edef\cmd#1{hello #1 \x }    % stores "hello world"
+
+    \def\x{different}
+    \cmd{333} % hello 333 world
+    \x % different
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+
+    output = parsed_tokens[0]["content"].strip()
+    assert output.startswith("hello 333 world")
+    assert output.endswith("different")
+
+
 def test_renew_env(parser):
     text = r"""
     \renewenvironment{XX}%

@@ -149,7 +149,12 @@ class CommandProcessor:
             self.commands[command_name] = command
 
     def process_newdef(
-        self, command_name: str, definition: str, num_args: int, usage_pattern: str
+        self,
+        command_name: str,
+        definition: str,
+        num_args: int,
+        usage_pattern: str,
+        expand_definition=False,
     ):
         if command_name in CONTENT_COMMANDS:
             return
@@ -158,6 +163,9 @@ class CommandProcessor:
             args = [g for g in match.groups() if g is not None]
 
             return substitute_args(definition, args), match.end()
+
+        if expand_definition:
+            definition = self.expand_commands(definition, True)[0]
 
         try:
             command = {
