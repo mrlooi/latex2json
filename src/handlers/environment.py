@@ -169,14 +169,14 @@ class EnvironmentProcessor:
                     args.append("")  # Empty string for missing required args
 
             # Process begin definition with arguments
-            result = env_info["begin_def"] + " "  # add trailing space to pad
+            result = env_info["begin_def"] + "\n"  # add trailing space to pad
             for i, arg in enumerate(args, 1):
                 if arg is not None:
                     # Replace unescaped #i with arg, preserve \#
                     result = re.sub(r"(?<!\\)#" + str(i), arg, result)
 
             # Add content and end definition
-            result += content + env_info["end_def"]
+            result += content + "\n" + env_info["end_def"]
 
             return result
 

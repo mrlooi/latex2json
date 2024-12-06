@@ -108,7 +108,8 @@ def test_env_with_newenvironment(handler):
     assert token["type"] == "environment"
     assert token["name"] == "test"
     assert (
-        token["content"].replace(" ", "") == r"\begin{center}yoloswagMYTEXT\end{center}"
+        token["content"].replace(" ", "").replace("\n", "")
+        == r"\begin{center}yoloswagMYTEXT\end{center}"
     )
 
 

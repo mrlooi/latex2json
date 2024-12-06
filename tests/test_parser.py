@@ -1463,5 +1463,44 @@ def test_csname_and_expandafter_commands(parser):
     assert parsed_tokens[0]["content"].strip() == "SCHOOL IS COOL"
 
 
+def test_complex_newcommands_with_csname(parser):
+
+    # real world example from nips_2017.sty
+    text = r"""
+    \newcommand*\patchAmsMathEnvironmentForLineno[1]{%
+        \expandafter\let\csname old#1\expandafter\endcsname\csname #1\endcsname
+        \expandafter\let\csname oldend#1\expandafter\endcsname\csname end#1\endcsname
+        \renewenvironment{#1}%
+          {\linenomath\csname old#1\endcsname}%
+          {\csname oldend#1\endcsname\endlinenomath}%
+      } 
+
+      \def\foo{START FOO}
+      \def\endfoo{END FOO}
+      \patchAmsMathEnvironmentForLineno{foo}
+      \begin{foo}
+        INSIDE FOO ENV
+      \end{foo}
+      """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "environment"
+    assert parsed_tokens[0]["name"] == "foo"
+
+    foo_content = parsed_tokens[0]["content"]
+    assert len(foo_content) == 1
+    linenomath = foo_content[0]
+    assert linenomath["type"] == "environment"
+    assert linenomath["name"] == "linenomath"
+    assert len(linenomath["content"]) == 1
+
+    inner = linenomath["content"][0]
+    assert inner["type"] == "text"
+    assert (
+        inner["content"].replace("\n", "").replace(" ", "")
+        == "STARTFOOINSIDEFOOENVENDFOO"
+    )
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
