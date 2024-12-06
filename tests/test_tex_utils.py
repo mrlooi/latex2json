@@ -1,5 +1,9 @@
 import pytest
-from src.tex_utils import extract_nested_content_pattern, find_matching_env_block
+from src.tex_utils import (
+    extract_nested_content_sequence_blocks,
+    extract_nested_content_pattern,
+    find_matching_env_block,
+)
 import re
 
 
@@ -95,3 +99,25 @@ def test_extract_nested_content_pattern():
     assert start == text.index(r"\csname")
     assert text[end:] == " POST"
     assert content.strip() == "test"
+
+
+def test_extract_nested_content_blocks():
+    text = r"{test}{test2} {test3} sssss"
+    blocks, total_pos = extract_nested_content_sequence_blocks(text, "{", "}", 3)
+    assert blocks == ["test", "test2", "test3"]
+    assert text[total_pos:] == " sssss"
+
+    blocks, total_pos = extract_nested_content_sequence_blocks(text, "{", "}", 2)
+    assert blocks == ["test", "test2"]
+    assert text[total_pos:] == " {test3} sssss"
+
+    text = r"ssss {ssss}"
+    blocks, total_pos = extract_nested_content_sequence_blocks(text, "{", "}", 2)
+    assert blocks == []
+    assert text[total_pos:] == "ssss {ssss}"
+
+    # with nested nested blocks
+    text = r"{ aaaa {bbbb}   } {11{22{33 }}  } aaaa {1123}"
+    blocks, total_pos = extract_nested_content_sequence_blocks(text, "{", "}", 4)
+    assert blocks == [" aaaa {bbbb}   ", "11{22{33 }}  "]
+    assert text[total_pos:] == " aaaa {1123}"

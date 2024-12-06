@@ -132,3 +132,12 @@ def test_nested_complex_structure():
     assert "even_more" in elsif_content
     assert "nested_else" in elsif_content
     assert "after_nested" in elsif_content
+
+
+def test_ifthenelse():
+    text = r"\ifthenelse{cond}{\ifthenelse{inner_cond}{inner_true}{inner_false}}{else_content}"
+    handler = IfElseBlockHandler()
+    result, pos = handler.handle(text)
+    assert result["condition"] == "cond"
+    assert result["if_content"] == r"\ifthenelse{inner_cond}{inner_true}{inner_false}"
+    assert result["else_content"] == "else_content"

@@ -2,13 +2,15 @@ from typing import Dict, Optional, Tuple
 import re
 
 from src.handlers.base import TokenHandler
+from src.tex_utils import extract_nested_content_sequence_blocks
 
-IF_PATTERN = re.compile(r"\\if(.*)([^\n]*)", re.IGNORECASE)
-ELSE_PATTERN = re.compile(r"\\else\b", re.IGNORECASE)
+IF_THEN_ELSE_PATTERN = re.compile(r"\\ifthenelse\s*\{", re.DOTALL)
+IF_PATTERN = re.compile(r"\\if(.*)([^\n]*)")
+ELSE_PATTERN = re.compile(r"\\else\b")
 ELSIF_PATTERN = re.compile(
-    r"\\els(?:e)?if(.*)([^\n]*)", re.IGNORECASE
+    r"\\els(?:e)?if(.*)([^\n]*)"
 )  # Matches both \elsif and \elseif
-FI_PATTERN = re.compile(r"\\fi\b", re.IGNORECASE)
+FI_PATTERN = re.compile(r"\\fi\b")
 
 
 def extract_nested_if_else(
@@ -92,13 +94,35 @@ def extract_nested_if_else(
     )
 
 
+def try_handle_ifthenelse(content: str) -> Tuple[Optional[Dict], int]:
+    match = IF_THEN_ELSE_PATTERN.match(content)
+    if match:
+        start_pos = match.end() - 1  # -1 to exclude the opening brace
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "{", "}", max_blocks=3
+        )
+        if len(blocks) != 3:
+            raise ValueError("Invalid \\ifthenelse structure")
+        return {
+            "type": "conditional",
+            "condition": blocks[0],
+            "if_content": blocks[1],
+            "else_content": blocks[2],
+        }, start_pos + end_pos
+    return None, 0
+
+
 class IfElseBlockHandler(TokenHandler):
     def can_handle(self, content: str) -> bool:
-        return IF_PATTERN.match(content)
+        return IF_PATTERN.match(content) or IF_THEN_ELSE_PATTERN.match(content)
 
     def handle(
         self, content: str, prev_token: Optional[Dict] = None
     ) -> Tuple[Optional[Dict], int]:
+        token, end_pos = try_handle_ifthenelse(content)
+        if token:
+            return token, end_pos
+
         match = IF_PATTERN.match(content)
         if match:
             condition = match.group(1)
@@ -123,26 +147,7 @@ class IfElseBlockHandler(TokenHandler):
 
 if __name__ == "__main__":
     text = r"""
-\if{sdd}
-  1 ONE uNO
-\elseif{222}
-    ELSE IF x2
-\elseif{sss}
-  \iftwo
-    2
-  \else
-      2.3
-  \fi
-  4
-\else
-  ELSE 5
-\fi
-
-\ifthree
-  content
-\else
-  else content
-\fi
+\ifasdaa{}{}{}
 """.strip()
 
     handler = IfElseBlockHandler()

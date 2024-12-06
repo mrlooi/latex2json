@@ -57,6 +57,43 @@ def extract_nested_content(
     return content, end_pos + 1
 
 
+def extract_nested_content_sequence_blocks(
+    text: str, open_delim: str = "{", close_delim: str = "}", max_blocks=float("inf")
+) -> Tuple[list[str], int]:
+    """
+    Extract multiple nested content blocks and return their contents along with the final position.
+    Returns a tuple of (blocks, total_end_pos) where:
+        - blocks is a list of extracted content strings
+        - total_end_pos is the position after the last closing delimiter
+    """
+    i = 0
+    blocks = []
+    total_pos = 0
+    last_valid_pos = 0
+    current_text = text
+
+    while i < max_blocks:
+        # Skip any leading whitespace
+        while current_text and current_text[0].isspace():
+            current_text = current_text[1:]
+            total_pos += 1
+
+        content, next_pos = extract_nested_content(
+            current_text, open_delim, close_delim
+        )
+        if next_pos == 0:
+            # If no more blocks found, return the position of the last successful block
+            return blocks, last_valid_pos
+
+        blocks.append(content)
+        current_text = current_text[next_pos:]
+        total_pos += next_pos
+        last_valid_pos = total_pos
+        i += 1
+
+    return blocks, last_valid_pos
+
+
 def extract_nested_content_pattern(
     text: str, begin_pattern: re.Pattern | str, end_pattern: re.Pattern | str
 ) -> Tuple[int, int, str]:
