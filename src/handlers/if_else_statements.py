@@ -5,12 +5,18 @@ from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content_sequence_blocks
 
 IF_THEN_ELSE_PATTERN = re.compile(r"\\ifthenelse\s*\{", re.DOTALL)
-IF_PATTERN = re.compile(r"\\if(.*)([^\n]*)")
+IF_PATTERN = re.compile(r"\\if(?!thenelse)(.*)([^\n]*)")
 ELSE_PATTERN = re.compile(r"\\else\b")
 ELSIF_PATTERN = re.compile(
     r"\\els(?:e)?if(.*)([^\n]*)"
 )  # Matches both \elsif and \elseif
 FI_PATTERN = re.compile(r"\\fi\b")
+
+PATTERNS = {
+    "if": IF_PATTERN,
+    "ifthenelse": IF_THEN_ELSE_PATTERN,
+    "equal": re.compile(r"\\equal\s*\{"),
+}
 
 
 def extract_nested_if_else(
@@ -94,8 +100,11 @@ def extract_nested_if_else(
     )
 
 
-def try_handle_ifthenelse(content: str) -> Tuple[Optional[Dict], int]:
-    match = IF_THEN_ELSE_PATTERN.match(content)
+def try_handle_ifthenelse(
+    content: str, match: Optional[re.Match] = None
+) -> Tuple[Optional[Dict], int]:
+    if match is None:
+        match = IF_THEN_ELSE_PATTERN.match(content)
     if match:
         start_pos = match.end() - 1  # -1 to exclude the opening brace
         blocks, end_pos = extract_nested_content_sequence_blocks(
@@ -114,33 +123,43 @@ def try_handle_ifthenelse(content: str) -> Tuple[Optional[Dict], int]:
 
 class IfElseBlockHandler(TokenHandler):
     def can_handle(self, content: str) -> bool:
-        return IF_PATTERN.match(content) or IF_THEN_ELSE_PATTERN.match(content)
+        return any(pattern.match(content) for pattern in PATTERNS.values())
 
     def handle(
         self, content: str, prev_token: Optional[Dict] = None
     ) -> Tuple[Optional[Dict], int]:
-        token, end_pos = try_handle_ifthenelse(content)
-        if token:
-            return token, end_pos
-
-        match = IF_PATTERN.match(content)
-        if match:
-            condition = match.group(1)
-            start_pos = match.end()
-            try:
-                if_content, else_content, elsif_branches, end_pos = (
-                    extract_nested_if_else(content[start_pos:])
-                )
-            except ValueError as e:
-                print(ValueError(f"Unclosed conditional block: {e}"))
-                return None, 0
-            return {
-                "type": "conditional",
-                "condition": condition,
-                "if_content": if_content,
-                "else_content": else_content,
-                "elsif_branches": elsif_branches,
-            }, start_pos + end_pos
+        for name, pattern in PATTERNS.items():
+            match = pattern.match(content)
+            if match:
+                if name == "ifthenelse":
+                    token, end_pos = try_handle_ifthenelse(content, match)
+                    return token, end_pos
+                elif name == "equal":
+                    start_pos = match.end() - 1
+                    blocks, end_pos = extract_nested_content_sequence_blocks(
+                        content[start_pos:], max_blocks=1
+                    )
+                    if len(blocks) == 0:
+                        return None, 0
+                    # ignore equal anyway
+                    return None, start_pos + end_pos
+                elif name == "if":
+                    condition = match.group(1)
+                    start_pos = match.end()
+                    try:
+                        if_content, else_content, elsif_branches, end_pos = (
+                            extract_nested_if_else(content[start_pos:])
+                        )
+                    except ValueError as e:
+                        print(ValueError(f"Unclosed conditional block: {e}"))
+                        return None, 0
+                    return {
+                        "type": "conditional",
+                        "condition": condition,
+                        "if_content": if_content,
+                        "else_content": else_content,
+                        "elsif_branches": elsif_branches,
+                    }, start_pos + end_pos
 
         return None, 0
 

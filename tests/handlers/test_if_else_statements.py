@@ -134,6 +134,14 @@ def test_nested_complex_structure():
     assert "after_nested" in elsif_content
 
 
+def test_ignore_equal():
+    text = r"\equal{cond}{content}"
+    handler = IfElseBlockHandler()
+    result, pos = handler.handle(text)
+    assert result is None
+    assert text[pos:] == "{content}"
+
+
 def test_ifthenelse():
     text = r"\ifthenelse{cond}{\ifthenelse{inner_cond}{inner_true}{inner_false}}{else_content}"
     handler = IfElseBlockHandler()
