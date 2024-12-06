@@ -262,9 +262,18 @@ class BaseEnvironmentHandler(TokenHandler):
                 )
             else:
                 env_name = match.group(2).strip()
+
                 start_pos, end_pos, inner_content = extract_nested_content_pattern(
                     content, r"\\" + env_name, r"\\end" + env_name
                 )
+                if env_name == "@float":
+                    # e.g. \@float{table} -> \begin{@float}{table} -> \begin{table}
+                    inner_match = re.match(
+                        r"\s*" + ENV_NAME_BRACE_PATTERN, inner_content
+                    )
+                    if inner_match:
+                        env_name = inner_match.group(1).strip()  # i.e. table
+                        inner_content = inner_content[inner_match.end() :]
 
             if end_pos == -1:
                 # No matching end found, treat as plain text

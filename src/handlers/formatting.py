@@ -203,7 +203,14 @@ class FormattingHandler(TokenHandler):
         for pattern_name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if match:
-                if pattern_name == "backslash":
+                if pattern_name == "pz@" or match.group(0).startswith(r"\baselineskip"):
+                    if prev_token:
+                        # check for number\pz@ e.g. 2\pz@ in previous token
+                        # since \pz@ could be parsed after the prior number was extracted in previous parsing loop
+                        # then strip out the trailing number if it exists
+                        strip_trailing_number_from_token(prev_token)
+                    return None, match.end()
+                elif pattern_name == "backslash":
                     return {"type": "text", "content": r"\\"}, match.end()
                 elif pattern_name == "spacing":
                     if match.group(0) == r"\!":
@@ -250,13 +257,6 @@ class FormattingHandler(TokenHandler):
                     return {"type": "text", "content": "\n"}, match.end()
                 elif pattern_name == "options":
                     return self._handle_options(content, match)
-                elif pattern_name == "pz@":
-                    if prev_token:
-                        # check for number\pz@ e.g. 2\pz@ in previous token
-                        # since \pz@ could be parsed after the prior number was extracted in previous parsing loop
-                        # then strip out the trailing number if it exists
-                        strip_trailing_number_from_token(prev_token)
-                    return None, match.end()
                 elif pattern_name == "class_setup":
                     if match.group(0).endswith("["):
                         start_pos = match.end() - 1

@@ -197,11 +197,14 @@ def test_convert_any_env_pairs_to_begin_end(handler):
 """
     assert convert_any_env_pairs_to_begin_end(content) == expect
 
-    content = r"\@float{sss} stuff \end@float post"
-    assert (
-        convert_any_env_pairs_to_begin_end(content)
-        == r"\begin{@float}{sss} stuff \end{@float} post"
-    )
+
+def test_with_float_env(handler):
+    content = r"\@float{table}[b] stuff \end@float post"
+    token, pos = handler.handle(content)
+    assert token["name"] == "table"
+    assert token["type"] == "table"
+    assert token["content"] == " stuff "
+    assert content[pos:] == " post"
 
 
 if __name__ == "__main__":

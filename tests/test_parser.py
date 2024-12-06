@@ -1544,5 +1544,48 @@ def test_complex_newcommands_with_csname(parser):
     )
 
 
+def test_complex_commands_with_float(parser):
+    # real world example from nips_2017.sty
+    text = r"""
+    % change this every year for notice string at bottom
+    \newcommand{\@nipsordinal}{31st}
+    \newcommand{\@nipsyear}{2017}
+    \newcommand{\@nipslocation}{Long Beach, CA, USA}
+
+    % handle tweaks for camera-ready copy vs. submission copy
+    \if@nipsfinal
+    \newcommand{\@noticestring}{%
+        \@nipsordinal\/ Conference on Neural Information Processing Systems
+        (NIPS \@nipsyear), \@nipslocation.%
+    }
+    \else
+    \fi
+
+    \newcommand{\@notice}{%
+    % give a bit of extra room back to authors on first page
+    \enlargethispage{2\baselineskip}%
+    \@float{noticebox}[b]%
+        \footnotesize\@noticestring%
+    \end@float%
+    }
+    \@notice
+"""
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "environment"
+    assert parsed_tokens[0]["name"] == "noticebox"
+    assert len(parsed_tokens[0]["content"]) == 1
+    text_token = parsed_tokens[0]["content"][0]
+    assert text_token["type"] == "text"
+    assert text_token["styles"] == [FRONTEND_STYLE_MAPPING["textfootnotesize"]]
+    t = text_token["content"]
+    assert (
+        t.find("31st")
+        < t.find("Conference on Neural Information Processing Systems")
+        < t.find("NIPS 2017")
+        < t.find("Long Beach, CA, USA")
+    )
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
