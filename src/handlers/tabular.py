@@ -2,11 +2,23 @@ import re
 from typing import Callable, Dict, List, Optional, Tuple
 from src.flatten import flatten_tokens
 from src.handlers.base import TokenHandler
-from src.tex_utils import extract_nested_content, find_matching_env_block
+from src.tex_utils import (
+    extract_nested_content,
+    extract_nested_content_pattern,
+    find_matching_env_block,
+)
+
+inside_tabular_pattern = r"(?:\[[^\]]*\])?\{([^}]*)\}(.*?)"
+
+tabular_pattern_1 = (
+    r"\\begin\s*\{(tabular\*?|longtable|tabularx|tabulary)\}%s\\end\s*\{\1\}"
+    % (inside_tabular_pattern)
+)
+tabular_pattern_2 = r"\\tabular%s\\endtabular" % (inside_tabular_pattern)
 
 # Compile patterns for code blocks
 TABULAR_PATTERN = re.compile(
-    r"\\begin\s*\{(tabular\*?|longtable|tabularx|tabulary)\}(?:\[[^\]]*\])?\{([^}]*)\}(.*?)\\end\s*\{\1\}",
+    r"%s|%s" % (tabular_pattern_1, tabular_pattern_2),
     re.DOTALL,
 )
 
@@ -142,10 +154,21 @@ class TabularHandler(TokenHandler):
         if not match:
             return None, 0
 
-        env_type = match.group(1)  # tabular, tabular*, or tabularx
+        env_type = "tabular"
+        is_begin = match.group(0).startswith("\\begin")
+        if is_begin:
+            env_type = match.group(1)  # tabular, tabular*, or tabularx
+
         # Strip out the beginning and end tags dynamically using the matched environment type
 
-        start_pos, end_pos, inner_content = find_matching_env_block(content, env_type)
+        if is_begin:
+            start_pos, end_pos, inner_content = find_matching_env_block(
+                content, env_type
+            )
+        else:
+            start_pos, end_pos, inner_content = extract_nested_content_pattern(
+                content, r"\\tabular", r"\\endtabular"
+            )
         if start_pos == -1:
             return None, 0
 

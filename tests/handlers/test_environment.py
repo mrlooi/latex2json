@@ -147,5 +147,21 @@ def test_nested_identical_environments(handler):
     assert content[pos:].strip() == "AFTER END"
 
 
+def test_env_pairs_without_begin(handler):
+    content = r"\list{}{} \item[] \endlist post"
+    token, pos = handler.handle(content)
+    assert token is not None
+    assert token["name"] == "list"
+    assert token["content"].strip() == r"\item[]"
+    assert content[pos:] == " post"
+
+    # nested
+    content = r"\xxx stuff \xxx nested \endxxx postnested \endxxx post"
+    token, pos = handler.handle(content)
+    assert token["name"] == "xxx"
+    assert token["content"] == r" stuff \xxx nested \endxxx postnested "
+    assert content[pos:] == " post"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

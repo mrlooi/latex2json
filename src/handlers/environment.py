@@ -1,18 +1,31 @@
 import re
 from typing import Callable, Dict, List, Optional, Tuple
 from src.handlers.base import TokenHandler
-from src.tex_utils import extract_nested_content, find_matching_env_block
+from src.tex_utils import (
+    extract_nested_content,
+    extract_nested_content_pattern,
+    find_matching_env_block,
+)
 
 BEGIN_GROUP_PATTERN = re.compile(r"\\begingroup\b")
 END_GROUP_PATTERN = re.compile(r"\\endgroup\b")
 
+ENV_NAME_BRACE_PATTERN = r"\{([^}]*?)\}"
+
+# e.g. \list \endlist, \xxx \endxxx etc
+# make sure to tweak the '1' in end\1 to match the relevant regex group if combining with other patterns
+ENV_PAIR_PATTERN = r"\\(\w+)(?:\s*(?:\{[^}]*\}|\[[^]]*\])*\s*).*\\end\1"
+
+# Check for both \begin{xxx} and \xxx \endxxx e.g. \list \endlist, etc
 ENVIRONMENT_PATTERN = re.compile(
-    r"\\begin\s*\{([^}]*?)\}", re.DOTALL
-)  # Make the name capture non-greedy with *?
+    r"\\begin\s*%s|%s" % (ENV_NAME_BRACE_PATTERN, ENV_PAIR_PATTERN[:-1] + "2"),
+    re.DOTALL,
+)
 
 NEW_ENVIRONMENT_PATTERN = re.compile(
-    r"\\(?:new|renew|provide)environment\*?\s*{([^}]+)}"
+    r"\\(?:new|renew|provide)environment\*?\s*%s" % (ENV_NAME_BRACE_PATTERN),
 )
+
 
 LIST_ENVIRONMENTS = ["itemize", "enumerate", "description"]
 
@@ -42,6 +55,7 @@ ENV_TYPES = {
     "subfigure": "figure",
     "subfloat": "figure",  # another common figure subdivision
     "quote": "quote",
+    "list": "list",
     **{env: "list" for env in LIST_ENVIRONMENTS},
     **{env: "layout" for env in LAYOUT_ENVIRONMENTS},
 }
@@ -50,11 +64,42 @@ ENV_TYPES = {
 ENV_ARGS = {
     "thebibliography": {"mandatory": 1},  # Expects 1 mandatory argument
     "minipage": {"mandatory": 1},  # Expects 1 mandatory argument
+    "list": {"mandatory": 2},  # usually used as \list{label}{spacing}
     # "tabular": {"mandatory": 1},          # Expects 1 mandatory argument for column spec
     "table": {"optional": 1},  # Expects 1 optional argument for placement
     "figure": {"optional": 1},  # Expects 1 optional argument for placement
     # ... other environments with known argument patterns
 }
+
+
+def find_matching_group_end(text: str, start_pos: int = 0) -> int:
+    """Find the matching endgroup for a begingroup, handling nested groups"""
+    nesting_level = 1
+    current_pos = start_pos
+
+    while nesting_level > 0 and current_pos < len(text):
+        begin_match = BEGIN_GROUP_PATTERN.search(text[current_pos:])
+        end_match = END_GROUP_PATTERN.search(text[current_pos:])
+
+        if not end_match:
+            return -1  # No matching endgroup found
+
+        # Find which comes first - a begin or an end
+        begin_pos = begin_match.start() if begin_match else float("inf")
+        end_pos = end_match.start()
+
+        if begin_pos < end_pos:
+            # Found nested begingroup
+            nesting_level += 1
+            current_pos += begin_pos + len("\\begingroup")
+        else:
+            # Found endgroup
+            nesting_level -= 1
+            current_pos += end_pos + len("\\endgroup")
+            if nesting_level == 0:
+                return current_pos - len("\\endgroup")
+
+    return -1 if nesting_level > 0 else current_pos
 
 
 class EnvironmentProcessor:
@@ -142,35 +187,6 @@ class BaseEnvironmentHandler(TokenHandler):
     def __init__(self):
         super().__init__()
 
-    def _find_matching_group_end(self, text: str, start_pos: int = 0) -> int:
-        """Find the matching endgroup for a begingroup, handling nested groups"""
-        nesting_level = 1
-        current_pos = start_pos
-
-        while nesting_level > 0 and current_pos < len(text):
-            begin_match = BEGIN_GROUP_PATTERN.search(text[current_pos:])
-            end_match = END_GROUP_PATTERN.search(text[current_pos:])
-
-            if not end_match:
-                return -1  # No matching endgroup found
-
-            # Find which comes first - a begin or an end
-            begin_pos = begin_match.start() if begin_match else float("inf")
-            end_pos = end_match.start()
-
-            if begin_pos < end_pos:
-                # Found nested begingroup
-                nesting_level += 1
-                current_pos += begin_pos + len("\\begingroup")
-            else:
-                # Found endgroup
-                nesting_level -= 1
-                current_pos += end_pos + len("\\endgroup")
-                if nesting_level == 0:
-                    return current_pos - len("\\endgroup")
-
-        return -1 if nesting_level > 0 else current_pos
-
     def can_handle(self, content: str) -> bool:
         return (
             ENVIRONMENT_PATTERN.match(content) is not None
@@ -197,24 +213,17 @@ class BaseEnvironmentHandler(TokenHandler):
 
         # Extract arguments based on environment type
         if env_name in ENV_ARGS and ENV_ARGS[env_name].get("mandatory", 0) > 0:
-            # Handle as argument
-            arg, end_pos = extract_nested_content(inner_content, "{", "}")
-            if arg:
-                inner_content = inner_content[end_pos:]  # Remove argument from content
-
-        # # Extract optional arguments
-        # args, end_pos = extract_nested_content(inner_content, '{', '}')
-        # if args:
-        #     inner_content = inner_content[end_pos:].strip()
-
-        # DEPRECATED: Label handling is now done independently through _handle_label()
-        # # Extract any label if present
-        # label_match = re.search(LABEL_PATTERN, inner_content)
-        # label = label_match.group(1) if label_match else None
-
-        # # Remove label from inner content before parsing
-        # if label_match:
-        #     inner_content = inner_content.replace(label_match.group(0), '').strip()
+            args = []
+            num_args = ENV_ARGS[env_name].get("mandatory")
+            for _ in range(num_args):
+                # Handle as argument
+                arg, end_pos = extract_nested_content(inner_content, "{", "}")
+                if end_pos > 0:
+                    inner_content = inner_content[
+                        end_pos:
+                    ]  # Remove argument from content
+                    args.append(arg)
+            token["args"] = args
 
         token["content"] = inner_content
 
@@ -226,14 +235,20 @@ class BaseEnvironmentHandler(TokenHandler):
         """Try to match an environment pattern"""
         if not match:
             match = ENVIRONMENT_PATTERN.match(content)
-        if (
-            match and match.re.pattern == ENVIRONMENT_PATTERN.pattern
-        ):  # Verify it's an environment match
-            env_name = match.group(1).strip()
+        if match and match.re.pattern == ENVIRONMENT_PATTERN.pattern:
+            # Verify it's an environment match
+            is_begin = match.group(0).startswith("\\begin")
             # Find the correct ending position for this environment
-            start_pos, end_pos, inner_content = find_matching_env_block(
-                content, env_name
-            )
+            if is_begin:
+                env_name = match.group(1).strip()
+                start_pos, end_pos, inner_content = find_matching_env_block(
+                    content, env_name
+                )
+            else:
+                env_name = match.group(2).strip()
+                start_pos, end_pos, inner_content = extract_nested_content_pattern(
+                    content, r"\\" + env_name, r"\\end" + env_name
+                )
 
             if end_pos == -1:
                 # No matching end found, treat as plain text
@@ -253,7 +268,7 @@ class BaseEnvironmentHandler(TokenHandler):
             match and match.re.pattern == BEGIN_GROUP_PATTERN.pattern
         ):  # Verify it's a group match
             start_pos = match.end()
-            end_pos = self._find_matching_group_end(content, start_pos)
+            end_pos = find_matching_group_end(content, start_pos)
 
             if end_pos == -1:
                 # No matching endgroup found, treat as plain text
@@ -408,6 +423,7 @@ class EnvironmentHandler(BaseEnvironmentHandler):
         return super()._handle_environment(env_name, inner_content)
 
     def handle(self, content: str) -> Tuple[Optional[Dict], int]:
+        # check for new environment definition first
         new_env_match = NEW_ENVIRONMENT_PATTERN.match(content)
         if new_env_match:
             token, end_pos = self._handle_newenvironment_def(content, new_env_match)
@@ -430,28 +446,9 @@ class EnvironmentHandler(BaseEnvironmentHandler):
 if __name__ == "__main__":
     handler = EnvironmentHandler()
 
-    # text = r"""
-    # \renewenvironment{boxed}[2][This is a box]
-    # {
-    #     \begin{center}
-    #     Argument 1 (\#1)=#1\\[1ex]
-    #     \begin{tabular}{|p{0.9\textwidth}|}
-    #     \hline\\
-    #     Argument 2 (\#2)=#2\\[2ex]
-    # }
-    # {
-    #     \\\\\hline
-    #     \end{tabular}
-    #     \end{center}
-    # }
+    # content = r"\begin{figure*}[h]\end{figure*}"
+    # print(handler.handle(content))
 
-    # \begin{boxed}[BOX]{BOX2}
-    # This text is \textit{inside} the environment.
-    # \end{boxed}
-    # """.strip()
-
-    # token, end_pos = handler.handle(text)
-    # print(handler.handle(text[end_pos:].strip()))
-
-    content = r"\begin{figure*}[h]\end{figure*}"
+    content = r"\xxx \item[] \endxxx"
+    # print(ENVIRONMENT_PATTERN.match(content))
     print(handler.handle(content))

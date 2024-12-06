@@ -150,3 +150,31 @@ def test_nested_tabulars(handler):
     assert token is not None
     assert token["type"] == "tabular"
     assert text[end_pos:].strip() == "END OF TABLE"
+
+
+def test_tabular_without_begin(handler):
+    content = r"\tabular{cc} a & b \\ c & d \\ \endtabular post"
+    token, pos = handler.handle(content)
+    assert token is not None
+    assert token["type"] == "tabular"
+    assert token["column_spec"] == "cc"
+    assert token["content"] == [["a", "b"], ["c", "d"]]
+    assert content[pos:] == " post"
+
+    # test nested
+    text = r"""
+    \tabular{c}
+        1 & 2 \\ 
+        \tabular{c}
+            11 & 22 \\
+            33 & 44
+        \endtabular & 4
+    \endtabular
+
+    END OF TABLE
+    """.strip()
+    token, end_pos = handler.handle(text)
+
+    assert token is not None
+    assert token["type"] == "tabular"
+    assert text[end_pos:].strip() == "END OF TABLE"
