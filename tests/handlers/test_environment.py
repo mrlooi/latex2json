@@ -197,6 +197,12 @@ def test_convert_any_env_pairs_to_begin_end(handler):
 """
     assert convert_any_env_pairs_to_begin_end(content) == expect
 
+    content = r"\@float{sss} stuff \end@float post"
+    assert (
+        convert_any_env_pairs_to_begin_end(content)
+        == r"\begin{@float}{sss} stuff \end{@float} post"
+    )
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
