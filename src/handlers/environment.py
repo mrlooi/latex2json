@@ -14,7 +14,7 @@ ENV_NAME_BRACE_PATTERN = r"\{([^}]*?)\}"
 
 # e.g. \list \endlist, \xxx \endxxx etc
 # make sure to tweak the '1' in end\1 to match the relevant regex group if combining with other patterns
-ENV_PAIR_PATTERN = r"\\(\w+)(?:\s*(?:\{[^}]*\}|\[[^]]*\])*\s*).*\\end\1"
+ENV_PAIR_PATTERN = r"\\(\w+)(\s*(?:\{[^}]*\}|\[[^]]*\])*\s*.*)\\end\1"
 
 # Check for both \begin{xxx} and \xxx \endxxx e.g. \list \endlist, etc
 ENVIRONMENT_PATTERN = re.compile(
@@ -25,7 +25,6 @@ ENVIRONMENT_PATTERN = re.compile(
 NEW_ENVIRONMENT_PATTERN = re.compile(
     r"\\(?:new|renew|provide)environment\*?\s*%s" % (ENV_NAME_BRACE_PATTERN),
 )
-
 
 LIST_ENVIRONMENTS = ["itemize", "enumerate", "description"]
 
@@ -70,6 +69,23 @@ ENV_ARGS = {
     "figure": {"optional": 1},  # Expects 1 optional argument for placement
     # ... other environments with known argument patterns
 }
+
+
+def convert_any_env_pairs_to_begin_end(content: str) -> str:
+    r"""Convert any \aa \endaa pairs to \begin{aa} \end{aa}"""
+    pattern = re.compile(ENV_PAIR_PATTERN, re.DOTALL)
+
+    match = pattern.search(content)
+    while match:
+        env_name = match.group(1)
+        start_pos, end_pos, inner_content = extract_nested_content_pattern(
+            content, r"\\" + env_name, r"\\end" + env_name
+        )
+        inner_content = convert_any_env_pairs_to_begin_end(inner_content)
+        inner_content = r"\begin{%s}%s\end{%s}" % (env_name, inner_content, env_name)
+        content = content[:start_pos] + inner_content + content[end_pos:]
+        match = pattern.search(content)
+    return content
 
 
 def find_matching_group_end(text: str, start_pos: int = 0) -> int:

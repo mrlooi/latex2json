@@ -1,5 +1,8 @@
 import pytest
-from src.handlers.environment import EnvironmentHandler
+from src.handlers.environment import (
+    EnvironmentHandler,
+    convert_any_env_pairs_to_begin_end,
+)
 
 
 @pytest.fixture
@@ -162,6 +165,37 @@ def test_env_pairs_without_begin(handler):
     assert token["name"] == "xxx"
     assert token["content"] == r" stuff \xxx nested \endxxx postnested "
     assert content[pos:] == " post"
+
+
+def test_convert_any_env_pairs_to_begin_end(handler):
+    content = r"\xxx stuff \endxxx aaa"
+    assert (
+        convert_any_env_pairs_to_begin_end(content)
+        == r"\begin{xxx} stuff \end{xxx} aaa"
+    )
+
+    content = r"\xxx stuff \endxxx aaa \xxx stuff \endxxx bbb"
+    assert (
+        convert_any_env_pairs_to_begin_end(content)
+        == r"\begin{xxx} stuff \end{xxx} aaa \begin{xxx} stuff \end{xxx} bbb"
+    )
+
+    content = r"""
+    \xxx stuff 
+        \yyy stuff
+        \endyyy 
+        ccc
+    \endxxx aaa
+"""
+
+    expect = r"""
+    \begin{xxx} stuff 
+        \begin{yyy} stuff
+        \end{yyy} 
+        ccc
+    \end{xxx} aaa
+"""
+    assert convert_any_env_pairs_to_begin_end(content) == expect
 
 
 if __name__ == "__main__":

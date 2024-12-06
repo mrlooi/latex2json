@@ -149,5 +149,25 @@ def test_env_equations(handler):
     assert content[pos:].strip() == ""
 
 
+def test_equation_with_env_pairs(handler):
+    content = r"""
+\begin{align}
+\array{ccc}
+a & b & c \\\\
+d & e & f \\\\
+g & h & i
+\endarray
+\end{align}
+
+Post align
+    """.strip()
+    assert handler.can_handle(content)
+    token, pos = handler.handle(content)
+    assert token
+    assert r"\array" not in token["content"]
+    assert r"\begin{array" in token["content"]
+    assert content[pos:].strip() == "Post align"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

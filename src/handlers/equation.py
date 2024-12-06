@@ -4,6 +4,7 @@ from typing import Callable, Dict, Optional, Tuple
 from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content
 from src.patterns import LABEL_PATTERN
+from src.handlers.environment import convert_any_env_pairs_to_begin_end
 
 EQUATION_ENV = {
     "equation",  # basic numbered equation
@@ -87,6 +88,9 @@ class EquationHandler(TokenHandler):
 
                 # Extract label if present
                 equation, labels = self._handle_labels(equation)
+
+                # convert any \aa \endaa pairs to \begin{aa} \end{aa} (to standardize)
+                equation = convert_any_env_pairs_to_begin_end(equation)
 
                 # Expand any commands in the equation
                 if self.process_content_fn:
