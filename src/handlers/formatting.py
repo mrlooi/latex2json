@@ -74,7 +74,7 @@ RAW_PATTERNS = OrderedDict(
         ),
         (
             "skip",
-            r"\\(?:bigskip|medskip|smallskip|(above|below)(display|caption)(short)?skip)\b",
+            r"\\(?:bigskip|medskip|smallskip|lastskip|unskip|(above|below)(display|caption)(short)?skip)\b",
         ),
         (
             "style",
