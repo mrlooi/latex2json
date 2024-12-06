@@ -1,6 +1,6 @@
 import datetime
 import pytest
-from src.handlers.formatting import FormattingHandler
+from src.handlers.formatting import FormattingHandler, strip_trailing_number_from_token
 
 
 @pytest.fixture
@@ -255,6 +255,37 @@ def test_misc_formatting_commands(handler):
     for line in content:
         token, pos = handler.handle(line)
         assert pos == len(line), f"Failed on line: {line}"
+
+
+def test_strip_trailing_number_from_token(handler):
+    token = strip_trailing_number_from_token({"type": "text", "content": "1234567890"})
+    assert token["content"] == ""
+
+    token = strip_trailing_number_from_token(
+        {"type": "text", "content": "1234567890abc"}
+    )
+    assert token["content"] == "1234567890abc"
+
+    token = strip_trailing_number_from_token(
+        {"type": "text", "content": "1234567890abc123"}
+    )
+    assert token["content"] == "1234567890abc"
+
+    token = strip_trailing_number_from_token({"type": "text", "content": "FIRST 333"})
+    assert token["content"] == "FIRST "
+
+    token = strip_trailing_number_from_token({"type": "text", "content": "FIRST -0.5"})
+    assert token["content"] == "FIRST "
+
+
+def test_pzat_with_prevtoken(handler):
+    for cmd in [r"\p@", r"\z@"]:
+        prev_token = {"type": "text", "content": "FIRST -123.5"}
+
+        token, pos = handler.handle(cmd, prev_token)
+        assert token is None
+        assert pos > 0
+        assert prev_token["content"] == "FIRST "
 
 
 if __name__ == "__main__":

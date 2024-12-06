@@ -85,7 +85,9 @@ class NewDefinitionHandler(TokenHandler):
         """Check if the content contains any definition commands"""
         return any(pattern.match(content) for pattern in PATTERNS.values())
 
-    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
+    def handle(
+        self, content: str, prev_token: Optional[Dict] = None
+    ) -> Tuple[Optional[Dict], int]:
         """Handle definition commands and return appropriate token with definition details"""
         for pattern_name, pattern in PATTERNS.items():
             match = pattern.match(content)

@@ -1424,6 +1424,48 @@ def test_renew_env(parser):
     assert qc[1]["content"] == "BOLD"
 
 
+def test_weird_setlength_and_defs(parser):
+    # real world example from nips_2017.sty
+    text = r"""
+
+\setlength{\topsep       }{4\p@ \@plus 1\p@   \@minus 2\p@}
+\setlength{\partopsep    }{1\p@ \@plus 0.5\p@ \@minus 0.5\p@}
+\setlength{\itemsep      }{2\p@ \@plus 1\p@   \@minus 0.5\p@}
+\setlength{\parsep       }{2\p@ \@plus 1\p@   \@minus 0.5\p@}
+\setlength{\leftmargin   }{3pc}
+\setlength{\leftmargini  }{\leftmargin}
+\setlength{\leftmarginii }{2em}
+\setlength{\leftmarginiii}{1.5em}
+\setlength{\leftmarginiv }{1.0em}
+\setlength{\leftmarginv  }{0.5em}
+\def\@listi  {\leftmargin\leftmargini}
+\def\@listii {\leftmargin\leftmarginii
+              \labelwidth\leftmarginii
+              \advance\labelwidth-\labelsep
+              \topsep  2\p@ \@plus 1\p@    \@minus 0.5\p@
+              \parsep  1\p@ \@plus 0.5\p@ \@minus 0.5\p@
+              \itemsep \parsep}
+
+\@listii
+"""
+    # clean sweep
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == ""
+
+    # all length commands should be ignored
+    length_commands = [
+        r"\topsep",
+        r"\partopsep",
+        r"\itemsep",
+        r"\parsep",
+        r"\leftmarginiv",
+    ]
+    for cmd in length_commands:
+        assert len(parser.parse(cmd)) == 0
+
+
 def test_csname_and_expandafter_commands(parser):
     text = r"""
     \expandafter\def\expandafter\csname\csname foo2  \expandafter\endcsname boo3! \expandafter\endcsname#1{VALID COMMAND #1}

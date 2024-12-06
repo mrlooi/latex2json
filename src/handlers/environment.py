@@ -287,7 +287,9 @@ class BaseEnvironmentHandler(TokenHandler):
 
         return None, 0
 
-    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
+    def handle(
+        self, content: str, prev_token: Optional[Dict] = None
+    ) -> Tuple[Optional[Dict], int]:
         env, end_pos = self._try_match_env(content)
         if env:
             return env, end_pos
@@ -422,7 +424,9 @@ class EnvironmentHandler(BaseEnvironmentHandler):
 
         return super()._handle_environment(env_name, inner_content)
 
-    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
+    def handle(
+        self, content: str, prev_token: Optional[Dict] = None
+    ) -> Tuple[Optional[Dict], int]:
         # check for new environment definition first
         new_env_match = NEW_ENVIRONMENT_PATTERN.match(content)
         if new_env_match:
@@ -440,7 +444,7 @@ class EnvironmentHandler(BaseEnvironmentHandler):
                     )
             return None, end_pos
 
-        return super().handle(content)
+        return super().handle(content, prev_token)
 
 
 if __name__ == "__main__":

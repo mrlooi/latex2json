@@ -121,7 +121,9 @@ class DiacriticsHandler(TokenHandler):
         """Check if the content contains any diacritic commands"""
         return any(pattern.match(content) for pattern in ACCENT_PATTERNS.values())
 
-    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
+    def handle(
+        self, content: str, prev_token: Optional[Dict] = None
+    ) -> Tuple[Optional[Dict], int]:
         """Handle diacritic commands and return appropriate token"""
         for accent_name, pattern in ACCENT_PATTERNS.items():
             match = pattern.match(content)

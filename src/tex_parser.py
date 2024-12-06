@@ -266,7 +266,8 @@ class LatexParser:
         """
         for handler in self.handlers:
             if handler.can_handle(content):
-                token, end_pos = handler.handle(content)
+                prev_token = tokens[-1] if tokens else None
+                token, end_pos = handler.handle(content, prev_token)
                 if token:
                     if isinstance(token, str):
                         token = {"type": "text", "content": token}
@@ -503,20 +504,10 @@ if __name__ == "__main__":
               \parsep  1\p@ \@plus 0.5\p@ \@minus 0.5\p@
               \itemsep \parsep}
 
-% \@listii
+\@listii
 """
 
-    text = r"""
-    \expandafter\def\expandafter\csname\csname foo2  \expandafter\endcsname boo3! \expandafter\endcsname#1{hello #1}
-    \foo2boo3!{MA BOII}
-    \csname foo2   boo3! \endcsname{YOLO}
-    \newline
-    \csname foo2boo3! \endcsname{NO}  % not valid
-    """
     parser = LatexParser(logger=logger)
     parsed_tokens = parser.parse(text)
     # print(len(parsed_tokens))
     print(parsed_tokens)
-
-# for command in commands:
-#     print(command, UNKNOWN_COMMAND_PATTERN.match(command))

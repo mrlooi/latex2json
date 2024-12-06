@@ -229,7 +229,9 @@ class TextFormattingHandler(TokenHandler):
             "content": extracted_content,
         }, start_pos + end_pos
 
-    def handle(self, content: str) -> Tuple[str, int]:
+    def handle(
+        self, content: str, prev_token: Optional[Dict] = None
+    ) -> Tuple[str, int]:
         for name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if not match:

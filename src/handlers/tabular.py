@@ -148,7 +148,9 @@ class TabularHandler(TokenHandler):
             content = self.cell_parser_fn(content)
         return self._clean_cell(content)
 
-    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
+    def handle(
+        self, content: str, prev_token: Optional[Dict] = None
+    ) -> Tuple[Optional[Dict], int]:
         match = re.match(TABULAR_PATTERN, content)
 
         if not match:

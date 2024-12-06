@@ -16,7 +16,9 @@ class TokenHandler(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
+    def handle(
+        self, content: str, prev_token: Optional[Dict] = None
+    ) -> Tuple[Optional[Dict], int]:
         """Process the content and return (token, new_position)"""
         raise NotImplementedError
 

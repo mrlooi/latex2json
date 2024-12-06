@@ -73,7 +73,9 @@ class EquationHandler(TokenHandler):
 
         return parsed_equation, list(reversed(labels))
 
-    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
+    def handle(
+        self, content: str, prev_token: Optional[Dict] = None
+    ) -> Tuple[Optional[Dict], int]:
 
         # Try each pattern until we find a match
         for pattern_name, pattern in PATTERNS.items():

@@ -96,7 +96,9 @@ class IfElseBlockHandler(TokenHandler):
     def can_handle(self, content: str) -> bool:
         return IF_PATTERN.match(content)
 
-    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
+    def handle(
+        self, content: str, prev_token: Optional[Dict] = None
+    ) -> Tuple[Optional[Dict], int]:
         match = IF_PATTERN.match(content)
         if match:
             condition = match.group(1)

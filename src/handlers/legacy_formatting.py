@@ -108,7 +108,9 @@ class LegacyFormattingHandler(TokenHandler):
     def can_handle(self, content: str) -> bool:
         return any(pattern.match(content) for pattern in PATTERNS.values())
 
-    def handle(self, content: str) -> Tuple[str, int]:
+    def handle(
+        self, content: str, prev_token: Optional[Dict] = None
+    ) -> Tuple[str, int]:
         for pattern_name, pattern in PATTERNS.items():
             match = pattern.match(content)
 

@@ -47,7 +47,9 @@ class AuthorHandler(TokenHandler):
 
         return authors
 
-    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
+    def handle(
+        self, content: str, prev_token: Optional[Dict] = None
+    ) -> Tuple[Optional[Dict], int]:
         for name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if match:

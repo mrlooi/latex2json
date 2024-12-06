@@ -14,7 +14,9 @@ class BibItemHandler(TokenHandler):
     def can_handle(self, content: str) -> bool:
         return BIBITEM_PATTERN.match(content) is not None
 
-    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
+    def handle(
+        self, content: str, prev_token: Optional[Dict] = None
+    ) -> Tuple[Optional[Dict], int]:
         match = BIBITEM_PATTERN.match(content)
         if match:
             item = match.group(3).strip()

@@ -167,12 +167,38 @@ PATTERNS["color"] = COLOR_COMMANDS_PATTERN
 PATTERNS["definecolor"] = DEFINE_COLOR_PATTERN
 # PATTERNS['and'] = re.compile(r'\\and\b', re.IGNORECASE)
 
+number_regex_compiled = re.compile(number_regex)
+
+
+def strip_trailing_number_from_token(token: Dict) -> Dict:
+    if not token or not isinstance(token, dict) or token.get("type") != "text":
+        return token
+
+    text = token["content"]
+    if not text:
+        return token
+
+    # If the entire string is a number, clear the content
+    if re.match(f"^{number_regex}$", text):
+        token["content"] = ""
+        return token
+
+    # Find the last non-numeric character
+    for i in range(len(text) - 1, -1, -1):
+        if not number_regex_compiled.match(text[i:]):
+            token["content"] = text[: i + 1]
+            break
+
+    return token
+
 
 class FormattingHandler(TokenHandler):
     def can_handle(self, content: str) -> bool:
         return any(pattern.match(content) for pattern in PATTERNS.values())
 
-    def handle(self, content: str) -> Tuple[Optional[Dict], int]:
+    def handle(
+        self, content: str, prev_token: Optional[Dict] = None
+    ) -> Tuple[Optional[Dict], int]:
         # Try each pattern until we find a match
         for pattern_name, pattern in PATTERNS.items():
             match = pattern.match(content)
@@ -224,6 +250,13 @@ class FormattingHandler(TokenHandler):
                     return {"type": "text", "content": "\n"}, match.end()
                 elif pattern_name == "options":
                     return self._handle_options(content, match)
+                elif pattern_name == "pz@":
+                    if prev_token:
+                        # check for number\pz@ e.g. 2\pz@ in previous token
+                        # since \pz@ could be parsed after the prior number was extracted in previous parsing loop
+                        # then strip out the trailing number if it exists
+                        strip_trailing_number_from_token(prev_token)
+                    return None, match.end()
                 elif pattern_name == "class_setup":
                     if match.group(0).endswith("["):
                         start_pos = match.end() - 1
@@ -276,5 +309,11 @@ class FormattingHandler(TokenHandler):
 
 if __name__ == "__main__":
     handler = FormattingHandler()
-    print(handler.handle(r"\textbackslash"))
-    print(handler.handle(r"\maketitle"))
+    # print(handler.handle(r"\textbackslash"))
+    # print(handler.handle(r"\maketitle"))
+
+    print(
+        strip_trailing_number_from_token(
+            {"type": "text", "content": "1234567890abC F33"}
+        )
+    )
