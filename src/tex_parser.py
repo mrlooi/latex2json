@@ -399,11 +399,7 @@ class LatexParser:
                     content[current_pos:]
                 )
                 if end_pos > 0:
-                    block = (
-                        token["if_content"]
-                        if token["condition"] != "false"
-                        else token["else_content"]
-                    )
+                    block = token["if_content"]
                     content = (
                         content[:current_pos] + block + content[current_pos + end_pos :]
                     )

@@ -234,6 +234,10 @@ class IfElseBlockHandler(TokenHandler):
                                 start_delimiter=self.all_ifs_compiled or IF_PATTERN,
                             )
                         )
+                        # Swap if_content and else_content for \iffalse
+                        if condition.replace("{", "").replace("}", "") == "false":
+                            if_content, else_content = else_content, if_content
+
                     except ValueError as e:
                         print(ValueError(f"Unclosed conditional block: {e}"))
                         return None, 0
