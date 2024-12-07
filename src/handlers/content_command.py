@@ -58,7 +58,8 @@ RAW_PATTERNS = OrderedDict(
 
 # compile them
 PATTERNS = OrderedDict(
-    (key, re.compile(pattern, re.DOTALL)) for key, pattern in RAW_PATTERNS.items()
+    (key, re.compile(pattern, re.DOTALL | re.IGNORECASE))
+    for key, pattern in RAW_PATTERNS.items()
 )
 
 

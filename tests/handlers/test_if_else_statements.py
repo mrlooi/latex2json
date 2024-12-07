@@ -149,3 +149,47 @@ def test_ifthenelse():
     assert result["condition"] == "cond"
     assert result["if_content"] == r"\ifthenelse{inner_cond}{inner_true}{inner_false}"
     assert result["else_content"] == "else_content"
+
+
+def test_others():
+    # ifx
+    text = r"""
+    \ifx\@h@ld\@empty EERRR 
+        aaaa
+     \else              
+        bbb
+     \fi
+""".strip()
+    handler = IfElseBlockHandler()
+    result, pos = handler.handle(text)
+    assert result["condition"] == r"\@h@ld\@empty"
+    assert result["if_content"].replace(" ", "").replace("\n", "") == "EERRRaaaa"
+    assert result["else_content"].replace(" ", "").replace("\n", "") == "bbb"
+
+    # ifnum
+    text = r"\ifnum\lastpenalty=\z@ PENALTY \else NOPE \fi"
+    result, pos = handler.handle(text)
+    assert result["condition"] == r"\lastpenalty=\z@"
+    assert result["if_content"].strip() == "PENALTY"
+    assert result["else_content"].strip() == "NOPE"
+
+    # ifdefined
+    for t in ["\\ifdefined", "\\ifundefined"]:
+        text = rf"{t}\@h@ld cccc \else dddd \fi"
+        result, pos = handler.handle(text)
+        assert result["condition"] == r"\@h@ld"
+        assert result["if_content"].strip() == "cccc"
+        assert result["else_content"].strip() == "dddd"
+
+    # ifcat
+    text = r"\ifcat\lastpenalty\z@ PENALTY \else NOPE \fi"
+    result, pos = handler.handle(text)
+    assert result["condition"] == r"\lastpenalty\z@"
+    assert result["if_content"].strip() == "PENALTY"
+    assert result["else_content"].strip() == "NOPE"
+
+    text = r"\ifcat _\ssss aaaa \else bbb \fi"
+    result, pos = handler.handle(text)
+    assert result["condition"] == r"_\ssss"
+    assert result["if_content"].strip() == "aaaa"
+    assert result["else_content"].strip() == "bbb"

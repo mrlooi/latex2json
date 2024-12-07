@@ -381,9 +381,7 @@ def test_with_csname_and_expandafter(handler):
     assert match is None
 
     # with let (double csname blocks)
-    content = (
-        r"\let\csname oldschool\expandafter\endcsname\csname school\endcsname POST"
-    )
+    content = r"\let\noexpand\csname oldschool\expandafter\noexpand\endcsname\csname school\endcsname POST"
     token, pos = handler.handle(content)
     assert token["type"] == "newcommand"
     assert token["name"] == "oldschool"

@@ -1,22 +1,55 @@
+from collections import OrderedDict
 from typing import Dict, Optional, Tuple
 import re
 
 from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content_sequence_blocks
 
-IF_THEN_ELSE_PATTERN = re.compile(r"\\ifthenelse\s*\{", re.DOTALL)
-IF_PATTERN = re.compile(r"\\if(?!thenelse)(.*)([^\n]*)")
+
+# Could be character, command, or more complex token
+char_or_command_pattern = r"(?:{\s*)?(?:\\[a-zA-Z@]+|\S)(?:\s*})?"
+
+default_if_pattern = r"if\s*(%s\s*%s|.+)(?=\\else\b|\\fi\b|$|\n)" % (
+    char_or_command_pattern,
+    char_or_command_pattern,
+)
+
+IF_PATTERN = re.compile(r"\\%s" % (default_if_pattern))
 ELSE_PATTERN = re.compile(r"\\else\b")
 ELSIF_PATTERN = re.compile(
-    r"\\els(?:e)?if(.*)([^\n]*)"
+    r"\\els(?:e)?%s" % (default_if_pattern)
 )  # Matches both \elsif and \elseif
 FI_PATTERN = re.compile(r"\\fi\b")
 
-PATTERNS = {
-    "if": IF_PATTERN,
-    "ifthenelse": IF_THEN_ELSE_PATTERN,
-    "equal": re.compile(r"\\equal\s*\{"),
-}
+command_with_opt_brace_pattern = r"(?:{\s*)?\\([a-zA-Z@]+)(?:\s*})?"
+value_pattern = r"\\value\s*{\s*([a-zA-Z@]+)\s*}"
+numbered_command_pattern = r"\\([a-zA-Z@]+)(\d+)"
+
+counter_or_num = rf"(?:{value_pattern}|{numbered_command_pattern}|{command_with_opt_brace_pattern}|\d+)"
+
+# Allow either order around operator
+ifnum_pattern = rf"\\ifnum\s*{counter_or_num}\s*([=<>])\s*{counter_or_num}"
+
+# \ifcat takes two items to compare
+ifcat_pattern = rf"\\ifcat\s*{char_or_command_pattern}\s*{char_or_command_pattern}"
+
+# ordered dict so that ifthenelse/ifnum etc is matched before general if
+PATTERNS = OrderedDict(
+    {
+        "ifthenelse": re.compile(r"\\ifthenelse\s*\{", re.DOTALL),
+        "ifx": re.compile(
+            r"\\ifx\s*(%s\s*%s)"
+            % (command_with_opt_brace_pattern, command_with_opt_brace_pattern)
+        ),
+        "ifdefined": re.compile(
+            r"\\if(?:un)?defined\s*%s" % (command_with_opt_brace_pattern)
+        ),
+        "ifnum": re.compile(ifnum_pattern),
+        "ifcat": re.compile(ifcat_pattern),
+        "if": IF_PATTERN,
+        "equal": re.compile(r"\\equal\s*\{"),
+    }
+)
 
 
 def extract_nested_if_else(
@@ -104,7 +137,7 @@ def try_handle_ifthenelse(
     content: str, match: Optional[re.Match] = None
 ) -> Tuple[Optional[Dict], int]:
     if match is None:
-        match = IF_THEN_ELSE_PATTERN.match(content)
+        match = PATTERNS["ifthenelse"].match(content)
     if match:
         start_pos = match.end() - 1  # -1 to exclude the opening brace
         blocks, end_pos = extract_nested_content_sequence_blocks(
@@ -143,12 +176,17 @@ class IfElseBlockHandler(TokenHandler):
                         return None, 0
                     # ignore equal anyway
                     return None, start_pos + end_pos
-                elif name == "if":
-                    condition = match.group(1)
+                else:
+                    condition = match.group(0).replace(" ", "")
+                    condition = condition.replace("\\" + name, "")
+                    if name == "ifdefined" and "\\ifundefined" in condition:
+                        condition = condition.replace("\\ifundefined", "")
                     start_pos = match.end()
                     try:
                         if_content, else_content, elsif_branches, end_pos = (
-                            extract_nested_if_else(content[start_pos:])
+                            extract_nested_if_else(
+                                content[start_pos:], start_delimiter=pattern
+                            )
                         )
                     except ValueError as e:
                         print(ValueError(f"Unclosed conditional block: {e}"))

@@ -18,7 +18,7 @@ LET_COMMAND_PATTERN = re.compile(
     r"%s([^\s{\\]+)\s*(=.*|\\[^\s{]+)" % (LET_COMMAND_PREFIX), re.DOTALL
 )
 
-EXPANDAFTER_PATTERN = re.compile(r"\\expandafter(?![a-zA-Z])")
+EXPAND_PATTERN = re.compile(r"\\(?:expandafter|noexpand)(?![a-zA-Z])")
 START_CSNAME_PATTERN = re.compile(r"\\csname(?![a-zA-Z])")
 END_CSNAME_PATTERN = re.compile(r"\\endcsname(?![a-zA-Z])")
 
@@ -57,7 +57,7 @@ PATTERNS = {
         r"\\setcounter\s*%s\s*%s" % (BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN),
         re.DOTALL,
     ),
-    "expandafter": EXPANDAFTER_PATTERN,
+    "expandafter": EXPAND_PATTERN,
 }
 
 
@@ -73,7 +73,7 @@ def extract_and_concat_nested_csname(content: str) -> Tuple[str, int]:
         # Remove the start and end patterns
         inner = START_CSNAME_PATTERN.sub("", inner)
         inner = END_CSNAME_PATTERN.sub("", inner)
-        inner = EXPANDAFTER_PATTERN.sub("", inner)
+        inner = EXPAND_PATTERN.sub("", inner)
 
         return inner, next_end_pos
     return "", -1
@@ -254,7 +254,7 @@ class NewDefinitionHandler(TokenHandler):
             prefix = prefix[:-1]
             start_pos = match.end() - 1
 
-            expand_after_pattern = re.compile(r"\s*" + EXPANDAFTER_PATTERN.pattern)
+            expand_after_pattern = re.compile(r"\s*" + EXPAND_PATTERN.pattern)
 
             inner_csnames = []
             while start_pos < len(content):
