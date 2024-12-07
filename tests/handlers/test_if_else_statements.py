@@ -173,6 +173,12 @@ def test_others():
     assert result["if_content"].strip() == "PENALTY"
     assert result["else_content"].strip() == "NOPE"
 
+    text = r"\ifnum 3=\myvar EQUALS 3 \else NOPE \fi"
+    result, pos = handler.handle(text)
+    assert result["condition"] == r"3=\myvar"
+    assert result["if_content"].strip() == "EQUALS 3"
+    assert result["else_content"].strip() == "NOPE"
+
     # ifdefined
     for t in ["\\ifdefined", "\\ifundefined"]:
         text = rf"{t}\@h@ld cccc \else dddd \fi"
@@ -193,6 +199,19 @@ def test_others():
     assert result["condition"] == r"_\ssss"
     assert result["if_content"].strip() == "aaaa"
     assert result["else_content"].strip() == "bbb"
+
+    # ifdim
+    text = r"\ifdim 3pt<\hsize EQUALS 3 \else NOPE \fi"
+    result, pos = handler.handle(text)
+    assert result["condition"] == r"3pt<\hsize"
+    assert result["if_content"].strip() == "EQUALS 3"
+    assert result["else_content"].strip() == "NOPE"
+
+    text = r"\ifdim\myvar=3pt EQUALS 3 \else NOPE \fi"
+    result, pos = handler.handle(text)
+    assert result["condition"] == r"\myvar=3pt"
+    assert result["if_content"].strip() == "EQUALS 3"
+    assert result["else_content"].strip() == "NOPE"
 
 
 def test_nested_multi_if_type_structure():
@@ -239,3 +258,24 @@ def test_with_process_newif():
 
     handler.clear()
     assert not handler.has_if("test")
+
+
+def test_ifcase():
+    text = r"""
+\ifcase\value{counter}
+  case 0
+\or One
+  case 1
+\or Two
+  case 2
+\else
+  default
+\fi
+""".strip()
+    handler = IfElseBlockHandler()
+    result, pos = handler.handle(text)
+    assert result["condition"] == r"\value{counter}"
+    assert result["if_content"].strip() == "case 0"
+    assert result["elsif_branches"][0][1].strip() == "case 1"
+    assert result["elsif_branches"][1][1].strip() == "case 2"
+    assert result["else_content"].strip() == "default"

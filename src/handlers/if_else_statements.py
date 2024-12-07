@@ -4,20 +4,21 @@ import re
 
 from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content_sequence_blocks
+from src.patterns import NUMBER_PATTERN
 
 
 # Could be character, command, or more complex token
 char_or_command_pattern = r"(?:{\s*)?(?:\\[a-zA-Z@]+|\S)(?:\s*})?"
 
-default_if_pattern = r"if\s*(%s\s*%s|.+)(?=\\else\b|\\fi\b|$|\n)" % (
+default_if_pattern = r"\s*(%s\s*%s|.+)(?=\\else\b|\\fi\b|$|\n)" % (
     char_or_command_pattern,
     char_or_command_pattern,
 )
 
-IF_PATTERN = re.compile(r"\\%s" % (default_if_pattern))
+IF_PATTERN = re.compile(r"\\if%s" % (default_if_pattern))
 ELSE_PATTERN = re.compile(r"\\else\b")
 ELSIF_PATTERN = re.compile(
-    r"\\els(?:e)?%s" % (default_if_pattern)
+    r"\\els(?:e)?if%s|\\or%s\b" % (default_if_pattern, default_if_pattern)
 )  # Matches both \elsif and \elseif
 FI_PATTERN = re.compile(r"\\fi\b")
 
@@ -29,6 +30,9 @@ counter_or_num = rf"(?:{value_pattern}|{numbered_command_pattern}|{command_with_
 
 # Allow either order around operator
 ifnum_pattern = rf"\\ifnum\s*{counter_or_num}\s*([=<>])\s*{counter_or_num}"
+
+command_or_dim = rf"(?:{command_with_opt_brace_pattern}|{NUMBER_PATTERN}\w+)"
+ifdim_pattern = rf"\\ifdim\s*{command_or_dim}\s*([=<>])\s*{command_or_dim}"
 
 # \ifcat takes two items to compare
 ifcat_pattern = rf"\\ifcat\s*{char_or_command_pattern}\s*{char_or_command_pattern}"
@@ -47,7 +51,9 @@ IF_PATTERNS_DEFAULT_LIST = OrderedDict(
             r"\\if(?:un)?defined\s*%s" % (command_with_opt_brace_pattern)
         ),
         "ifnum": re.compile(ifnum_pattern),
+        "ifdim": re.compile(ifdim_pattern),
         "ifcat": re.compile(ifcat_pattern),
+        "ifcase": re.compile(r"\\ifcase" + default_if_pattern),
         "if": IF_PATTERN,
     }
 )
