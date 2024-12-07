@@ -1,5 +1,5 @@
 import pytest
-from src.handlers.if_else_statements import IfElseBlockHandler, extract_nested_if_else
+from src.handlers.if_else_statements import IfElseBlockHandler, extract_else_elseif_fi
 
 
 @pytest.fixture
@@ -97,7 +97,7 @@ def test_error_unclosed_if():
     assert pos == 0
 
 
-def test_nested_complex_structure():
+def test_base_if_nested_structure():
     text = r"""
 \if{level1}
     \if{level2a}
@@ -134,12 +134,12 @@ def test_nested_complex_structure():
     assert "after_nested" in elsif_content
 
 
-def test_ignore_equal():
-    text = r"\equal{cond}{content}"
-    handler = IfElseBlockHandler()
-    result, pos = handler.handle(text)
-    assert result is None
-    assert text[pos:] == "{content}"
+# def test_ignore_equal():
+#     text = r"\equal{cond}{content}"
+#     handler = IfElseBlockHandler()
+#     result, pos = handler.handle(text)
+#     assert result is None
+#     assert text[pos:] == "{content}"
 
 
 def test_ifthenelse():
@@ -193,3 +193,49 @@ def test_others():
     assert result["condition"] == r"_\ssss"
     assert result["if_content"].strip() == "aaaa"
     assert result["else_content"].strip() == "bbb"
+
+
+def test_nested_multi_if_type_structure():
+    text = r"""
+\ifx\first\empty
+    First 
+    \ifnum\second<2
+        Inner second
+    \else
+        Inner else
+    \fi
+\else
+    bbb
+\fi
+
+post
+""".strip()
+    handler = IfElseBlockHandler()
+    result, pos = handler.handle(text)
+    assert result["condition"] == r"\first\empty"
+
+    if_content = result["if_content"]
+    assert r"\ifnum\second<2" in if_content
+    assert "Inner second" in if_content
+    assert "Inner else" in if_content
+    assert if_content.strip().endswith(r"\fi")
+
+    assert result["else_content"].strip() == "bbb"
+    assert text[pos:].strip() == "post"
+
+
+def test_with_process_newif():
+    handler = IfElseBlockHandler()
+    handler.process_newif("test")
+    assert handler.has_if("test")
+
+    text = r"""
+    \iftest TRUE \else FALSE \fi 
+""".strip()
+    result, pos = handler.handle(text)
+    assert result["condition"] == r"test"
+    assert result["if_content"].strip() == "TRUE"
+    assert result["else_content"].strip() == "FALSE"
+
+    handler.clear()
+    assert not handler.has_if("test")

@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 import re
 
 from src.handlers.base import TokenHandler
@@ -33,10 +33,12 @@ ifnum_pattern = rf"\\ifnum\s*{counter_or_num}\s*([=<>])\s*{counter_or_num}"
 # \ifcat takes two items to compare
 ifcat_pattern = rf"\\ifcat\s*{char_or_command_pattern}\s*{char_or_command_pattern}"
 
+EQUAL_PATTERN = re.compile(r"\\equal\s*\{")
+
 # ordered dict so that ifthenelse/ifnum etc is matched before general if
-PATTERNS = OrderedDict(
+IF_PATTERNS_DEFAULT_LIST = OrderedDict(
     {
-        "ifthenelse": re.compile(r"\\ifthenelse\s*\{", re.DOTALL),
+        "ifthenelse": re.compile(r"\\ifthenelse\s*\{"),
         "ifx": re.compile(
             r"\\ifx\s*(%s\s*%s)"
             % (command_with_opt_brace_pattern, command_with_opt_brace_pattern)
@@ -47,12 +49,11 @@ PATTERNS = OrderedDict(
         "ifnum": re.compile(ifnum_pattern),
         "ifcat": re.compile(ifcat_pattern),
         "if": IF_PATTERN,
-        "equal": re.compile(r"\\equal\s*\{"),
     }
 )
 
 
-def extract_nested_if_else(
+def extract_else_elseif_fi(
     content: str,
     start_delimiter: re.Pattern = IF_PATTERN,
     end_delimiter: re.Pattern = FI_PATTERN,
@@ -137,7 +138,7 @@ def try_handle_ifthenelse(
     content: str, match: Optional[re.Match] = None
 ) -> Tuple[Optional[Dict], int]:
     if match is None:
-        match = PATTERNS["ifthenelse"].match(content)
+        match = IF_PATTERNS_DEFAULT_LIST["ifthenelse"].match(content)
     if match:
         start_pos = match.end() - 1  # -1 to exclude the opening brace
         blocks, end_pos = extract_nested_content_sequence_blocks(
@@ -155,37 +156,73 @@ def try_handle_ifthenelse(
 
 
 class IfElseBlockHandler(TokenHandler):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.all_ifs: List[str, re.Pattern] = []
+        self.all_ifs_compiled: re.Pattern = None
+        self._reset()
+
+    def clear(self):
+        self._reset()
+
+    def _reset(self):
+        self.all_ifs = [
+            (name, pattern) for name, pattern in IF_PATTERNS_DEFAULT_LIST.items()
+        ]
+        self._recompile_all_ifs()
+
+    def process_newif(self, var_name: str):
+        pattern = re.compile(r"\\if" + var_name + r"(?:true|false)?")
+        # push to top of stack i.e. priority
+        self.all_ifs.insert(0, (var_name, pattern))
+        self._recompile_all_ifs()
+
+    def has_if(self, var_name: str) -> bool:
+        return any(name == var_name for name, _ in self.all_ifs)
+
+    def _recompile_all_ifs(self):
+        pattern = ""
+        for k, v in self.all_ifs:
+            pattern += "|" + v.pattern
+        if pattern.startswith("|"):
+            pattern = pattern[1:]
+        self.all_ifs_compiled = re.compile(pattern)
+
     def can_handle(self, content: str) -> bool:
-        return any(pattern.match(content) for pattern in PATTERNS.values())
+        return any(pattern.match(content) for _, pattern in self.all_ifs)
 
     def handle(
         self, content: str, prev_token: Optional[Dict] = None
     ) -> Tuple[Optional[Dict], int]:
-        for name, pattern in PATTERNS.items():
+        for name, pattern in self.all_ifs:
             match = pattern.match(content)
             if match:
                 if name == "ifthenelse":
                     token, end_pos = try_handle_ifthenelse(content, match)
                     return token, end_pos
-                elif name == "equal":
-                    start_pos = match.end() - 1
-                    blocks, end_pos = extract_nested_content_sequence_blocks(
-                        content[start_pos:], max_blocks=1
-                    )
-                    if len(blocks) == 0:
-                        return None, 0
-                    # ignore equal anyway
-                    return None, start_pos + end_pos
+                # elif name == "equal":
+                #     start_pos = match.end() - 1
+                #     blocks, end_pos = extract_nested_content_sequence_blocks(
+                #         content[start_pos:], max_blocks=1
+                #     )
+                #     if len(blocks) == 0:
+                #         return None, 0
+                #     # ignore equal anyway
+                #     return None, start_pos + end_pos
                 else:
                     condition = match.group(0).replace(" ", "")
-                    condition = condition.replace("\\" + name, "")
-                    if name == "ifdefined" and "\\ifundefined" in condition:
-                        condition = condition.replace("\\ifundefined", "")
+                    if condition == "\\if" + name:
+                        condition = name
+                    else:
+                        condition = condition.replace("\\" + name, "")
+                        if name == "ifdefined" and "\\ifundefined" in condition:
+                            condition = condition.replace("\\ifundefined", "")
                     start_pos = match.end()
                     try:
                         if_content, else_content, elsif_branches, end_pos = (
-                            extract_nested_if_else(
-                                content[start_pos:], start_delimiter=pattern
+                            extract_else_elseif_fi(
+                                content[start_pos:],
+                                start_delimiter=self.all_ifs_compiled,
                             )
                         )
                     except ValueError as e:
@@ -204,8 +241,9 @@ class IfElseBlockHandler(TokenHandler):
 
 if __name__ == "__main__":
     text = r"""
-\ifasdaa{}{}{}
+    \iftest TRUE \else FALSE \fi 
 """.strip()
 
     handler = IfElseBlockHandler()
+    handler.process_newif("test")
     print(handler.handle(text))

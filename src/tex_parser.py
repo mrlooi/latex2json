@@ -116,6 +116,7 @@ class LatexParser:
         # handlers
         for handler in self.handlers:
             handler.clear()
+        self.if_else_block_handler.clear()
         self.new_definition_handler.clear()
 
     def _expand_command(self, content: str, ignore_unicode: bool = False) -> str:
@@ -230,9 +231,10 @@ class LatexParser:
         if self.new_definition_handler.can_handle(content):
             token, end_pos = self.new_definition_handler.handle(content)
             if token:
+                cmd_name = token["name"]
                 if token["type"] == "newcommand":
                     self.command_processor.process_newcommand(
-                        token["name"],
+                        cmd_name,
                         token["content"],
                         token["num_args"],
                         token["defaults"],
@@ -240,18 +242,19 @@ class LatexParser:
                     )
                 elif token["type"] == "def":
                     self.command_processor.process_newdef(
-                        token["name"],
+                        cmd_name,
                         token["content"],
                         token["num_args"],
                         token["usage_pattern"],
                         token["is_edef"],
                     )
                 elif token["type"] == "newif":
-                    self.command_processor.process_newif(token["name"])
+                    self.command_processor.process_newif(cmd_name)
+                    self.if_else_block_handler.process_newif(cmd_name)
                 elif token["type"] == "newlength":
-                    self.command_processor.process_newlength(token["name"])
+                    self.command_processor.process_newlength(cmd_name)
                 elif token["type"] == "newcounter":
-                    self.command_processor.process_newcounter(token["name"])
+                    self.command_processor.process_newcounter(cmd_name)
                 # elif token['type'] == 'newtheorem':
                 #     pass
 

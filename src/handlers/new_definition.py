@@ -8,7 +8,7 @@ POST_NEW_COMMAND_PATTERN_STR = (
     r"\*?\s*(?:{\\([^}]+)}|\\([^\s{[]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{"
 )
 
-DEF_COMMAND_PREFIX = r"(?:\\long)?\\(?:e)?def\s*\\"
+DEF_COMMAND_PREFIX = r"(?:\\long)?\\(?:e|g)?def\s*\\"
 LET_COMMAND_PREFIX = r"\\let\s*\\"
 
 DEF_COMMAND_PATTERN = re.compile(

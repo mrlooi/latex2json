@@ -1317,15 +1317,21 @@ def test_legacy_formatting(parser):
 
 def test_new_if(parser):
     text = r"""
+    \def\foo{BAR}
     \newif\ifvar\varfalse
 
     \vartrue
 
     Stuff after
+
+    \ifvar\foo haha \else FALSE \fi
     """
     parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) == 1
-    assert parsed_tokens[0]["content"].strip() == "Stuff after"
+    assert (
+        parsed_tokens[0]["content"].replace(" ", "").replace("\n", "")
+        == "StuffafterBARhaha"
+    )
     assert "newif:var" in parser.commands
 
 
