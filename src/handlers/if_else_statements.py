@@ -158,8 +158,8 @@ def try_handle_ifthenelse(
 class IfElseBlockHandler(TokenHandler):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.all_ifs: List[str, re.Pattern] = []
-        self.all_ifs_compiled: re.Pattern = None
+        self.all_ifs: List[Tuple[str, re.Pattern]] = []
+        self.all_ifs_compiled: re.Pattern | None = None
         self._reset()
 
     def clear(self):
@@ -181,6 +181,9 @@ class IfElseBlockHandler(TokenHandler):
         return any(name == var_name for name, _ in self.all_ifs)
 
     def _recompile_all_ifs(self):
+        if len(self.all_ifs) == 0:
+            self.all_ifs_compiled = None
+            return
         pattern = ""
         for k, v in self.all_ifs:
             pattern += "|" + v.pattern
@@ -222,7 +225,7 @@ class IfElseBlockHandler(TokenHandler):
                         if_content, else_content, elsif_branches, end_pos = (
                             extract_else_elseif_fi(
                                 content[start_pos:],
-                                start_delimiter=self.all_ifs_compiled,
+                                start_delimiter=self.all_ifs_compiled or IF_PATTERN,
                             )
                         )
                     except ValueError as e:
