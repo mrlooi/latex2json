@@ -32,6 +32,7 @@ from src.handlers import (
     TextFormattingHandler,
     IfElseBlockHandler,
     DiacriticsHandler,
+    ForLoopHandler,
 )
 from src.handlers.environment import BaseEnvironmentHandler
 from src.patterns import PATTERNS
@@ -90,6 +91,7 @@ class LatexParser:
             ),
             # make sure to add EnvironmentHandler after equation/tabular or other env related formats, since it will greedily parse any begin/end block. Add as last to be safe
             self.env_handler,
+            ForLoopHandler(),
             # add formatting stuffs last
             TextFormattingHandler(self.parse),
             FormattingHandler(),
@@ -486,26 +488,23 @@ if __name__ == "__main__":
 
     # Example usage
     text = r"""
-
-\setlength{\topsep       }{4\p@ \@plus 1\p@   \@minus 2\p@}
-\setlength{\partopsep    }{1\p@ \@plus 0.5\p@ \@minus 0.5\p@}
-\setlength{\itemsep      }{2\p@ \@plus 1\p@   \@minus 0.5\p@}
-\setlength{\parsep       }{2\p@ \@plus 1\p@   \@minus 0.5\p@}
-\setlength{\leftmargin   }{3pc}
-\setlength{\leftmargini  }{\leftmargin}
-\setlength{\leftmarginii }{2em}
-\setlength{\leftmarginiii}{1.5em}
-\setlength{\leftmarginiv }{1.0em}
-\setlength{\leftmarginv  }{0.5em}
-\def\@listi  {\leftmargin\leftmargini}
-\def\@listii {\leftmargin\leftmarginii
-              \labelwidth\leftmarginii
-              \advance\labelwidth-\labelsep
-              \topsep  2\p@ \@plus 1\p@    \@minus 0.5\p@
-              \parsep  1\p@ \@plus 0.5\p@ \@minus 0.5\p@
-              \itemsep \parsep}
-
-\@listii
+\begin{algorithm}[H] 
+\caption{Sum of Array Elements}
+\label{alg:loop}
+\begin{algorithmic}[1]
+\Require{$A_{1} \dots A_{N}$} 
+\Ensure{$Sum$ (sum of values in the array)}
+\Statex
+\Function{Loop}{$A[\;]$}
+  \State {$Sum$ $\gets$ {$0$}}
+    \State {$N$ $\gets$ {$length(A)$}}
+    \For{$k \gets 1$ to $N$}                    
+        \State {$Sum$ $\gets$ {$Sum + A_{k}$}}
+    \EndFor
+    \State \Return {$Sum$}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
 """
 
     parser = LatexParser(logger=logger)

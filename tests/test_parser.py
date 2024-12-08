@@ -1634,5 +1634,22 @@ def test_complex_commands_with_float(parser):
     )
 
 
+def test_for_loops(parser):
+    # basically ignore for loops entirely?
+    text = r"""
+    \foreach \x in {0,...,4}{
+    \draw (3*\x,10)--++(0,-0.2);
+    \foreach \j in {1,...,4}
+        \draw[draw=blue] ({3*(\x+\j/5)},10)--++(0,-0.2);
+}
+
+After loops
+"""
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "After loops"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

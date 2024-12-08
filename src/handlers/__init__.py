@@ -13,6 +13,7 @@ from .author import AuthorHandler
 from .text_formatting import TextFormattingHandler
 from .if_else_statements import IfElseBlockHandler
 from .diacritics import DiacriticsHandler
+from .for_loop_statements import ForLoopHandler
 
 __all__ = [
     "TokenHandler",
@@ -30,4 +31,5 @@ __all__ = [
     "TextFormattingHandler",
     "IfElseBlockHandler",
     "DiacriticsHandler",
+    "ForLoopHandler",
 ]
