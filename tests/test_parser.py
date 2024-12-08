@@ -598,6 +598,47 @@ def test_item_with_label(parser):
     assert items[2]["labels"] == ["special-item"]
 
 
+def test_algorithmic(parser):
+    text = r"""
+\begin{algorithm}[H] 
+
+\caption{Sum of Array Elements}
+\label{alg:loop}
+
+\begin{algorithmic}[1]
+\Require{$A_{1} \dots A_{N}$} 
+\Ensure{$Sum$ (sum of values in the array)}
+\Statex
+\Function{Loop}{$A[\;]$}
+  \State {$Sum$ $\gets$ {$0$}}
+    \State {$N$ $\gets$ {$length(A)$}}
+    \For{$k \gets 1$ to $N$}                    
+        \State {$Sum$ $\gets$ {$Sum + A_{k}$}}
+    \EndFor
+    \State \Return {$Sum$}
+\EndFunction
+\end{algorithmic}
+
+\end{algorithm}
+    """
+    parsed_tokens = parser.parse(text)
+    algorithm = parsed_tokens[0]
+    assert algorithm["type"] == "algorithm"
+    assert algorithm["labels"] == ["alg:loop"]
+    assert len(algorithm["content"]) == 2
+
+    caption = algorithm["content"][0]
+    assert caption["type"] == "caption"
+    assert caption["content"] == "Sum of Array Elements"
+
+    # algorithmic keep as literal?
+    algorithmic = algorithm["content"][1]
+    assert algorithmic["type"] == "algorithmic"
+    assert r"\Require{$A_{1} \dots A_{N}$}" in algorithmic["content"]
+    assert r"\Ensure{$Sum$ (sum of values in the array)}" in algorithmic["content"]
+    assert algorithmic["content"].strip().endswith(r"\EndFunction")
+
+
 def test_figure(parser):
     content = r"""
     \begin{figure*}[h]

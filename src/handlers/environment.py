@@ -53,6 +53,8 @@ ENV_TYPES = {
     "figure": "figure",
     "subfigure": "figure",
     "subfloat": "figure",  # another common figure subdivision
+    "algorithm": "algorithm",
+    "algorithmic": "algorithmic",
     "quote": "quote",
     "list": "list",
     **{env: "list" for env in LIST_ENVIRONMENTS},

@@ -285,10 +285,12 @@ class LatexParser:
                     elif token["type"] == "section":
                         self.current_env = token
                     elif isinstance(handler, BaseEnvironmentHandler):
-                        prev_env = self.current_env
-                        self.current_env = token
-                        token["content"] = self.parse(token["content"])
-                        self.current_env = prev_env
+                        # algorithmic keep as literal?
+                        if token["type"] != "algorithmic":
+                            prev_env = self.current_env
+                            self.current_env = token
+                            token["content"] = self.parse(token["content"])
+                            self.current_env = prev_env
 
                     self.add_token(token, tokens)
                 return True, end_pos
