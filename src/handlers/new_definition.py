@@ -207,13 +207,6 @@ class NewDefinitionHandler(TokenHandler):
 
         pattern = r"\\" + re.escape(cmd_name) + r"(?![a-zA-Z])"
 
-        if num_args >= 1:
-            # Build pattern for commands with arguments
-            num_optional = len(defaults)
-            pattern += "".join(r"(?:\[(.*?)\])?" for _ in range(num_optional))
-            num_required = num_args - num_optional
-            pattern += "".join(r"\{(.*?)\}" for _ in range(num_required))
-
         token = {
             "type": "newcommand",
             "name": cmd_name,
@@ -336,7 +329,7 @@ class NewDefinitionHandler(TokenHandler):
         parts = []
         current_pos = 0
         param_count = 0
-        for param in re.finditer(r"#(\d)", usage_pattern):
+        for param in re.finditer(r"#(\d+)", usage_pattern):
             # Add everything before the parameter as escaped text
             before_param = usage_pattern[current_pos : param.start()]
             if before_param:

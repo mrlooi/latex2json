@@ -6,7 +6,7 @@ from src.patterns import NEWLINE_PATTERN
 from src.latex_maps.latex_unicode_converter import LatexUnicodeConverter
 from collections import OrderedDict
 
-from src.tex_utils import substitute_patterns
+from src.tex_utils import extract_nested_content_sequence_blocks, substitute_patterns
 from src.handlers.content_command import RAW_PATTERNS as CONTENT_COMMANDS
 from src.handlers.new_definition import (
     END_CSNAME_PATTERN,
@@ -18,9 +18,8 @@ from src.handlers.new_definition import (
 def substitute_args(definition: str, args: List[str]) -> str:
     """Substitute #1, #2, etc. with the provided arguments in order"""
     result = definition
-    # Sort in reverse order to handle #10 before #1, etc.
     for i, arg in enumerate(args, 1):
-        if arg is not None:  # Only substitute if we have a value
+        if arg is not None:
             result = result.replace(f"#{i}", arg)
     return result
 
@@ -28,6 +27,11 @@ def substitute_args(definition: str, args: List[str]) -> str:
 CSNAME_PATTERN = re.compile(
     START_CSNAME_PATTERN.pattern + r"(.*)" + END_CSNAME_PATTERN.pattern
 )
+
+
+def default_ignore_handler(match, text):
+    # return empty str to ignore?
+    return "", match.end()
 
 
 class CommandProcessor:
@@ -56,21 +60,34 @@ class CommandProcessor:
 
         num_optional = len(defaults)
 
-        def handler(match):
-            groups = match.groups()
-            args = []
+        def handler(match, text):
+            start_pos = match.end()
+            end_pos = start_pos
+            args = defaults.copy()
 
             # Handle optional args
             if num_optional:
-                args.extend(
-                    groups[i] if groups[i] is not None else defaults[i]
-                    for i in range(num_optional)
+                blocks, end_pos = extract_nested_content_sequence_blocks(
+                    text[start_pos:], "[", "]", num_optional
                 )
+                end_pos += start_pos
+                for i, block in enumerate(blocks):
+                    args[i] = block
 
-            # Add required args
-            args.extend(groups[num_optional:num_args])
+            args_left = num_args - num_optional
+            if args_left > 0:
+                start_pos = end_pos
+                blocks, end_pos = extract_nested_content_sequence_blocks(
+                    text[start_pos:], "{", "}", args_left
+                )
+                end_pos += start_pos
+                for block in blocks:
+                    args.append(block)
 
-            return substitute_args(definition, args), match.end()
+            # fill remaining args with empty strings
+            args.extend([""] * (num_args - len(args)))
+
+            return substitute_args(definition, args), end_pos
 
         try:
             command = {
@@ -93,7 +110,7 @@ class CommandProcessor:
         if command_name in CONTENT_COMMANDS:
             return
 
-        def handler(match):
+        def handler(match, text):
             args = [g for g in match.groups() if g is not None]
 
             return substitute_args(definition, args), match.end()
@@ -112,35 +129,26 @@ class CommandProcessor:
             raise e
 
     def process_newif(self, var_name: str):
-        def handler(match):
-            # return empty str to ignore?
-            return "", match.end()
 
         command = {
             "pattern": re.compile(r"\\" + var_name + r"(?:true|false)"),
-            "handler": handler,
+            "handler": default_ignore_handler,
         }
         self.commands["newif:" + var_name] = command
 
     def process_newlength(self, var_name: str):
-        def handler(match):
-            # return empty str to ignore?
-            return "", match.end()
 
         command = {
             "pattern": re.compile(r"\\" + var_name + r"\b"),
-            "handler": handler,
+            "handler": default_ignore_handler,
         }
         self.commands["newlength:" + var_name] = command
 
     def process_newcounter(self, var_name: str):
-        def handler(match):
-            # return empty str to ignore?
-            return "", match.end()
 
         command = {
             "pattern": re.compile(r"\\the" + var_name + r"\b"),
-            "handler": handler,
+            "handler": default_ignore_handler,
         }
         self.commands["newcounter:" + var_name] = command
 
@@ -169,7 +177,7 @@ class CommandProcessor:
             if cmd_name not in commands:
                 return match.group(0), match.end()
             handler = commands[cmd_name]["handler"]
-            return handler(match)
+            return handler(match, text)
 
         prev_text = None
         while prev_text != text:
@@ -191,7 +199,7 @@ class CommandProcessor:
                 for cmd in self.commands.values():
                     match = cmd["pattern"].match(text)
                     if match:
-                        out, _ = cmd["handler"](match)
+                        out, _ = cmd["handler"](match, text)
                         return out, end_pos
                 return "", end_pos
         return text, 0
@@ -200,6 +208,6 @@ class CommandProcessor:
         for cmd in self.commands.values():
             match = cmd["pattern"].match(text)
             if match:
-                return cmd["handler"](match)
+                return cmd["handler"](match, text)
 
         return self._handle_csname(text)

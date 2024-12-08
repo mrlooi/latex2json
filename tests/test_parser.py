@@ -157,6 +157,20 @@ def test_command_definitions(parser):
     assert split_content[2] == "Second paragraph"
     assert split_content[3] == "(Edited by me)"
 
+    # command with required arg but if not given default to empty string
+    text = r"""
+    \newcommand{\ccc}[2]{arg1=#1, arg2=#2}
+    \ccc / \ccc{3} / \ccc{3}{4}
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    # split content
+    split_content = parsed_tokens[0]["content"].split("/")
+    assert len(split_content) == 3
+    assert split_content[0].strip() == "arg1=, arg2="
+    assert split_content[1].strip() == "arg1=3, arg2="
+    assert split_content[2].strip() == "arg1=3, arg2=4"
+
 
 def test_recommand_definitions(parser):
     text = r"""
