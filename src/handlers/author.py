@@ -7,15 +7,16 @@ from src.tex_utils import extract_nested_content
 AND_PATTERN = re.compile(r"\\and\b", re.IGNORECASE)
 BACKSLASH_PATTERN = re.compile(r"\\\\")
 
+compile_as = re.DOTALL | re.IGNORECASE
+
 PATTERNS = {
-    "author": re.compile(r"\\[Aa]uthor(?:\s*\[(.*?)\])?\s*{", re.DOTALL),
-    "email": re.compile(r"\\email\s*{", re.DOTALL),
-    "affiliation": re.compile(r"\\affiliation\s*{", re.DOTALL),
-    "address": re.compile(r"\\address\s*{", re.DOTALL),
-    "thanks": re.compile(
-        r"\\thanks\s*{", re.DOTALL
-    ),  # usually found inside author block
-    "samethanks": re.compile(r"\\samethanks\b", re.DOTALL),  # Add this pattern
+    "author": re.compile(r"\\author(?:\s*\[(.*?)\])?\s*{", compile_as),
+    "email": re.compile(r"\\email\s*{", compile_as),
+    "affiliation": re.compile(r"\\affiliation\s*{", compile_as),
+    "address": re.compile(r"\\address\s*{", compile_as),
+    # \thanks usually found inside author block
+    "thanks": re.compile(r"\\thanks\s*{", compile_as),
+    "samethanks": re.compile(r"\\samethanks\b", compile_as),
 }
 
 

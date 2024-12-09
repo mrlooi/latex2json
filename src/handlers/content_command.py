@@ -8,7 +8,7 @@ from src.patterns import SECTION_LEVELS
 RAW_PATTERNS = OrderedDict(
     [
         # 1. Commands that need nested brace handling (simplified patterns)
-        ("abstract", r"\\[Aa]bstract\s*{"),
+        ("abstract", r"\\abstract\s*{"),
         ("section", r"\\(?:(?:sub)*section\*?)\s*{"),
         ("paragraph", r"\\(?:(?:sub)*paragraph\*?)\s*{"),
         ("part", r"\\part\*?\s*{"),
@@ -19,7 +19,7 @@ RAW_PATTERNS = OrderedDict(
         # input
         ("input", r"\\(?:input|include)\s*{"),
         # REFs
-        ("ref", r"\\(?:[Cc]|[Aa]uto|eq|page)?[Rr]ef\*?\s*{"),
+        ("ref", r"\\(?:c|auto|eq|page)?ref\*?\s*{"),
         ("hyperref", r"\\hyperref\s*\[([^]]*)\]\s*{"),
         ("href", r"\\href\s*{([^}]*)}\s*{"),
         # bookmarks (similar to refs?)
@@ -37,7 +37,7 @@ RAW_PATTERNS = OrderedDict(
         # Citations
         (
             "citation",
-            r"\\(?:(?:[Cc])(?:ite|itep|itet|itealt|itealp|iteauthor))(?:\[([^\]]*)\])?\s*{",
+            r"\\(?:c(?:ite|itep|itet|itealt|itealp|iteauthor))(?:\[([^\]]*)\])?\s*{",
         ),
         # Citations with just braces
         ("citetext", r"\\(?:citetext|citenum)\s*{"),

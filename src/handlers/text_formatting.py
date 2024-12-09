@@ -162,9 +162,10 @@ class TextFormattingHandler(TokenHandler):
                 new_token["styles"] = list(OrderedDict.fromkeys(new_token_styles))
                 return new_token, total_pos
             else:
-                # if "styles" in token:
-                token["type"] = "styled"
                 token["content"] = inner_content
+                if isinstance(inner_content, str):
+                    return token, total_pos
+                token["type"] = "group"
 
             if not inner_content:
                 return None, total_pos
@@ -200,7 +201,7 @@ class TextFormattingHandler(TokenHandler):
         # choose 2nd one in texorpdfstring
         if self.process_content_fn:
             return {
-                "type": "layout",
+                "type": "group",
                 "content": self.process_content_fn(second),
             }, end_pos
         return {
@@ -225,7 +226,7 @@ class TextFormattingHandler(TokenHandler):
             )
 
         return {
-            "type": "layout",
+            "type": "group",
             "content": extracted_content,
         }, start_pos + end_pos
 

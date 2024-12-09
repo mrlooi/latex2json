@@ -56,9 +56,9 @@ ENV_TYPES = {
     "algorithm": "algorithm",
     "algorithmic": "algorithmic",
     "quote": "quote",
-    "list": "list",
+    "list": "list",  # \list \endlist
     **{env: "list" for env in LIST_ENVIRONMENTS},
-    **{env: "layout" for env in LAYOUT_ENVIRONMENTS},
+    **{env: "group" for env in LAYOUT_ENVIRONMENTS},
 }
 
 # Add to your environment configurations
