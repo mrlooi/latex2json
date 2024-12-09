@@ -1,5 +1,6 @@
 from typing import Callable, Dict, Tuple
 import re
+import os
 
 
 def find_matching_delimiter(
@@ -215,3 +216,33 @@ def substitute_patterns(
             match = pattern.search(text[current_pos:])
 
     return text
+
+
+def read_tex_file_content(file_path: str, dir_path: str = None) -> str:
+    """
+    Attempts to read content from an input file, handling both absolute and relative paths.
+
+    Args:
+        file_path: Path to the input file (absolute or relative)
+
+    Returns:
+        str: Content of the file if successful, error message if failed
+    """
+    try:
+        input_path = file_path
+        # If path is not absolute and we know the current file's directory
+        if not os.path.isabs(input_path) and dir_path:
+            input_path = os.path.join(dir_path, input_path)
+
+        # Try different extensions if file not found
+        if not os.path.exists(input_path):
+            for ext in ["", ".tex"]:
+                test_path = input_path + ext
+                if os.path.exists(test_path):
+                    input_path = test_path
+                    break
+
+        with open(input_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except (FileNotFoundError, IOError) as e:
+        raise FileNotFoundError(f"Failed to read input file '{file_path}': {str(e)}")

@@ -3,8 +3,6 @@ import re
 from typing import List, Dict, Tuple, Union
 import sys, os
 
-from src.handlers.new_definition import extract_and_concat_nested_csname
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
@@ -37,7 +35,7 @@ from src.handlers import (
 from src.handlers.environment import BaseEnvironmentHandler
 from src.patterns import PATTERNS
 from src.commands import CommandProcessor
-from src.tex_utils import extract_nested_content
+from src.tex_utils import extract_nested_content, read_tex_file_content
 
 # Add these compiled patterns at module level
 # match $ or % or { or } only if not preceded by \
@@ -52,16 +50,16 @@ UNKNOWN_COMMAND_PATTERN = re.compile(r"(\\[@a-zA-Z*]+\s*\{?)", re.DOTALL)
 
 class LatexParser:
     def __init__(self, logger: logging.Logger = None):
-        self.logger = logger or logging.getLogger(__name__)
-
         # for logging
+        self.logger = logger or logging.getLogger(__name__)
         self._unknown_commands = {}
 
+        # state vars
         self.labels = {}
-
         self.current_env = (
             None  # Current environment token (used for associating nested labels)
         )
+        self.current_file_dir = None
         self.current_str = ""
 
         # Regex patterns for different LaTeX elements
@@ -113,6 +111,7 @@ class LatexParser:
         self.labels = {}
         self._unknown_commands = {}
         self.current_str = ""
+        self.current_file_dir = None
         self.current_env = None
         self.command_processor.clear()
         # handlers
@@ -276,6 +275,16 @@ class LatexParser:
                 if token:
                     if isinstance(token, str):
                         token = {"type": "text", "content": token}
+                    elif token["type"] == "input":
+                        # open input file
+                        if token["content"]:
+                            file_path = os.path.join(
+                                self.current_file_dir, token["content"]
+                            )
+                            input_tokens = self.parse_file(file_path)
+                            if input_tokens:
+                                tokens.extend(input_tokens)
+                        return True, end_pos
                     elif token["type"] in ["footnote", "caption"]:
                         prev_env = self.current_env
                         self.current_env = token
@@ -335,7 +344,24 @@ class LatexParser:
         line_break_delimiter: str = "\n",
         handle_unknown_commands: bool = True,
         handle_legacy_formatting: bool = True,
+        file_path: str = None,
     ) -> List[Dict[str, str]]:
+        """
+        Parse LaTeX content string into tokens.
+
+        Args:
+            content: The LaTeX content to parse
+            line_break_delimiter: Character to use for line breaks
+            handle_unknown_commands: Whether to process unknown commands
+            handle_legacy_formatting: Whether to handle legacy formatting
+            file_path: Optional path to the source file (used for resolving relative paths)
+
+        Returns:
+            List[Dict[str, str]]: List of parsed tokens
+        """
+        if file_path:
+            self.current_file_dir = os.path.dirname(os.path.abspath(file_path))
+
         tokens = []
         current_pos = 0
 
@@ -462,6 +488,24 @@ class LatexParser:
 
         return tokens
 
+    def parse_file(self, file_path: str) -> List[Dict[str, str]]:
+        """
+        Parse a LaTeX file directly from the file path.
+
+        Args:
+            file_path: Path to the LaTeX file to parse
+
+        Returns:
+            List[Dict[str, str]]: List of parsed tokens
+        """
+        try:
+            self.logger.info(f"Parsing file: {file_path}")
+            content = read_tex_file_content(file_path)
+            return self.parse(content, file_path=file_path)
+        except Exception as e:
+            self.logger.error(f"Failed to parse file: {str(e)}")
+            return []
+
 
 if __name__ == "__main__":
 
@@ -481,33 +525,33 @@ if __name__ == "__main__":
 
     logger = logging.getLogger(__name__)
 
-    # file = "papers/arXiv-1509.05363v6/taodiscrepancy.tex"
-    # logger.info(f"Parsing file: {file}")
-    # with open(file, "r") as f:
-    #     text = f.read()
-
-    # Example usage
-    text = r"""
-\begin{algorithm}[H] 
-\caption{Sum of Array Elements}
-\label{alg:loop}
-\begin{algorithmic}[1]
-\Require{$A_{1} \dots A_{N}$} 
-\Ensure{$Sum$ (sum of values in the array)}
-\Statex
-\Function{Loop}{$A[\;]$}
-  \State {$Sum$ $\gets$ {$0$}}
-    \State {$N$ $\gets$ {$length(A)$}}
-    \For{$k \gets 1$ to $N$}                    
-        \State {$Sum$ $\gets$ {$Sum + A_{k}$}}
-    \EndFor
-    \State \Return {$Sum$}
-\EndFunction
-\end{algorithmic}
-\end{algorithm}
-"""
-
     parser = LatexParser(logger=logger)
-    parsed_tokens = parser.parse(text)
+
+    file = "papers/arXiv-1706.03762v7/ms.tex"
+    parsed_tokens = parser.parse_file(file)
+
+    #     # Example usage
+    #     text = r"""
+    # \begin{algorithm}[H]
+    # \caption{Sum of Array Elements}
+    # \label{alg:loop}
+    # \begin{algorithmic}[1]
+    # \Require{$A_{1} \dots A_{N}$}
+    # \Ensure{$Sum$ (sum of values in the array)}
+    # \Statex
+    # \Function{Loop}{$A[\;]$}
+    #   \State {$Sum$ $\gets$ {$0$}}
+    #     \State {$N$ $\gets$ {$length(A)$}}
+    #     \For{$k \gets 1$ to $N$}
+    #         \State {$Sum$ $\gets$ {$Sum + A_{k}$}}
+    #     \EndFor
+    #     \State \Return {$Sum$}
+    # \EndFunction
+    # \end{algorithmic}
+    # \end{algorithm}
+    # """
+
+    # parser = LatexParser(logger=logger)
+    # parsed_tokens = parser.parse(text)
     # print(len(parsed_tokens))
-    print(parsed_tokens)
+    # print(parsed_tokens)
