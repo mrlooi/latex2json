@@ -104,3 +104,21 @@ def test_complex_non_nested_cases(handler):
     # assert out == r"\textlarge{}"
 
     assert text[end_pos:].strip() == "Outside block"
+
+
+def test_pre_mathmode_cases(handler):
+    text = r"\boldmath $1+1=2$"
+    out, end_pos = handler.handle(text)
+    assert out == r"\textbf{$1+1=2$}"
+
+    text = r"\unboldmath $1+1=2$"
+    out, end_pos = handler.handle(text)
+    assert out == r"\textrm{$1+1=2$}"
+
+    text = r"\mathversion{bold} $1+1=2$"
+    out, end_pos = handler.handle(text)
+    assert out == r"\textbf{$1+1=2$}"
+
+    text = r"\mathversion{normal} $1+1=2$"
+    out, end_pos = handler.handle(text)
+    assert out == r"\textrm{$1+1=2$}"
