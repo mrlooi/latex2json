@@ -9,7 +9,9 @@ class DocumentToken(EnvironmentToken):
 
 class SectionToken(BaseToken):
     type: TokenType = TokenType.SECTION
+    title: str
     labels: Optional[List[str]] = None
+    content: Optional[str] = None
 
 
 class TitleToken(BaseToken):
