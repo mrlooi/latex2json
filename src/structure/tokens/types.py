@@ -1,0 +1,54 @@
+from enum import Enum
+
+
+class TokenType(Enum):
+    """Enum for token types"""
+
+    # Document/Content Structure
+    DOCUMENT = "document"
+    TITLE = "title"
+    SECTION = "section"
+    ABSTRACT = "abstract"
+    APPENDIX = "appendix"
+
+    # ENV related
+    ENVIRONMENT = "environment"
+    # Tables & Figures
+    FIGURE = "figure"
+    TABLE = "table"
+    TABULAR = "tabular"
+    GRAPHICS = "graphics"
+    CAPTION = "caption"
+
+    # Lists
+    LIST = "list"
+    ITEM = "item"
+
+    # Text
+    TEXT = "text"
+    QUOTE = "quote"
+
+    # Math & Technical
+    EQUATION = "equation"
+    CODE = "code"
+    ALGORITHM = "algorithm"
+    ALGORITHMIC = "algorithmic"
+
+    # References & Links
+    CITATION = "citation"
+    REF = "ref"
+    URL = "url"
+    FOOTNOTE = "footnote"
+
+    # Bibliography
+    BIBLIOGRAPHY = "bibliography"
+    BIBITEM = "bibitem"
+
+    # Metadata
+    AUTHOR = "author"
+    EMAIL = "email"
+    AFFILIATION = "affiliation"
+    KEYWORDS = "keywords"
+
+    # Other
+    GROUP = "group"
