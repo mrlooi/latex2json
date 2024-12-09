@@ -7,16 +7,15 @@ class DocumentToken(EnvironmentToken):
     type: TokenType = TokenType.DOCUMENT
 
 
-class SectionToken(BaseToken):
-    type: TokenType = TokenType.SECTION
+class TitleToken(BaseToken):
+    type: TokenType = TokenType.TITLE
     title: str
-    labels: Optional[List[str]] = None
     content: Optional[str] = None
 
 
-class TitleToken(BaseToken):
-    type: TokenType = TokenType.TITLE
-    content: str
+class SectionToken(TitleToken):
+    type: TokenType = TokenType.SECTION
+    labels: Optional[List[str]] = None
 
 
 class AbstractToken(EnvironmentToken):
