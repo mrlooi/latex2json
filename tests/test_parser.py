@@ -1665,5 +1665,31 @@ After loops
     assert parsed_tokens[0]["content"].strip() == "After loops"
 
 
+def test_inputs_with_files(parser):
+    import os
+
+    text = r"""
+    PRE INPUT
+
+    \input{samples/example.tex}
+
+    POST INPUT
+    """
+    parsed_tokens = parser.parse(text, file_path=os.path.abspath(__file__))
+    assert len(parsed_tokens) > 2
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "PRE INPUT"
+    assert parsed_tokens[-1]["type"] == "text"
+    assert parsed_tokens[-1]["content"].strip() == "POST INPUT"
+
+    # check input middle
+    input_tokens = parsed_tokens[1:-1]
+    assert len(input_tokens) == 2
+    assert input_tokens[0]["type"] == "section"
+    assert input_tokens[0]["title"] == "Example"
+    assert input_tokens[1]["type"] == "equation"
+    assert input_tokens[1]["content"].strip() == "1+1=2"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
