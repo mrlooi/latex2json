@@ -55,7 +55,7 @@ class ItemHandler(BaseEnvironmentHandler):
                 token = self._handle_environment("item", content[start:end_pos].strip())
                 token["type"] = "item"
                 if match.group(1):
-                    token["label"] = match.group(1).strip()
+                    token["title"] = match.group(1).strip()
                 return token, end_pos
 
             return None, end_pos

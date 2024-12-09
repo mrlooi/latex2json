@@ -29,7 +29,7 @@ class BibItemHandler(TokenHandler):
                     "cite_key": match.group(2).strip(),
                 }
                 if match.group(1):
-                    token["label"] = match.group(1).strip()
+                    token["title"] = match.group(1).strip()
                 return token, match.end()
 
             return None, match.end()

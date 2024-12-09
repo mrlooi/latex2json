@@ -20,13 +20,13 @@ def test_basic_item(handler):
     assert token["type"] == "item"
     assert token["content"] == "First item"
 
-    # Test with label
+    # Test with title
     content = r"\item[1.] First item"
     token, pos = handler.handle(content)
 
     assert token["type"] == "item"
     assert token["content"] == "First item"
-    assert token["label"] == "1."
+    assert token["title"] == "1."
 
 
 def test_multiple_items(handler):

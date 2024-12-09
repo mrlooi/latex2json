@@ -1254,7 +1254,7 @@ def test_nested_items_with_environments(parser):
     # Check nested items
     nested_items = [t for t in nested_list["content"] if t["type"] == "item"]
     assert len(nested_items) == 2
-    assert nested_items[0]["label"] == "a)"
+    assert nested_items[0]["title"] == "a)"
 
     # Check math in first nested item
     math = [t for t in nested_items[0]["content"] if t["type"] == "equation"][0]
