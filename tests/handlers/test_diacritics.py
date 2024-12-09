@@ -14,6 +14,14 @@ def test_diacritics():
     assert convert_tex_diacritics(r"\vec333") == "3⃗33"
     assert convert_tex_diacritics(r"\vec{333}") == "3⃗33"
 
+    # Test with ^~=`'"
+    assert convert_tex_diacritics(r"\^{abb}") == "âbb"
+    assert convert_tex_diacritics(r"\~a") == "ã"
+    assert convert_tex_diacritics(r"\=a") == "ā"
+    assert convert_tex_diacritics(r"\'a") == "á"
+    assert convert_tex_diacritics(r"\`{abb}") == "àbb"
+    assert convert_tex_diacritics(r"\"a") == "ä"
+
     # Test basic accents
     assert convert_tex_diacritics(r"\'a") == "á"
     assert convert_tex_diacritics(r"\`a") == "à"
