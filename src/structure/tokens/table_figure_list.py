@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional, TypedDict, Union
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 from src.structure.tokens.base import BaseToken, EnvironmentToken
 from src.structure.tokens.types import TokenType
 
@@ -20,12 +20,25 @@ class TableToken(EnvironmentToken):
     type: TokenType = TokenType.TABLE
 
 
-class TabularToken(EnvironmentToken):
+class TableCell(BaseModel):
+    content: Union[str, BaseToken, List[Union[str, BaseToken]]]  # The cell's content
+    rowspan: Optional[int]  # Optional as not all cells have it
+    colspan: Optional[int]
+
+
+# The actual cell can be either the TypedDict or simple types
+ContentElement = Union[str, BaseToken]
+CellType = Union[TableCell, ContentElement, List[ContentElement], None]
+TabularRowType = List[CellType]
+TabularContentType = List[TabularRowType]
+
+
+class TabularToken(BaseToken):
     """Represents tabular environments"""
 
     type: TokenType = TokenType.TABULAR
-    column_spec: str
-    content: List[List[Union[str, Dict, List]]] = Field(default_factory=list)
+    # column_spec: str
+    content: TabularContentType = Field(default_factory=list)
 
 
 # CAPTION

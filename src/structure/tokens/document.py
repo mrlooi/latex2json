@@ -13,9 +13,11 @@ class TitleToken(BaseToken):
     content: Optional[str] = None
 
 
-class SectionToken(TitleToken):
+class SectionToken(BaseToken):
     type: TokenType = TokenType.SECTION
+    title: str
     labels: Optional[List[str]] = None
+    content: Optional[List[BaseToken]] = []
 
 
 class AbstractToken(EnvironmentToken):
