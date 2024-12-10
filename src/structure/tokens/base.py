@@ -35,6 +35,11 @@ class TextToken(BaseToken):
     type: TokenType = TokenType.TEXT
     content: str
 
+    def __repr__(self):
+        if self.styles:
+            return f'STYLED:{self.styles} -> "{self.content}"'
+        return f'"{self.content}"'
+
 
 class QuoteToken(BaseToken):
     type: TokenType = TokenType.QUOTE
