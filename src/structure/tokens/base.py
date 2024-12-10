@@ -8,11 +8,17 @@ class BaseToken(BaseModel):
 
     content: Union[str, List["BaseToken"], Dict[str, "BaseToken"]]
     type: TokenType
+    styles: Optional[List[str]] = None
 
     def model_dump(self, **kwargs) -> Dict[str, Any]:
         """Override model_dump to exclude None values by default"""
         kwargs.setdefault("exclude_none", True)
         return super().model_dump(**kwargs)
+
+    def model_dump_json(self, **kwargs) -> str:
+        """Override model_dump_json to exclude None values by default"""
+        kwargs.setdefault("exclude_none", True)
+        return super().model_dump_json(**kwargs)
 
 
 class EnvironmentToken(BaseToken):
@@ -28,7 +34,6 @@ class EnvironmentToken(BaseToken):
 class TextToken(BaseToken):
     type: TokenType = TokenType.TEXT
     content: str
-    styles: Optional[List[str]] = None
 
 
 class QuoteToken(BaseToken):
@@ -39,4 +44,3 @@ class QuoteToken(BaseToken):
 class GroupToken(BaseToken):
     type: TokenType = TokenType.GROUP
     content: List[BaseToken]
-    styles: Optional[List[str]] = None
