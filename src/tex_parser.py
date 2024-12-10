@@ -278,9 +278,11 @@ class LatexParser:
                     elif token["type"] == "input":
                         # open input file
                         if token["content"]:
-                            file_path = os.path.join(
-                                self.current_file_dir, token["content"]
-                            )
+                            file_path = token["content"]
+                            if self.current_file_dir:
+                                file_path = os.path.join(
+                                    self.current_file_dir, file_path
+                                )
                             input_tokens = self.parse_file(file_path)
                             if input_tokens:
                                 tokens.extend(input_tokens)
