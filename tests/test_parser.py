@@ -1,6 +1,6 @@
 import pytest
 from src.handlers.text_formatting import FRONTEND_STYLE_MAPPING
-from src.patterns import SECTION_LEVELS
+from src.handlers.content_command import SECTION_LEVELS, PARAGRAPH_LEVELS
 from src.tex_parser import LatexParser
 from tests.latex_samples_data import TRAINING_SECTION_TEXT
 
@@ -22,7 +22,7 @@ def parsed_training_tokens(parser):
 
 def test_parse_sections(parsed_training_tokens):
     sections = [token for token in parsed_training_tokens if token["type"] == "section"]
-    assert len(sections) == 7
+    assert len(sections) == 5
 
     start_level = SECTION_LEVELS["section"]
     assert sections[0]["title"] == "Training"
@@ -42,6 +42,16 @@ def test_parse_sections(parsed_training_tokens):
     # check its label is there
     assert regularization_section["labels"] == ["sec:reg"]
 
+    # check paragraphs
+    paragraphs = [
+        token for token in parsed_training_tokens if token["type"] == "paragraph"
+    ]
+    assert len(paragraphs) == 2
+    assert paragraphs[0]["title"] == "Residual Dropout"
+    assert paragraphs[0]["level"] == PARAGRAPH_LEVELS["paragraph"]
+    assert paragraphs[1]["title"] == "Label Smoothing"
+    assert paragraphs[1]["level"] == PARAGRAPH_LEVELS["paragraph"]
+
 
 def test_parse_subsections(parser):
     text = r"""
@@ -52,17 +62,16 @@ def test_parse_subsections(parser):
     \subparagraph{Sub Regularization}
     """
     parsed_tokens = parser.parse(text)
-    sections = [token for token in parsed_tokens if token["type"] == "section"]
 
-    assert sections[0]["title"] == "Training Data and Batching"
-    assert sections[0]["level"] == SECTION_LEVELS["section"] + 1
-    assert sections[1]["title"] == "Hardware and Schedule"
-    assert sections[1]["level"] == SECTION_LEVELS["section"] + 2
+    assert parsed_tokens[0]["title"] == "Training Data and Batching"
+    assert parsed_tokens[0]["level"] == SECTION_LEVELS["section"] + 1
+    assert parsed_tokens[1]["title"] == "Hardware and Schedule"
+    assert parsed_tokens[1]["level"] == SECTION_LEVELS["section"] + 2
 
-    assert sections[2]["title"] == "Regularization"
-    assert sections[2]["level"] == SECTION_LEVELS["paragraph"]
-    assert sections[3]["title"] == "Sub Regularization"
-    assert sections[3]["level"] == SECTION_LEVELS["paragraph"] + 1
+    assert parsed_tokens[2]["title"] == "Regularization"
+    assert parsed_tokens[2]["level"] == PARAGRAPH_LEVELS["paragraph"]
+    assert parsed_tokens[3]["title"] == "Sub Regularization"
+    assert parsed_tokens[3]["level"] == PARAGRAPH_LEVELS["subparagraph"]
 
 
 def test_parse_equations(parsed_training_tokens):

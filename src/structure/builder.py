@@ -26,8 +26,9 @@ def convert_inline_equations_to_text(tokens):
     return converted_tokens
 
 
-no_space_after = tuple([",", ".", ":", ";", ")", "]", "}", "'", '"'])
-no_space_before = tuple(["(", "[", "{", "'", '"', ",", "."])
+# dont add space if any of these
+prev_ends_with = tuple(["(", "[", "{", "'", '"'])
+next_starts_with = tuple([":", ";", ")", "]", "}", ",", "."])
 
 
 def should_add_space(prev_content: str, next_content: str) -> bool:
@@ -43,9 +44,9 @@ def should_add_space(prev_content: str, next_content: str) -> bool:
     """
 
     return not (
-        prev_content.endswith(no_space_after)
+        prev_content.endswith(prev_ends_with)
         or prev_content.endswith(" ")
-        or next_content.startswith(no_space_before)
+        or next_content.startswith(next_starts_with)
         or next_content.startswith(" ")
     )
 
@@ -114,50 +115,66 @@ def process_tokens(in_tokens):
 
 
 def organize_content(in_tokens):
+    def manage_stack(token, stack, organized, parent_stack=None):
+        """Helper function to manage stack operations for sections and paragraphs"""
+        # Clear lower stacks if needed
+        while stack and stack[-1]["level"] >= token["level"]:
+            stack.pop()
+
+        # Determine where to add the token
+        target = (
+            parent_stack[-1]["content"]
+            if parent_stack
+            else (stack[-1]["content"] if stack else organized)
+        )
+        target.append(token)
+
+        token["content"] = []
+        stack.append(token)
+
     def recursive_organize(tokens):
         organized = []
         section_stack = []
+        paragraph_stack = []
 
         for token in tokens:
             # Recursively organize content if token has nested content
             if isinstance(token, dict) and isinstance(token.get("content"), list):
-                token = token.copy()  # Create a copy to avoid modifying original
+                token = token.copy()
                 token["content"] = recursive_organize(token["content"])
 
             if isinstance(token, dict):
                 if token["type"] == "appendix":
                     section_stack.clear()
+                    paragraph_stack.clear()
                     organized.append(token)
                 elif token["type"] == "section":
-                    while (
-                        section_stack and section_stack[-1]["level"] >= token["level"]
-                    ):
-                        section_stack.pop()
-
-                    if section_stack:
-                        section_stack[-1]["content"].append(token)
-                    else:
-                        organized.append(token)
-
-                    token["content"] = []
-                    section_stack.append(token)
+                    paragraph_stack.clear()  # Clear paragraph stack for new section
+                    manage_stack(token, section_stack, organized)
+                elif token["type"] == "paragraph":
+                    manage_stack(token, paragraph_stack, organized, section_stack)
                 else:
-                    if section_stack:
-                        section_stack[-1]["content"].append(token)
-                    else:
-                        organized.append(token)
+                    # Add other tokens to the deepest stack
+                    target = (
+                        paragraph_stack[-1]["content"]
+                        if paragraph_stack
+                        else (
+                            section_stack[-1]["content"] if section_stack else organized
+                        )
+                    )
+                    target.append(token)
             else:
-                if section_stack:
-                    section_stack[-1]["content"].append(token)
-                else:
-                    organized.append(token)
+                # Handle non-dict tokens
+                target = (
+                    paragraph_stack[-1]["content"]
+                    if paragraph_stack
+                    else (section_stack[-1]["content"] if section_stack else organized)
+                )
+                target.append(token)
 
         return organized
 
-    # First merge inline equations with text
     tokens = process_tokens(in_tokens)
-
-    # Then organize sections recursively
     return recursive_organize(tokens)
 
 
@@ -165,46 +182,54 @@ if __name__ == "__main__":
     from src.tex_parser import LatexParser
     import json
 
-    with open("papers/arXiv-1706.03762v7/parsed_tokens.json", "r") as f:
-        tokens = json.load(f)
+    DEBUG = True
 
-    # parser = LatexParser()
+    if not DEBUG:
+        with open("papers/arXiv-1706.03762v7/parsed_tokens.json", "r") as f:
+            tokens = json.load(f)
+    else:
+        parser = LatexParser()
 
-    # text = r"""
-    # \title{My Title}
+        text = r"""
+        \title{My Title}
 
-    # \begin{document}
+        \begin{document}
 
-    # \abstract{This is my abstract}
+        \abstract{This is my abstract}
 
-    # \section{Intro} \label{sec:intro}
+        \paragraph{This is my paragraph}
+        YEAAA baby
 
-    # Some text here, $1+1=2$:
-    # \begin{equation}
-    #     E = mc^2
-    # \end{equation}
+        \section{Intro} \label{sec:intro}
 
-    # \subsection{SubIntro}
-    # My name is \textbf{John Doe} \textbf{Sss} ahama
+        Some text here, $1+1=2$:
+        \begin{equation}
+            E = mc^2
+        \end{equation}
 
-    # \subsection{SubIntro2}
-    # SUBINTRO 2
+        \subsection{SubIntro}
+        My name is \textbf{John Doe} \textbf{Sss} ahama
 
-    # \section{Conclusion}
-    # TLDR: Best paper
+        \subsection{SubIntro2}
+        SUBINTRO 2
+        \paragraph{Paragraph me}
+        Hi there this is paragrpah
 
-    # \subsection{mini conclusion}
-    # Mini conclude
+        \section{Conclusion}
+        TLDR: Best paper
 
-    # \appendix
+        \subsection{mini conclusion}
+        Mini conclude
 
-    # \section{Appendix}
-    # My appendix
+        \appendix
 
-    # \end{document}
-    # """
+        \section{Appendix}
+        My appendix
 
-    # tokens = parser.parse(text)
+        \end{document}
+        """
+
+        tokens = parser.parse(text)
 
     organized_tokens = organize_content(tokens)
     # print(organized_tokens)

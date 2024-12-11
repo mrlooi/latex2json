@@ -12,6 +12,7 @@ from src.structure.tokens.base import (
 
 from src.structure.tokens.document import (
     DocumentToken,
+    ParagraphToken,
     TitleToken,
     SectionToken,
     AbstractToken,
@@ -51,6 +52,7 @@ TOKEN_MAP: Dict[TokenType, Type[BaseToken]] = {
     TokenType.DOCUMENT: DocumentToken,
     TokenType.TITLE: TitleToken,
     TokenType.SECTION: SectionToken,
+    TokenType.PARAGRAPH: ParagraphToken,
     TokenType.ABSTRACT: AbstractToken,
     TokenType.APPENDIX: AppendixToken,
     # ENV related

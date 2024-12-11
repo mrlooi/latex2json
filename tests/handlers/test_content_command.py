@@ -1,6 +1,9 @@
 import pytest
-from src.handlers.content_command import ContentCommandHandler
-from src.patterns import SECTION_LEVELS
+from src.handlers.content_command import (
+    ContentCommandHandler,
+    SECTION_LEVELS,
+    PARAGRAPH_LEVELS,
+)
 
 
 @pytest.fixture
@@ -141,12 +144,18 @@ def test_handle_with_expand_fn():
         return content.replace("old", "new")
 
     handler = ContentCommandHandler(process_content_fn=mock_expand)
-    token, pos = handler.handle(r"\paragraph*{old title}")
+    token, pos = handler.handle(r"\paragraph{old title}")
     assert token == {
-        "type": "section",
+        "type": "paragraph",
         "title": "new title",
-        "level": SECTION_LEVELS["paragraph"],
-        "numbered": False,
+        "level": PARAGRAPH_LEVELS["paragraph"],
+    }
+
+    token, pos = handler.handle(r"\subparagraph{old title}")
+    assert token == {
+        "type": "paragraph",
+        "title": "new title",
+        "level": PARAGRAPH_LEVELS["subparagraph"],
     }
 
 

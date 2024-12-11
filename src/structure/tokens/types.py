@@ -8,6 +8,7 @@ class TokenType(Enum):
     DOCUMENT = "document"
     TITLE = "title"
     SECTION = "section"
+    PARAGRAPH = "paragraph"
     ABSTRACT = "abstract"
     APPENDIX = "appendix"
 

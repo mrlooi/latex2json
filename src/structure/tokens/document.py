@@ -16,8 +16,13 @@ class TitleToken(BaseToken):
 class SectionToken(BaseToken):
     type: TokenType = TokenType.SECTION
     title: str
+    level: int
     labels: Optional[List[str]] = None
     content: Optional[List[BaseToken]] = []
+
+
+class ParagraphToken(SectionToken):
+    type: TokenType = TokenType.PARAGRAPH
 
 
 class AbstractToken(EnvironmentToken):
