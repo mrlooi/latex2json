@@ -334,13 +334,14 @@ def test_nested_environments(parser):
     parsed_tokens = parser.parse(text)
 
     # Check environments
-    environments = [token for token in parsed_tokens if token["type"] == "environment"]
-    assert len(environments) == 1
+    assert len(parsed_tokens) == 1
 
     # Check lemma environment
-    lemma = environments[0]
+    lemma = parsed_tokens[0]
+    assert lemma["type"] == "math_env"
     assert lemma["name"] == "lemma"
     assert lemma["labels"] == ["tb"]
+    assert lemma["numbered"] is True
 
     # Check equation environment
     equation = lemma["content"][0]

@@ -40,6 +40,22 @@ LAYOUT_ENVIRONMENTS = [
     "subequations",
 ]
 
+# Mathematical/Proof environments
+MATH_ENVIRONMENTS = [
+    "theorem",
+    "lemma",
+    "proposition",
+    "corollary",
+    "definition",
+    "proof",
+    "example",
+    "remark",
+    "note",
+    "claim",
+    "conjecture",
+    "axiom",
+]
+
 # Map environment names to their types
 ENV_TYPES = {
     "document": "document",
@@ -50,6 +66,7 @@ ENV_TYPES = {
     "table": "table",
     "subtable": "table",
     "subsubtable": "table",
+    "tabular": "tabular",  # should be handled in tabular handler
     "figure": "figure",
     "subfigure": "figure",
     "subfloat": "figure",  # another common figure subdivision
@@ -59,6 +76,7 @@ ENV_TYPES = {
     "list": "list",  # \list \endlist
     **{env: "list" for env in LIST_ENVIRONMENTS},
     **{env: "group" for env in LAYOUT_ENVIRONMENTS},
+    **{env: "math_env" for env in MATH_ENVIRONMENTS},
 }
 
 # Add to your environment configurations
@@ -220,7 +238,7 @@ class BaseEnvironmentHandler(TokenHandler):
         env_type = ENV_TYPES.get(env_name, "environment")
         token["type"] = env_type
 
-        if not contains_asterisk and env_type in ["table", "figure"]:
+        if not contains_asterisk and env_type in ["table", "figure", "math_env"]:
             token["numbered"] = True
 
         # Extract title if present (text within square brackets after environment name)

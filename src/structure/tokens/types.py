@@ -20,6 +20,7 @@ class TokenType(Enum):
 
     # ENV related
     ENVIRONMENT = "environment"
+    MATH_ENV = "math_env"
     # Tables & Figures
     FIGURE = "figure"
     TABLE = "table"

@@ -5,6 +5,7 @@ from src.structure.tokens.types import TokenType
 from src.structure.tokens.base import (
     BaseToken,
     CommandToken,
+    MathEnvToken,
     TextToken,
     QuoteToken,
     EnvironmentToken,
@@ -61,6 +62,7 @@ TOKEN_MAP: Dict[TokenType, Type[BaseToken]] = {
     TokenType.COMMAND: CommandToken,
     # ENV related
     TokenType.ENVIRONMENT: EnvironmentToken,
+    TokenType.MATH_ENV: MathEnvToken,
     # Tables & Figures
     TokenType.FIGURE: FigureToken,
     TokenType.TABLE: TableToken,
