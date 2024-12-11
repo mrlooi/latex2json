@@ -21,36 +21,35 @@ class ItemHandler(BaseEnvironmentHandler):
             end_pos = match.end()
             if item:
                 start = match.start(2)
-                # search for inner environments
                 current_pos = start
 
-                while True:
-                    next_item = ITEM_PATTERN.search(content[current_pos:])
-                    if not next_item:
-                        end_pos = len(content)
-                        break
-
-                    # check for nested inner envs
+                # search for inner environments with \item so that we can handle nested items
+                next_item = ITEM_PATTERN.search(content[current_pos:])
+                while next_item:
+                    # check for nested inner envs (since those are the ones that could contain inner \item)
                     env_match = self.search(content[current_pos:])
                     if not env_match:
-                        break
-
-                    pos = env_match.start()
-                    # If we find a nested environment after the next item,
-                    # we can safely exit
-                    if next_item and pos > next_item.start():
                         end_pos = current_pos + next_item.start()
                         break
 
-                    # Handle the inner environment
+                    start_env = env_match.start()
+                    # If we find a nested environment after the next item,
+                    # we can safely exit
+                    if start_env > next_item.start():
+                        end_pos = current_pos + next_item.start()
+                        break
+
+                    # Handle and skip the inner environment
                     inner_token, inner_length = super().handle(
-                        content[current_pos + pos :]
+                        content[current_pos + start_env :]
                     )
                     if not inner_token:  # should not happen..
                         break
 
-                    current_pos += pos + inner_length
+                    current_pos += start_env + inner_length
                     end_pos = current_pos
+
+                    next_item = ITEM_PATTERN.search(content[current_pos:])
 
                 token = self._handle_environment("item", content[start:end_pos].strip())
                 token["type"] = "item"
