@@ -232,6 +232,10 @@ def test_misc_formatting_commands(handler):
     \ProvidesClass{sigma}[2012/01/18]
     \LoadClass[fleqn,11pt,twoside]{article}
     \vskip -\parskip
+
+    \parindent 4mm
+    \parskip    4mm
+    
     \vskip 10pt
     \vskip10pt
     \labelsep

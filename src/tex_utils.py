@@ -242,7 +242,7 @@ def read_tex_file_content(file_path: str, dir_path: str = None) -> str:
                     input_path = test_path
                     break
 
-        with open(input_path, "r", encoding="utf-8") as f:
+        with open(input_path, "r") as f:
             return f.read()
     except (FileNotFoundError, IOError) as e:
         raise FileNotFoundError(f"Failed to read input file '{file_path}': {str(e)}")

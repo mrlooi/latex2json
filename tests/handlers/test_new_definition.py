@@ -261,7 +261,7 @@ def test_crefname(handler):
     content = r"\crefname{equation}{333}{aaaa} hahaha"
     token, pos = handler.handle(content)
     assert token["type"] == "crefname"
-    assert token["counter"] == "equation"
+    assert token["name"] == "equation"
     assert token["singular"] == "333"
     assert token["plural"] == "aaaa"
 

@@ -231,7 +231,7 @@ class LatexParser:
         """Check for new definitions in the content and process them"""
         if self.new_definition_handler.can_handle(content):
             token, end_pos = self.new_definition_handler.handle(content)
-            if token:
+            if token and "name" in token:
                 cmd_name = token["name"]
                 if token["type"] == "newcommand":
                     self.command_processor.process_newcommand(
@@ -505,7 +505,11 @@ class LatexParser:
             content = read_tex_file_content(file_path)
             return self.parse(content, file_path=file_path)
         except Exception as e:
-            self.logger.error(f"Failed to parse file: {str(e)}")
+            self.logger.error(f"Failed to parse file: {file_path}, error: {str(e)}")
+            self.logger.error(
+                "Stack trace:", exc_info=True
+            )  # This will log the full stack trace
+
             return []
 
 

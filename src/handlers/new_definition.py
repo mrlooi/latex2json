@@ -154,7 +154,7 @@ class NewDefinitionHandler(TokenHandler):
         r"""Handle \crefname definitions"""
         token = {
             "type": "crefname",
-            "counter": match.group(1),
+            "name": match.group(1),
             "singular": match.group(2),
             "plural": match.group(3),
         }
