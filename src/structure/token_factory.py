@@ -70,9 +70,9 @@ class TokenFactory:
         self.logger = logger or logging.getLogger(__name__)
         self._token_map = TOKEN_MAP.copy()  # Instance-specific token map
         self._processors: Dict[TokenType, TokenProcessor] = {}
-        self._custom_type_handlers: Dict[str, Callable[[Dict[str, Any]], BaseToken]] = (
-            {}
-        )
+        self._custom_type_handlers: Dict[
+            str, Callable[[Dict[str, Any]], BaseToken | None]
+        ] = {}
         self._init_handlers()
 
     def _init_handlers(self):
@@ -81,9 +81,13 @@ class TokenFactory:
         def handle_includegraphics(data: Dict[str, Any]) -> BaseToken:
             return GraphicsToken(content=data["content"])
 
-        self.register_custom_type("includegraphics", handle_includegraphics)
+        def handle_date(data: Dict[str, Any]) -> None:
+            return None
 
-    def create(self, data: Union[str, Dict[str, Any]]) -> BaseToken:
+        self.register_custom_type("includegraphics", handle_includegraphics)
+        self.register_custom_type("date", handle_date)
+
+    def create(self, data: Union[str, Dict[str, Any]]) -> BaseToken | None:
         if isinstance(data, str):
             return data
 
@@ -136,10 +140,14 @@ class TokenFactory:
         if isinstance(content, dict) and "type" in content:
             return self.create(content)
         elif isinstance(content, list):
-            return [
-                self.create(item) if isinstance(item, dict) and "type" in item else item
-                for item in content
-            ]
+            output = []
+            for item in content:
+                if isinstance(item, dict) and "type" in item:
+                    item = self.create(item)
+                    if item is None:
+                        continue
+                output.append(item)
+            return output
         return content
 
     def register_processor(
