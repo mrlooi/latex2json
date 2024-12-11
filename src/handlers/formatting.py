@@ -100,7 +100,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "spacing",
             r"\\(?:"
-            r"quad|qquad|,|;|:|\!|"  # \quad, \qquad, \, \; \:
+            r"quad|qquad|xspace|,|;|:|\!|"  # \quad, \qquad, \, \; \:
             r"hspace\*?\s*{([^}]+)}|"  # \hspace{length}
             r"hskip\s*"
             + number_regex
@@ -154,7 +154,7 @@ RAW_PATTERNS = OrderedDict(
         ("phantom", r"\\(?:hphantom|vphantom)\s*{"),
         (
             "other",
-            r"\\(?:ignorespaces|relax|\@tempboxa|box|global|fnsymbol|@plus|@minus)\b",
+            r"\\(?:ignorespaces|relax|\@tempboxa|box|global|fnsymbol|@plus|@minus|null)\b",
         ),  # ignore fnsymbol
         ("pz@", r"(?:%s)?\\[pz]@(?![a-zA-Z@])" % number_regex),
         ("slash", r"\\/"),  # \/ (in latex, this is like an empty space)

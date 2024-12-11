@@ -9,7 +9,7 @@ POST_NEW_COMMAND_PATTERN_STR = (
 )
 
 DEF_COMMAND_PREFIX = r"(?:\\long)?\\(?:e|g)?def\s*\\"
-LET_COMMAND_PREFIX = r"\\let\s*\\"
+LET_COMMAND_PREFIX = r"\\(?:future)?let\s*\\"
 
 DEF_COMMAND_PATTERN = re.compile(
     r"%s([^\s{#]+)(((?:#\d+|[^{])*)\s*{)" % (DEF_COMMAND_PREFIX), re.DOTALL

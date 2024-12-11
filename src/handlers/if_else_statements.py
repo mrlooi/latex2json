@@ -15,6 +15,26 @@ default_if_pattern = r"\s*(%s\s*%s|.+)(?=\\else\b|\\fi\b|$|\n)" % (
     char_or_command_pattern,
 )
 
+# Pattern to match any TeX token (command, character, or group)
+tex_token_pattern = r"""
+    (?:
+        \\[a-zA-Z@]+     # Command token
+        |
+        \{[^}]*\}        # Group token
+        |
+        [^\\{}]          # Single character token
+    )
+"""
+
+# Pattern for \ifx with two tokens to compare
+ifx_pattern = re.compile(
+    r"\\ifx\s*"
+    + rf"({tex_token_pattern})\s*"  # First token
+    + rf"({tex_token_pattern})",  # Second token
+    re.VERBOSE,
+)
+
+
 IF_PATTERN = re.compile(r"\\if%s" % (default_if_pattern))
 ELSE_PATTERN = re.compile(r"\\else\b")
 ELSIF_PATTERN = re.compile(
@@ -43,10 +63,7 @@ EQUAL_PATTERN = re.compile(r"\\equal\s*\{")
 IF_PATTERNS_DEFAULT_LIST = OrderedDict(
     {
         "ifthenelse": re.compile(r"\\ifthenelse\s*\{"),
-        "ifx": re.compile(
-            r"\\ifx\s*(%s\s*%s)"
-            % (command_with_opt_brace_pattern, command_with_opt_brace_pattern)
-        ),
+        "ifx": ifx_pattern,
         "ifdefined": re.compile(
             r"\\if(?:un)?defined\s*%s" % (command_with_opt_brace_pattern)
         ),

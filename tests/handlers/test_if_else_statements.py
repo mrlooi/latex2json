@@ -166,6 +166,13 @@ def test_others():
     assert result["if_content"].replace(" ", "").replace("\n", "") == "EERRRaaaa"
     assert result["else_content"].replace(" ", "").replace("\n", "") == "bbb"
 
+    text = r"\ifx\@let@token.\else.\null \fi \xspace"
+    result, pos = handler.handle(text)
+    assert result["condition"] == r"\@let@token."
+    assert result["if_content"].strip() == ""
+    assert result["else_content"].strip() == r".\null"
+    assert text[pos:] == r" \xspace"
+
     # ifnum
     text = r"\ifnum\lastpenalty=\z@ PENALTY \else NOPE \fi"
     result, pos = handler.handle(text)
