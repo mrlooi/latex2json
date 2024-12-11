@@ -81,11 +81,7 @@ class TokenFactory:
         def handle_includegraphics(data: Dict[str, Any]) -> BaseToken:
             return GraphicsToken(content=data["content"])
 
-        def handle_thanks(data: Dict[str, Any]) -> BaseToken:
-            return TextToken(content=data["content"])
-
         self.register_custom_type("includegraphics", handle_includegraphics)
-        self.register_custom_type("thanks", handle_thanks)
 
     def create(self, data: Union[str, Dict[str, Any]]) -> BaseToken:
         if isinstance(data, str):

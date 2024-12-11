@@ -49,3 +49,10 @@ class QuoteToken(BaseToken):
 class GroupToken(BaseToken):
     type: TokenType = TokenType.GROUP
     content: List[BaseToken]
+
+
+# usually for unknown commands
+class CommandToken(BaseToken):
+    type: TokenType = TokenType.COMMAND
+    command: str
+    content: Optional[str] = None

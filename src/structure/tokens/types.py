@@ -12,6 +12,12 @@ class TokenType(Enum):
     ABSTRACT = "abstract"
     APPENDIX = "appendix"
 
+    COMMAND = "command"
+
+    # Text
+    TEXT = "text"
+    QUOTE = "quote"
+
     # ENV related
     ENVIRONMENT = "environment"
     # Tables & Figures
@@ -24,10 +30,6 @@ class TokenType(Enum):
     # Lists
     LIST = "list"
     ITEM = "item"
-
-    # Text
-    TEXT = "text"
-    QUOTE = "quote"
 
     # Math & Technical
     EQUATION = "equation"

@@ -59,18 +59,21 @@ def concat_text_with_same_styles(tokens):
         if isinstance(token, dict) and token.get("type") == "text":
             if current_text is None:
                 current_text = token
-            elif current_text.get("styles") == token.get("styles"):
+            else:
                 prev_content = current_text["content"]
                 next_content = token["content"]
+                add_space = should_add_space(prev_content, next_content)
+                # merge text tokens with same style
+                if current_text.get("styles") == token.get("styles"):
 
-                current_text["content"] += (
-                    " " + next_content
-                    if should_add_space(prev_content, next_content)
-                    else next_content
-                )
-            else:
-                concatenated_tokens.append(current_text)
-                current_text = token
+                    current_text["content"] += (
+                        " " + next_content if add_space else next_content
+                    )
+                else:
+                    concatenated_tokens.append(current_text)
+                    current_text = token
+                    if add_space:
+                        token["content"] = " " + token["content"]
         else:
             if current_text is not None:
                 concatenated_tokens.append(current_text)

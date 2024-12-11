@@ -5,6 +5,9 @@ from src.structure.tokens.types import TokenType
 
 class AuthorToken(BaseToken):
     type: TokenType = TokenType.AUTHOR
+    content: List[
+        List[BaseToken]
+    ]  # each row is an author, where each author -> List[BaseToken]
 
 
 class EmailToken(BaseToken):

@@ -1245,12 +1245,12 @@ def test_if_else_statements(parser):
 
     # test unclosed if
     text = r"""
-    \if{cond1} 
+    \ifcond 
     """
     parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) == 1
     assert parsed_tokens[0]["type"] == "command"
-    assert parsed_tokens[0]["content"].strip() == "cond1"
+    assert parsed_tokens[0]["command"] == r"\ifcond"
 
 
 def test_nested_items_with_environments(parser):

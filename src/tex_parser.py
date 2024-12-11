@@ -45,7 +45,7 @@ DELIM_PATTERN = re.compile(
 )
 ESCAPED_AMPERSAND_SPLIT = re.compile(r"(?<!\\)&")
 TRAILING_BACKSLASH = re.compile(r"\\+$")
-UNKNOWN_COMMAND_PATTERN = re.compile(r"(\\[@a-zA-Z*]+\s*\{?)", re.DOTALL)
+UNKNOWN_COMMAND_PATTERN = re.compile(r"(\\[@a-zA-Z\*]+(?:\s*{)?)")
 
 
 class LatexParser:
@@ -199,14 +199,12 @@ class LatexParser:
             expanded = self._expand_command(total_content)
 
             if expanded.startswith("\\"):
-                if inner_content:
-                    token = {
-                        "type": "command",
-                        "command": expanded.replace("{" + inner_content + "}", ""),
-                        "content": inner_content,
-                    }
-                else:
-                    token = {"type": "command", "command": expanded}
+                token = {"type": "command", "command": command}
+                if expanded.startswith(command):
+                    expanded = expanded[len(command) :]
+                # expanded = expanded.strip("{}")
+                if expanded:
+                    token["content"] = expanded
             else:
                 token = {"type": "text", "content": expanded}
 
