@@ -1759,5 +1759,25 @@ def test_inputs_with_files(parser):
     assert len(bib_token["content"]) == 2
 
 
+def test_cvpr_sty_lastlines(parser):
+    text = r"""
+    \DeclareRobustCommand\onedot{\futurelet\@let@token\@onedot}
+    \def\@onedot{\ifx\@let@token.\else.\null\fi\xspace}
+
+    \def\eg{\emph{e.g}\onedot}
+
+    This is my example \eg Haha
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 3
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "This is my example"
+    assert parsed_tokens[1]["type"] == "text"
+    assert parsed_tokens[1]["content"] == "e.g"
+    assert parsed_tokens[1]["styles"] == [FRONTEND_STYLE_MAPPING["emph"]]
+    assert parsed_tokens[2]["type"] == "text"
+    assert parsed_tokens[2]["content"].strip() == "Haha"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

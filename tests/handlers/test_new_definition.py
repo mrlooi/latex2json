@@ -256,6 +256,13 @@ def test_let_command(handler):
     assert token["name"] == "arXiv"
     assert token["content"] == r"\arxiv"
 
+    # futurelet
+    content = r"\futurelet\arXiv\arxiv"
+    token, _ = handler.handle(content)
+    assert token["type"] == "newcommand"
+    assert token["name"] == "arXiv"
+    assert token["content"] == r"\arxiv"
+
 
 def test_crefname(handler):
     content = r"\crefname{equation}{333}{aaaa} hahaha"
