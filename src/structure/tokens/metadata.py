@@ -9,14 +9,19 @@ class AuthorToken(BaseToken):
 
 class EmailToken(BaseToken):
     type: TokenType = TokenType.EMAIL
-    content: str
+    content: str | List[BaseToken]
 
 
 class AffiliationToken(BaseToken):
     type: TokenType = TokenType.AFFILIATION
-    content: str
+    content: str | List[BaseToken]
+
+
+class AddressToken(BaseToken):
+    type: TokenType = TokenType.ADDRESS
+    content: str | List[BaseToken]
 
 
 class KeywordsToken(BaseToken):
     type: TokenType = TokenType.KEYWORDS
-    content: str
+    content: str | List[BaseToken]

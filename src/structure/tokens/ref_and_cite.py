@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from src.structure.tokens.base import BaseToken
 from src.structure.tokens.types import TokenType
@@ -25,7 +25,7 @@ class UrlToken(BaseToken):
     """Represents URLs and hyperlinks"""
 
     type: TokenType = TokenType.URL
-    title: Optional[str] = None
+    title: Optional[str | List[BaseToken]] = None
     content: str
 
 

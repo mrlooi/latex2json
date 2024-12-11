@@ -41,6 +41,7 @@ from src.structure.tokens.code_and_algo import (
 )
 from src.structure.tokens.bibliography import BibliographyToken, BibItemToken
 from src.structure.tokens.metadata import (
+    AddressToken,
     AuthorToken,
     EmailToken,
     AffiliationToken,
@@ -87,6 +88,7 @@ TOKEN_MAP: Dict[TokenType, Type[BaseToken]] = {
     TokenType.EMAIL: EmailToken,
     TokenType.AFFILIATION: AffiliationToken,
     TokenType.KEYWORDS: KeywordsToken,
+    TokenType.ADDRESS: AddressToken,
     # Other
     TokenType.GROUP: GroupToken,
 }

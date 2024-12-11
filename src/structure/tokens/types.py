@@ -50,6 +50,7 @@ class TokenType(Enum):
     EMAIL = "email"
     AFFILIATION = "affiliation"
     KEYWORDS = "keywords"
+    ADDRESS = "address"
 
     # Other
     GROUP = "group"
