@@ -70,12 +70,12 @@ class LatexParser:
         self.if_else_block_handler = IfElseBlockHandler()
         # handlers
         self.handlers: List[TokenHandler] = [
-            AuthorHandler(self._parse_cell),
+            AuthorHandler(self.parse),
             # ignore unicode conversion for equations
             EquationHandler(lambda x: self._expand_command(x, ignore_unicode=True)),
             CodeBlockHandler(),
             ItemHandler(),
-            BibItemHandler(),
+            BibItemHandler(self.parse),
             ContentCommandHandler(self._expand_command),
             # for tabular, on the first pass we process content and maintain the '\\' delimiter to maintain row integrity
             TabularHandler(
@@ -144,19 +144,6 @@ class LatexParser:
                 self.labels[content] = tokens[-1]
             else:
                 tokens.append({"type": "label", "content": content})
-
-    def _parse_cell(self, cell_content: str) -> List[Dict]:
-        cell = self.parse(cell_content)
-        return self._clean_cell(cell)
-
-    def _clean_cell(self, cell: List[Dict]) -> List[Dict]:
-        if len(cell) == 0:
-            return None
-        elif len(cell) == 1 and isinstance(cell[0], dict):
-            if cell[0]["type"] == "text" and "styles" not in cell[0]:
-                return cell[0]["content"]
-            return cell[0]
-        return cell
 
     def add_token(self, token: str | Dict, tokens: List[Dict]):
         # uncomment this if we want to merge self.current_str whitespaces
@@ -290,11 +277,11 @@ class LatexParser:
                     elif token["type"] in ["footnote", "caption"]:
                         prev_env = self.current_env
                         self.current_env = token
-                        token["content"] = self._parse_cell(token["content"])
+                        token["content"] = self.parse(token["content"])
                         self.current_env = prev_env
                     elif token["type"] == "url":
                         if "title" in token:
-                            token["title"] = self._parse_cell(token["title"])
+                            token["title"] = self.parse(token["title"])
                     elif token["type"] == "section":
                         self.current_env = token
                     elif isinstance(handler, BaseEnvironmentHandler):

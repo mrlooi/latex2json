@@ -23,6 +23,8 @@ class BibItemHandler(TokenHandler):
             if item:
                 # remove newblock
                 item = NEWBLOCK_PATTERN.sub("", item)
+                if self.process_content_fn:
+                    item = self.process_content_fn(item)
                 token = {
                     "type": "bibitem",
                     "content": item,

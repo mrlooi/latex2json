@@ -513,11 +513,11 @@ def test_parse_refs_and_urls(parser):
     assert refs[2]["type"] == "ref"
     assert refs[3]["type"] == "ref"
 
+    assert "title" not in refs[0]
     assert refs[0]["content"] == "https://www.tesla.com"
     assert refs[1]["content"] == "https://www.google.com"
+    assert refs[1]["title"][0]["content"] == "Google"
     assert refs[2]["title"] == "fig:modalnet"
-    assert "title" not in refs[0]
-    assert refs[1]["title"] == "Google"
     assert refs[2]["content"] == "ModalNet"
     assert "title" not in refs[3]
     assert refs[3]["content"] == "fig:modalnet"
@@ -625,7 +625,7 @@ def test_algorithmic(parser):
     text = r"""
 \begin{algorithm}[H] 
 
-\caption{Sum of Array Elements}
+\caption{Sum of Array Elements \url{https://www.google.com}}
 \label{alg:loop}
 
 \begin{algorithmic}[1]
@@ -652,7 +652,9 @@ def test_algorithmic(parser):
 
     caption = algorithm["content"][0]
     assert caption["type"] == "caption"
-    assert caption["content"] == "Sum of Array Elements"
+    assert caption["content"][0]["content"].strip() == "Sum of Array Elements"
+    assert caption["content"][1]["type"] == "url"
+    assert caption["content"][1]["content"] == "https://www.google.com"
 
     # algorithmic keep as literal?
     algorithmic = algorithm["content"][1]
@@ -725,7 +727,7 @@ def test_nested_figures(parser):
     ][0]
     first_caption = [t for t in first_subfig["content"] if t["type"] == "caption"][0]
     assert first_graphics["content"] == "image.png"
-    assert first_caption["content"] == "First pendulum design"
+    assert first_caption["content"][0]["content"] == "First pendulum design"
 
     # Check second subfigure
     second_subfig = subfigures[1]
@@ -737,11 +739,11 @@ def test_nested_figures(parser):
     ][0]
     second_caption = [t for t in second_subfig["content"] if t["type"] == "caption"][0]
     assert second_graphics["content"] == "example-image-b"
-    assert second_caption["content"] == "Second pendulum design"
+    assert second_caption["content"][0]["content"] == "Second pendulum design"
 
     # Check main caption
     main_caption = [t for t in figure["content"] if t["type"] == "caption"][0]
-    assert main_caption["content"] == "Different pendulum clock designs"
+    assert main_caption["content"][0]["content"] == "Different pendulum clock designs"
 
 
 def test_complex_table(parser):
@@ -835,7 +837,7 @@ def test_complex_table(parser):
     # Check caption
     caption = table["content"][1]
     assert caption["type"] == "caption"
-    assert caption["content"] == "Regional Sales Distribution"
+    assert caption["content"][0]["content"] == "Regional Sales Distribution"
 
 
 def test_nested_newcommands(parser):
@@ -1162,7 +1164,7 @@ def test_user_defined_commands_w_legacy_formatting(parser):
     parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) == 1
     assert parsed_tokens[0]["type"] == "url"
-    assert parsed_tokens[0]["title"] == "arXiv:1234567"
+    assert parsed_tokens[0]["title"][0]["content"] == "arXiv:1234567"
     assert parsed_tokens[0]["content"] == "http://arxiv.org/abs/1234567"
 
 

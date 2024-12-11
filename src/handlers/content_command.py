@@ -169,6 +169,9 @@ class ContentCommandHandler(TokenHandler):
         elif matched_type == "href":
             return {"type": "url", "title": content, "content": match.group(1).strip()}
 
+        elif matched_type == "url":
+            return {"type": "url", "content": content}
+
         elif matched_type in ["ref", "bookmark"]:
             return {"type": "ref", "content": content}
 
@@ -199,9 +202,6 @@ class ContentCommandHandler(TokenHandler):
 
         elif matched_type == "includegraphics":
             return {"type": "includegraphics", "content": content}
-
-        elif matched_type == "url":
-            return {"type": "url", "content": content}
 
         elif matched_type == "pdfbookmark":
             return {
