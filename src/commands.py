@@ -137,12 +137,14 @@ class CommandProcessor:
         self.commands["newif:" + var_name] = command
 
     def process_newlength(self, var_name: str):
+        self.process_newX(var_name, "newlength")
 
+    def process_newX(self, var_name: str, type: str = "newX"):
         command = {
             "pattern": re.compile(r"\\" + var_name + r"\b"),
             "handler": default_ignore_handler,
         }
-        self.commands["newlength:" + var_name] = command
+        self.commands[type + ":" + var_name] = command
 
     def process_newcounter(self, var_name: str):
 

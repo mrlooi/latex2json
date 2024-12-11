@@ -392,5 +392,20 @@ def test_with_csname_and_expandafter(handler):
     assert content[pos:] == " POST"
 
 
+def test_other_newX_commands(handler):
+    content = r"\newcount\cvpr@rulercount aaa"
+    token, pos = handler.handle(content)
+    assert token["name"] == "cvpr@rulercount"
+    assert content[pos:] == " aaa"
+
+    content = r"\newdimen\cvpr@ruleroffset"
+    token, pos = handler.handle(content)
+    assert token["name"] == "cvpr@ruleroffset"
+
+    content = r"\newbox\cvpr@rulerbox"
+    token, pos = handler.handle(content)
+    assert token["name"] == "cvpr@rulerbox"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

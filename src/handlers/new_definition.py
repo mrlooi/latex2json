@@ -50,6 +50,7 @@ PATTERNS = {
         r"\\setlength\s*%s\s*%s" % (BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN),
         re.DOTALL,
     ),
+    "newcountboxdimen": re.compile(r"\\(?:re)?new(?:count|box|dimen)\s*\\([^\s{[]+)"),
     "newcounter": re.compile(
         r"\\(?:re)?newcounter\s*" + BRACE_CONTENT_PATTERN, re.DOTALL
     ),
@@ -122,6 +123,8 @@ class NewDefinitionHandler(TokenHandler):
                     return self._handle_newlength(match)
                 elif pattern_name == "newcounter" or pattern_name == "setcounter":
                     return self._handle_newcounter(match)
+                elif pattern_name == "newcountboxdimen":
+                    return self._handle_newcountboxdimen(match)
                 elif pattern_name == "expandafter":
                     next_pos = match.end()
                     token, end_pos = self.handle(content[next_pos:])
@@ -130,6 +133,12 @@ class NewDefinitionHandler(TokenHandler):
                     return None, match.end()
 
         return None, 0
+
+    def _handle_newcountboxdimen(self, match) -> Tuple[Optional[Dict], int]:
+        r"""Handle \newcountboxdimen definitions"""
+        var_name = match.group(1).strip()
+        token = {"type": "newcountboxdimen", "name": var_name}
+        return token, match.end()
 
     def _handle_newif(self, match) -> Tuple[Optional[Dict], int]:
         r"""Handle \newif definitions"""

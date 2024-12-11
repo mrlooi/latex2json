@@ -16,7 +16,6 @@ PATTERNS = {
     "address": re.compile(r"\\address\s*{", compile_as),
     # \thanks usually found inside author block
     "thanks": re.compile(r"\\thanks\s*{", compile_as),
-    "samethanks": re.compile(r"\\samethanks\b", compile_as),
 }
 
 
@@ -54,11 +53,7 @@ class AuthorHandler(TokenHandler):
         for name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if match:
-                if name == "samethanks":
-                    if self.last_thanks_token:
-                        return self.last_thanks_token, match.end()
-                    return {"type": "samethanks"}, match.end()
-                elif name == "thanks":
+                if name == "thanks":
                     start_pos = match.end() - 1
                     content, end_pos = extract_nested_content(content[start_pos:])
                     token = {

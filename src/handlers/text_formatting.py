@@ -47,7 +47,7 @@ BOX_PATTERN = re.compile(
         fcolorbox\s*{[^}]*}\s*{[^}]*}\s*{|   # \fcolorbox{border}{bg}{text}
         scalebox\s*{[^}]*}\s*{|  # \scalebox{scale}{text}
         mbox\s*{| # \mbox{text}
-        hbox\s+to\s+[^{]+\s*{| # \hbox to \hsize{text}
+        hbox\s+to\s*[^{]+\s*{| # \hbox to \hsize{text}
         sbox\b\s*[^{]+\s*{| # \sbox\@tempboxa{text}
         resizebox\s*{[^}]*}\s*{[^}]*}\s*{  # \resizebox{width}{height}{text}
     )
