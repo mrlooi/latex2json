@@ -489,9 +489,12 @@ class LatexParser:
             List[Dict[str, str]]: List of parsed tokens
         """
         try:
-            self.logger.info(f"Parsing file: {file_path}")
+            self.logger.info(f"Parsing file: {file_path}, ext: {extension}")
+            current_file_dir = self.current_file_dir
             content = read_tex_file_content(file_path, extension=extension)
-            return self.parse(content, file_path=file_path)
+            out = self.parse(content, file_path=file_path)
+            self.current_file_dir = current_file_dir
+            return out
         except Exception as e:
             self.logger.error(f"Failed to parse file: {file_path}, error: {str(e)}")
             self.logger.error(

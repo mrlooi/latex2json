@@ -118,7 +118,10 @@ RAW_PATTERNS = OrderedDict(
         # number
         ("numbers", r"\\linenumbers\b|\\(?:numberwithin)\s*\{[^}]*\}\s*\{[^}]*\}"),
         # table
-        ("newcolumntype", r"\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}\s*{"),
+        (
+            "newcolumntype",
+            r"\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}(?:\s*\[\d+\])?\s*{",
+        ),
         # separators
         ("itemsep", r"\\itemsep\s*=\s*-?\d*\.?\d+\w+?\b"),
         (

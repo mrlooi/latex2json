@@ -254,6 +254,9 @@ def test_misc_formatting_commands(handler):
     \advance\@tempskipa-\@tempdimb
     \advance\section@level-\subsection@level
     \advance\leftmargin by -\rightmargin
+
+    \newcolumntype{x}[1]{>{\centering}p{#1pt}}
+    \newcolumntype{y}{>{\centering}p{16pt}}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
