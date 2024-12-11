@@ -260,7 +260,8 @@ class LatexParser:
                 if token:
                     if isinstance(token, str):
                         token = {"type": "text", "content": token}
-                    elif token["type"] == "input":
+                    elif token["type"] in ["input_file", "bibliography_file"]:
+                        ext = ".bbl" if token["type"] == "bibliography_file" else ".tex"
                         # open input file
                         if token["content"]:
                             file_path = token["content"]
@@ -268,7 +269,7 @@ class LatexParser:
                                 file_path = os.path.join(
                                     self.current_file_dir, file_path
                                 )
-                            input_tokens = self.parse_file(file_path)
+                            input_tokens = self.parse_file(file_path, extension=ext)
                             if input_tokens:
                                 tokens.extend(input_tokens)
                         return True, end_pos
@@ -475,7 +476,9 @@ class LatexParser:
 
         return tokens
 
-    def parse_file(self, file_path: str) -> List[Dict[str, str]]:
+    def parse_file(
+        self, file_path: str, extension: str = ".tex"
+    ) -> List[Dict[str, str]]:
         """
         Parse a LaTeX file directly from the file path.
 
@@ -487,7 +490,7 @@ class LatexParser:
         """
         try:
             self.logger.info(f"Parsing file: {file_path}")
-            content = read_tex_file_content(file_path)
+            content = read_tex_file_content(file_path, extension=extension)
             return self.parse(content, file_path=file_path)
         except Exception as e:
             self.logger.error(f"Failed to parse file: {file_path}, error: {str(e)}")

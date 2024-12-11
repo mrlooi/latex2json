@@ -29,7 +29,7 @@ RAW_PATTERNS = OrderedDict(
         ("caption", r"\\caption\s*{"),
         ("captionof", r"\\captionof\s*{([^}]*?)}\s*{"),
         # input
-        ("input", r"\\(?:input|include)\s*{"),
+        ("input_file", r"\\(?:input|include)\s*{"),
         # REFs
         ("ref", r"\\(?:c|auto|eq|page)?ref\*?\s*{"),
         ("hyperref", r"\\hyperref\s*\[([^]]*)\]\s*{"),
@@ -64,7 +64,7 @@ RAW_PATTERNS = OrderedDict(
         # keywords
         ("keywords", r"\\keywords\s*{"),
         # bibliography
-        ("bibliography", r"\\bibliography\s*{"),
+        ("bibliography_file", r"\\bibliography\s*{"),
     ]
 )
 
@@ -141,14 +141,9 @@ class ContentCommandHandler(TokenHandler):
                 "level": level,
                 "numbered": numbered,
             }
-        elif matched_type == "input":
-            return {"type": "input", "content": content}
 
         elif matched_type == "title":
             return {"type": "title", "title": content}
-
-        elif matched_type == "caption":
-            return {"type": "caption", "content": content}
 
         elif matched_type == "captionof":
             return {

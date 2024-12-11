@@ -1715,6 +1715,7 @@ After loops
 def test_inputs_with_files(parser):
     import os
 
+    # regular input
     text = r"""
     PRE INPUT
 
@@ -1736,6 +1737,26 @@ def test_inputs_with_files(parser):
     assert input_tokens[0]["title"] == "Example"
     assert input_tokens[1]["type"] == "equation"
     assert input_tokens[1]["content"].strip() == "1+1=2"
+
+    # bibliography file
+    text = r"""
+    PRE BIBLIOGRAPHY
+
+    \bibliography{samples/bib}
+
+    POST BIBLIOGRAPHY
+    """
+    parsed_tokens = parser.parse(text, file_path=os.path.abspath(__file__))
+    assert len(parsed_tokens) == 3
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "PRE BIBLIOGRAPHY"
+    assert parsed_tokens[-1]["type"] == "text"
+    assert parsed_tokens[-1]["content"].strip() == "POST BIBLIOGRAPHY"
+
+    # check bibliography file
+    bib_token = parsed_tokens[1]
+    assert bib_token["type"] == "bibliography"
+    assert len(bib_token["content"]) == 2
 
 
 if __name__ == "__main__":

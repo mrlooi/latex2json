@@ -230,13 +230,19 @@ def test_other(handler):
     # include/input
     text = r"\input{file.tex} POST INPUT"
     token, pos = handler.handle(text)
-    assert token == {"type": "input", "content": "file.tex"}
+    assert token == {"type": "input_file", "content": "file.tex"}
     assert text[pos:] == " POST INPUT"
 
     text = text.replace(r"\input", r"\include")
     token, pos = handler.handle(text)
-    assert token == {"type": "input", "content": "file.tex"}
+    assert token == {"type": "input_file", "content": "file.tex"}
     assert text[pos:] == " POST INPUT"
+
+    # bibliography file
+    text = r"\bibliography{file.bib} POST BIBLIOGRAPHY"
+    token, pos = handler.handle(text)
+    assert token == {"type": "bibliography_file", "content": "file.bib"}
+    assert text[pos:] == " POST BIBLIOGRAPHY"
 
 
 if __name__ == "__main__":

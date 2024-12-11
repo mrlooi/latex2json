@@ -218,7 +218,9 @@ def substitute_patterns(
     return text
 
 
-def read_tex_file_content(file_path: str, dir_path: str = None) -> str:
+def read_tex_file_content(
+    file_path: str, dir_path: str = None, extension=".tex"
+) -> str:
     """
     Attempts to read content from an input file, handling both absolute and relative paths.
 
@@ -236,7 +238,7 @@ def read_tex_file_content(file_path: str, dir_path: str = None) -> str:
 
         # Try different extensions if file not found
         if not os.path.exists(input_path):
-            for ext in ["", ".tex"]:
+            for ext in ["", extension]:
                 test_path = input_path + ext
                 if os.path.exists(test_path):
                     input_path = test_path
