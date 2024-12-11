@@ -1092,6 +1092,41 @@ def test_new_environment(parser):
     assert row.strip() == "This text is inside the environment."
 
 
+def test_author(parser):
+    text = r"""
+\author{
+  \AND
+  Ashish Vaswani\thanks{Equal contribution. Listing order is random. Jakob proposed replacing RNNs with self-attention and started the effort to evaluate this idea.
+Ashish, with Illia, designed and implemented the first Transformer models and has been crucially involved in every aspect of this work. Noam proposed scaled dot-product attention, multi-head attention and the parameter-free position representation and became the other person involved in nearly every detail. Niki designed, implemented, tuned and evaluated countless model variants in our original codebase and tensor2tensor. Llion also experimented with novel model variants, was responsible for our initial codebase, and efficient inference and visualizations. Lukasz and Aidan spent countless long days designing various parts of and implementing tensor2tensor, replacing our earlier codebase, greatly improving results and massively accelerating our research.
+}\\
+  Google Brain\\
+  \texttt{avaswani@google.com}\\
+  \And
+  Noam Shazeer\footnotemark[1]\\
+  Google Brain\\
+  \texttt{noam@google.com}\\
+}
+"""
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "author"
+
+    authors = parsed_tokens[0]["content"]
+    assert len(authors) == 2
+
+    first = authors[0]
+    assert first[0]["content"] == "Ashish Vaswani"
+
+    thanks_footnote = first[1]
+    assert thanks_footnote["type"] == "footnote"  # thanks is footnote
+    assert thanks_footnote["content"][0]["content"].startswith("Equal contribution")
+
+    second = authors[1]
+    assert second[0]["content"] == "Noam Shazeer"
+    assert second[1]["type"] == "footnote"
+    assert second[1]["content"][0]["content"].startswith("1")
+
+
 def test_bibliography(parser):
     text = r"""
     \begin{thebibliography}{99}
