@@ -601,7 +601,8 @@ def test_item_with_label(parser):
     \label{label-top}
     \item[*] First item with custom label
     \item Second item
-    \item[+] \label{special-item} Third item with label
+    \item[+] \label{special-item} Third item with label % \begin{itemize}
+    
     \end{itemize}
     """
     parsed_tokens = parser.parse(text)
@@ -1292,6 +1293,7 @@ def test_nested_items_with_environments(parser):
     \item Second item with nested list:
         \begin{enumerate}
         \item[a)] Nested item with math $F=ma$
+        % ssss a  \item[bbb] SS
         \item[b)] Another nested item with:
             \begin{itemize}
             \item Deep nested item 1
@@ -1299,6 +1301,7 @@ def test_nested_items_with_environments(parser):
                 \begin{equation}
                 \nabla \cdot \mathbf{E} = \frac{\rho}{\epsilon_0}
                 \end{equation}
+            % \item xxxx
             \end{itemize}
         \end{enumerate}
     \end{itemize}
@@ -1410,6 +1413,7 @@ def test_legacy_formatting(parser):
     \begin{tabular}{c}
         \tt aaa & \large bbb \\ 
         \sc eee & {\em 444} + 333
+        % \begin{tabular}{x}
     \end{tabular}
     """
     parsed_tokens = parser.parse(text)

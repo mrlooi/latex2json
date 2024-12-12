@@ -289,6 +289,37 @@ def has_comment_on_sameline(content: str, pos: int) -> bool:
     return False
 
 
+def strip_latex_comments(text: str) -> str:
+    r"""
+    Remove all LaTeX comments (lines starting with % or inline comments after unescaped %)
+    while preserving escaped \% characters.
+
+    Args:
+        text: Input LaTeX text
+
+    Returns:
+        Text with all comments removed
+    """
+    lines = []
+    for line in text.splitlines():
+        processed_line = ""
+        i = 0
+        while i < len(line):
+            # Handle escaped %
+            if i < len(line) - 1 and line[i : i + 2] == r"\%":
+                processed_line += r"\%"
+                i += 2
+                continue
+            # Handle unescaped %
+            if line[i] == "%":
+                break
+            processed_line += line[i]
+            i += 1
+        lines.append(processed_line.rstrip())
+
+    return "\n".join(lines)
+
+
 if __name__ == "__main__":
     text = r"% comment\n\begin{test}"
     pos = text.find(r"\begin")

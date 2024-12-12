@@ -216,3 +216,38 @@ def test_has_uncommented_percent_before():
     # Multiple escaped and unescaped comments
     text = r"\% not a comment % this is a comment \begin{test}"
     assert has_comment_on_sameline(text, text.find(r"\begin"))
+
+
+def test_strip_latex_comments():
+    from src.tex_utils import strip_latex_comments
+
+    # Test basic single-line comments
+    text = r"This is code % with a comment"
+    assert strip_latex_comments(text) == "This is code"
+
+    # Test multiline text with various comment types
+    text = r"""
+    First line% with comment
+    Second line with \% escaped percent % and a comment
+    % Fully commented line
+    No comments here
+    Mixed line with \% escaped and % real comment
+    """.strip()
+
+    expected = r"""
+    First line
+    Second line with \% escaped percent
+
+    No comments here
+    Mixed line with \% escaped and""".strip()
+
+    assert strip_latex_comments(text) == expected
+
+    # Test empty lines and whitespace handling
+    text = r"""
+    % Comment only
+    
+    Text % Comment
+      % Indented comment
+        Text with space   % Comment
+    """.strip()

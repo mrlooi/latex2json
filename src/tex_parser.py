@@ -35,7 +35,11 @@ from src.handlers import (
 from src.handlers.environment import BaseEnvironmentHandler
 from src.patterns import PATTERNS
 from src.commands import CommandProcessor
-from src.tex_utils import extract_nested_content, read_tex_file_content
+from src.tex_utils import (
+    extract_nested_content,
+    read_tex_file_content,
+    strip_latex_comments,
+)
 
 # Add these compiled patterns at module level
 # match $ or % or { or } only if not preceded by \
@@ -352,6 +356,8 @@ class LatexParser:
         """
         if file_path:
             self.current_file_dir = os.path.dirname(os.path.abspath(file_path))
+
+        content = strip_latex_comments(content)
 
         tokens = []
         current_pos = 0
