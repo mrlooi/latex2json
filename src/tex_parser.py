@@ -76,7 +76,7 @@ class LatexParser:
             CodeBlockHandler(),
             ItemHandler(),
             BibItemHandler(self.parse),
-            ContentCommandHandler(self._expand_command),
+            ContentCommandHandler(),
             # for tabular, on the first pass we process content and maintain the '\\' delimiter to maintain row integrity
             TabularHandler(
                 process_content_fn=lambda x: self.parse(
@@ -283,8 +283,9 @@ class LatexParser:
                     elif token["type"] == "url":
                         if "title" in token:
                             token["title"] = self.parse(token["title"])
-                    elif token["type"] == "section":
+                    elif token["type"] in ["section", "paragraph"]:
                         self.current_env = token
+                        token["title"] = self._expand_command(token["title"])
                     elif isinstance(handler, BaseEnvironmentHandler):
                         # algorithmic keep as literal?
                         if token["type"] not in ["algorithmic", "tabular"]:

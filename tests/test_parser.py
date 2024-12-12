@@ -626,7 +626,7 @@ def test_algorithmic(parser):
     text = r"""
 \begin{algorithm}[H] 
 
-\caption{Sum of Array Elements \url{https://www.google.com}}
+\caption{Sum of Array Elements \% Here is link \url{https://www.google.com}}
 \label{alg:loop}
 
 \begin{algorithmic}[1]
@@ -653,7 +653,10 @@ def test_algorithmic(parser):
 
     caption = algorithm["content"][0]
     assert caption["type"] == "caption"
-    assert caption["content"][0]["content"].strip() == "Sum of Array Elements"
+    assert (
+        caption["content"][0]["content"].strip()
+        == "Sum of Array Elements % Here is link"
+    )
     assert caption["content"][1]["type"] == "url"
     assert caption["content"][1]["content"] == "https://www.google.com"
 

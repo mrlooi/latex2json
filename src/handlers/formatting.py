@@ -34,7 +34,7 @@ number_regex = NUMBER_PATTERN
 RAW_PATTERNS = OrderedDict(
     [
         # Comments
-        ("comment", r"%([^\n]*)"),
+        ("comment", r"(?<!\\)%([^\n]*)"),
         # Class and package setup commands
         (
             "class_setup",
@@ -207,6 +207,8 @@ class FormattingHandler(TokenHandler):
         for pattern_name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if match:
+                if pattern_name == "comment":
+                    return None, match.end()
                 if pattern_name == "pz@" or match.group(0).startswith(r"\baselineskip"):
                     if prev_token:
                         # check for number\pz@ e.g. 2\pz@ in previous token
