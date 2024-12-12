@@ -113,7 +113,7 @@ PATTERNS = {
 LEGACY_FORMAT_MAPPING: Dict[str, str] = {**LEGACY_FONT_MAPPING, **LEGACY_SIZE_MAPPING}
 
 # negative lookbehind that ensures the preceding character is not a backslash
-OPENING_BRACE_PATTERN = re.compile(r"(?<!\\)\{")
+OPENING_BRACE_PATTERN = re.compile(r"(?<!\\){")
 
 
 class LegacyFormattingHandler(TokenHandler):
@@ -167,7 +167,7 @@ class LegacyFormattingHandler(TokenHandler):
                             pos = out_end_pos
                             if pos < len(next_content) and next_content[pos] == "{":
                                 _, skip_len = extract_nested_content(next_content[pos:])
-                                pos += skip_len
+                                pos += skip_len or 1
                                 continue
                             else:
                                 # found same legacy pattern
