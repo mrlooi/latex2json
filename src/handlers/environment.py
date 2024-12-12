@@ -7,8 +7,7 @@ from src.tex_utils import (
     find_matching_env_block,
 )
 
-BEGIN_GROUP_PATTERN = re.compile(r"\\begingroup\b")
-END_GROUP_PATTERN = re.compile(r"\\endgroup\b")
+BEGIN_GROUP_PATTERN = re.compile(r"\\(?:begin|b)group\b")
 
 ENV_NAME_BRACE_PATTERN = r"\{([^}]*?)\}"
 
@@ -106,36 +105,6 @@ def convert_any_env_pairs_to_begin_end(content: str) -> str:
         content = content[:start_pos] + inner_content + content[end_pos:]
         match = pattern.search(content)
     return content
-
-
-def find_matching_group_end(text: str, start_pos: int = 0) -> int:
-    """Find the matching endgroup for a begingroup, handling nested groups"""
-    nesting_level = 1
-    current_pos = start_pos
-
-    while nesting_level > 0 and current_pos < len(text):
-        begin_match = BEGIN_GROUP_PATTERN.search(text[current_pos:])
-        end_match = END_GROUP_PATTERN.search(text[current_pos:])
-
-        if not end_match:
-            return -1  # No matching endgroup found
-
-        # Find which comes first - a begin or an end
-        begin_pos = begin_match.start() if begin_match else float("inf")
-        end_pos = end_match.start()
-
-        if begin_pos < end_pos:
-            # Found nested begingroup
-            nesting_level += 1
-            current_pos += begin_pos + len("\\begingroup")
-        else:
-            # Found endgroup
-            nesting_level -= 1
-            current_pos += end_pos + len("\\endgroup")
-            if nesting_level == 0:
-                return current_pos - len("\\endgroup")
-
-    return -1 if nesting_level > 0 else current_pos
 
 
 def find_pattern_while_skipping_nested_envs(
@@ -379,15 +348,18 @@ class BaseEnvironmentHandler(TokenHandler):
         if (
             match and match.re.pattern == BEGIN_GROUP_PATTERN.pattern
         ):  # Verify it's a group match
-            start_pos = match.end()
-            end_pos = find_matching_group_end(content, start_pos)
+            is_bgroup = "bgroup" in match.group(0)
+            if is_bgroup:
+                start_pos, end_pos, inner_content = extract_nested_content_pattern(
+                    content, r"\\bgroup\b", r"\\egroup\b"
+                )
+            else:
+                start_pos, end_pos, inner_content = extract_nested_content_pattern(
+                    content, r"\\begingroup\b", r"\\endgroup\b"
+                )
 
             if end_pos == -1:
-                # No matching endgroup found, treat as plain text
-                return match.group(0), match.end()
-
-            # Extract content between begingroup and endgroup
-            inner_content = content[start_pos:end_pos].strip()
+                return None, 0
 
             token = {
                 "type": ENV_TYPES.get("group", "environment"),
@@ -395,7 +367,7 @@ class BaseEnvironmentHandler(TokenHandler):
                 "content": inner_content,
             }
 
-            return token, end_pos + len("\\endgroup")
+            return token, end_pos
 
         return None, 0
 
@@ -580,7 +552,8 @@ if __name__ == "__main__":
 
     # content = r"\begin{figure*}[h]\end{figure*}"
     # print(handler.handle(content))
-
-    content = r"\xxx \item[] \endxxx"
-    # print(ENVIRONMENT_PATTERN.match(content))
-    print(handler.handle(content))
+    content = (
+        r"\begingroup\bgroup\begin{center}Center\end{center}\egroup\endgroup hahaha"
+    )
+    token, pos = handler.handle(content)
+    print(token)

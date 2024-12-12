@@ -47,8 +47,6 @@ from src.tex_utils import (
 DELIM_PATTERN = re.compile(
     r"(?<!\\)(?:\\\\|\$|%|(?:^|[ \t])\{|\s{|\\\^|\\(?![$%&_#{}^~\\]))"
 )
-ESCAPED_AMPERSAND_SPLIT = re.compile(r"(?<!\\)&")
-TRAILING_BACKSLASH = re.compile(r"\\+$")
 UNKNOWN_COMMAND_PATTERN = re.compile(r"(\\[@a-zA-Z\*]+(?:\s*{)?)")
 
 
