@@ -2,7 +2,11 @@ import re
 from typing import Callable, Dict, Optional, Tuple
 from src.handlers.base import TokenHandler
 from src.patterns import BRACE_CONTENT_PATTERN
-from src.tex_utils import extract_nested_content, extract_nested_content_pattern
+from src.tex_utils import (
+    extract_nested_content,
+    extract_nested_content_pattern,
+    extract_nested_content_sequence_blocks,
+)
 
 POST_NEW_COMMAND_PATTERN_STR = (
     r"\*?\s*(?:{\\([^}]+)}|\\([^\s{[]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{"
@@ -24,6 +28,9 @@ END_CSNAME_PATTERN = re.compile(r"\\endcsname(?![a-zA-Z])")
 
 # Compile patterns for definition commands
 PATTERNS = {
+    "newenvironment": re.compile(
+        r"\\(?:new|renew|provide)environment\*?\s*\{([^}]*?)\}",
+    ),
     # Matches newcommand/renewcommand, supports both {\commandname} and \commandname syntax
     "newcommand": re.compile(
         r"\\(?:new|renew|provide)command" + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL
@@ -95,7 +102,9 @@ class NewDefinitionHandler(TokenHandler):
         for pattern_name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if match:
-                # declaremathoperator is for math mde
+                if pattern_name == "newenvironment":
+                    return self._handle_newenvironment(content, match)
+                # declaremathoperator is for math mode
                 if pattern_name == "newcommand" or pattern_name.startswith("declare"):
                     return self._handle_newcommand(content, match)
                 elif pattern_name == "let":
@@ -135,6 +144,45 @@ class NewDefinitionHandler(TokenHandler):
                     return None, match.end()
 
         return None, 0
+
+    def _handle_newenvironment(self, content: str, match) -> Tuple[Optional[Dict], int]:
+        """Handle \newenvironment definitions"""
+        env_name = match.group(1)
+        current_pos = match.end()
+
+        # Store environment definition
+        token = {
+            "type": "newenvironment",
+            "begin_def": "",
+            "end_def": "",
+            "name": env_name,
+            "num_args": 0,
+            "optional_args": [],
+        }
+
+        # Look for optional arguments [n][default]...
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[current_pos:], "[", "]"
+        )
+        if blocks:
+            first_arg = blocks[0].strip()
+            if first_arg.isdigit():
+                token["num_args"] = int(first_arg)
+            for block in blocks[1:]:
+                token["optional_args"].append(block.strip())
+
+        current_pos += end_pos
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[current_pos:], "{", "}", max_blocks=2
+        )
+        if len(blocks) == 2:
+            token["begin_def"] = blocks[0]
+            token["end_def"] = blocks[1]
+        else:
+            return None, current_pos
+
+        current_pos += end_pos
+        return token, current_pos
 
     def _handle_newother(self, match) -> Tuple[Optional[Dict], int]:
         r"""Handle \newother definitions"""

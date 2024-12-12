@@ -16,11 +16,8 @@ logging.basicConfig(
 
 from src.handlers import (
     NewDefinitionHandler,
-    EnvironmentHandler,
     IfElseBlockHandler,
 )
-from src.patterns import PATTERNS
-from src.commands import CommandProcessor
 from src.tex_utils import (
     extract_nested_content,
     read_tex_file_content,
@@ -46,66 +43,25 @@ class LatexStyParser:
 
         self.current_file_dir = None
 
-        self.command_processor = CommandProcessor()
         self.if_else_block_handler = IfElseBlockHandler()
         self.new_definition_handler = NewDefinitionHandler()
-        self.env_handler = EnvironmentHandler()
-
-    # getter for commands
-    @property
-    def commands(self):
-        return self.command_processor.commands
-
-    @property
-    def environments(self):
-        return self.env_handler.environments
 
     def clear(self):
         self.current_file_dir = None
-        self.command_processor.clear()
-        self.env_handler.clear()
         self.if_else_block_handler.clear()
         self.new_definition_handler.clear()
 
-    def _check_for_new_definitions(self, content: str) -> None:
+    def _check_for_new_definitions(self, content: str):
         """Check for new definitions in the content and process them"""
         if self.new_definition_handler.can_handle(content):
             token, end_pos = self.new_definition_handler.handle(content)
-            if token and "name" in token:
-                cmd_name = token["name"]
-                if token["type"] == "newcommand":
-                    self.command_processor.process_newcommand(
-                        cmd_name,
-                        token["content"],
-                        token["num_args"],
-                        token["defaults"],
-                        token["usage_pattern"],
-                    )
-                elif token["type"] == "def":
-                    self.command_processor.process_newdef(
-                        cmd_name,
-                        token["content"],
-                        token["num_args"],
-                        token["usage_pattern"],
-                        token["is_edef"],
-                    )
-                elif token["type"] == "newif":
-                    self.command_processor.process_newif(cmd_name)
-                    self.if_else_block_handler.process_newif(cmd_name)
-                elif token["type"] == "newcounter":
-                    self.command_processor.process_newcounter(cmd_name)
-                elif token["type"] == "newlength":
-                    self.command_processor.process_newlength(cmd_name)
-                elif token["type"] == "newother":
-                    self.command_processor.process_newX(cmd_name)
-                elif token["type"] == "newtheorem":
-                    self.env_handler.process_newtheorem(cmd_name, token["title"])
-
-            return end_pos
-        return 0
+            if token:
+                return token, end_pos
+        return None, 0
 
     def _check_usepackage(self, content: str) -> None:
         match = USEPACKAGE_PATTERN.match(content) or INCLUDE_PATTERN.match(content)
+        tokens = []
         if match:
             package_name = match.group(1)
             if not package_name.endswith(".sty"):
@@ -113,9 +69,9 @@ class LatexStyParser:
             if self.current_file_dir:
                 package_path = os.path.join(self.current_file_dir, package_name)
                 if os.path.exists(package_path):
-                    self.parse_file(package_path)
-            return match.end()
-        return 0
+                    tokens = self.parse_file(package_path)
+            return tokens, match.end()
+        return tokens, 0
 
     def parse(
         self,
@@ -158,8 +114,7 @@ class LatexStyParser:
                     # Parse the content within the braces
                     nested_tokens = self.parse(inner_content)
                     if nested_tokens:
-                        for token in nested_tokens:
-                            self.add_token(token, tokens)
+                        tokens.extend(nested_tokens)
                     current_pos += end_pos
                     continue
 
@@ -178,15 +133,17 @@ class LatexStyParser:
                     break
                 continue
 
-            end_pos = self._check_usepackage(content[current_pos:])
+            new_tokens, end_pos = self._check_usepackage(content[current_pos:])
             if end_pos > 0:
                 current_pos += end_pos
+                tokens.extend(new_tokens)
                 continue
 
             # check for new definition commands
-            end_pos = self._check_for_new_definitions(content[current_pos:])
+            token, end_pos = self._check_for_new_definitions(content[current_pos:])
             if end_pos > 0:
                 current_pos += end_pos
+                tokens.append(token)
                 continue
 
             # check for if else blocks

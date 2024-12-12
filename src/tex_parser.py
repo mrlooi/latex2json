@@ -220,7 +220,15 @@ class LatexParser:
             token, end_pos = self.new_definition_handler.handle(content)
             if token and "name" in token:
                 cmd_name = token["name"]
-                if token["type"] == "newcommand":
+                if token["type"] == "newenvironment":
+                    self.env_handler.process_newenvironment(
+                        cmd_name,
+                        token["begin_def"],
+                        token["end_def"],
+                        token["num_args"],
+                        token["optional_args"],
+                    )
+                elif token["type"] == "newcommand":
                     self.command_processor.process_newcommand(
                         cmd_name,
                         token["content"],
