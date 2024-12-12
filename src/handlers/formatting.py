@@ -149,6 +149,7 @@ RAW_PATTERNS = OrderedDict(
         ("addtocontents", r"\\(?:addtocontents|addtocounter)\s*\{[^}]*\s*\}\s*{"),
         ("backslash", r"\\(?:backslash|textbackslash)\b"),
         ("ensuremath", r"\\ensuremath\s*{"),
+        ("hyphenation", r"\\hyphenation\s*{"),
         # Handle vspace separately
         ("vspace", r"\\vspace\*?\s*{[^}]+}"),
         ("phantom", r"\\(?:hphantom|vphantom)\s*{"),
@@ -228,6 +229,7 @@ class FormattingHandler(TokenHandler):
                     "setup",
                     "lstset",
                     "addtocontents",
+                    "hyphenation",
                 ]:
                     # extracted nested
                     start_pos = match.end() - 1
