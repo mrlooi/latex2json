@@ -3,8 +3,51 @@ from src.tex_utils import (
     extract_nested_content_sequence_blocks,
     extract_nested_content_pattern,
     find_matching_env_block,
+    has_comment_on_sameline,
 )
 import re
+
+
+def test_find_matching_delimiter_with_comments():
+    from src.tex_utils import find_matching_delimiter
+
+    # Basic comment case
+    text = "{test} % {invalid}"
+    start, end = find_matching_delimiter(text)
+    assert text[start:end] == "{test}"
+
+    # Comment in the middle of nested delimiters
+    text = "{outer{inn % {ignored}\ner}end}"  # removed r-prefix to allow real newline
+    start, end = find_matching_delimiter(text)
+    assert text[start:end] == "{outer{inn % {ignored}\ner}end}"
+
+    # Multiple comments
+    text = "{test} % comment 1 {invalid}\n{next} % comment 2"  # removed r-prefix
+    start, end = find_matching_delimiter(text)
+    assert text[start:end] == "{test}"
+
+    # Escaped comment character
+    text = r"{test \% not a comment {nested}}"
+    start, end = find_matching_delimiter(text)
+    assert text[start:end] == r"{test \% not a comment {nested}}"
+
+    # Mixed escaped and unescaped comments
+    text = (
+        "{test \\% not a comment % but this is\nstill in {nested}}"  # removed r-prefix
+    )
+    start, end = find_matching_delimiter(text)
+    assert (
+        text[start:end] == "{test \\% not a comment % but this is\nstill in {nested}}"
+    )
+
+    text = r"""
+    {
+        test % }
+        POST
+    }
+""".strip()
+    start, end = find_matching_delimiter(text)
+    assert text[start + 1 : end - 1].replace("\n", "").replace(" ", "") == "test%}POST"
 
 
 def test_find_matching_env_block():
@@ -100,6 +143,28 @@ def test_extract_nested_content_pattern():
     assert text[end:] == " POST"
     assert content.strip() == "test"
 
+    # test with commented inner begin/end patterns
+    text = r"""
+    \begin{table}
+    %\end{table}
+    MID TABLE
+    %\begin{table}
+    \end{table}
+    POST TABLE
+"""
+    start, end, content = extract_nested_content_pattern(
+        text, r"\\begin{table}", r"\\end{table}"
+    )
+    assert start == text.index(r"\begin{table}")
+    assert text[end:].strip() == "POST TABLE"
+
+    expected = r"""
+    %\end{table}
+    MID TABLE
+    %\begin{table}
+""".strip()
+    assert content.strip() == expected
+
 
 def test_extract_nested_content_blocks():
     text = r"{test}{test2} {test3} sssss"
@@ -121,3 +186,33 @@ def test_extract_nested_content_blocks():
     blocks, total_pos = extract_nested_content_sequence_blocks(text, "{", "}", 4)
     assert blocks == [" aaaa {bbbb}   ", "11{22{33 }}  "]
     assert text[total_pos:] == " aaaa {1123}"
+
+
+def test_has_uncommented_percent_before():
+    # Basic comment case
+    text = r"% comment \begin{test}"
+    assert has_comment_on_sameline(text, text.find(r"\begin"))
+
+    # Escaped comment case
+    text = r"\% not a comment \begin{test}"
+    assert not has_comment_on_sameline(text, text.find(r"\begin"))
+
+    # No comment case
+    text = r"normal text \begin{test}"
+    assert not has_comment_on_sameline(text, text.find(r"\begin"))
+
+    # Comment after position
+    text = r"\begin{test} % comment after"
+    assert not has_comment_on_sameline(text, text.find(r"\begin"))
+
+    # Multiple line case
+    text = r"line1\n% comment \begin{test}"
+    assert has_comment_on_sameline(text, text.find(r"\begin"))
+
+    # Comment on previous line shouldn't affect current line
+    text = "% comment\n \\begin{test}"
+    assert not has_comment_on_sameline(text, text.find(r"\begin"))
+
+    # Multiple escaped and unescaped comments
+    text = r"\% not a comment % this is a comment \begin{test}"
+    assert has_comment_on_sameline(text, text.find(r"\begin"))

@@ -465,8 +465,15 @@ class LatexParser:
                         cmd_name = token["command"]
                         if cmd_name not in self._unknown_commands:
                             self._unknown_commands[cmd_name] = token
+
+                            pos = current_pos - end_pos
+                            surrounding_content = (
+                                content[max(0, pos - 100) : pos]
+                                + "-->"
+                                + content[pos : pos + 100]
+                            )
                             self.logger.warning(
-                                f"\n*****\nUnknown command: Token: {token}\n***Surrounding content***\n{content[max(0, current_pos-100):current_pos+100]}\n*****"
+                                f"\n*****\nUnknown command: Token: {token}\n***Surrounding content***\n{surrounding_content}\n*****"
                             )
                         else:
                             self.logger.warning(

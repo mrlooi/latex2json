@@ -340,7 +340,10 @@ class BaseEnvironmentHandler(TokenHandler):
                     content, env_name
                 )
             else:
-                env_name = match.group(2).strip()
+                all_str = match.group(0)
+                env_name = (
+                    all_str[all_str.rfind("\\end") :].replace("\\end", "").strip()
+                )
 
                 start_pos, end_pos, inner_content = extract_nested_content_pattern(
                     content, r"\\" + env_name, r"\\end" + env_name

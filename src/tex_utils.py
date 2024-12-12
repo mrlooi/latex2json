@@ -12,6 +12,7 @@ def find_matching_delimiter(
         - start_pos is the position of the opening delimiter
         - end_pos is the position of the matching closing delimiter
     Returns (-1, -1) if no valid delimiters found.
+    Skips content after unescaped % until the next line.
     """
     # Skip leading whitespace
     while start < len(text) and text[start].isspace():
@@ -23,9 +24,17 @@ def find_matching_delimiter(
     stack = []
     i = start
     while i < len(text):
-        # Check for escaped delimiters
+        # Check for escaped characters
         if i > 0 and text[i - 1] == "\\":
             i += 1
+            continue
+
+        # If we find an unescaped %, skip to the next line
+        if text[i] == "%":
+            i = text.find("\n", i)
+            if i == -1:  # No more newlines found
+                break
+            i += 1  # Move past the newline
             continue
 
         if text[i] == open_delim:
@@ -35,7 +44,7 @@ def find_matching_delimiter(
                 return -1, -1  # Unmatched closing delimiter
             stack.pop()
             if not stack:  # Found the matching delimiter
-                return start, i
+                return start, i + 1
         i += 1
     return -1, -1  # No matching delimiter found
 
@@ -54,8 +63,8 @@ def extract_nested_content(
         return None, 0
 
     # Return content without the delimiters and the next position to process
-    content = text[start_pos + 1 : end_pos]
-    return content, end_pos + 1
+    content = text[start_pos + 1 : end_pos - 1]
+    return content, end_pos
 
 
 def extract_nested_content_sequence_blocks(
@@ -112,8 +121,10 @@ def extract_nested_content_pattern(
     if isinstance(end_pattern, str):
         end_pattern = re.compile(end_pattern)
 
-    # Find the first beginning pattern
+    # Find the first beginning pattern that isn't commented
     begin_match = begin_pattern.search(text)
+    while begin_match and has_comment_on_sameline(text, begin_match.start()):
+        begin_match = begin_pattern.search(text, begin_match.end())
     if not begin_match:
         return -1, -1, ""
 
@@ -123,8 +134,14 @@ def extract_nested_content_pattern(
     start_pos = begin_match.start()
 
     while nesting_level > 0 and current_pos < len(text):
+        # Find next begin/end patterns, skipping commented ones
         begin_match = begin_pattern.search(text, current_pos)
+        while begin_match and has_comment_on_sameline(text, begin_match.start()):
+            begin_match = begin_pattern.search(text, begin_match.end())
+
         end_match = end_pattern.search(text, current_pos)
+        while end_match and has_comment_on_sameline(text, end_match.start()):
+            end_match = end_pattern.search(text, end_match.end())
 
         if not end_match:
             return -1, -1, ""
@@ -248,3 +265,40 @@ def read_tex_file_content(
             return f.read()
     except (FileNotFoundError, IOError) as e:
         raise FileNotFoundError(f"Failed to read input file '{file_path}': {str(e)}")
+
+
+def has_comment_on_sameline(content: str, pos: int) -> bool:
+    """Check if there's an uncommented % before pos on the current line"""
+    # Find start of current line
+    line_start = content.rfind("\n", 0, pos)
+    if line_start == -1:
+        line_start = 0
+    else:
+        line_start += 1  # Move past the newline
+
+    # Get content from start of current line to position
+    line_before = content[line_start:pos]
+
+    # Look for unescaped %
+    i = 0
+    while i < len(line_before):
+        if line_before[i] == "%":
+            if i == 0 or line_before[i - 1] != "\\":
+                return True
+        i += 1
+    return False
+
+
+if __name__ == "__main__":
+    text = r"% comment\n\begin{test}"
+    pos = text.find(r"\begin")
+
+    # Debug prints
+    print(f"Full text: {repr(text)}")
+    print(f"Position of \\begin: {pos}")
+    line_start = text.rfind("\n", 0, pos) + 1
+    print(f"Line start: {line_start}")
+    line_before = text[line_start:pos]
+    print(f"Line before: {repr(line_before)}")
+
+    print(has_comment_on_sameline(text, text.find(r"\begin")))

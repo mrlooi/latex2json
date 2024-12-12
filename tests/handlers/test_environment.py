@@ -213,5 +213,32 @@ def test_process_newtheorem(handler):
     assert content[pos:] == " post"
 
 
+def test_commenting_inside_env(handler):
+    text = r"""
+    \begin{table}
+    PRE 
+
+    %\end{table}
+    %\begin{table}
+
+    POST
+    \end{table}
+    """.strip()
+
+    token, pos = handler.handle(text)
+    assert token["name"] == "table"
+    assert token["type"] == "table"
+
+    expected = r"""
+    PRE 
+
+    %\end{table}
+    %\begin{table}
+
+    POST
+"""
+    assert token["content"].strip() == expected.strip()
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
