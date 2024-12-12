@@ -287,7 +287,7 @@ class LatexParser:
                         self.current_env = token
                     elif isinstance(handler, BaseEnvironmentHandler):
                         # algorithmic keep as literal?
-                        if token["type"] != "algorithmic":
+                        if token["type"] not in ["algorithmic", "tabular"]:
                             prev_env = self.current_env
                             self.current_env = token
                             token["content"] = self.parse(token["content"])
@@ -526,31 +526,23 @@ if __name__ == "__main__":
 
     parser = LatexParser(logger=logger)
 
-    file = "papers/arXiv-1706.03762v7/ms.tex"
-    parsed_tokens = parser.parse_file(file)
+    # file = "papers/arXiv-1512.03385v1/residual_v1_arxiv_release.tex"
+    # tokens = parser.parse_file(file)
 
-    #     # Example usage
-    #     text = r"""
-    # \begin{algorithm}[H]
-    # \caption{Sum of Array Elements}
-    # \label{alg:loop}
-    # \begin{algorithmic}[1]
-    # \Require{$A_{1} \dots A_{N}$}
-    # \Ensure{$Sum$ (sum of values in the array)}
-    # \Statex
-    # \Function{Loop}{$A[\;]$}
-    #   \State {$Sum$ $\gets$ {$0$}}
-    #     \State {$N$ $\gets$ {$length(A)$}}
-    #     \For{$k \gets 1$ to $N$}
-    #         \State {$Sum$ $\gets$ {$Sum + A_{k}$}}
-    #     \EndFor
-    #     \State \Return {$Sum$}
-    # \EndFunction
-    # \end{algorithmic}
-    # \end{algorithm}
-    # """
+    text = r"""
 
-    # parser = LatexParser(logger=logger)
-    # parsed_tokens = parser.parse(text)
-    # print(len(parsed_tokens))
-    # print(parsed_tokens)
+
+\begin{table}[t]
+
+\small
+\begin{center}
+\begin{tabular}{l|c c}
+\hline
+\large 1
+\end{tabular}
+\end{center}
+
+\end{table}
+    """
+    tokens = parser.parse(text)
+    print(tokens)

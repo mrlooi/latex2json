@@ -2,6 +2,7 @@ import re
 from typing import Callable, Dict, List, Optional, Tuple
 from src.flatten import flatten_tokens
 from src.handlers.base import TokenHandler
+from src.handlers.environment import BaseEnvironmentHandler
 from src.tex_utils import (
     extract_nested_content,
     extract_nested_content_pattern,
@@ -89,9 +90,10 @@ def parse_tabular(latex_table: str, cell_parser_fn=None) -> List[List[Dict]]:
         first_row_empty = not any(parsed_rows[0])
         if first_row_empty:
             parsed_rows = parsed_rows[1:]
-        last_row_empty = not any(parsed_rows[-1])
-        if last_row_empty:
-            parsed_rows = parsed_rows[:-1]
+        if parsed_rows:
+            last_row_empty = not any(parsed_rows[-1])
+            if last_row_empty:
+                parsed_rows = parsed_rows[:-1]
 
     return parsed_rows
 
@@ -118,13 +120,13 @@ def split_cells(row: str) -> List[str]:
     return [cell.strip() for cell in CELL_SPLIT_PATTERN.split(row)]
 
 
-class TabularHandler(TokenHandler):
+class TabularHandler(BaseEnvironmentHandler):
     def __init__(
         self,
         process_content_fn: Optional[Callable[[str], str]] = None,
         cell_parser_fn: Optional[Callable[[str], List[Dict]]] = None,
     ):
-        super().__init__(process_content_fn)
+        super().__init__(process_content_fn=process_content_fn)
         self.cell_parser_fn = cell_parser_fn
 
     def can_handle(self, content: str) -> bool:
@@ -294,8 +296,7 @@ class TabularHandler(TokenHandler):
                 return None
 
             result = parse_tabular(flattened_content, cell_parser_fn)
-            if result:
-                token["content"] = result
+            token["content"] = result
 
         return token, total_pos
 

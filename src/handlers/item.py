@@ -1,6 +1,9 @@
 from typing import Callable, Dict, List, Optional, Tuple
 import re
-from src.handlers.environment import BaseEnvironmentHandler
+from src.handlers.environment import (
+    BaseEnvironmentHandler,
+    find_pattern_while_skipping_nested_envs,
+)
 
 ITEM_PATTERN = re.compile(
     r"\\item\b\s*(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item\b|$)", re.DOTALL
@@ -21,35 +24,12 @@ class ItemHandler(BaseEnvironmentHandler):
             end_pos = match.end()
             if item:
                 start = match.start(2)
-                current_pos = start
-
-                # search for inner environments with \item so that we can handle nested items
-                next_item = ITEM_PATTERN.search(content[current_pos:])
-                while next_item:
-                    # check for nested inner envs (since those are the ones that could contain inner \item)
-                    env_match = self.search(content[current_pos:])
-                    if not env_match:
-                        end_pos = current_pos + next_item.start()
-                        break
-
-                    start_env = env_match.start()
-                    # If we find a nested environment after the next item,
-                    # we can safely exit
-                    if start_env > next_item.start():
-                        end_pos = current_pos + next_item.start()
-                        break
-
-                    # Handle and skip the inner environment
-                    inner_token, inner_length = super().handle(
-                        content[current_pos + start_env :]
-                    )
-                    if not inner_token:  # should not happen..
-                        break
-
-                    current_pos += start_env + inner_length
-                    end_pos = current_pos
-
-                    next_item = ITEM_PATTERN.search(content[current_pos:])
+                # skip any nested environments that may contain inner \item
+                out_end_pos = find_pattern_while_skipping_nested_envs(
+                    content, ITEM_PATTERN, start_pos=start
+                )
+                if out_end_pos != -1:
+                    end_pos = out_end_pos
 
                 token = self._handle_environment("item", content[start:end_pos].strip())
                 token["type"] = "item"

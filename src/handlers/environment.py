@@ -138,6 +138,55 @@ def find_matching_group_end(text: str, start_pos: int = 0) -> int:
     return -1 if nesting_level > 0 else current_pos
 
 
+def find_pattern_while_skipping_nested_envs(
+    content: str,
+    pattern: re.Pattern,
+    start_pos: int = 0,
+) -> int:
+    """
+    Find the next occurrence of a pattern while properly handling nested environments.
+
+    Args:
+        content: The content to search in
+        current_pos: Starting position for the search
+        pattern: Compiled regex pattern to search for
+
+    Returns:
+        Position where the next pattern match begins, or the current position
+        if no match is found
+    """
+    end_pos = -1
+
+    next_match = pattern.search(content[start_pos:])
+    while next_match:
+        # check for nested inner envs
+        env_match = BaseEnvironmentHandler.search(content[start_pos:])
+        if not env_match:
+            end_pos = start_pos + next_match.start()
+            break
+
+        start_env = env_match.start()
+        # If we find a nested environment after the next match,
+        # we can safely exit
+        if start_env > next_match.start():
+            end_pos = start_pos + next_match.start()
+            break
+
+        # Handle and skip the inner environment
+        inner_token, inner_length = BaseEnvironmentHandler.try_handle(
+            content[start_pos + start_env :]
+        )
+        if not inner_token:
+            break
+
+        start_pos += start_env + inner_length
+        end_pos = start_pos
+
+        next_match = pattern.search(content[start_pos:])
+
+    return end_pos
+
+
 class EnvironmentProcessor:
     def __init__(self):
         self.environments: Dict[str, Dict[str, any]] = {}
@@ -220,8 +269,8 @@ class EnvironmentProcessor:
 
 
 class BaseEnvironmentHandler(TokenHandler):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self._newtheorems: Dict[str, str] = {}
 
     def process_newtheorem(self, var_name: str, title: str):
@@ -274,8 +323,9 @@ class BaseEnvironmentHandler(TokenHandler):
 
         return token
 
-    def _try_match_env(
-        self, content: str, match: Optional[re.Match] = None
+    @staticmethod
+    def try_match_env(
+        content: str, match: Optional[re.Match] = None
     ) -> Tuple[Optional[Dict], int]:
         """Try to match an environment pattern"""
         if not match:
@@ -304,16 +354,21 @@ class BaseEnvironmentHandler(TokenHandler):
                         env_name = inner_match.group(1).strip()  # i.e. table
                         inner_content = inner_content[inner_match.end() :]
 
+            token = {
+                "name": env_name,
+                "match": match,
+                "end_pos": end_pos,
+                "content": inner_content,
+            }
             if end_pos == -1:
-                # No matching end found, treat as plain text
-                return match.group(0), match.end()
-            else:
-                env_token = self._handle_environment(env_name, inner_content)
-                return env_token, end_pos
-        return None, 0
+                return False, token
 
-    def _try_match_group(
-        self, content: str, match: Optional[re.Match] = None
+            return True, token
+        return False, 0
+
+    @staticmethod
+    def try_match_group(
+        content: str, match: Optional[re.Match] = None
     ) -> Tuple[Optional[Dict], int]:
         """Try to match a group pattern"""
         if not match:
@@ -344,13 +399,29 @@ class BaseEnvironmentHandler(TokenHandler):
     def handle(
         self, content: str, prev_token: Optional[Dict] = None
     ) -> Tuple[Optional[Dict], int]:
-        env, end_pos = self._try_match_env(content)
-        if env:
-            return env, end_pos
+        matched, out = BaseEnvironmentHandler.try_match_env(content)
+        if matched:
+            env_token = self._handle_environment(out["name"], out["content"])
+            return env_token, out["end_pos"]
 
-        return self._try_match_group(content)
+        return BaseEnvironmentHandler.try_match_group(content)
 
-    def search(self, content: str) -> Optional[re.Match]:
+    @staticmethod
+    def try_handle(content: str) -> Tuple[Optional[Dict], int]:
+        matched, out = BaseEnvironmentHandler.try_match_env(content)
+        if matched:
+            env_name = out["name"]
+            env_type = ENV_TYPES.get(env_name, "environment")
+            return {
+                "type": env_type,
+                "name": env_name,
+                "content": out["content"],
+            }, out["end_pos"]
+
+        return BaseEnvironmentHandler.try_match_group(content)
+
+    @staticmethod
+    def search(content: str) -> Optional[re.Match]:
         """Search for the next environment or group pattern match"""
         # search both to see which one appears first
         env_match = ENVIRONMENT_PATTERN.search(content)
@@ -368,8 +439,8 @@ class BaseEnvironmentHandler(TokenHandler):
 
 
 class EnvironmentHandler(BaseEnvironmentHandler):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.environment_processor = EnvironmentProcessor()
 
