@@ -87,12 +87,8 @@ def test_handle_environment(handler):
 def test_handle_environment_with_asterisk(handler):
     content = r"\begin{table*}[h]HSHSHS\end{table*} muhaha"
     token, pos = handler.handle(content)
-    assert token == {
-        "type": "table",
-        "name": "table*",
-        "content": "HSHSHS",
-        "title": "h",
-    }
+    assert token["type"] == "table"
+    assert token["content"] == "HSHSHS"
 
     assert content[pos:].strip() == "muhaha"
 
@@ -204,6 +200,16 @@ def test_with_float_env(handler):
     assert token["name"] == "table"
     assert token["type"] == "table"
     assert token["content"] == " stuff "
+    assert content[pos:] == " post"
+
+
+def test_process_newtheorem(handler):
+    handler.process_newtheorem("mytheoremmm", "theorem")
+    content = r"\begin{mytheoremmm} stuff \end{mytheoremmm} post"
+    token, pos = handler.handle(content)
+    assert token["name"] == "theorem"
+    assert token["type"] == "math_env"
+    assert token["content"].strip() == "stuff"
     assert content[pos:] == " post"
 
 

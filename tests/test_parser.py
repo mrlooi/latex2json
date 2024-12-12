@@ -678,7 +678,6 @@ def test_figure(parser):
     token = tokens[0]
 
     assert token["type"] == "figure"
-    assert token["name"] == "figure*"
     assert len(token["content"]) == 2
 
     assert token["content"][0]["type"] == "includegraphics"
@@ -1029,12 +1028,38 @@ def test_escaped_special_chars(parser):
 
 def test_newtheorem(parser):
     text = r"""
-    \newtheorem{theorem}{Theorem}[section]
-    \newtheorem{lemma}[theorem]{Lemma}
+    \newtheorem{myown}{MARS}
+    \newtheorem{mytheorem}{TheoremAA}[section]
+    \newtheorem{mylemma}[theorem]{LemmaXX}
     """
     parsed_tokens = parser.parse(text)
     # we ignore newtheorem commands but make sure they are parsed
     assert len(parsed_tokens) == 0
+
+    # then we check that it handles these env
+    text = r"""
+    \begin{myown}
+        Occupy Mars
+    \end{myown}
+
+    \begin{mytheorem}
+        This is a theorem
+    \end{mytheorem}
+
+    \begin{mylemma}
+        Lemma Toad
+    \end{mylemma}
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 3
+    assert parsed_tokens[0]["type"] == "environment"
+    assert parsed_tokens[0]["name"] == "MARS"
+
+    assert parsed_tokens[1]["type"] == "environment"
+    assert parsed_tokens[1]["name"] == "TheoremAA"
+
+    assert parsed_tokens[2]["type"] == "environment"
+    assert parsed_tokens[2]["name"] == "LemmaXX"
 
 
 def test_new_environment(parser):

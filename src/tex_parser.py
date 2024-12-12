@@ -241,10 +241,10 @@ class LatexParser:
                     self.command_processor.process_newcounter(cmd_name)
                 elif token["type"] == "newlength":
                     self.command_processor.process_newlength(cmd_name)
-                elif token["type"] == "newcountboxdimen":
+                elif token["type"] == "newother":
                     self.command_processor.process_newX(cmd_name)
-                # elif token['type'] == 'newtheorem':
-                #     pass
+                elif token["type"] == "newtheorem":
+                    self.env_handler.process_newtheorem(cmd_name, token["title"])
 
             return end_pos
         return 0

@@ -222,6 +222,13 @@ class EnvironmentProcessor:
 class BaseEnvironmentHandler(TokenHandler):
     def __init__(self):
         super().__init__()
+        self._newtheorems: Dict[str, str] = {}
+
+    def process_newtheorem(self, var_name: str, title: str):
+        self._newtheorems[var_name] = title
+
+    def clear(self):
+        self._newtheorems = {}
 
     def can_handle(self, content: str) -> bool:
         return (
@@ -230,12 +237,14 @@ class BaseEnvironmentHandler(TokenHandler):
         )
 
     def _handle_environment(self, env_name: str, inner_content: str) -> None:
-        token = {"type": "environment", "name": env_name}
 
         contains_asterisk = "*" in env_name
         env_name = env_name.replace("*", "")
 
-        env_type = ENV_TYPES.get(env_name, "environment")
+        env_name = self._newtheorems.get(env_name, env_name)
+        token = {"type": "environment", "name": env_name}
+
+        env_type = ENV_TYPES.get(env_name.lower(), "environment")
         token["type"] = env_type
 
         if not contains_asterisk and env_type in ["table", "figure", "math_env"]:

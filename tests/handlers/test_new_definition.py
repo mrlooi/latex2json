@@ -53,13 +53,13 @@ def test_handle_newtheorem(handler):
     # Test basic newtheorem
     content = r"\newtheorem{theorem}{Theorem}"
     token, pos = handler.handle(content)
-    assert token == {"type": "theorem", "name": "theorem", "title": "Theorem"}
+    assert token == {"type": "newtheorem", "name": "theorem", "title": "Theorem"}
 
     # Test with counter specification
     content = r"\newtheorem{lemma}[theorem]{Lemma}"
     token, pos = handler.handle(content)
     assert token == {
-        "type": "theorem",
+        "type": "newtheorem",
         "name": "lemma",
         "counter": "theorem",
         "title": "Lemma",
@@ -69,7 +69,7 @@ def test_handle_newtheorem(handler):
     content = r"\newtheorem{proposition}{Proposition}[section]"
     token, pos = handler.handle(content)
     assert token == {
-        "type": "theorem",
+        "type": "newtheorem",
         "name": "proposition",
         "title": "Proposition",
         "within": "section",
