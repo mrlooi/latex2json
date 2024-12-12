@@ -235,36 +235,34 @@ def substitute_patterns(
     return text
 
 
-def read_tex_file_content(
-    file_path: str, dir_path: str = None, extension=".tex"
-) -> str:
+def read_tex_file_content(file_path: str, extension: str = ".tex") -> str:
     """
-    Attempts to read content from an input file, handling both absolute and relative paths.
+    Attempts to read content from an input file.
 
     Args:
-        file_path: Path to the input file (absolute or relative)
-
-    Returns:
-        str: Content of the file if successful, error message if failed
+        file_path: Path to the input file
+        extension: Default file extension to try (e.g., ".tex")
     """
-    try:
-        input_path = file_path
-        # If path is not absolute and we know the current file's directory
-        if not os.path.isabs(input_path) and dir_path:
-            input_path = os.path.join(dir_path, input_path)
-
-        # Try different extensions if file not found
-        if not os.path.exists(input_path):
-            for ext in ["", extension]:
-                test_path = input_path + ext
-                if os.path.exists(test_path):
-                    input_path = test_path
-                    break
-
-        with open(input_path, "r") as f:
+    # Clean up inputs
+    file_path = file_path.strip()
+    
+    # Try with extension first if it's not already there
+    if not file_path.endswith(extension):
+        path_with_ext = file_path + extension
+        if os.path.exists(path_with_ext):
+            if os.path.isdir(path_with_ext):
+                raise FileNotFoundError(f"'{path_with_ext}' is a directory, not a file")
+            with open(path_with_ext, 'r') as f:
+                return f.read()
+    
+    # Then try exact path
+    if os.path.exists(file_path):
+        if os.path.isdir(file_path):
+            raise FileNotFoundError(f"'{file_path}' is a directory, not a file")
+        with open(file_path, 'r') as f:
             return f.read()
-    except (FileNotFoundError, IOError) as e:
-        raise FileNotFoundError(f"Failed to read input file '{file_path}': {str(e)}")
+
+    raise FileNotFoundError(f"Failed to read input file '{file_path}'")
 
 
 def has_comment_on_sameline(content: str, pos: int) -> bool:
