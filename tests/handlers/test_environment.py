@@ -113,16 +113,18 @@ def test_env_with_newenvironment(handler):
 
 
 def test_begingroup(handler):
-    content = r"\begingroup\begin{center}Center\end{center}\endgroup hahaha"
+    content = r"\bgroup\begin{center}Center\end{center}\egroup hahaha"
     token, pos = handler.handle(content)
-    assert token is not None
-    assert content[pos:].strip() == "hahaha"
+    assert token["content"] == r"\begin{center}Center\end{center}"
+    assert content[pos:] == " hahaha"
 
     # test nested groups
-    content = r"\begingroup\begingroup\begin{center}Center\end{center}\endgroup\endgroup hahaha"
+    content = (
+        r"\begingroup\bgroup\begin{center}Center\end{center}\egroup\endgroup hahaha"
+    )
     token, pos = handler.handle(content)
-    assert token is not None
-    assert content[pos:].strip() == "hahaha"
+    assert token["content"] == r"\bgroup\begin{center}Center\end{center}\egroup"
+    assert content[pos:] == " hahaha"
 
 
 def test_nested_identical_environments(handler):
