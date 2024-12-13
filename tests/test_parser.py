@@ -1202,24 +1202,6 @@ def test_user_defined_commands_override(parser):
     assert parsed_tokens[0]["type"] == "text"
     assert parsed_tokens[0]["content"].strip() == "NO INDENT TEXT"
 
-
-def test_user_defined_commands_w_legacy_formatting(parser):
-    text = r"""
-    \def\textbf#1{<b>#1</b>\newline}
-    \textbf{Hello}
-    {\bf Muhaha}
-    """
-    parsed_tokens = parser.parse(text)
-
-    content = []
-    for t in parsed_tokens:
-        c = t["content"]
-        content.extend([l.strip() for l in c.split("\n") if l.strip()])
-    assert len(content) == 2
-    assert content[0] == r"<b>Hello</b>"
-    assert content[1] == r"<b>Muhaha</b>"
-    # assert content[2] == r"\texttt{mamaa}"
-
     text = r"""
     \def\arxiv#1{  {\href{http://arxiv.org/abs/#1}
     {{arXiv:#1}}}}

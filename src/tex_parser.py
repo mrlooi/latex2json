@@ -252,6 +252,12 @@ class LatexParser:
                     token["optional_args"],
                 )
             elif token["type"] == "newcommand":
+                # check if there is potential recursion.
+                if re.search(r"\\" + cmd_name + r"\b", token["content"]):
+                    self.logger.warning(
+                        f"Potential recursion detected for newcommand: \\{cmd_name}, skipping..."
+                    )
+                    return
                 self.command_processor.process_newcommand(
                     cmd_name,
                     token["content"],

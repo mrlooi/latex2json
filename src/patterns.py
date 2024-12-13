@@ -36,7 +36,11 @@ PATTERNS = OrderedDict(
 LABEL_PATTERN = PATTERNS["label"]
 NEWLINE_PATTERN = PATTERNS["newline"]
 
+# These commands should not be overrwritten by newcommand/newenvironment
 WHITELISTED_COMMANDS = [
+    "newcommand",
+    "begin",
+    "end",
     "section",
     "subsection",
     "subsubsection",
@@ -49,4 +53,77 @@ WHITELISTED_COMMANDS = [
     "part",
     "chapter",
     "abstract",
+    "table",
+    "figure",
+    "cite",
+    "caption",
+    "captionof",
+    "bibitem",
+    # text font
+    "textbf",
+    "textit",
+    "textsl",
+    "textsc",
+    "textsf",
+    "texttt",
+    "textrm",
+    "textup",
+    "emph",
+    # text size
+    "texttiny",
+    "textscriptsize",
+    "textfootnotesize",
+    "textsmall",
+    "textnormal",
+    "textlarge",
+    "texthuge",
+    "text",
+    # legacy font
+    # Basic text style commands
+    "tt",
+    "bf",
+    "it",
+    "sl",
+    "sc",
+    "sf",
+    "rm",
+    "em",
+    "bold",
+    # Font family declarations
+    "rmfamily",
+    "sffamily",
+    "ttfamily",
+    # Font shape declarations
+    "itshape",
+    "scshape",
+    "upshape",
+    "slshape",
+    # Font series declarations
+    "bfseries",
+    "mdseries",
+    # Font combinations and resets
+    "normalfont",
+    # Additional text mode variants
+    "textup",
+    "textnormal",
+    "textmd",
+    # math stuff (often used directly before math mode)
+    "unboldmath",
+    "boldmath",
+    "mathversion{bold}",
+    "mathversion{normal}",
+    # Basic size commands
+    "tiny",
+    "scriptsize",
+    "footnotesize",
+    "small",
+    "normalsize",
+    "large",
+    "Large",
+    "LARGE",
+    "huge",
+    "Huge",
+    # Additional size declarations
+    "smaller",
+    "larger",
 ]

@@ -35,7 +35,7 @@ ifx_pattern = re.compile(
 )
 
 
-IF_PATTERN = re.compile(r"\\if%s" % (default_if_pattern))
+IF_PATTERN = re.compile(r"\\(?:@)?if%s" % (default_if_pattern))
 ELSE_PATTERN = re.compile(r"\\else\b")
 ELSIF_PATTERN = re.compile(
     r"\\els(?:e)?if%s|\\or%s\b" % (default_if_pattern, default_if_pattern)
@@ -237,7 +237,7 @@ class IfElseBlockHandler(TokenHandler):
                 #     return None, start_pos + end_pos
                 else:
                     condition = match.group(0).replace(" ", "")
-                    if condition == "\\if" + name:
+                    if condition == "\\if" + name or condition == "\\@if" + name:
                         condition = name
                     else:
                         condition = condition.replace("\\" + name, "")

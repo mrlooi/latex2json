@@ -28,6 +28,18 @@ Post IF
 
     assert text[pos:].strip() == "Post IF"
 
+    text = r"""
+    \@ifsss
+    content
+    \else
+    content2
+    \fi
+""".strip()
+    handler = IfElseBlockHandler()
+    result, pos = handler.handle(text)
+    assert result["if_content"] == "content"
+    assert result["else_content"] == "content2"
+
 
 def test_if_elsif_else():
     text = r"""

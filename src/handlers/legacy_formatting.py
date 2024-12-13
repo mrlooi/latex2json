@@ -10,33 +10,6 @@ from src.handlers.environment import (
     find_pattern_while_skipping_nested_envs,
 )
 
-r"""
-% Old Style        Modern Equivalent
-{\tt text}         \texttt{text}      % Typewriter text
-{\bf text}         \textbf{text}      % Bold face
-{\it text}         \textit{text}      % Italic
-{\sl text}         \textsl{text}      % Slanted
-{\sc text}         \textsc{text}      % Small Caps
-{\sf text}         \textsf{text}      % Sans serif
-{\rm text}         \textrm{text}      % Roman (normal) text
-{\cal text}        \mathcal{text}     % Calligraphic (only in math mode)
-
-{\tiny text}       \texttiny{text}
-{\small text}      \textsmall{text}
-{\large text}      \textlarge{text}
-{\huge text}       \texthuge{text}
-
-{\em text}         \emph{text}        % Emphasized text
-{\mit text}        \mathit{text}      % Math italic
-{\bold text}       \textbf{text}      % Another bold variant
-{\normalsize text} \textnormal{text}  % Normal size
-
-{\footnotesize text}
-{\scriptsize text}
-{\Large text}      % Note capital L
-{\LARGE text}
-{\Huge text}       % Note capital H
-"""
 
 # Font style mappings
 # NOTE: we IGNORE math mode ones
