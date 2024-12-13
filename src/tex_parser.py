@@ -35,7 +35,13 @@ from src.handlers import (
 from src.handlers.environment import BaseEnvironmentHandler
 from src.patterns import PATTERNS
 from src.commands import CommandProcessor
-from src.tex_utils import extract_nested_content, read_tex_file_content
+from src.tex_utils import (
+    extract_nested_content,
+    read_tex_file_content,
+    strip_latex_comments,
+)
+from src.sty_parser import LatexStyParser
+from src.patterns import USEPACKAGE_PATTERN, WHITELISTED_COMMANDS
 
 # Add these compiled patterns at module level
 # match $ or % or { or } only if not preceded by \
@@ -43,9 +49,7 @@ from src.tex_utils import extract_nested_content, read_tex_file_content
 DELIM_PATTERN = re.compile(
     r"(?<!\\)(?:\\\\|\$|%|(?:^|[ \t])\{|\s{|\\\^|\\(?![$%&_#{}^~\\]))"
 )
-ESCAPED_AMPERSAND_SPLIT = re.compile(r"(?<!\\)&")
-TRAILING_BACKSLASH = re.compile(r"\\+$")
-UNKNOWN_COMMAND_PATTERN = re.compile(r"(\\[@a-zA-Z*]+\s*\{?)", re.DOTALL)
+UNKNOWN_COMMAND_PATTERN = re.compile(r"(\\[@a-zA-Z\*]+(?:\s*{)?)")
 
 
 class LatexParser:
@@ -62,6 +66,9 @@ class LatexParser:
         self.current_file_dir = None
         self.current_str = ""
 
+        # STY parser
+        self.sty_parser = LatexStyParser(logger=self.logger)
+
         # Regex patterns for different LaTeX elements
         self.command_processor = CommandProcessor()
         self.env_handler = EnvironmentHandler()
@@ -70,13 +77,13 @@ class LatexParser:
         self.if_else_block_handler = IfElseBlockHandler()
         # handlers
         self.handlers: List[TokenHandler] = [
-            AuthorHandler(self._parse_cell),
+            AuthorHandler(self.parse),
             # ignore unicode conversion for equations
             EquationHandler(lambda x: self._expand_command(x, ignore_unicode=True)),
             CodeBlockHandler(),
             ItemHandler(),
-            BibItemHandler(),
-            ContentCommandHandler(self._expand_command),
+            BibItemHandler(self.parse),
+            ContentCommandHandler(),
             # for tabular, on the first pass we process content and maintain the '\\' delimiter to maintain row integrity
             TabularHandler(
                 process_content_fn=lambda x: self.parse(
@@ -119,6 +126,7 @@ class LatexParser:
             handler.clear()
         self.if_else_block_handler.clear()
         self.new_definition_handler.clear()
+        self.sty_parser.clear()
 
     def _expand_command(self, content: str, ignore_unicode: bool = False) -> str:
         """Expand LaTeX commands in the content"""
@@ -144,19 +152,6 @@ class LatexParser:
                 self.labels[content] = tokens[-1]
             else:
                 tokens.append({"type": "label", "content": content})
-
-    def _parse_cell(self, cell_content: str) -> List[Dict]:
-        cell = self.parse(cell_content)
-        return self._clean_cell(cell)
-
-    def _clean_cell(self, cell: List[Dict]) -> List[Dict]:
-        if len(cell) == 0:
-            return None
-        elif len(cell) == 1 and isinstance(cell[0], dict):
-            if cell[0]["type"] == "text" and "styles" not in cell[0]:
-                return cell[0]["content"]
-            return cell[0]
-        return cell
 
     def add_token(self, token: str | Dict, tokens: List[Dict]):
         # uncomment this if we want to merge self.current_str whitespaces
@@ -212,14 +207,12 @@ class LatexParser:
             expanded = self._expand_command(total_content)
 
             if expanded.startswith("\\"):
-                if inner_content:
-                    token = {
-                        "type": "command",
-                        "command": expanded.replace("{" + inner_content + "}", ""),
-                        "content": inner_content,
-                    }
-                else:
-                    token = {"type": "command", "command": expanded}
+                token = {"type": "command", "command": command}
+                if expanded.startswith(command):
+                    expanded = expanded[len(command) :]
+                # expanded = expanded.strip("{}")
+                if expanded:
+                    token["content"] = expanded
             else:
                 token = {"type": "text", "content": expanded}
 
@@ -227,38 +220,77 @@ class LatexParser:
 
         return None, 0
 
+    def _check_usepackage(self, content: str) -> None:
+        # check for STY file
+        match = USEPACKAGE_PATTERN.match(content)
+        if match:
+            package_name = match.group(1)
+            if not package_name.endswith(".sty"):
+                package_name += ".sty"
+            package_path = package_name
+            if self.current_file_dir:
+                package_path = os.path.join(self.current_file_dir, package_name)
+            if os.path.exists(package_path):
+                tokens = self.sty_parser.parse_file(package_path)
+                for token in tokens:
+                    self._process_new_definition_token(token)
+            return match.end()
+        return 0
+
+    def _process_new_definition_token(self, token: Dict) -> None:
+        if token and "name" in token:
+            cmd_name = token["name"]
+            # do not process content commands e.g. section etc
+            if cmd_name in WHITELISTED_COMMANDS:
+                return
+            if token["type"] == "newenvironment":
+                self.env_handler.process_newenvironment(
+                    cmd_name,
+                    token["begin_def"],
+                    token["end_def"],
+                    token["num_args"],
+                    token["optional_args"],
+                )
+            elif token["type"] == "newcommand":
+                # check if there is potential recursion.
+                if re.search(r"\\" + cmd_name + r"\b", token["content"]):
+                    self.logger.warning(
+                        f"Potential recursion detected for newcommand: \\{cmd_name}, skipping..."
+                    )
+                    return
+                self.command_processor.process_newcommand(
+                    cmd_name,
+                    token["content"],
+                    token["num_args"],
+                    token["defaults"],
+                    token["usage_pattern"],
+                )
+            elif token["type"] == "def":
+                self.command_processor.process_newdef(
+                    cmd_name,
+                    token["content"],
+                    token["num_args"],
+                    token["usage_pattern"],
+                    token["is_edef"],
+                )
+            elif token["type"] == "newif":
+                self.command_processor.process_newif(cmd_name)
+                self.if_else_block_handler.process_newif(cmd_name)
+            elif token["type"] == "newcounter":
+                self.command_processor.process_newcounter(cmd_name)
+            elif token["type"] == "newlength":
+                self.command_processor.process_newlength(cmd_name)
+            elif token["type"] == "newother":
+                self.command_processor.process_newX(cmd_name)
+            elif token["type"] == "newtheorem":
+                self.env_handler.process_newtheorem(cmd_name, token["title"])
+
     def _check_for_new_definitions(self, content: str) -> None:
         """Check for new definitions in the content and process them"""
         if self.new_definition_handler.can_handle(content):
             token, end_pos = self.new_definition_handler.handle(content)
             if token:
-                cmd_name = token["name"]
-                if token["type"] == "newcommand":
-                    self.command_processor.process_newcommand(
-                        cmd_name,
-                        token["content"],
-                        token["num_args"],
-                        token["defaults"],
-                        token["usage_pattern"],
-                    )
-                elif token["type"] == "def":
-                    self.command_processor.process_newdef(
-                        cmd_name,
-                        token["content"],
-                        token["num_args"],
-                        token["usage_pattern"],
-                        token["is_edef"],
-                    )
-                elif token["type"] == "newif":
-                    self.command_processor.process_newif(cmd_name)
-                    self.if_else_block_handler.process_newif(cmd_name)
-                elif token["type"] == "newlength":
-                    self.command_processor.process_newlength(cmd_name)
-                elif token["type"] == "newcounter":
-                    self.command_processor.process_newcounter(cmd_name)
-                # elif token['type'] == 'newtheorem':
-                #     pass
-
+                self._process_new_definition_token(token)
             return end_pos
         return 0
 
@@ -275,7 +307,8 @@ class LatexParser:
                 if token:
                     if isinstance(token, str):
                         token = {"type": "text", "content": token}
-                    elif token["type"] == "input":
+                    elif token["type"] in ["input_file", "bibliography_file"]:
+                        ext = ".bbl" if token["type"] == "bibliography_file" else ".tex"
                         # open input file
                         if token["content"]:
                             file_path = token["content"]
@@ -283,23 +316,24 @@ class LatexParser:
                                 file_path = os.path.join(
                                     self.current_file_dir, file_path
                                 )
-                            input_tokens = self.parse_file(file_path)
+                            input_tokens = self.parse_file(file_path, extension=ext)
                             if input_tokens:
                                 tokens.extend(input_tokens)
                         return True, end_pos
                     elif token["type"] in ["footnote", "caption"]:
                         prev_env = self.current_env
                         self.current_env = token
-                        token["content"] = self._parse_cell(token["content"])
+                        token["content"] = self.parse(token["content"])
                         self.current_env = prev_env
                     elif token["type"] == "url":
                         if "title" in token:
-                            token["title"] = self._parse_cell(token["title"])
-                    elif token["type"] == "section":
+                            token["title"] = self.parse(token["title"])
+                    elif token["type"] in ["section", "paragraph"]:
                         self.current_env = token
+                        token["title"] = self._expand_command(token["title"])
                     elif isinstance(handler, BaseEnvironmentHandler):
                         # algorithmic keep as literal?
-                        if token["type"] != "algorithmic":
+                        if token["type"] not in ["algorithmic", "tabular"]:
                             prev_env = self.current_env
                             self.current_env = token
                             token["content"] = self.parse(token["content"])
@@ -364,6 +398,8 @@ class LatexParser:
         if file_path:
             self.current_file_dir = os.path.dirname(os.path.abspath(file_path))
 
+        content = strip_latex_comments(content)
+
         tokens = []
         current_pos = 0
 
@@ -407,6 +443,11 @@ class LatexParser:
                 current_pos += next_pos
                 if not next_delimiter:
                     break
+                continue
+
+            end_pos = self._check_usepackage(content[current_pos:])
+            if end_pos > 0:
+                current_pos += end_pos
                 continue
 
             # check for user defined commands (important to check before new definitions in case of floating \csname)
@@ -476,8 +517,15 @@ class LatexParser:
                         cmd_name = token["command"]
                         if cmd_name not in self._unknown_commands:
                             self._unknown_commands[cmd_name] = token
+
+                            pos = current_pos - end_pos
+                            surrounding_content = (
+                                content[max(0, pos - 100) : pos]
+                                + "-->"
+                                + content[pos : pos + 100]
+                            )
                             self.logger.warning(
-                                f"\n*****\nUnknown command: Token: {token}\n***Surrounding content***\n{content[max(0, current_pos-100):current_pos+100]}\n*****"
+                                f"\n*****\nUnknown command: Token: {token}\n***Surrounding content***\n{surrounding_content}\n*****"
                             )
                         else:
                             self.logger.warning(
@@ -490,7 +538,9 @@ class LatexParser:
 
         return tokens
 
-    def parse_file(self, file_path: str) -> List[Dict[str, str]]:
+    def parse_file(
+        self, file_path: str, extension: str = ".tex"
+    ) -> List[Dict[str, str]]:
         """
         Parse a LaTeX file directly from the file path.
 
@@ -501,11 +551,18 @@ class LatexParser:
             List[Dict[str, str]]: List of parsed tokens
         """
         try:
-            self.logger.info(f"Parsing file: {file_path}")
-            content = read_tex_file_content(file_path)
-            return self.parse(content, file_path=file_path)
+            self.logger.info(f"Parsing file: {file_path}, ext: {extension}")
+            current_file_dir = self.current_file_dir
+            content = read_tex_file_content(file_path, extension=extension)
+            out = self.parse(content, file_path=file_path)
+            self.current_file_dir = current_file_dir
+            return out
         except Exception as e:
-            self.logger.error(f"Failed to parse file: {str(e)}")
+            self.logger.error(f"Failed to parse file: {file_path}, error: {str(e)}")
+            self.logger.error(
+                "Stack trace:", exc_info=True
+            )  # This will log the full stack trace
+
             return []
 
 
@@ -529,31 +586,16 @@ if __name__ == "__main__":
 
     parser = LatexParser(logger=logger)
 
-    file = "papers/arXiv-1706.03762v7/ms.tex"
-    parsed_tokens = parser.parse_file(file)
+    file = "papers/arXiv-1512.03385v1/residual_v1_arxiv_release.tex"
+    tokens = parser.parse_file(file)
+    # print(tokens)
 
-    #     # Example usage
-    #     text = r"""
-    # \begin{algorithm}[H]
-    # \caption{Sum of Array Elements}
-    # \label{alg:loop}
-    # \begin{algorithmic}[1]
-    # \Require{$A_{1} \dots A_{N}$}
-    # \Ensure{$Sum$ (sum of values in the array)}
-    # \Statex
-    # \Function{Loop}{$A[\;]$}
-    #   \State {$Sum$ $\gets$ {$0$}}
-    #     \State {$N$ $\gets$ {$length(A)$}}
-    #     \For{$k \gets 1$ to $N$}
-    #         \State {$Sum$ $\gets$ {$Sum + A_{k}$}}
-    #     \EndFor
-    #     \State \Return {$Sum$}
-    # \EndFunction
-    # \end{algorithmic}
-    # \end{algorithm}
-    # """
+#     text = r"""
+# \begin{table}[t]
+# %\end{table}
+# %\begin{table}[t]
+# \end{table}
 
-    # parser = LatexParser(logger=logger)
-    # parsed_tokens = parser.parse(text)
-    # print(len(parsed_tokens))
-    # print(parsed_tokens)
+# """
+# tokens = parser.parse(text)
+# print(tokens)

@@ -19,7 +19,7 @@ class LatexUnicodeConverter:
 
             # Add word boundary after the command to prevent partial matches
             escaped = re.escape(cmd)
-            if not escaped.endswith("}"):
+            if escaped[-1].isalpha():
                 escaped += r"(?![a-zA-Z])"
             if cmd.startswith("\\ensuremath"):
                 patterns["ensuremath"].append(escaped)

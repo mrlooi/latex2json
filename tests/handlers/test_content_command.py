@@ -1,6 +1,9 @@
 import pytest
-from src.handlers.content_command import ContentCommandHandler
-from src.patterns import SECTION_LEVELS
+from src.handlers.content_command import (
+    ContentCommandHandler,
+    SECTION_LEVELS,
+    PARAGRAPH_LEVELS,
+)
 
 
 @pytest.fixture
@@ -141,12 +144,18 @@ def test_handle_with_expand_fn():
         return content.replace("old", "new")
 
     handler = ContentCommandHandler(process_content_fn=mock_expand)
-    token, pos = handler.handle(r"\paragraph*{old title}")
+    token, pos = handler.handle(r"\paragraph{old title}")
     assert token == {
-        "type": "section",
+        "type": "paragraph",
         "title": "new title",
-        "level": SECTION_LEVELS["paragraph"],
-        "numbered": False,
+        "level": PARAGRAPH_LEVELS["paragraph"],
+    }
+
+    token, pos = handler.handle(r"\subparagraph{old title}")
+    assert token == {
+        "type": "paragraph",
+        "title": "new title",
+        "level": PARAGRAPH_LEVELS["subparagraph"],
     }
 
 
@@ -221,13 +230,19 @@ def test_other(handler):
     # include/input
     text = r"\input{file.tex} POST INPUT"
     token, pos = handler.handle(text)
-    assert token == {"type": "input", "content": "file.tex"}
+    assert token == {"type": "input_file", "content": "file.tex"}
     assert text[pos:] == " POST INPUT"
 
     text = text.replace(r"\input", r"\include")
     token, pos = handler.handle(text)
-    assert token == {"type": "input", "content": "file.tex"}
+    assert token == {"type": "input_file", "content": "file.tex"}
     assert text[pos:] == " POST INPUT"
+
+    # bibliography file
+    text = r"\bibliography{file.bib} POST BIBLIOGRAPHY"
+    token, pos = handler.handle(text)
+    assert token == {"type": "bibliography_file", "content": "file.bib"}
+    assert text[pos:] == " POST BIBLIOGRAPHY"
 
 
 if __name__ == "__main__":

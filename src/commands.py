@@ -2,12 +2,10 @@
 
 import re
 from typing import List, Dict, Optional
-from src.patterns import NEWLINE_PATTERN
 from src.latex_maps.latex_unicode_converter import LatexUnicodeConverter
 from collections import OrderedDict
 
 from src.tex_utils import extract_nested_content_sequence_blocks, substitute_patterns
-from src.handlers.content_command import RAW_PATTERNS as CONTENT_COMMANDS
 from src.handlers.new_definition import (
     END_CSNAME_PATTERN,
     START_CSNAME_PATTERN,
@@ -55,9 +53,6 @@ class CommandProcessor:
         defaults: List[str],
         usage_pattern: str,
     ):
-        if command_name in CONTENT_COMMANDS:
-            return
-
         num_optional = len(defaults)
 
         def handler(match, text):
@@ -107,9 +102,6 @@ class CommandProcessor:
         usage_pattern: str,
         expand_definition=False,
     ):
-        if command_name in CONTENT_COMMANDS:
-            return
-
         def handler(match, text):
             args = [g for g in match.groups() if g is not None]
 
@@ -137,12 +129,14 @@ class CommandProcessor:
         self.commands["newif:" + var_name] = command
 
     def process_newlength(self, var_name: str):
+        self.process_newX(var_name, "newlength")
 
+    def process_newX(self, var_name: str, type: str = "newX"):
         command = {
             "pattern": re.compile(r"\\" + var_name + r"\b"),
             "handler": default_ignore_handler,
         }
-        self.commands["newlength:" + var_name] = command
+        self.commands[type + ":" + var_name] = command
 
     def process_newcounter(self, var_name: str):
 

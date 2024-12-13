@@ -5,34 +5,11 @@ import re
 
 from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content
+from src.handlers.environment import (
+    BaseEnvironmentHandler,
+    find_pattern_while_skipping_nested_envs,
+)
 
-r"""
-% Old Style        Modern Equivalent
-{\tt text}         \texttt{text}      % Typewriter text
-{\bf text}         \textbf{text}      % Bold face
-{\it text}         \textit{text}      % Italic
-{\sl text}         \textsl{text}      % Slanted
-{\sc text}         \textsc{text}      % Small Caps
-{\sf text}         \textsf{text}      % Sans serif
-{\rm text}         \textrm{text}      % Roman (normal) text
-{\cal text}        \mathcal{text}     % Calligraphic (only in math mode)
-
-{\tiny text}       \texttiny{text}
-{\small text}      \textsmall{text}
-{\large text}      \textlarge{text}
-{\huge text}       \texthuge{text}
-
-{\em text}         \emph{text}        % Emphasized text
-{\mit text}        \mathit{text}      % Math italic
-{\bold text}       \textbf{text}      % Another bold variant
-{\normalsize text} \textnormal{text}  % Normal size
-
-{\footnotesize text}
-{\scriptsize text}
-{\Large text}      % Note capital L
-{\LARGE text}
-{\Huge text}       % Note capital H
-"""
 
 # Font style mappings
 # NOTE: we IGNORE math mode ones
@@ -93,11 +70,11 @@ LEGACY_SIZE_MAPPING: Dict[str, str] = {
 # Old style patterns
 # Generate regex patterns from the mappings
 FONT_PATTERN = re.compile(
-    r"\\(" + "|".join(LEGACY_FONT_MAPPING.keys()) + r")(?![a-zA-Z])\s*\{?", re.DOTALL
+    r"\\(" + "|".join(LEGACY_FONT_MAPPING.keys()) + r")(?![a-zA-Z])\s*\{?"
 )
 
 SIZE_PATTERN = re.compile(
-    r"\\(" + "|".join(LEGACY_SIZE_MAPPING.keys()) + r")(?![a-zA-Z])\s*\{?", re.DOTALL
+    r"\\(" + "|".join(LEGACY_SIZE_MAPPING.keys()) + r")(?![a-zA-Z])\s*\{?"
 )
 
 PATTERNS = {
@@ -107,6 +84,9 @@ PATTERNS = {
 
 
 LEGACY_FORMAT_MAPPING: Dict[str, str] = {**LEGACY_FONT_MAPPING, **LEGACY_SIZE_MAPPING}
+
+# negative lookbehind that ensures the preceding character is not a backslash
+OPENING_BRACE_PATTERN = re.compile(r"(?<!\\){")
 
 
 class LegacyFormattingHandler(TokenHandler):
@@ -125,11 +105,16 @@ class LegacyFormattingHandler(TokenHandler):
                 modern_command = LEGACY_FORMAT_MAPPING.get(command)
                 if not modern_command:
                     modern_command = command
+
                 if match.group(0).endswith("{"):
+                    # simple \tt{text}
                     text, end_pos = extract_nested_content("{" + content[next_pos:])
                     content_to_format = text.strip()
                     total_pos = next_pos + end_pos - 1
                 else:
+                    # Handle cases like
+                    # \tt ... {...} ... }  # up to the closing brace
+                    # \tt ... \bf ...  # next formatting i.e. \bf override
                     next_content = content[next_pos:]
                     end_pos = len(next_content)
 
@@ -141,27 +126,32 @@ class LegacyFormattingHandler(TokenHandler):
                         next_content = next_content[:end_pos]
 
                     # check for similar patterns that aren't nested in braces
-                    pos = 0
+
+                    pattern_or_open_brace_pattern = re.compile(
+                        pattern.pattern + "|" + OPENING_BRACE_PATTERN.pattern
+                    )
+
+                    pos = -1
                     while pos < len(next_content):
-                        # Skip escaped braces
-                        if pos > 0 and next_content[pos - 1 : pos + 1] == r"\{":
-                            pos += 1
-                            continue
-                        # Check for opening brace
-                        if next_content[pos] == "{":
-                            # Skip the entire nested block
-                            _, skip_len = extract_nested_content(next_content[pos:])
-                            pos += skip_len
-                        else:
-                            # Look for pattern match only in non-nested content
-                            match = pattern.match(next_content[pos:])
-                            if match:
-                                end_pos = pos
-                                next_content = next_content[:end_pos]
+                        out_end_pos = find_pattern_while_skipping_nested_envs(
+                            next_content, pattern_or_open_brace_pattern, max(pos, 0)
+                        )
+                        if out_end_pos != -1:
+                            pos = out_end_pos
+                            if pos < len(next_content) and next_content[pos] == "{":
+                                _, skip_len = extract_nested_content(next_content[pos:])
+                                pos += skip_len or 1
+                                continue
+                            else:
+                                # found same legacy pattern
                                 break
+                        else:
                             pos += 1
 
-                    content_to_format = next_content
+                    if pos != -1:
+                        end_pos = pos
+
+                    content_to_format = next_content[:end_pos]
                     total_pos = next_pos + end_pos
 
                 formatted_text = rf"\{modern_command}" + "{" + content_to_format + "}"

@@ -1,6 +1,6 @@
 import pytest
 from src.handlers.text_formatting import FRONTEND_STYLE_MAPPING
-from src.patterns import SECTION_LEVELS
+from src.handlers.content_command import SECTION_LEVELS, PARAGRAPH_LEVELS
 from src.tex_parser import LatexParser
 from tests.latex_samples_data import TRAINING_SECTION_TEXT
 
@@ -22,7 +22,7 @@ def parsed_training_tokens(parser):
 
 def test_parse_sections(parsed_training_tokens):
     sections = [token for token in parsed_training_tokens if token["type"] == "section"]
-    assert len(sections) == 7
+    assert len(sections) == 5
 
     start_level = SECTION_LEVELS["section"]
     assert sections[0]["title"] == "Training"
@@ -42,6 +42,16 @@ def test_parse_sections(parsed_training_tokens):
     # check its label is there
     assert regularization_section["labels"] == ["sec:reg"]
 
+    # check paragraphs
+    paragraphs = [
+        token for token in parsed_training_tokens if token["type"] == "paragraph"
+    ]
+    assert len(paragraphs) == 2
+    assert paragraphs[0]["title"] == "Residual Dropout"
+    assert paragraphs[0]["level"] == PARAGRAPH_LEVELS["paragraph"]
+    assert paragraphs[1]["title"] == "Label Smoothing"
+    assert paragraphs[1]["level"] == PARAGRAPH_LEVELS["paragraph"]
+
 
 def test_parse_subsections(parser):
     text = r"""
@@ -52,17 +62,16 @@ def test_parse_subsections(parser):
     \subparagraph{Sub Regularization}
     """
     parsed_tokens = parser.parse(text)
-    sections = [token for token in parsed_tokens if token["type"] == "section"]
 
-    assert sections[0]["title"] == "Training Data and Batching"
-    assert sections[0]["level"] == SECTION_LEVELS["section"] + 1
-    assert sections[1]["title"] == "Hardware and Schedule"
-    assert sections[1]["level"] == SECTION_LEVELS["section"] + 2
+    assert parsed_tokens[0]["title"] == "Training Data and Batching"
+    assert parsed_tokens[0]["level"] == SECTION_LEVELS["section"] + 1
+    assert parsed_tokens[1]["title"] == "Hardware and Schedule"
+    assert parsed_tokens[1]["level"] == SECTION_LEVELS["section"] + 2
 
-    assert sections[2]["title"] == "Regularization"
-    assert sections[2]["level"] == SECTION_LEVELS["paragraph"]
-    assert sections[3]["title"] == "Sub Regularization"
-    assert sections[3]["level"] == SECTION_LEVELS["paragraph"] + 1
+    assert parsed_tokens[2]["title"] == "Regularization"
+    assert parsed_tokens[2]["level"] == PARAGRAPH_LEVELS["paragraph"]
+    assert parsed_tokens[3]["title"] == "Sub Regularization"
+    assert parsed_tokens[3]["level"] == PARAGRAPH_LEVELS["subparagraph"]
 
 
 def test_parse_equations(parsed_training_tokens):
@@ -325,13 +334,14 @@ def test_nested_environments(parser):
     parsed_tokens = parser.parse(text)
 
     # Check environments
-    environments = [token for token in parsed_tokens if token["type"] == "environment"]
-    assert len(environments) == 1
+    assert len(parsed_tokens) == 1
 
     # Check lemma environment
-    lemma = environments[0]
+    lemma = parsed_tokens[0]
+    assert lemma["type"] == "math_env"
     assert lemma["name"] == "lemma"
     assert lemma["labels"] == ["tb"]
+    assert lemma["numbered"] is True
 
     # Check equation environment
     equation = lemma["content"][0]
@@ -504,11 +514,11 @@ def test_parse_refs_and_urls(parser):
     assert refs[2]["type"] == "ref"
     assert refs[3]["type"] == "ref"
 
+    assert "title" not in refs[0]
     assert refs[0]["content"] == "https://www.tesla.com"
     assert refs[1]["content"] == "https://www.google.com"
+    assert refs[1]["title"][0]["content"] == "Google"
     assert refs[2]["title"] == "fig:modalnet"
-    assert "title" not in refs[0]
-    assert refs[1]["title"] == "Google"
     assert refs[2]["content"] == "ModalNet"
     assert "title" not in refs[3]
     assert refs[3]["content"] == "fig:modalnet"
@@ -591,7 +601,8 @@ def test_item_with_label(parser):
     \label{label-top}
     \item[*] First item with custom label
     \item Second item
-    \item[+] \label{special-item} Third item with label
+    \item[+] \label{special-item} Third item with label % \begin{itemize}
+    
     \end{itemize}
     """
     parsed_tokens = parser.parse(text)
@@ -616,7 +627,7 @@ def test_algorithmic(parser):
     text = r"""
 \begin{algorithm}[H] 
 
-\caption{Sum of Array Elements}
+\caption{Sum of Array Elements \% Here is link \url{https://www.google.com}}
 \label{alg:loop}
 
 \begin{algorithmic}[1]
@@ -643,7 +654,12 @@ def test_algorithmic(parser):
 
     caption = algorithm["content"][0]
     assert caption["type"] == "caption"
-    assert caption["content"] == "Sum of Array Elements"
+    assert (
+        caption["content"][0]["content"].strip()
+        == "Sum of Array Elements % Here is link"
+    )
+    assert caption["content"][1]["type"] == "url"
+    assert caption["content"][1]["content"] == "https://www.google.com"
 
     # algorithmic keep as literal?
     algorithmic = algorithm["content"][1]
@@ -666,7 +682,6 @@ def test_figure(parser):
     token = tokens[0]
 
     assert token["type"] == "figure"
-    assert token["name"] == "figure*"
     assert len(token["content"]) == 2
 
     assert token["content"][0]["type"] == "includegraphics"
@@ -716,7 +731,7 @@ def test_nested_figures(parser):
     ][0]
     first_caption = [t for t in first_subfig["content"] if t["type"] == "caption"][0]
     assert first_graphics["content"] == "image.png"
-    assert first_caption["content"] == "First pendulum design"
+    assert first_caption["content"][0]["content"] == "First pendulum design"
 
     # Check second subfigure
     second_subfig = subfigures[1]
@@ -728,11 +743,11 @@ def test_nested_figures(parser):
     ][0]
     second_caption = [t for t in second_subfig["content"] if t["type"] == "caption"][0]
     assert second_graphics["content"] == "example-image-b"
-    assert second_caption["content"] == "Second pendulum design"
+    assert second_caption["content"][0]["content"] == "Second pendulum design"
 
     # Check main caption
     main_caption = [t for t in figure["content"] if t["type"] == "caption"][0]
-    assert main_caption["content"] == "Different pendulum clock designs"
+    assert main_caption["content"][0]["content"] == "Different pendulum clock designs"
 
 
 def test_complex_table(parser):
@@ -826,7 +841,7 @@ def test_complex_table(parser):
     # Check caption
     caption = table["content"][1]
     assert caption["type"] == "caption"
-    assert caption["content"] == "Regional Sales Distribution"
+    assert caption["content"][0]["content"] == "Regional Sales Distribution"
 
 
 def test_nested_newcommands(parser):
@@ -1017,12 +1032,38 @@ def test_escaped_special_chars(parser):
 
 def test_newtheorem(parser):
     text = r"""
-    \newtheorem{theorem}{Theorem}[section]
-    \newtheorem{lemma}[theorem]{Lemma}
+    \newtheorem{myown}{MARS}
+    \newtheorem{mytheorem}{TheoremAA}[section]
+    \newtheorem{mylemma}[theorem]{LemmaXX}
     """
     parsed_tokens = parser.parse(text)
     # we ignore newtheorem commands but make sure they are parsed
     assert len(parsed_tokens) == 0
+
+    # then we check that it handles these env
+    text = r"""
+    \begin{myown}
+        Occupy Mars
+    \end{myown}
+
+    \begin{mytheorem}
+        This is a theorem
+    \end{mytheorem}
+
+    \begin{mylemma}
+        Lemma Toad
+    \end{mylemma}
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 3
+    assert parsed_tokens[0]["type"] == "environment"
+    assert parsed_tokens[0]["name"] == "MARS"
+
+    assert parsed_tokens[1]["type"] == "environment"
+    assert parsed_tokens[1]["name"] == "TheoremAA"
+
+    assert parsed_tokens[2]["type"] == "environment"
+    assert parsed_tokens[2]["name"] == "LemmaXX"
 
 
 def test_new_environment(parser):
@@ -1081,6 +1122,41 @@ def test_new_environment(parser):
     assert row.strip() == "This text is inside the environment."
 
 
+def test_author(parser):
+    text = r"""
+\author{
+  \AND
+  Ashish Vaswani\thanks{Equal contribution. Listing order is random. Jakob proposed replacing RNNs with self-attention and started the effort to evaluate this idea.
+Ashish, with Illia, designed and implemented the first Transformer models and has been crucially involved in every aspect of this work. Noam proposed scaled dot-product attention, multi-head attention and the parameter-free position representation and became the other person involved in nearly every detail. Niki designed, implemented, tuned and evaluated countless model variants in our original codebase and tensor2tensor. Llion also experimented with novel model variants, was responsible for our initial codebase, and efficient inference and visualizations. Lukasz and Aidan spent countless long days designing various parts of and implementing tensor2tensor, replacing our earlier codebase, greatly improving results and massively accelerating our research.
+}\\
+  Google Brain\\
+  \texttt{avaswani@google.com}\\
+  \And
+  Noam Shazeer\footnotemark[1]\\
+  Google Brain\\
+  \texttt{noam@google.com}\\
+}
+"""
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "author"
+
+    authors = parsed_tokens[0]["content"]
+    assert len(authors) == 2
+
+    first = authors[0]
+    assert first[0]["content"] == "Ashish Vaswani"
+
+    thanks_footnote = first[1]
+    assert thanks_footnote["type"] == "footnote"  # thanks is footnote
+    assert thanks_footnote["content"][0]["content"].startswith("Equal contribution")
+
+    second = authors[1]
+    assert second[0]["content"] == "Noam Shazeer"
+    assert second[1]["type"] == "footnote"
+    assert second[1]["content"][0]["content"].startswith("1")
+
+
 def test_bibliography(parser):
     text = r"""
     \begin{thebibliography}{99}
@@ -1126,24 +1202,6 @@ def test_user_defined_commands_override(parser):
     assert parsed_tokens[0]["type"] == "text"
     assert parsed_tokens[0]["content"].strip() == "NO INDENT TEXT"
 
-
-def test_user_defined_commands_w_legacy_formatting(parser):
-    text = r"""
-    \def\textbf#1{<b>#1</b>\newline}
-    \textbf{Hello}
-    {\bf Muhaha}
-    """
-    parsed_tokens = parser.parse(text)
-
-    content = []
-    for t in parsed_tokens:
-        c = t["content"]
-        content.extend([l.strip() for l in c.split("\n") if l.strip()])
-    assert len(content) == 2
-    assert content[0] == r"<b>Hello</b>"
-    assert content[1] == r"<b>Muhaha</b>"
-    # assert content[2] == r"\texttt{mamaa}"
-
     text = r"""
     \def\arxiv#1{  {\href{http://arxiv.org/abs/#1}
     {{arXiv:#1}}}}
@@ -1153,7 +1211,7 @@ def test_user_defined_commands_w_legacy_formatting(parser):
     parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) == 1
     assert parsed_tokens[0]["type"] == "url"
-    assert parsed_tokens[0]["title"] == "arXiv:1234567"
+    assert parsed_tokens[0]["title"][0]["content"] == "arXiv:1234567"
     assert parsed_tokens[0]["content"] == "http://arxiv.org/abs/1234567"
 
 
@@ -1199,12 +1257,12 @@ def test_if_else_statements(parser):
 
     # test unclosed if
     text = r"""
-    \if{cond1} 
+    \ifcond 
     """
     parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) == 1
     assert parsed_tokens[0]["type"] == "command"
-    assert parsed_tokens[0]["content"].strip() == "cond1"
+    assert parsed_tokens[0]["command"] == r"\ifcond"
 
 
 def test_nested_items_with_environments(parser):
@@ -1217,6 +1275,7 @@ def test_nested_items_with_environments(parser):
     \item Second item with nested list:
         \begin{enumerate}
         \item[a)] Nested item with math $F=ma$
+        % ssss a  \item[bbb] SS
         \item[b)] Another nested item with:
             \begin{itemize}
             \item Deep nested item 1
@@ -1224,6 +1283,7 @@ def test_nested_items_with_environments(parser):
                 \begin{equation}
                 \nabla \cdot \mathbf{E} = \frac{\rho}{\epsilon_0}
                 \end{equation}
+            % \item xxxx
             \end{itemize}
         \end{enumerate}
     \end{itemize}
@@ -1335,6 +1395,7 @@ def test_legacy_formatting(parser):
     \begin{tabular}{c}
         \tt aaa & \large bbb \\ 
         \sc eee & {\em 444} + 333
+        % \begin{tabular}{x}
     \end{tabular}
     """
     parsed_tokens = parser.parse(text)
@@ -1668,6 +1729,7 @@ After loops
 def test_inputs_with_files(parser):
     import os
 
+    # regular input
     text = r"""
     PRE INPUT
 
@@ -1689,6 +1751,46 @@ def test_inputs_with_files(parser):
     assert input_tokens[0]["title"] == "Example"
     assert input_tokens[1]["type"] == "equation"
     assert input_tokens[1]["content"].strip() == "1+1=2"
+
+    # bibliography file
+    text = r"""
+    PRE BIBLIOGRAPHY
+
+    \bibliography{samples/bib}
+
+    POST BIBLIOGRAPHY
+    """
+    parsed_tokens = parser.parse(text, file_path=os.path.abspath(__file__))
+    assert len(parsed_tokens) == 3
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "PRE BIBLIOGRAPHY"
+    assert parsed_tokens[-1]["type"] == "text"
+    assert parsed_tokens[-1]["content"].strip() == "POST BIBLIOGRAPHY"
+
+    # check bibliography file
+    bib_token = parsed_tokens[1]
+    assert bib_token["type"] == "bibliography"
+    assert len(bib_token["content"]) == 2
+
+
+def test_cvpr_sty_lastlines(parser):
+    text = r"""
+    \DeclareRobustCommand\onedot{\futurelet\@let@token\@onedot}
+    \def\@onedot{\ifx\@let@token.\else.\null\fi\xspace}
+
+    \def\eg{\emph{e.g}\onedot}
+
+    This is my example \eg Haha
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 3
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "This is my example"
+    assert parsed_tokens[1]["type"] == "text"
+    assert parsed_tokens[1]["content"] == "e.g"
+    assert parsed_tokens[1]["styles"] == [FRONTEND_STYLE_MAPPING["emph"]]
+    assert parsed_tokens[2]["type"] == "text"
+    assert parsed_tokens[2]["content"].strip() == "Haha"
 
 
 if __name__ == "__main__":

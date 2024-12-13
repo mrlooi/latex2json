@@ -35,6 +35,19 @@ def test_basic_tabular(handler):
     assert token["content"][1] == ["c", "d"]  # Second row
 
 
+def test_empty_tabular(handler):
+    text = r"""
+    \begin{tabular}{c}
+      & &  \\
+    \end{tabular}
+    """.strip()
+    token, end_pos = handler.handle(text.strip())
+    assert token is not None
+    assert token["type"] == "tabular"
+    assert token["column_spec"] == "c"
+    assert len(token["content"]) == 0
+
+
 def test_tabular_with_multicolumn(handler):
     text = r"""
     \begin{tabular}{|c|c|c|}

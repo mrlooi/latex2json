@@ -2,14 +2,18 @@ import re
 from typing import Callable, Dict, Optional, Tuple
 from src.handlers.base import TokenHandler
 from src.patterns import BRACE_CONTENT_PATTERN
-from src.tex_utils import extract_nested_content, extract_nested_content_pattern
+from src.tex_utils import (
+    extract_nested_content,
+    extract_nested_content_pattern,
+    extract_nested_content_sequence_blocks,
+)
 
 POST_NEW_COMMAND_PATTERN_STR = (
     r"\*?\s*(?:{\\([^}]+)}|\\([^\s{[]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{"
 )
 
 DEF_COMMAND_PREFIX = r"(?:\\long)?\\(?:e|g)?def\s*\\"
-LET_COMMAND_PREFIX = r"\\let\s*\\"
+LET_COMMAND_PREFIX = r"\\(?:future)?let\s*\\"
 
 DEF_COMMAND_PATTERN = re.compile(
     r"%s([^\s{#]+)(((?:#\d+|[^{])*)\s*{)" % (DEF_COMMAND_PREFIX), re.DOTALL
@@ -24,6 +28,9 @@ END_CSNAME_PATTERN = re.compile(r"\\endcsname(?![a-zA-Z])")
 
 # Compile patterns for definition commands
 PATTERNS = {
+    "newenvironment": re.compile(
+        r"\\(?:new|renew|provide)environment\*?\s*\{([^}]*?)\}",
+    ),
     # Matches newcommand/renewcommand, supports both {\commandname} and \commandname syntax
     "newcommand": re.compile(
         r"\\(?:new|renew|provide)command" + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL
@@ -52,6 +59,9 @@ PATTERNS = {
     ),
     "newcounter": re.compile(
         r"\\(?:re)?newcounter\s*" + BRACE_CONTENT_PATTERN, re.DOTALL
+    ),
+    "newother": re.compile(
+        r"\\(?:re)?new(?:count|box|dimen|skip|muskip)\s*\\([^\s{[]+)"
     ),
     "setcounter": re.compile(
         r"\\setcounter\s*%s\s*%s" % (BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN),
@@ -92,7 +102,9 @@ class NewDefinitionHandler(TokenHandler):
         for pattern_name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if match:
-                # declaremathoperator is for math mde
+                if pattern_name == "newenvironment":
+                    return self._handle_newenvironment(content, match)
+                # declaremathoperator is for math mode
                 if pattern_name == "newcommand" or pattern_name.startswith("declare"):
                     return self._handle_newcommand(content, match)
                 elif pattern_name == "let":
@@ -122,6 +134,8 @@ class NewDefinitionHandler(TokenHandler):
                     return self._handle_newlength(match)
                 elif pattern_name == "newcounter" or pattern_name == "setcounter":
                     return self._handle_newcounter(match)
+                elif pattern_name == "newother":
+                    return self._handle_newother(match)
                 elif pattern_name == "expandafter":
                     next_pos = match.end()
                     token, end_pos = self.handle(content[next_pos:])
@@ -130,6 +144,51 @@ class NewDefinitionHandler(TokenHandler):
                     return None, match.end()
 
         return None, 0
+
+    def _handle_newenvironment(self, content: str, match) -> Tuple[Optional[Dict], int]:
+        """Handle \newenvironment definitions"""
+        env_name = match.group(1)
+        current_pos = match.end()
+
+        # Store environment definition
+        token = {
+            "type": "newenvironment",
+            "begin_def": "",
+            "end_def": "",
+            "name": env_name,
+            "num_args": 0,
+            "optional_args": [],
+        }
+
+        # Look for optional arguments [n][default]...
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[current_pos:], "[", "]"
+        )
+        if blocks:
+            first_arg = blocks[0].strip()
+            if first_arg.isdigit():
+                token["num_args"] = int(first_arg)
+            for block in blocks[1:]:
+                token["optional_args"].append(block.strip())
+
+        current_pos += end_pos
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[current_pos:], "{", "}", max_blocks=2
+        )
+        if len(blocks) == 2:
+            token["begin_def"] = blocks[0]
+            token["end_def"] = blocks[1]
+        else:
+            return None, current_pos
+
+        current_pos += end_pos
+        return token, current_pos
+
+    def _handle_newother(self, match) -> Tuple[Optional[Dict], int]:
+        r"""Handle \newother definitions"""
+        var_name = match.group(1).strip()
+        token = {"type": "newother", "name": var_name}
+        return token, match.end()
 
     def _handle_newif(self, match) -> Tuple[Optional[Dict], int]:
         r"""Handle \newif definitions"""
@@ -154,7 +213,7 @@ class NewDefinitionHandler(TokenHandler):
         r"""Handle \crefname definitions"""
         token = {
             "type": "crefname",
-            "counter": match.group(1),
+            "name": match.group(1),
             "singular": match.group(2),
             "plural": match.group(3),
         }
@@ -220,7 +279,7 @@ class NewDefinitionHandler(TokenHandler):
 
     def _handle_newtheorem(self, match) -> Tuple[Optional[Dict], int]:
         """Handle \newtheorem definitions"""
-        token = {"type": "theorem", "name": match.group(1), "title": match.group(3)}
+        token = {"type": "newtheorem", "name": match.group(1), "title": match.group(3)}
 
         # Handle optional counter specification
         if match.group(2):

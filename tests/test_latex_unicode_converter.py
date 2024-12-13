@@ -12,6 +12,7 @@ def test_basic_conversion(converter):
     assert converter.convert(r"\#") == "#"
     assert converter.convert(r"\$") == "$"
     assert converter.convert(r"\textpm") == "±"
+    assert converter.convert(r"\{ssss\}") == "{ssss}"
 
 
 def test_accented_characters(converter):

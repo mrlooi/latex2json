@@ -34,7 +34,7 @@ number_regex = NUMBER_PATTERN
 RAW_PATTERNS = OrderedDict(
     [
         # Comments
-        ("comment", r"%([^\n]*)"),
+        ("comment", r"(?<!\\)%([^\n]*)"),
         # Class and package setup commands
         (
             "class_setup",
@@ -50,13 +50,6 @@ RAW_PATTERNS = OrderedDict(
         ("today", r"\\today\b"),
         # top level commands
         ("documentclass", r"\\documentclass(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}"),
-        (
-            "usepackage",
-            re.compile(
-                r"\\(usepackage|RequirePackage)(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}",
-                re.DOTALL,
-            ),
-        ),
         # Formatting commands
         ("setup", r"\\(?:hypersetup|captionsetup\[([^\]]*)\])\s*{"),
         ("make", r"\\(?:maketitle|makeatletter|makeatother)\b"),
@@ -88,9 +81,10 @@ RAW_PATTERNS = OrderedDict(
         # New margin and size commands allowing any characters after the number
         (
             "margins",
-            r"\\(?:rightmargin|leftmargin|parskip)\b|\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)\s*"
-            + number_regex
-            + r"(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b"
+            r"\\(?:rightmargin|leftmargin)\b|"
+            + r"\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)"
+            + r"\s*(?:%s)?"
+            % (number_regex + r"(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b")
             + r"|(%s)?\\baselineskip" % (number_regex),
         ),
         # width
@@ -99,7 +93,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "spacing",
             r"\\(?:"
-            r"quad|qquad|,|;|:|\!|"  # \quad, \qquad, \, \; \:
+            r"quad|qquad|xspace|,|;|:|\!|"  # \quad, \qquad, \, \; \:
             r"hspace\*?\s*{([^}]+)}|"  # \hspace{length}
             r"hskip\s*"
             + number_regex
@@ -117,7 +111,10 @@ RAW_PATTERNS = OrderedDict(
         # number
         ("numbers", r"\\linenumbers\b|\\(?:numberwithin)\s*\{[^}]*\}\s*\{[^}]*\}"),
         # table
-        ("newcolumntype", r"\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}\s*{"),
+        (
+            "newcolumntype",
+            r"\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}(?:\s*\[\d+\])?\s*{",
+        ),
         # separators
         ("itemsep", r"\\itemsep\s*=\s*-?\d*\.?\d+\w+?\b"),
         (
@@ -145,12 +142,13 @@ RAW_PATTERNS = OrderedDict(
         ("addtocontents", r"\\(?:addtocontents|addtocounter)\s*\{[^}]*\s*\}\s*{"),
         ("backslash", r"\\(?:backslash|textbackslash)\b"),
         ("ensuremath", r"\\ensuremath\s*{"),
+        ("hyphenation", r"\\hyphenation\s*{"),
         # Handle vspace separately
         ("vspace", r"\\vspace\*?\s*{[^}]+}"),
         ("phantom", r"\\(?:hphantom|vphantom)\s*{"),
         (
             "other",
-            r"\\(?:ignorespaces|relax|\@tempboxa|box|global|fnsymbol|@plus|@minus)\b",
+            r"\\(?:ignorespaces|relax|\@tempboxa|box|global|fnsymbol|@plus|@minus|null)\b",
         ),  # ignore fnsymbol
         ("pz@", r"(?:%s)?\\[pz]@(?![a-zA-Z@])" % number_regex),
         ("slash", r"\\/"),  # \/ (in latex, this is like an empty space)
@@ -203,6 +201,8 @@ class FormattingHandler(TokenHandler):
         for pattern_name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if match:
+                if pattern_name == "comment":
+                    return None, match.end()
                 if pattern_name == "pz@" or match.group(0).startswith(r"\baselineskip"):
                     if prev_token:
                         # check for number\pz@ e.g. 2\pz@ in previous token
@@ -222,6 +222,7 @@ class FormattingHandler(TokenHandler):
                     "setup",
                     "lstset",
                     "addtocontents",
+                    "hyphenation",
                 ]:
                     # extracted nested
                     start_pos = match.end() - 1

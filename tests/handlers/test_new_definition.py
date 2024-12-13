@@ -53,13 +53,13 @@ def test_handle_newtheorem(handler):
     # Test basic newtheorem
     content = r"\newtheorem{theorem}{Theorem}"
     token, pos = handler.handle(content)
-    assert token == {"type": "theorem", "name": "theorem", "title": "Theorem"}
+    assert token == {"type": "newtheorem", "name": "theorem", "title": "Theorem"}
 
     # Test with counter specification
     content = r"\newtheorem{lemma}[theorem]{Lemma}"
     token, pos = handler.handle(content)
     assert token == {
-        "type": "theorem",
+        "type": "newtheorem",
         "name": "lemma",
         "counter": "theorem",
         "title": "Lemma",
@@ -69,7 +69,7 @@ def test_handle_newtheorem(handler):
     content = r"\newtheorem{proposition}{Proposition}[section]"
     token, pos = handler.handle(content)
     assert token == {
-        "type": "theorem",
+        "type": "newtheorem",
         "name": "proposition",
         "title": "Proposition",
         "within": "section",
@@ -256,12 +256,19 @@ def test_let_command(handler):
     assert token["name"] == "arXiv"
     assert token["content"] == r"\arxiv"
 
+    # futurelet
+    content = r"\futurelet\arXiv\arxiv"
+    token, _ = handler.handle(content)
+    assert token["type"] == "newcommand"
+    assert token["name"] == "arXiv"
+    assert token["content"] == r"\arxiv"
+
 
 def test_crefname(handler):
     content = r"\crefname{equation}{333}{aaaa} hahaha"
     token, pos = handler.handle(content)
     assert token["type"] == "crefname"
-    assert token["counter"] == "equation"
+    assert token["name"] == "equation"
     assert token["singular"] == "333"
     assert token["plural"] == "aaaa"
 
@@ -390,6 +397,79 @@ def test_with_csname_and_expandafter(handler):
     assert pattern.match(r"\csname oldschool\endcsname")
     assert not pattern.match(r"\csname oldschool   \endcsname")
     assert content[pos:] == " POST"
+
+
+def test_other_newX_commands(handler):
+    content = r"\newcount\cvpr@rulercount aaa"
+    token, pos = handler.handle(content)
+    assert token["name"] == "cvpr@rulercount"
+    assert content[pos:] == " aaa"
+
+    content = r"\newdimen\cvpr@ruleroffset"
+    token, pos = handler.handle(content)
+    assert token["name"] == "cvpr@ruleroffset"
+
+    content = r"\newbox\cvpr@rulerbox"
+    token, pos = handler.handle(content)
+    assert token["name"] == "cvpr@rulerbox"
+
+
+def test_can_handle_newenvironments(handler):
+    assert handler.can_handle(r"\newenvironment{test}{begin def}{end def}")
+    assert not handler.can_handle("regular text")
+
+
+def test_handle_newenvironment(handler):
+    # Test basic newenvironment
+    content = r"\newenvironment{test}{begin def}{end def}"
+    token, pos = handler.handle(content)
+
+    assert token == {
+        "type": "newenvironment",
+        "name": "test",
+        "num_args": 0,
+        "optional_args": [],
+        "begin_def": "begin def",
+        "end_def": "end def",
+    }
+
+    # Test with arguments
+    content = r"\newenvironment{test2}[2]{begin #1 #2}{end #2}"
+    token, pos = handler.handle(content)
+    assert token == {
+        "type": "newenvironment",
+        "name": "test2",
+        "num_args": 2,
+        "optional_args": [],
+        "begin_def": "begin #1 #2",
+        "end_def": "end #2",
+    }
+
+    # Test with optional arguments
+    content = r"\newenvironment{test3}[2][default]{begin #1 #2}{end}"
+    token, pos = handler.handle(content)
+    assert token == {
+        "type": "newenvironment",
+        "name": "test3",
+        "num_args": 2,
+        "optional_args": ["default"],
+        "begin_def": "begin #1 #2",
+        "end_def": "end",
+    }
+
+    # Test newenvironment with complex begin/end definitions
+    content = r"\newenvironment{complex}{\begin{center}\begin{tabular}}{end{tabular}\end{center}}"
+    token, pos = handler.handle(content)
+    assert token == {
+        "type": "newenvironment",
+        "name": "complex",
+        "num_args": 0,
+        "optional_args": [],
+        "begin_def": r"\begin{center}\begin{tabular}",
+        "end_def": r"end{tabular}\end{center}",
+    }
+
+    handler.clear()
 
 
 if __name__ == "__main__":

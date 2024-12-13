@@ -16,7 +16,6 @@ PATTERNS = {
     "address": re.compile(r"\\address\s*{", compile_as),
     # \thanks usually found inside author block
     "thanks": re.compile(r"\\thanks\s*{", compile_as),
-    "samethanks": re.compile(r"\\samethanks\b", compile_as),
 }
 
 
@@ -54,10 +53,15 @@ class AuthorHandler(TokenHandler):
         for name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if match:
-                if name == "samethanks":
-                    if self.last_thanks_token:
-                        return self.last_thanks_token, match.end()
-                    return {"type": "samethanks"}, match.end()
+                if name == "thanks":
+                    start_pos = match.end() - 1
+                    content, end_pos = extract_nested_content(content[start_pos:])
+                    token = {
+                        "type": "footnote",
+                        "content": content,
+                    }
+                    self.last_thanks_token = token
+                    return token, start_pos + end_pos
                 elif name == "author":
                     # short_author = match.group(1)  # Will be None if no [] present
                     start_pos = match.end() - 1
@@ -71,10 +75,7 @@ class AuthorHandler(TokenHandler):
                         for token in tokens:
                             processed = self.process_content_fn(token)
                             if processed:
-                                if isinstance(processed, list):
-                                    parsed_tokens.extend(processed)
-                                else:
-                                    parsed_tokens.append(processed)
+                                parsed_tokens.append(processed)
                         tokens = parsed_tokens
 
                     return {
@@ -91,8 +92,6 @@ class AuthorHandler(TokenHandler):
                         "type": name,
                         "content": content,
                     }
-                    if name == "thanks":
-                        self.last_thanks_token = token
                     return token, start_pos + end_pos
 
         return None, 0

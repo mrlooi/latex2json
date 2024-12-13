@@ -10,7 +10,6 @@ def handler():
 
 def test_can_handle_formatting(handler):
     # Test formatting commands
-    assert handler.can_handle(r"\usepackage{amsmath}")
     assert handler.can_handle(r"\centering")
     assert handler.can_handle(r"\raggedright")
     assert handler.can_handle(r"\noindent")
@@ -182,8 +181,6 @@ def test_misc_formatting_commands(handler):
     \documentclass[12pt,a4paper,reqno]{amsart}
     \documentclass{XXX}
     \hypersetup{colorlinks,linkcolor={blue},citecolor={blue},urlcolor={red}}  
-    \usepackage[noabbrev,capitalize,nameinlink]{cleveref}
-    \usepackage{graphicx}
     \pagestyle{empty}
     \numberwithin{equation}{section}
     \theoremstyle{conjecture}
@@ -199,7 +196,6 @@ def test_misc_formatting_commands(handler):
     \fboxsep{1pt}
     \value{section}
     \allowdisplaybreaks
-    \RequirePackage{ifpdf}
     \itemsep=0pt
 
     \topmargin 0.0cm
@@ -232,6 +228,10 @@ def test_misc_formatting_commands(handler):
     \ProvidesClass{sigma}[2012/01/18]
     \LoadClass[fleqn,11pt,twoside]{article}
     \vskip -\parskip
+
+    \parindent 4mm
+    \parskip    4mm
+    
     \vskip 10pt
     \vskip10pt
     \labelsep
@@ -250,6 +250,10 @@ def test_misc_formatting_commands(handler):
     \advance\@tempskipa-\@tempdimb
     \advance\section@level-\subsection@level
     \advance\leftmargin by -\rightmargin
+
+    \newcolumntype{x}[1]{>{\centering}p{#1pt}}
+    \newcolumntype{y}{>{\centering}p{16pt}}
+    \hyphenation{identity notorious underlying surpasses desired residual doubled}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

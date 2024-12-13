@@ -122,3 +122,29 @@ def test_pre_mathmode_cases(handler):
     text = r"\mathversion{normal} $1+1=2$"
     out, end_pos = handler.handle(text)
     assert out == r"\textrm{$1+1=2$}"
+
+
+def test_nested_cases(handler):
+    tabular_content = r"""
+\begin{center}
+\begin{tabular}{l|c c}
+\hline
+\large 1 % notice the large here should be contained
+\end{tabular}
+\end{center}
+""".strip()
+    text = (
+        r"""\small
+    %s
+
+    helloworld
+    \huge HUGE
+    """
+        % (tabular_content)
+    ).strip()
+    out, end_pos = handler.handle(text)
+    out = out.strip().replace("\n", "")
+    assert out.startswith(r"\textsmall{%s" % (tabular_content.replace("\n", "")))
+    assert out.replace(" ", "").endswith("helloworld}")
+
+    assert text[end_pos:].strip() == r"\huge HUGE"

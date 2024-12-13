@@ -3,21 +3,33 @@ from collections import OrderedDict
 from typing import Callable, Dict, Optional, Tuple
 from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content
-from src.patterns import SECTION_LEVELS
+
+SECTION_LEVELS = {
+    "part": 0,
+    "chapter": 1,
+    "section": 1,
+    "subsection": 2,
+    "subsubsection": 3,
+}
+
+PARAGRAPH_LEVELS = {
+    "paragraph": 1,
+    "subparagraph": 2,
+}
 
 RAW_PATTERNS = OrderedDict(
     [
         # 1. Commands that need nested brace handling (simplified patterns)
         ("abstract", r"\\abstract\s*{"),
         ("section", r"\\(?:(?:sub)*section\*?)\s*{"),
-        ("paragraph", r"\\(?:(?:sub)*paragraph\*?)\s*{"),
         ("part", r"\\part\*?\s*{"),
         ("chapter", r"\\chapter\*?\s*{"),
+        ("paragraph", r"\\(?:(?:sub)*paragraph\*?)\s*{"),
         ("footnote", r"\\footnote\s*{"),
         ("caption", r"\\caption\s*{"),
         ("captionof", r"\\captionof\s*{([^}]*?)}\s*{"),
         # input
-        ("input", r"\\(?:input|include)\s*{"),
+        ("input_file", r"\\(?:input|include)\s*{"),
         # REFs
         ("ref", r"\\(?:c|auto|eq|page)?ref\*?\s*{"),
         ("hyperref", r"\\hyperref\s*\[([^]]*)\]\s*{"),
@@ -52,7 +64,7 @@ RAW_PATTERNS = OrderedDict(
         # keywords
         ("keywords", r"\\keywords\s*{"),
         # bibliography
-        ("bibliography", r"\\bibliography\s*{"),
+        ("bibliography_file", r"\\bibliography\s*{"),
     ]
 )
 
@@ -113,7 +125,14 @@ class ContentCommandHandler(TokenHandler):
 
         content = content.strip()
 
-        if matched_type in ["section", "paragraph", "chapter", "part"]:
+        if matched_type == "paragraph":
+            level = match.group(0).count("sub") + PARAGRAPH_LEVELS["paragraph"]
+            return {
+                "type": "paragraph",
+                "title": content,
+                "level": level,
+            }
+        elif matched_type in ["section", "chapter", "part"]:
             level = match.group(0).count("sub") + SECTION_LEVELS[matched_type]
             numbered = (matched_type + "*") not in match.group(0)
             return {
@@ -122,14 +141,9 @@ class ContentCommandHandler(TokenHandler):
                 "level": level,
                 "numbered": numbered,
             }
-        elif matched_type == "input":
-            return {"type": "input", "content": content}
 
         elif matched_type == "title":
             return {"type": "title", "title": content}
-
-        elif matched_type == "caption":
-            return {"type": "caption", "content": content}
 
         elif matched_type == "captionof":
             return {
@@ -149,6 +163,9 @@ class ContentCommandHandler(TokenHandler):
 
         elif matched_type == "href":
             return {"type": "url", "title": content, "content": match.group(1).strip()}
+
+        elif matched_type == "url":
+            return {"type": "url", "content": content}
 
         elif matched_type in ["ref", "bookmark"]:
             return {"type": "ref", "content": content}
@@ -180,9 +197,6 @@ class ContentCommandHandler(TokenHandler):
 
         elif matched_type == "includegraphics":
             return {"type": "includegraphics", "content": content}
-
-        elif matched_type == "url":
-            return {"type": "url", "content": content}
 
         elif matched_type == "pdfbookmark":
             return {

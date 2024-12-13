@@ -1,0 +1,52 @@
+from enum import Enum
+from typing import Dict, Any, List, Optional, TypedDict, Union
+
+from pydantic import BaseModel, Field
+from src.structure.tokens.base import BaseToken, EnvironmentToken
+from src.structure.tokens.types import TokenType
+
+
+# FIGURE
+class FigureToken(EnvironmentToken):
+    """Represents figures"""
+
+    type: TokenType = TokenType.FIGURE
+
+
+# TABLES
+class TableToken(EnvironmentToken):
+    """Represents tables"""
+
+    type: TokenType = TokenType.TABLE
+
+
+# CAPTION
+class CaptionToken(BaseToken):
+    """Represents captions"""
+
+    type: TokenType = TokenType.CAPTION
+    title: Optional[str] = None
+
+
+# GRAPHICS
+class GraphicsToken(BaseToken):
+    """Represents graphics"""
+
+    type: TokenType = TokenType.GRAPHICS
+    content: str
+
+
+# LISTS AND ITEMS
+class ItemToken(BaseToken):
+    """Represents list items"""
+
+    type: TokenType = TokenType.ITEM
+    title: Optional[str] = None
+    labels: Optional[List[str]] = None
+
+
+class ListToken(EnvironmentToken):
+    """Represents itemize/enumerate/description environments"""
+
+    type: TokenType = TokenType.LIST
+    content: List[ItemToken] = Field(default_factory=list)

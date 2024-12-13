@@ -12,6 +12,7 @@ def find_matching_delimiter(
         - start_pos is the position of the opening delimiter
         - end_pos is the position of the matching closing delimiter
     Returns (-1, -1) if no valid delimiters found.
+    Skips content after unescaped % until the next line.
     """
     # Skip leading whitespace
     while start < len(text) and text[start].isspace():
@@ -23,9 +24,17 @@ def find_matching_delimiter(
     stack = []
     i = start
     while i < len(text):
-        # Check for escaped delimiters
+        # Check for escaped characters
         if i > 0 and text[i - 1] == "\\":
             i += 1
+            continue
+
+        # If we find an unescaped %, skip to the next line
+        if text[i] == "%":
+            i = text.find("\n", i)
+            if i == -1:  # No more newlines found
+                break
+            i += 1  # Move past the newline
             continue
 
         if text[i] == open_delim:
@@ -35,7 +44,7 @@ def find_matching_delimiter(
                 return -1, -1  # Unmatched closing delimiter
             stack.pop()
             if not stack:  # Found the matching delimiter
-                return start, i
+                return start, i + 1
         i += 1
     return -1, -1  # No matching delimiter found
 
@@ -54,8 +63,8 @@ def extract_nested_content(
         return None, 0
 
     # Return content without the delimiters and the next position to process
-    content = text[start_pos + 1 : end_pos]
-    return content, end_pos + 1
+    content = text[start_pos + 1 : end_pos - 1]
+    return content, end_pos
 
 
 def extract_nested_content_sequence_blocks(
@@ -112,8 +121,10 @@ def extract_nested_content_pattern(
     if isinstance(end_pattern, str):
         end_pattern = re.compile(end_pattern)
 
-    # Find the first beginning pattern
+    # Find the first beginning pattern that isn't commented
     begin_match = begin_pattern.search(text)
+    while begin_match and has_comment_on_sameline(text, begin_match.start()):
+        begin_match = begin_pattern.search(text, begin_match.end())
     if not begin_match:
         return -1, -1, ""
 
@@ -123,8 +134,14 @@ def extract_nested_content_pattern(
     start_pos = begin_match.start()
 
     while nesting_level > 0 and current_pos < len(text):
+        # Find next begin/end patterns, skipping commented ones
         begin_match = begin_pattern.search(text, current_pos)
+        while begin_match and has_comment_on_sameline(text, begin_match.start()):
+            begin_match = begin_pattern.search(text, begin_match.end())
+
         end_match = end_pattern.search(text, current_pos)
+        while end_match and has_comment_on_sameline(text, end_match.start()):
+            end_match = end_pattern.search(text, end_match.end())
 
         if not end_match:
             return -1, -1, ""
@@ -218,31 +235,99 @@ def substitute_patterns(
     return text
 
 
-def read_tex_file_content(file_path: str, dir_path: str = None) -> str:
+def read_tex_file_content(file_path: str, extension: str = ".tex") -> str:
     """
-    Attempts to read content from an input file, handling both absolute and relative paths.
+    Attempts to read content from an input file.
 
     Args:
-        file_path: Path to the input file (absolute or relative)
+        file_path: Path to the input file
+        extension: Default file extension to try (e.g., ".tex")
+    """
+    # Clean up inputs
+    file_path = file_path.strip()
+    
+    # Try with extension first if it's not already there
+    if not file_path.endswith(extension):
+        path_with_ext = file_path + extension
+        if os.path.exists(path_with_ext):
+            if os.path.isdir(path_with_ext):
+                raise FileNotFoundError(f"'{path_with_ext}' is a directory, not a file")
+            with open(path_with_ext, 'r') as f:
+                return f.read()
+    
+    # Then try exact path
+    if os.path.exists(file_path):
+        if os.path.isdir(file_path):
+            raise FileNotFoundError(f"'{file_path}' is a directory, not a file")
+        with open(file_path, 'r') as f:
+            return f.read()
+
+    raise FileNotFoundError(f"Failed to read input file '{file_path}'")
+
+
+def has_comment_on_sameline(content: str, pos: int) -> bool:
+    """Check if there's an uncommented % before pos on the current line"""
+    # Find start of current line
+    line_start = content.rfind("\n", 0, pos)
+    if line_start == -1:
+        line_start = 0
+    else:
+        line_start += 1  # Move past the newline
+
+    # Get content from start of current line to position
+    line_before = content[line_start:pos]
+
+    # Look for unescaped %
+    i = 0
+    while i < len(line_before):
+        if line_before[i] == "%":
+            if i == 0 or line_before[i - 1] != "\\":
+                return True
+        i += 1
+    return False
+
+
+def strip_latex_comments(text: str) -> str:
+    r"""
+    Remove all LaTeX comments (lines starting with % or inline comments after unescaped %)
+    while preserving escaped \% characters.
+
+    Args:
+        text: Input LaTeX text
 
     Returns:
-        str: Content of the file if successful, error message if failed
+        Text with all comments removed
     """
-    try:
-        input_path = file_path
-        # If path is not absolute and we know the current file's directory
-        if not os.path.isabs(input_path) and dir_path:
-            input_path = os.path.join(dir_path, input_path)
+    lines = []
+    for line in text.splitlines():
+        processed_line = ""
+        i = 0
+        while i < len(line):
+            # Handle escaped %
+            if i < len(line) - 1 and line[i : i + 2] == r"\%":
+                processed_line += r"\%"
+                i += 2
+                continue
+            # Handle unescaped %
+            if line[i] == "%":
+                break
+            processed_line += line[i]
+            i += 1
+        lines.append(processed_line.rstrip())
 
-        # Try different extensions if file not found
-        if not os.path.exists(input_path):
-            for ext in ["", ".tex"]:
-                test_path = input_path + ext
-                if os.path.exists(test_path):
-                    input_path = test_path
-                    break
+    return "\n".join(lines)
 
-        with open(input_path, "r", encoding="utf-8") as f:
-            return f.read()
-    except (FileNotFoundError, IOError) as e:
-        raise FileNotFoundError(f"Failed to read input file '{file_path}': {str(e)}")
+
+if __name__ == "__main__":
+    text = r"% comment\n\begin{test}"
+    pos = text.find(r"\begin")
+
+    # Debug prints
+    print(f"Full text: {repr(text)}")
+    print(f"Position of \\begin: {pos}")
+    line_start = text.rfind("\n", 0, pos) + 1
+    print(f"Line start: {line_start}")
+    line_before = text[line_start:pos]
+    print(f"Line before: {repr(line_before)}")
+
+    print(has_comment_on_sameline(text, text.find(r"\begin")))
