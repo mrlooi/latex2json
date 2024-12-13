@@ -5,7 +5,7 @@ import re
 from src.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content_sequence_blocks
 from src.patterns import NUMBER_PATTERN
-
+from src.handlers.new_definition import extract_and_concat_nested_csname
 
 # Could be character, command, or more complex token
 char_or_command_pattern = r"(?:{\s*)?(?:\\[a-zA-Z@]+|\S)(?:\s*})?"
@@ -236,14 +236,25 @@ class IfElseBlockHandler(TokenHandler):
                 #     # ignore equal anyway
                 #     return None, start_pos + end_pos
                 else:
-                    condition = match.group(0).replace(" ", "")
-                    if condition == "\\if" + name or condition == "\\@if" + name:
-                        condition = name
+                    out_str = match.group(0)
+                    start_pos = match.start()
+                    cs_name_ind = out_str.find("\\csname")
+                    condition = out_str.replace(" ", "")
+                    if cs_name_ind != -1:
+                        inner, pos = extract_and_concat_nested_csname(
+                            content[start_pos + cs_name_ind :]
+                        )
+                        if inner:
+                            start_pos += cs_name_ind + pos
+                            condition = inner.strip()
                     else:
-                        condition = condition.replace("\\" + name, "")
-                        if name == "ifdefined" and "\\ifundefined" in condition:
-                            condition = condition.replace("\\ifundefined", "")
-                    start_pos = match.end()
+                        start_pos = match.end()
+                        if condition == "\\if" + name or condition == "\\@if" + name:
+                            condition = name
+                        else:
+                            condition = condition.replace("\\" + name, "")
+                            if name == "ifdefined" and "\\ifundefined" in condition:
+                                condition = condition.replace("\\ifundefined", "")
                     try:
                         if_content, else_content, elsif_branches, end_pos = (
                             extract_else_elseif_fi(
@@ -271,9 +282,8 @@ class IfElseBlockHandler(TokenHandler):
 
 if __name__ == "__main__":
     text = r"""
-    \iftest TRUE \else FALSE \fi 
+    \ifx\csname urlstyle\endcsname\relax\fi
 """.strip()
 
     handler = IfElseBlockHandler()
-    handler.process_newif("test")
     print(handler.handle(text))

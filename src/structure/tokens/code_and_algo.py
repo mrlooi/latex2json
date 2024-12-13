@@ -20,7 +20,7 @@ class AlgorithmToken(EnvironmentToken):
     """Represents algorithm environment"""
 
     type: TokenType = TokenType.ALGORITHM
-    content: List[CodeToken] = Field(default_factory=list)
+    content: List[BaseToken] = Field(default_factory=list)
 
 
 class AlgorithmicToken(BaseToken):

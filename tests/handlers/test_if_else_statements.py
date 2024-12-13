@@ -298,3 +298,11 @@ def test_ifcase():
     assert result["elsif_branches"][0][1].strip() == "case 1"
     assert result["elsif_branches"][1][1].strip() == "case 2"
     assert result["else_content"].strip() == "default"
+
+
+def test_with_csname():
+    text = r"""\ifx\csname urlstyle\endcsname\relax\fi POST""".strip()
+    handler = IfElseBlockHandler()
+    result, pos = handler.handle(text)
+    assert result["else_content"] == ""
+    assert text[pos:] == " POST"
