@@ -254,6 +254,11 @@ def test_misc_formatting_commands(handler):
     \newcolumntype{x}[1]{>{\centering}p{#1pt}}
     \newcolumntype{y}{>{\centering}p{16pt}}
     \hyphenation{identity notorious underlying surpasses desired residual doubled}
+
+    \DeclareFontFamily{OT1}{rsfs}{}
+    \DeclareFontShape{OT1}{rsfs}{n}{it}{<-> rsfs10}{}
+    \DeclareMathAlphabet{\mathscr}{OT1}{rsfs}{n}{it}
+
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

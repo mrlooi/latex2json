@@ -4,7 +4,7 @@ from collections import OrderedDict
 from typing import Callable, Dict, Optional, Tuple
 from src.handlers.base import TokenHandler
 from src.patterns import NUMBER_PATTERN
-from src.tex_utils import extract_nested_content
+from src.tex_utils import extract_nested_content, extract_nested_content_sequence_blocks
 
 
 DEFINE_COLOR_PATTERN = re.compile(
@@ -31,6 +31,13 @@ COLOR_COMMANDS_PATTERN = re.compile(
 
 number_regex = NUMBER_PATTERN
 
+declare_pattern_N_blocks = {
+    "DeclareFontFamily": 3,
+    "DeclareFontShape": 6,
+    "DeclareMathAlphabet": 5,
+    "DeclareOption": 2,
+}
+
 RAW_PATTERNS = OrderedDict(
     [
         # Comments
@@ -50,6 +57,7 @@ RAW_PATTERNS = OrderedDict(
         ("today", r"\\today\b"),
         # top level commands
         ("documentclass", r"\\documentclass(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}"),
+        ("subjclass", r"\\subjclass\s*\[[^\]]*\]\s*\{[^}]+\}"),
         # Formatting commands
         ("setup", r"\\(?:hypersetup|captionsetup\[([^\]]*)\])\s*{"),
         ("make", r"\\(?:maketitle|makeatletter|makeatother)\b"),
@@ -104,7 +112,14 @@ RAW_PATTERNS = OrderedDict(
         (
             "options",
             re.compile(
-                r"\\(?:ProcessOptions\b|(PassOptionsToPackage|PassOptionsToClass)\s*\{[^}]*\}\s*\{[^}]*\}|DeclareOption\*?\s*\{)",
+                r"\\(?:ProcessOptions\b|(PassOptionsToPackage|PassOptionsToClass)\s*\{[^}]*\}\s*\{[^}]*\})",
+                re.DOTALL,
+            ),
+        ),
+        (
+            "declare",
+            re.compile(
+                r"\\(DeclareFontShape|DeclareFontFamily|DeclareMathAlphabet|DeclareOption)\*?\s*\{",
                 re.DOTALL,
             ),
         ),
@@ -258,6 +273,8 @@ class FormattingHandler(TokenHandler):
                     return {"type": "text", "content": "\n"}, match.end()
                 elif pattern_name == "options":
                     return self._handle_options(content, match)
+                elif pattern_name == "declare":
+                    return self._handle_declare(content, match)
                 elif pattern_name == "class_setup":
                     if match.group(0).endswith("["):
                         start_pos = match.end() - 1
@@ -288,6 +305,17 @@ class FormattingHandler(TokenHandler):
 
         return None, 0
 
+    def _handle_declare(
+        self, content: str, match: re.Match
+    ) -> Tuple[Optional[Dict], int]:
+        cmd = match.group(1)
+        start_pos = match.end() - 1
+        N_blocks = declare_pattern_N_blocks.get(cmd, 1)
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "{", "}", max_blocks=N_blocks
+        )
+        return None, start_pos + end_pos
+
     def _handle_options(
         self, content: str, match: re.Match
     ) -> Tuple[Optional[Dict], int]:
@@ -297,13 +325,6 @@ class FormattingHandler(TokenHandler):
             _, end_pos = extract_nested_content(content[start_pos:])
 
             end_pos += start_pos
-            if out.startswith("\\DeclareOption"):
-                # check for next {
-                next_match = re.match(r"\s*\{", content[end_pos:])
-                if next_match:
-                    next_start_pos = end_pos + next_match.end() - 1
-                    _, next_end_pos = extract_nested_content(content[next_start_pos:])
-                    return None, next_start_pos + next_end_pos
             return None, end_pos
         return None, match.end()
 

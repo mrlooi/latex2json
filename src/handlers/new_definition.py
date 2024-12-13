@@ -54,7 +54,8 @@ PATTERNS = {
         r"\\(?:re)?newlength\s*" + BRACE_CONTENT_PATTERN, re.DOTALL
     ),
     "setlength": re.compile(
-        r"\\setlength\s*%s\s*%s" % (BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN),
+        r"\\(?:setlength|addtolength)\s*%s\s*%s"
+        % (BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN),
         re.DOTALL,
     ),
     "newcounter": re.compile(
