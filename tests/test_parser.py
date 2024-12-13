@@ -1793,5 +1793,18 @@ def test_cvpr_sty_lastlines(parser):
     assert parsed_tokens[2]["content"].strip() == "Haha"
 
 
+def test_floatname(parser):
+    text = r"""
+    \floatname{algorithm}{Procedure}
+
+    \begin{algorithm}
+    This is procedure
+    \end{algorithm}
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["name"] == "Procedure"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

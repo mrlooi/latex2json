@@ -74,6 +74,10 @@ RAW_PATTERNS = OrderedDict(
             r"\\vskip\s*(?:" + number_regex + r"\w+\b|-?\\[@a-zA-Z]+|\b)",
         ),
         (
+            "penalty",
+            r"\\penalty\s*" + number_regex + r"\b",
+        ),
+        (
             "skip",
             r"\\(?:bigskip|medskip|smallskip|lastskip|unskip|(above|below)(display|caption)(short)?skip)\b",
         ),
@@ -150,12 +154,13 @@ RAW_PATTERNS = OrderedDict(
             r"hrule\b|"
             r"morecmidrules\b|"  # no args
             r"fboxsep\s*{([^}]+)}|"  # {length}
+            r"tabcolsep\b|"
             r"colrule\b"
             r")",
         ),
         ("protect", r"\\protect\\[a-zA-Z]+(?:\s*(?:\[[^\]]*\]|\{[^}]*\})*)?"),
         ("addtocontents", r"\\(?:addtocontents|addtocounter)\s*\{[^}]*\s*\}\s*{"),
-        ("backslash", r"\\(?:backslash|textbackslash)\b"),
+        ("backslash", r"\\(?:backslash|textbackslash|arraybackslash)\b"),
         ("ensuremath", r"\\ensuremath\s*{"),
         ("hyphenation", r"\\hyphenation\s*{"),
         # Handle vspace separately

@@ -153,6 +153,7 @@ def test_box_commands(handler):
         ),
         (r"\hbox to 3in{Some text}", "Some text"),
         (r"\sbox\@tempboxa{Some text}", "Some text"),
+        (r"\pbox{3cm}{Some text}", "Some text"),
     ]
 
     for command, expected_text in test_cases:

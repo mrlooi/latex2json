@@ -239,6 +239,10 @@ class LatexParser:
 
     def _process_new_definition_token(self, token: Dict) -> None:
         if token and "name" in token:
+            if token["type"] == "floatname":
+                self.env_handler.process_floatname(token["name"], token["title"])
+                return
+
             cmd_name = token["name"]
             # do not process content commands e.g. section etc
             if cmd_name in WHITELISTED_COMMANDS:

@@ -22,9 +22,12 @@ LET_COMMAND_PATTERN = re.compile(
     r"%s([^\s{\\]+)\s*(=.*|\\[^\s{]+)" % (LET_COMMAND_PREFIX), re.DOTALL
 )
 
-EXPAND_PATTERN = re.compile(r"\\(?:expandafter|noexpand)(?![a-zA-Z])")
+EXPAND_PATTERN = re.compile(r"\\(?:expandafter|noexpand)(?:\w+)?(?![a-zA-Z])")
 START_CSNAME_PATTERN = re.compile(r"\\csname(?![a-zA-Z])")
 END_CSNAME_PATTERN = re.compile(r"\\endcsname(?![a-zA-Z])")
+
+command_with_opt_brace_pattern = r"(?:%s|\\[a-zA-Z@]+)" % (BRACE_CONTENT_PATTERN)
+
 
 # Compile patterns for definition commands
 PATTERNS = {
@@ -55,7 +58,7 @@ PATTERNS = {
     ),
     "setlength": re.compile(
         r"\\(?:setlength|addtolength)\s*%s\s*%s"
-        % (BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN),
+        % (command_with_opt_brace_pattern, command_with_opt_brace_pattern),
         re.DOTALL,
     ),
     "newcounter": re.compile(
@@ -68,7 +71,9 @@ PATTERNS = {
         r"\\setcounter\s*%s\s*%s" % (BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN),
         re.DOTALL,
     ),
+    "floatname": re.compile(r"\\floatname{([^}]*)}{([^}]*)}"),
     "expandafter": EXPAND_PATTERN,
+    "endcsname": END_CSNAME_PATTERN,  # for trailing \endcsname?
 }
 
 
@@ -137,7 +142,13 @@ class NewDefinitionHandler(TokenHandler):
                     return self._handle_newcounter(match)
                 elif pattern_name == "newother":
                     return self._handle_newother(match)
-                elif pattern_name == "expandafter":
+                elif pattern_name == "floatname":
+                    return {
+                        "type": "floatname",
+                        "name": match.group(1),
+                        "title": match.group(2),
+                    }, match.end()
+                elif pattern_name in ["expandafter", "endcsname"]:
                     next_pos = match.end()
                     token, end_pos = self.handle(content[next_pos:])
                     return token, next_pos + end_pos
@@ -197,10 +208,21 @@ class NewDefinitionHandler(TokenHandler):
         token = {"type": "newif", "name": var_name}
         return token, match.end()
 
-    def _handle_newlength(self, match) -> Tuple[Optional[Dict], int]:
+    def _handle_newlength(self, match: re.Match) -> Tuple[Optional[Dict], int]:
         r"""Handle \newlength definitions"""
-        var_name = match.group(1).strip()
-        var_name = var_name.replace("\\", "")
+        s = match.group(0)
+        # remove everything from length
+        first_length = s.find("length")
+        if first_length != -1:
+            s = s[first_length + 6 :].strip()
+        var_name = s
+        if var_name.startswith("{"):
+            var_name, _ = extract_nested_content(var_name)
+            var_name = var_name.strip()
+        if var_name.startswith("\\"):
+            var_name = var_name[1:]
+        if "{" in var_name:
+            var_name = var_name[: var_name.find("{")].strip()
         token = {"type": "newlength", "name": var_name}
         return token, match.end()
 
@@ -445,8 +467,7 @@ if __name__ == "__main__":
         print()
 
     text = r"""
-    \let\arXiv\arxiv
-    \def\doi
+    \newlength{\len} after"
     """.strip()
 
     print(handler.handle(text))

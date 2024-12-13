@@ -49,6 +49,7 @@ BOX_PATTERN = re.compile(
         mbox\s*{| # \mbox{text}
         hbox\s+to\s*[^{]+\s*{| # \hbox to \hsize{text}
         sbox\b\s*[^{]+\s*{| # \sbox\@tempboxa{text}
+        pbox\b\s*{[^}]*}\s*{| # \pbox{x}{text}
         resizebox\s*{[^}]*}\s*{[^}]*}\s*{  # \resizebox{width}{height}{text}
     )
     """,

@@ -59,6 +59,8 @@ WHITELISTED_COMMANDS = [
     "caption",
     "captionof",
     "bibitem",
+    "url",
+    "ref",
     # text font
     "textbf",
     "textit",

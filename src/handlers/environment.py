@@ -161,12 +161,17 @@ class BaseEnvironmentHandler(TokenHandler):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._newtheorems: Dict[str, str] = {}
+        self._floatnames: Dict[str, str] = {}
 
     def process_newtheorem(self, var_name: str, title: str):
         self._newtheorems[var_name] = title
 
+    def process_floatname(self, var_name: str, title: str):
+        self._floatnames[var_name] = title
+
     def clear(self):
         self._newtheorems = {}
+        self._floatnames = {}
 
     def can_handle(self, content: str) -> bool:
         return (
@@ -180,7 +185,10 @@ class BaseEnvironmentHandler(TokenHandler):
         env_name = env_name.replace("*", "")
 
         env_name = self._newtheorems.get(env_name, env_name)
-        token = {"type": "environment", "name": env_name}
+        token = {
+            "type": "environment",
+            "name": self._floatnames.get(env_name, env_name),
+        }
 
         env_type = ENV_TYPES.get(env_name.lower(), "environment")
         token["type"] = env_type

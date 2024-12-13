@@ -49,6 +49,14 @@ def test_handle_renewcommand(handler):
     assert token["content"] == "new definition"
 
 
+def test_handle_floatname(handler):
+    content = r"\floatname{figure}{FigureX} after"
+    token, pos = handler.handle(content)
+    assert token == {"type": "floatname", "name": "figure", "title": "FigureX"}
+
+    assert content[pos:] == " after"
+
+
 def test_handle_newtheorem(handler):
     # Test basic newtheorem
     content = r"\newtheorem{theorem}{Theorem}"
@@ -94,6 +102,7 @@ def test_handle_newlength(handler):
         r"\newlength{\len} after",
         r"\renewlength{\len} after",
         r"\setlength{\len}{10pt} after",
+        r"\setlength\len{1.5pt} after",
     ]
     for content in contents:
         token, pos = handler.handle(content)
