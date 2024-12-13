@@ -5,6 +5,11 @@ from collections import OrderedDict
 BRACE_CONTENT_PATTERN = r"\{([^}]+)\}"
 NUMBER_PATTERN = r"[-+]?\d*\.?\d+"
 
+USEPACKAGE_PATTERN = re.compile(
+    r"\\(?:usepackage|RequirePackage)(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}",
+    re.DOTALL,
+)  # capture group 1
+
 # ASSUMES ORDERD DICT (PYTHON 3.7+)
 RAW_PATTERNS = OrderedDict(
     [
@@ -30,3 +35,18 @@ PATTERNS = OrderedDict(
 
 LABEL_PATTERN = PATTERNS["label"]
 NEWLINE_PATTERN = PATTERNS["newline"]
+
+WHITELISTED_COMMANDS = [
+    "section",
+    "subsection",
+    "subsubsection",
+    "paragraph",
+    "subparagraph",
+    "maketitle",
+    "title",
+    "author",
+    "date",
+    "part",
+    "chapter",
+    "abstract",
+]

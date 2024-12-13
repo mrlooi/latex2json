@@ -40,6 +40,8 @@ from src.tex_utils import (
     read_tex_file_content,
     strip_latex_comments,
 )
+from src.sty_parser import LatexStyParser
+from src.patterns import USEPACKAGE_PATTERN, WHITELISTED_COMMANDS
 
 # Add these compiled patterns at module level
 # match $ or % or { or } only if not preceded by \
@@ -63,6 +65,9 @@ class LatexParser:
         )
         self.current_file_dir = None
         self.current_str = ""
+
+        # STY parser
+        self.sty_parser = LatexStyParser(logger=self.logger)
 
         # Regex patterns for different LaTeX elements
         self.command_processor = CommandProcessor()
@@ -121,6 +126,7 @@ class LatexParser:
             handler.clear()
         self.if_else_block_handler.clear()
         self.new_definition_handler.clear()
+        self.sty_parser.clear()
 
     def _expand_command(self, content: str, ignore_unicode: bool = False) -> str:
         """Expand LaTeX commands in the content"""
@@ -214,48 +220,71 @@ class LatexParser:
 
         return None, 0
 
+    def _check_usepackage(self, content: str) -> None:
+        # check for STY file
+        match = USEPACKAGE_PATTERN.match(content)
+        if match:
+            package_name = match.group(1)
+            if not package_name.endswith(".sty"):
+                package_name += ".sty"
+            package_path = package_name
+            if self.current_file_dir:
+                package_path = os.path.join(self.current_file_dir, package_name)
+            if os.path.exists(package_path):
+                tokens = self.sty_parser.parse_file(package_path)
+                for token in tokens:
+                    self._process_new_definition_token(token)
+            return match.end()
+        return 0
+
+    def _process_new_definition_token(self, token: Dict) -> None:
+        if token and "name" in token:
+            cmd_name = token["name"]
+            # do not process content commands e.g. section etc
+            if cmd_name in WHITELISTED_COMMANDS:
+                return
+            if token["type"] == "newenvironment":
+                self.env_handler.process_newenvironment(
+                    cmd_name,
+                    token["begin_def"],
+                    token["end_def"],
+                    token["num_args"],
+                    token["optional_args"],
+                )
+            elif token["type"] == "newcommand":
+                self.command_processor.process_newcommand(
+                    cmd_name,
+                    token["content"],
+                    token["num_args"],
+                    token["defaults"],
+                    token["usage_pattern"],
+                )
+            elif token["type"] == "def":
+                self.command_processor.process_newdef(
+                    cmd_name,
+                    token["content"],
+                    token["num_args"],
+                    token["usage_pattern"],
+                    token["is_edef"],
+                )
+            elif token["type"] == "newif":
+                self.command_processor.process_newif(cmd_name)
+                self.if_else_block_handler.process_newif(cmd_name)
+            elif token["type"] == "newcounter":
+                self.command_processor.process_newcounter(cmd_name)
+            elif token["type"] == "newlength":
+                self.command_processor.process_newlength(cmd_name)
+            elif token["type"] == "newother":
+                self.command_processor.process_newX(cmd_name)
+            elif token["type"] == "newtheorem":
+                self.env_handler.process_newtheorem(cmd_name, token["title"])
+
     def _check_for_new_definitions(self, content: str) -> None:
         """Check for new definitions in the content and process them"""
         if self.new_definition_handler.can_handle(content):
             token, end_pos = self.new_definition_handler.handle(content)
-            if token and "name" in token:
-                cmd_name = token["name"]
-                if token["type"] == "newenvironment":
-                    self.env_handler.process_newenvironment(
-                        cmd_name,
-                        token["begin_def"],
-                        token["end_def"],
-                        token["num_args"],
-                        token["optional_args"],
-                    )
-                elif token["type"] == "newcommand":
-                    self.command_processor.process_newcommand(
-                        cmd_name,
-                        token["content"],
-                        token["num_args"],
-                        token["defaults"],
-                        token["usage_pattern"],
-                    )
-                elif token["type"] == "def":
-                    self.command_processor.process_newdef(
-                        cmd_name,
-                        token["content"],
-                        token["num_args"],
-                        token["usage_pattern"],
-                        token["is_edef"],
-                    )
-                elif token["type"] == "newif":
-                    self.command_processor.process_newif(cmd_name)
-                    self.if_else_block_handler.process_newif(cmd_name)
-                elif token["type"] == "newcounter":
-                    self.command_processor.process_newcounter(cmd_name)
-                elif token["type"] == "newlength":
-                    self.command_processor.process_newlength(cmd_name)
-                elif token["type"] == "newother":
-                    self.command_processor.process_newX(cmd_name)
-                elif token["type"] == "newtheorem":
-                    self.env_handler.process_newtheorem(cmd_name, token["title"])
-
+            if token:
+                self._process_new_definition_token(token)
             return end_pos
         return 0
 
@@ -410,6 +439,11 @@ class LatexParser:
                     break
                 continue
 
+            end_pos = self._check_usepackage(content[current_pos:])
+            if end_pos > 0:
+                current_pos += end_pos
+                continue
+
             # check for user defined commands (important to check before new definitions in case of floating \csname)
             if self.command_processor.can_handle(content[current_pos:]):
                 text, end_pos = self.command_processor.handle(content[current_pos:])
@@ -546,23 +580,16 @@ if __name__ == "__main__":
 
     parser = LatexParser(logger=logger)
 
-    # file = "papers/arXiv-1512.03385v1/residual_v1_arxiv_release.tex"
-    # tokens = parser.parse_file(file)
+    file = "papers/arXiv-1512.03385v1/residual_v1_arxiv_release.tex"
+    tokens = parser.parse_file(file)
+    # print(tokens)
 
-    text = r"""
+#     text = r"""
+# \begin{table}[t]
+# %\end{table}
+# %\begin{table}[t]
+# \end{table}
 
-
-\begin{table}[t]
-
-\small
-\begin{center}
-\begin{tabular}{l|c c}
-\hline
-\large 1
-\end{tabular}
-\end{center}
-
-\end{table}
-    """
-    tokens = parser.parse(text)
-    print(tokens)
+# """
+# tokens = parser.parse(text)
+# print(tokens)

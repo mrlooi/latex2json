@@ -50,13 +50,6 @@ RAW_PATTERNS = OrderedDict(
         ("today", r"\\today\b"),
         # top level commands
         ("documentclass", r"\\documentclass(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}"),
-        (
-            "usepackage",
-            re.compile(
-                r"\\(usepackage|RequirePackage)(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}",
-                re.DOTALL,
-            ),
-        ),
         # Formatting commands
         ("setup", r"\\(?:hypersetup|captionsetup\[([^\]]*)\])\s*{"),
         ("make", r"\\(?:maketitle|makeatletter|makeatother)\b"),

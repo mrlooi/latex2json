@@ -23,16 +23,13 @@ from src.tex_utils import (
     read_tex_file_content,
     strip_latex_comments,
 )
+from src.patterns import USEPACKAGE_PATTERN
 
 # Add these compiled patterns at module level
 # match $ or % or { or } only if not preceded by \
 # Update DELIM_PATTERN to also match double backslashes and opening braces {
 DELIM_PATTERN = re.compile(r"(?<!\\)(?:\\\\|%|(?:^|[ \t])\{|\\\^|\\(?![$%&_#{}^~\\]))")
 
-USEPACKAGE_PATTERN = re.compile(
-    r"\\(?:usepackage|RequirePackage)(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}",
-    re.DOTALL,
-)
 INCLUDE_PATTERN = re.compile(r"\\input\s*\{([^}]+)\}", re.DOTALL)
 
 
@@ -66,10 +63,11 @@ class LatexStyParser:
             package_name = match.group(1)
             if not package_name.endswith(".sty"):
                 package_name += ".sty"
+            package_path = package_name
             if self.current_file_dir:
                 package_path = os.path.join(self.current_file_dir, package_name)
-                if os.path.exists(package_path):
-                    tokens = self.parse_file(package_path)
+            if os.path.exists(package_path):
+                tokens = self.parse_file(package_path)
             return tokens, match.end()
         return tokens, 0
 
