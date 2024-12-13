@@ -129,6 +129,13 @@ RAW_PATTERNS = OrderedDict(
         ),
         # number
         ("numbers", r"\\linenumbers\b|\\(?:numberwithin)\s*\{[^}]*\}\s*\{[^}]*\}"),
+        (
+            "numbering_style",
+            re.compile(
+                r"\\(?:arabic|roman|alph|fnsymbol)(?:\s*\{[^}]*\}|\b)",
+                re.DOTALL | re.IGNORECASE,
+            ),
+        ),
         # table
         (
             "newcolumntype",
@@ -168,8 +175,8 @@ RAW_PATTERNS = OrderedDict(
         ("phantom", r"\\(?:hphantom|vphantom)\s*{"),
         (
             "other",
-            r"\\(?:ignorespaces|relax|\@tempboxa|box|global|fnsymbol|@plus|@minus|null)\b",
-        ),  # ignore fnsymbol
+            r"\\(?:ignorespaces|relax|\@tempboxa|box|global|@plus|@minus|null)\b",
+        ),
         ("pz@", r"(?:%s)?\\[pz]@(?![a-zA-Z@])" % number_regex),
         ("slash", r"\\/"),  # \/ (in latex, this is like an empty space)
         ("advance", r"\\advance\\[a-zA-Z@*\d]+(?:\s+by)?(?:\s*-)?\\[a-zA-Z@*\d]+"),

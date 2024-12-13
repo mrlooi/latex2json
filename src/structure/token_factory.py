@@ -6,65 +6,7 @@ from src.structure.tokens.table_figure_list import (
 from src.structure.tokens.types import TokenType
 from src.structure.tokens.base import BaseToken
 from src.structure.tokens.registry import TOKEN_MAP
-from src.structure.tokens.tabular import (
-    TabularToken,
-    TabularContentType,
-    TabularRowType,
-    TableCell,
-)
-
-
-class TokenProcessor:
-    """Base class for token processing strategies"""
-
-    def process(self, data: Dict[str, Any], factory: "TokenFactory") -> BaseToken:
-        """Default processing implementation"""
-        return data
-
-
-class TabularProcessor(TokenProcessor):
-    def process(self, data: Dict[str, Any], factory: "TokenFactory") -> BaseToken:
-        """Process tabular data recursively"""
-        content: List[List[Union[str, dict, List]]] = data["content"]
-        all_cells: TabularContentType = []
-        for row in content:
-            row_cells: TabularRowType = []
-            for cell in row:
-                if cell is None or isinstance(cell, str):
-                    row_cells.append(cell)
-                elif isinstance(cell, dict):
-                    if "type" in cell:
-                        row_cells.append(factory.create(cell))
-                    elif "rowspan" in cell or "colspan" in cell:
-                        content = cell["content"]
-                        if isinstance(content, list):
-                            content = self._process_nested_list(content, factory)
-                        c = TableCell(
-                            rowspan=cell.get("rowspan", 1),
-                            colspan=cell.get("colspan", 1),
-                            content=content,
-                        )
-                        row_cells.append(c)
-                elif isinstance(cell, list):
-                    # Recursively process nested lists
-                    row_cells.append(self._process_nested_list(cell, factory))
-                else:
-                    row_cells.append(cell)
-            all_cells.append(row_cells)
-        return TabularToken(content=all_cells)
-
-    def _process_nested_list(self, nested_list: List, factory: "TokenFactory") -> List:
-        """Recursively process a nested list"""
-        processed_list = []
-        for item in nested_list:
-            if isinstance(item, dict) and "type" in item:
-                processed_list.append(factory.create(item))
-            elif isinstance(item, list):
-                # Recursively process further nested lists
-                processed_list.append(self._process_nested_list(item, factory))
-            else:
-                processed_list.append(item)
-        return processed_list
+from src.structure.tokens.tabular import TabularToken
 
 
 class TokenFactory:
@@ -73,15 +15,12 @@ class TokenFactory:
     def __init__(self, logger: logging.Logger = None):
         self.logger = logger or logging.getLogger(__name__)
         self._token_map = TOKEN_MAP.copy()  # Instance-specific token map
-        self._processors: Dict[TokenType, TokenProcessor] = {}
         self._custom_type_handlers: Dict[
             str, Callable[[Dict[str, Any]], BaseToken | None]
         ] = {}
         self._init_handlers()
 
     def _init_handlers(self):
-        self.register_processor(TokenType.TABULAR, TabularProcessor())
-
         def handle_includegraphics(data: Dict[str, Any]) -> BaseToken:
             return GraphicsToken(content=data["content"])
 
@@ -92,54 +31,66 @@ class TokenFactory:
         self.register_custom_type("date", handle_date)
 
     def create(self, data: Union[str, Dict[str, Any]]) -> BaseToken | None:
+        """Create a token instance based on the provided data"""
+        # Handle simple string tokens
         if isinstance(data, str):
             return data
 
-        """Create a token instance based on the provided data"""
+        # Validate input
         if isinstance(data, list):
             raise ValueError("List of tokens is not supported", data)
-        original_type = data.get("type")
 
-        # Handle custom string types first
-        if (
-            isinstance(original_type, str)
-            and original_type in self._custom_type_handlers
-        ):
-            return self._custom_type_handlers[original_type](data)
+        # Get and validate token type
+        token_type = self._get_token_type(data)
+        if not token_type:
+            return None
 
-        # Try to convert to TokenType enum
+        # Process based on token type
         try:
-            if isinstance(original_type, str):
-                converted_type = TokenType(original_type)
-                data = {
-                    **data,
-                    "type": converted_type,
-                }  # Create a new dictionary with the converted type
-        except ValueError:
-            self.logger.warning(
-                f"Unknown token type: {original_type}, falling back to BaseToken"
-            )
-            # Could either raise, or fall back to BaseToken
-            return BaseToken.model_validate(data)
-
-        token_type = data.get("type")
-        # Get processor or use default
-        processor = self._processors.get(token_type, TokenProcessor())
-        data = processor.process(data, self)
-
-        # Recursively process content
-        if "content" in data:
-            data["content"] = self._process_content(data["content"])
-
-        token_class = self._token_map.get(token_type, BaseToken)
-        try:
-            return token_class.model_validate(data)
+            return self._create_token(token_type, data)
         except Exception as e:
-            self.logger.error(
-                f"Failed to create token of type {data['type']}: {str(e)}"
-            )
+            self.logger.error(f"Failed to create token of type {token_type}: {str(e)}")
             self.logger.error(f"Data: {data}")
             raise
+
+    def _get_token_type(self, data: Dict[str, Any]) -> Union[TokenType, str, None]:
+        """Extract and validate the token type"""
+        original_type = data.get("type")
+
+        # Handle custom string types
+        if isinstance(original_type, str):
+            if original_type in self._custom_type_handlers:
+                return original_type
+
+            # Try converting to TokenType enum
+            try:
+                return TokenType(original_type)
+            except ValueError:
+                self.logger.warning(
+                    f"Unknown token type: {original_type}, falling back to BaseToken"
+                )
+                return None
+
+        return original_type
+
+    def _create_token(
+        self, token_type: Union[TokenType, str], data: Dict[str, Any]
+    ) -> BaseToken:
+        """Create the appropriate token based on type"""
+        # Handle custom types
+        if isinstance(token_type, str):
+            return self._custom_type_handlers[token_type](data)
+
+        # Handle special token types
+        if token_type == TokenType.TABULAR:
+            return TabularToken.process(data, self.create)
+
+        # Handle standard tokens
+        if "content" in data:
+            data = {**data, "content": self._process_content(data["content"])}
+
+        token_class = self._token_map.get(token_type, BaseToken)
+        return token_class.model_validate(data)
 
     def _process_content(self, content: Union[Dict, List, str]) -> Any:
         """Helper method to process nested content"""
@@ -155,12 +106,6 @@ class TokenFactory:
                 output.append(item)
             return output
         return content
-
-    def register_processor(
-        self, token_type: TokenType, processor: TokenProcessor
-    ) -> None:
-        """Register a processor for a specific token type"""
-        self._processors[token_type] = processor
 
     def register_token_type(
         self, token_type: TokenType, token_class: Type[BaseToken]
