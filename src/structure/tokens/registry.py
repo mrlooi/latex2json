@@ -25,11 +25,11 @@ from src.structure.tokens.table_figure_list import (
     ListToken,
     ItemToken,
     TableToken,
-    TabularToken,
     FigureToken,
     GraphicsToken,
     CaptionToken,
 )
+from src.structure.tokens.tabular import TabularToken
 from src.structure.tokens.ref_and_cite import (
     CitationToken,
     ReferenceToken,

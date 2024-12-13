@@ -2,14 +2,16 @@ import logging
 from typing import Dict, List, Type, Any, Callable, Union
 from src.structure.tokens.table_figure_list import (
     GraphicsToken,
-    TableCell,
-    TabularContentType,
-    TabularRowType,
-    TabularToken,
 )
 from src.structure.tokens.types import TokenType
-from src.structure.tokens.base import BaseToken, TextToken
+from src.structure.tokens.base import BaseToken
 from src.structure.tokens.registry import TOKEN_MAP
+from src.structure.tokens.tabular import (
+    TabularToken,
+    TabularContentType,
+    TabularRowType,
+    TableCell,
+)
 
 
 class TokenProcessor:
@@ -33,11 +35,13 @@ class TabularProcessor(TokenProcessor):
                 elif isinstance(cell, dict):
                     if "type" in cell:
                         row_cells.append(factory.create(cell))
-                    elif "rowspan" in cell:
-                        content = factory.create(cell["content"])
+                    elif "rowspan" in cell or "colspan" in cell:
+                        content = cell["content"]
+                        if isinstance(content, list):
+                            content = self._process_nested_list(content, factory)
                         c = TableCell(
-                            rowspan=cell["rowspan"],
-                            colspan=cell["colspan"],
+                            rowspan=cell.get("rowspan", 1),
+                            colspan=cell.get("colspan", 1),
                             content=content,
                         )
                         row_cells.append(c)
@@ -92,6 +96,8 @@ class TokenFactory:
             return data
 
         """Create a token instance based on the provided data"""
+        if isinstance(data, list):
+            raise ValueError("List of tokens is not supported", data)
         original_type = data.get("type")
 
         # Handle custom string types first
