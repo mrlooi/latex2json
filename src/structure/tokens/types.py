@@ -58,5 +58,13 @@ class TokenType(Enum):
     # Other
     GROUP = "group"
 
+    def __eq__(self, other) -> bool:
+        if isinstance(other, str):
+            return self.value == other
+        return super().__eq__(other)
+
+    def __hash__(self) -> int:
+        return hash(self.value)
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self.value.upper()}"
