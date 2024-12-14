@@ -1,4 +1,5 @@
 import re
+from typing import Dict
 
 from src.latex_maps._latex2unicode_map import latex2unicode
 
@@ -6,14 +7,20 @@ from src.latex_maps._latex2unicode_map import latex2unicode
 class LatexUnicodeConverter:
     def __init__(self):
         # create copy of latex2unicode
-        self.latex2unicode = latex2unicode.copy()
+        self.latex2str = self._init_latex2unicode()
         self.patterns = self._create_categorized_regex_patterns()
+
+    def _init_latex2unicode(self):
+        _latex2str: Dict[str, str] = {}
+        for key, value in latex2unicode.items():
+            _latex2str[key] = value if isinstance(value, str) else chr(value)
+        return _latex2str
 
     def _create_categorized_regex_patterns(self):
         patterns = {"ensuremath": [], "text": [], "math": [], "font": [], "other": []}
 
         # Categorize each command
-        for cmd in self.latex2unicode.keys():
+        for cmd in self.latex2str.keys():
             if not cmd.startswith("\\") and not cmd.startswith("{"):
                 continue
 
@@ -45,7 +52,7 @@ class LatexUnicodeConverter:
 
         # Process in specific order: longer commands first
         for pattern in self.patterns.values():
-            result = pattern.sub(lambda m: chr(self.latex2unicode[m.group(0)]), result)
+            result = pattern.sub(lambda m: self.latex2str[m.group(0)], result)
 
         return result
 

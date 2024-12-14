@@ -1,7 +1,7 @@
 from collections import OrderedDict
 import re
 from typing import List, Dict, Tuple, Union
-import sys, os
+import sys, os, traceback
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -564,8 +564,10 @@ class LatexParser:
         except Exception as e:
             self.logger.error(f"Failed to parse file: {file_path}, error: {str(e)}")
             self.logger.error(
-                "Stack trace:", exc_info=True
-            )  # This will log the full stack trace
+                "Stack trace:\n"
+                + "".join(traceback.format_tb(e.__traceback__, limit=10))
+            )
+            self.logger.warning(f"Continuing from failed parse at {file_path}")
 
             return []
 

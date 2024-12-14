@@ -47,7 +47,6 @@ class TextToken(BaseToken):
 
 class QuoteToken(BaseToken):
     type: TokenType = TokenType.QUOTE
-    content: str
 
 
 class GroupToken(BaseToken):

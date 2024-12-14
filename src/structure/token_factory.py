@@ -1,5 +1,6 @@
 import logging
 from typing import Dict, List, Type, Any, Callable, Union
+from src.structure.tokens.bibliography import BibliographyToken
 from src.structure.tokens.table_figure_list import (
     GraphicsToken,
 )
@@ -84,6 +85,8 @@ class TokenFactory:
         # Handle special token types
         if token_type == TokenType.TABULAR:
             return TabularToken.process(data, self.create)
+        elif token_type == TokenType.BIBLIOGRAPHY:
+            return BibliographyToken.process(data, self.create)
 
         # Handle standard tokens
         if "content" in data:

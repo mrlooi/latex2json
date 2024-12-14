@@ -18,7 +18,6 @@ CellType = Union[TableCell, ContentElement, List[ContentElement], None]
 TabularRowType = List[CellType]
 TabularContentType = List[TabularRowType]
 
-T = TypeVar("T", bound=BaseToken)
 TokenCreator = Callable[[Dict[str, Any]], BaseToken]
 
 

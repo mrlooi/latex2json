@@ -57,7 +57,7 @@ RAW_PATTERNS = OrderedDict(
         ("today", r"\\today\b"),
         # top level commands
         ("documentclass", r"\\documentclass(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}"),
-        ("subjclass", r"\\subjclass\s*\[[^\]]*\]\s*\{[^}]+\}"),
+        ("subjclass", r"\\subjclass\s*(?:\[[^\]]*\])?\s*\{[^}]+\}"),
         # Formatting commands
         ("setup", r"\\(?:hypersetup|captionsetup\[([^\]]*)\])\s*{"),
         ("make", r"\\(?:maketitle|makeatletter|makeatother)\b"),
@@ -83,7 +83,7 @@ RAW_PATTERNS = OrderedDict(
         ),
         (
             "style",
-            r"\\(?:pagestyle|urlstyle|thispagestyle|theoremstyle|bibliographystyle)\s*\{[^}]*\}",
+            r"\\(?:pagestyle|urlstyle|thispagestyle|theoremstyle|bibliographystyle|documentstyle)\s*\{[^}]*\}",
         ),
         ("newstyle", r"\\(?:newpagestyle|renewpagestyle)\s*\{[^}]*\}\s*{"),
         # ("font", r"\\(?:mdseries|bfseries|itshape|slshape|normalfont|ttfamily)\b"),
