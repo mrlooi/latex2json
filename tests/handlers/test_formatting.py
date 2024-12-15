@@ -258,6 +258,7 @@ def test_misc_formatting_commands(handler):
     \DeclareFontFamily{OT1}{rsfs}{}
     \DeclareFontShape{OT1}{rsfs}{n}{it}{<-> rsfs10}{}
     \DeclareMathAlphabet{\mathscr}{OT1}{rsfs}{n}{it}
+    \SetMathAlphabet{\mathscr}{OT1}{rsfs}{n}{it}{xxx}
 
     \penalty1000
     \subjclass{Primary 01A80}

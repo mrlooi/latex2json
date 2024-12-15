@@ -36,6 +36,7 @@ declare_pattern_N_blocks = {
     "DeclareFontShape": 6,
     "DeclareMathAlphabet": 5,
     "DeclareOption": 2,
+    "SetMathAlphabet": 6,
 }
 
 RAW_PATTERNS = OrderedDict(
@@ -67,7 +68,7 @@ RAW_PATTERNS = OrderedDict(
         ),
         (
             "pagebreak",
-            r"\\(?:pagebreak|filbreak|newpage|break)\b|\\linebreak(?:\[\d+\])?",
+            r"\\(?:pagebreak|filbreak|newpage|allowbreak|break)\b|\\linebreak(?:\[\d+\])?",
         ),
         (
             "vskip",
@@ -123,7 +124,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "declare",
             re.compile(
-                r"\\(DeclareFontShape|DeclareFontFamily|DeclareMathAlphabet|DeclareOption)\*?\s*\{",
+                r"\\(DeclareFontShape|DeclareFontFamily|DeclareMathAlphabet|DeclareOption|SetMathAlphabet)\*?\s*\{",
                 re.DOTALL,
             ),
         ),

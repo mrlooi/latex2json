@@ -45,6 +45,7 @@ LEGACY_FONT_MAPPING: Dict[str, str] = {
     # math stuff (often used directly before math mode)
     "unboldmath": "textrm",
     "boldmath": "textbf",
+    "bm": "textbf",
     "mathversion{bold}": "textbf",
     "mathversion{normal}": "textrm",
 }
