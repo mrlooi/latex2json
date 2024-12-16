@@ -249,8 +249,10 @@ class LatexParser:
                 self.env_handler.process_floatname(token["name"], token["title"])
                 return
 
-            cmd_name = token["name"]
             # do not process content commands e.g. section etc
+            cmd_name = token.get("name", "")
+            if not cmd_name:
+                return
             if cmd_name in WHITELISTED_COMMANDS:
                 return
             if token["type"] == "newenvironment":
@@ -263,7 +265,7 @@ class LatexParser:
                 )
             elif token["type"] == "newcommand":
                 # check if there is potential recursion.
-                if re.search(r"\\" + cmd_name + r"(?![a-zA-Z])", token["content"]):
+                if re.search(r"\\" + cmd_name + r"(?![a-zA-Z@])", token["content"]):
                     self.logger.warning(
                         f"Potential recursion detected for newcommand: \\{cmd_name}, skipping..."
                     )

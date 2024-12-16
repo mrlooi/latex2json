@@ -32,6 +32,13 @@ FRONTEND_STYLE_MAPPING: Dict[str, str] = {
     "textlarge": "large",
     "texthuge": "xx-large",
     "text": None,
+    "textcolor": None,
+    "textsuperscript": "superscript",
+    "textsubscript": "subscript",
+    "underline": "underline",
+    "textstrikeout": "line-through",  # requires ulem package in LaTeX
+    "sout": "line-through",  # another strikethrough command
+    "textoverline": "overline",
 }
 
 TEXT_COMMANDS = "|".join(FRONTEND_STYLE_MAPPING.keys())

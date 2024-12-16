@@ -158,9 +158,10 @@ class CommandProcessor:
 
         return text, match_count
 
-    def _expand(self, text: str) -> tuple[str, int]:
+    def _expand(self, text: str, max_depth: int = 1000) -> tuple[str, int]:
         """Recursively expand defined commands in the text until no further expansions are possible."""
         match_count = 0
+        depth = 0
 
         commands = self.commands
         command2pattern = {name: cmd["pattern"] for name, cmd in commands.items()}
@@ -175,8 +176,14 @@ class CommandProcessor:
 
         prev_text = None
         while prev_text != text:
+            depth += 1
+            if depth > max_depth:
+                raise RecursionError(
+                    f"Maximum recursion depth ({max_depth}) exceeded. Possible infinite loop in LaTeX commands."
+                )
             prev_text = text
             text = substitute_patterns(text, command2pattern, sub_fn)
+
         return text, match_count
 
     def can_handle(self, text: str) -> bool:
@@ -202,6 +209,9 @@ class CommandProcessor:
         for cmd in self.commands.values():
             match = cmd["pattern"].match(text)
             if match:
-                return cmd["handler"](match, text)
+                out, end_pos = cmd["handler"](match, text)
+                if match.group(0) == out:  # prevent infinite loop
+                    return "", match.end()
+                return out, end_pos
 
         return self._handle_csname(text)

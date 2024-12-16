@@ -25,7 +25,7 @@ from src.tex_utils import (
     read_tex_file_content,
     strip_latex_comments,
 )
-from src.patterns import USEPACKAGE_PATTERN
+from src.patterns import USEPACKAGE_PATTERN, WHITELISTED_COMMANDS
 
 # Add these compiled patterns at module level
 # match $ or % or { or } only if not preceded by \
@@ -61,14 +61,19 @@ class LatexStyParser:
         if self.new_definition_handler.can_handle(content):
             token, end_pos = self.new_definition_handler.handle(content)
             if token:
-                cmd_name = token["name"]
+                cmd_name = token.get("name", "")
+                if not cmd_name:
+                    return None, end_pos
+                if cmd_name in WHITELISTED_COMMANDS:
+                    return None, end_pos
+
                 if token["type"] == "newif":
                     self.if_else_block_handler.process_newif(cmd_name)
                     self.command_processor.process_newif(cmd_name)
 
                 elif token["type"] == "newcommand":
                     # check if there is potential recursion.
-                    if re.search(r"\\" + cmd_name + r"(?![a-zA-Z])", token["content"]):
+                    if re.search(r"\\" + cmd_name + r"(?![a-zA-Z@])", token["content"]):
                         self.logger.warning(
                             f"Potential recursion detected for newcommand: \\{cmd_name}, skipping..."
                         )
@@ -172,6 +177,7 @@ class LatexStyParser:
                 continue
 
             # check for user defined commands (important to check before new definitions in case of floating \csname)
+            print(content[current_pos : current_pos + 10])
             if self.command_processor.can_handle(content[current_pos:]):
                 text, end_pos = self.command_processor.handle(content[current_pos:])
                 if end_pos > 0:
@@ -191,7 +197,8 @@ class LatexStyParser:
             token, end_pos = self._check_for_new_definitions(content[current_pos:])
             if end_pos > 0:
                 current_pos += end_pos
-                tokens.append(token)
+                if token:
+                    tokens.append(token)
                 continue
 
             # check for if else blocks
@@ -227,6 +234,7 @@ class LatexStyParser:
             current_file_path = self.current_file_path
 
             content = read_tex_file_content(file_path, extension=extension)
+            self.logger.info(f"Finished parsing file: {file_path}")
             self.parsed_files.add(file_path)
 
             out = self.parse(content, file_path=file_path)
@@ -256,5 +264,5 @@ if __name__ == "__main__":
 
     parser = LatexStyParser(logger=logger)
 
-    file = "papers/new/arXiv-2010.11929v2/natbib.sty"
+    file = "papers/new/arXiv-2301.13741v3/icml2023.sty"
     tokens = parser.parse_file(file)

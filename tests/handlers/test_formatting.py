@@ -215,6 +215,7 @@ def test_misc_formatting_commands(handler):
     \rightmargin
     \leftmargin
     \captionsetup[figure]{labelsep=quad}
+    \captionsetup{font={small}}
     \thispagestyle{empty}
 
     \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}

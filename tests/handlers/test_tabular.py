@@ -208,3 +208,17 @@ def test_tabular_without_begin(handler):
     assert token is not None
     assert token["type"] == "tabular"
     assert text[end_pos:].strip() == "END OF TABLE"
+
+
+def test_makecell(handler):
+    text = r"""
+    \begin{tabular}{cc}
+        \makecell{a & b \\ c & d} & 22
+    \end{tabular} 
+    POST
+    """.strip()
+    token, end_pos = handler.handle(text)
+    assert token is not None
+    assert token["type"] == "tabular"
+    assert token["content"] == [[r"a & b \\ c & d", "22"]]
+    assert text[end_pos:].strip() == "POST"

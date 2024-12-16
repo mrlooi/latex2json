@@ -56,6 +56,9 @@ PATTERNS = {
     "newlength": re.compile(
         r"\\(?:re)?newlength\s*" + BRACE_CONTENT_PATTERN, re.DOTALL
     ),
+    "newboolean": re.compile(
+        r"\\(?:re)?newboolean\s*" + BRACE_CONTENT_PATTERN, re.DOTALL
+    ),
     "setlength": re.compile(
         r"\\(?:setlength|addtolength)\s*%s\s*%s"
         % (command_with_opt_brace_pattern, command_with_opt_brace_pattern),

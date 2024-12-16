@@ -38,6 +38,14 @@ def test_handle_outputs(handler):
     }
     assert text[end_pos:] == "BC"
 
+    text = r"\textsuperscript{123}"
+    out, end_pos = handler.handle(text)
+    assert out == {
+        "type": "text",
+        "styles": [FRONTEND_STYLE_MAPPING["textsuperscript"]],
+        "content": "123",
+    }
+
     #     r"\textbf123 {sds}",
     # r"\textbf {sds",
     # r"\textbf",

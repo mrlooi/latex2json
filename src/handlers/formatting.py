@@ -60,11 +60,11 @@ RAW_PATTERNS = OrderedDict(
         ("documentclass", r"\\documentclass(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}"),
         ("subjclass", r"\\subjclass\s*(?:\[[^\]]*\])?\s*\{[^}]+\}"),
         # Formatting commands
-        ("setup", r"\\(?:hypersetup|captionsetup\[([^\]]*)\])\s*{"),
+        ("setup", r"\\(?:hypersetup|captionsetup)(?:\[([^\]]*)\])?\s*{"),
         ("make", r"\\(?:maketitle|makeatletter|makeatother)\b"),
         (
             "page",
-            r"\\enlargethispage\s*\{[^}]*\}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|break|scriptsize|sloppy|flushbottom)\b",
+            r"\\enlargethispage\s*\{[^}]*\}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|break|scriptsize|sloppy|flushbottom|flushleft|flushright|flushtop)\b",
         ),
         (
             "pagebreak",
@@ -129,7 +129,13 @@ RAW_PATTERNS = OrderedDict(
             ),
         ),
         # number
-        ("numbers", r"\\linenumbers\b|\\(?:numberwithin)\s*\{[^}]*\}\s*\{[^}]*\}"),
+        (
+            "numbers",
+            re.compile(
+                r"\\linenumbers\b|linesnumbered\b|\\(?:numberwithin)\s*\{[^}]*\}\s*\{[^}]*\}",
+                re.IGNORECASE,
+            ),
+        ),
         (
             "numbering_style",
             re.compile(

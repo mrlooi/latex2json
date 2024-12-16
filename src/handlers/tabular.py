@@ -29,40 +29,85 @@ MULTIROW_PATTERN = re.compile(r"\\multirow{(\d+)}{[^}]*}{(.*)}", re.DOTALL)
 CELL_SPLIT_PATTERN = re.compile(r"(?<!\\)&")
 
 
-def split_rows(latex_table: str) -> List[str]:
+MAKECELL_PATTERN = re.compile(r"\\makecell\s*{", re.DOTALL)
+
+
+def split_latex_content(
+    content: str, delimiter: str, is_row_split: bool = False
+) -> List[str]:
     """
-    Split table content into rows while respecting nested structures.
-    Doesn't split on \\ that appears inside {...} blocks.
+    Generic function to split LaTeX content while respecting nested structures.
+
+    Args:
+        content: The LaTeX content to split
+        delimiter: The delimiter to split on ('\\\\' for rows, '&' for cells)
+        is_row_split: Whether this is a row split (affects newline handling)
+
+    Returns:
+        List of split content, with separators and empty lines filtered out for rows,
+        but preserving empty cells for cell splitting
     """
-    rows = []
-    current_row = []
+    # For cell splitting, handle newlines first
+    if not is_row_split:
+        lines = [line.strip() for line in content.split("\n")]
+        lines = [line for line in lines if line]
+        content = " ".join(lines)
+
+    parts = []
+    current_part = []
     nesting_level = 0
     i = 0
 
-    while i < len(latex_table):
-        if latex_table[i] == "{":
+    while i < len(content):
+        if content[i] == "{":
             nesting_level += 1
-            current_row.append(latex_table[i])
-        elif latex_table[i] == "}":
+            current_part.append(content[i])
+        elif content[i] == "}":
             nesting_level -= 1
-            current_row.append(latex_table[i])
-        elif latex_table[i : i + 2] == r"\\" and nesting_level == 0:
-            # Only split on \\ when we're not inside brackets
-            current_row = "".join(current_row).strip()
-            if current_row:
-                rows.append(current_row)
-            current_row = []
-            i += 1  # Skip the second backslash
+            current_part.append(content[i])
+        elif content[i : i + len(delimiter)] == delimiter and nesting_level == 0:
+            # Only split when we're not inside brackets
+            current_part = "".join(current_part).strip()
+            if is_row_split:
+                # For rows, only add non-empty parts
+                if current_part:
+                    parts.append(current_part)
+            else:
+                # For cells, preserve empty cells
+                parts.append(current_part)
+            current_part = []
+            i += len(delimiter) - 1  # Skip the rest of delimiter
         else:
-            current_row.append(latex_table[i])
+            current_part.append(content[i])
         i += 1
 
-    # Add the last row if it exists
-    current_row = "".join(current_row).strip()
-    if current_row:
-        rows.append(current_row)
+    # Add the last part if it exists (for rows) or always (for cells)
+    current_part = "".join(current_part).strip()
+    if is_row_split:
+        if current_part:
+            parts.append(current_part)
+    else:
+        parts.append(current_part)
 
-    return rows
+    return parts
+
+
+def split_rows(latex_table: str) -> List[str]:
+    """Split table content into rows while respecting nested structures."""
+    return split_latex_content(latex_table, r"\\", is_row_split=True)
+
+
+def split_cells(row: str) -> List[str]:
+    """Split row into cells while respecting nested structures."""
+    cells = split_latex_content(row, "&", is_row_split=False)
+    out_cells = []
+    for cell in cells:
+        if cell:
+            match = MAKECELL_PATTERN.search(cell)
+            if match:
+                cell, end_pos = extract_nested_content(cell[match.end() - 1 :])
+        out_cells.append(cell)
+    return out_cells
 
 
 def parse_tabular(latex_table: str, cell_parser_fn=None) -> List[List[Dict]]:
@@ -130,28 +175,6 @@ def parse_tabular(latex_table: str, cell_parser_fn=None) -> List[List[Dict]]:
                 parsed_rows = parsed_rows[:-1]
 
     return parsed_rows
-
-
-def split_cells(row: str) -> List[str]:
-    """
-    Split row into cells by & but handle:
-    - escaped &
-    - newlines
-    - row separators like \\hline
-
-    Returns:
-        List of cell contents, with separators and empty lines filtered out
-    """
-    # Split by newlines first and filter out separators
-    lines = [line.strip() for line in row.split("\n")]
-    lines = [line for line in lines if line]
-
-    # Join valid lines back together
-    row = " ".join(lines)
-    # print(row)
-
-    # Split by unescaped & characters
-    return [cell.strip() for cell in CELL_SPLIT_PATTERN.split(row)]
 
 
 class TabularHandler(BaseEnvironmentHandler):
@@ -351,8 +374,10 @@ if __name__ == "__main__":
     handler = TabularHandler(cell_parser_fn=parse_cell)
 
     text = r"""
-	\begin{tabular}{@{}lllllr@{}}	
-		\multirow{2}{34mm}{Experiment Setup\\ (training set)\at(test set)}
-	\end{tabular}
+    \begin{tabular}{cc}
+        \makecell{a & b \\ c & d} & 22
+    \end{tabular} 
+    POST
     """.strip()
-    token, end_pos = handler.handle(text.strip())
+    token, end_pos = handler.handle(text)
+    print(token)
