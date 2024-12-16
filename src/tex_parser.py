@@ -263,7 +263,7 @@ class LatexParser:
                 )
             elif token["type"] == "newcommand":
                 # check if there is potential recursion.
-                if re.search(r"\\" + cmd_name + r"\b", token["content"]):
+                if re.search(r"\\" + cmd_name + r"(?![a-zA-Z])", token["content"]):
                     self.logger.warning(
                         f"Potential recursion detected for newcommand: \\{cmd_name}, skipping..."
                     )
@@ -518,7 +518,9 @@ class LatexParser:
                     content[current_pos:]
                 )
                 if end_pos > 0:
-                    block = token["if_content"]
+                    block = ""
+                    if token:
+                        block = token.get("if_content", "")
                     content = (
                         content[:current_pos] + block + content[current_pos + end_pos :]
                     )
@@ -601,6 +603,7 @@ class LatexParser:
             current_file_dir = self.current_file_dir
             content = read_tex_file_content(file_path, extension=extension)
             out = self.parse(content, file_path=file_path)
+            self.logger.info(f"Finished parsing file: {file_path}")
             self.current_file_dir = current_file_dir
             return out
         except Exception as e:
@@ -634,16 +637,18 @@ if __name__ == "__main__":
 
     parser = LatexParser(logger=logger)
 
-    # file = "papers/new/arXiv-2010.11929v2/main.tex"
-    file = "papers/tested/arXiv-2301.10303v4.tex"
+    file = "papers/new/arXiv-2010.11929v2/main.tex"
+    # file = "papers/tested/arXiv-2301.10303v4.tex"
     tokens = parser.parse_file(file)
 
 #     text = r"""
-# \def\eps{{\epsilon}}
-# \eps
-# \def\1{\bm{1}}
-# \1
-
+#         \newcommand{\@notice}{%
+#         % give a bit of extra room back to authors on first page
+#         \enlargethispage{2\baselineskip}%
+#         \@float{noticebox}[b]%
+#             \footnotesize\@noticestring%
+#         \end@float%
+#         }
 # """
 #     tokens = parser.parse(text)
 #     print(tokens)

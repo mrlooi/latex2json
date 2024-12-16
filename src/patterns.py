@@ -56,6 +56,8 @@ WHITELISTED_COMMANDS = [
     "table",
     "figure",
     "cite",
+    "citep",
+    "citet",
     "caption",
     "captionof",
     "bibitem",

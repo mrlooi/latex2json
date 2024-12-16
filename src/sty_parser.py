@@ -3,6 +3,8 @@ import re
 from typing import List, Dict, Tuple, Union
 import sys, os
 
+from src.commands import CommandProcessor
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
@@ -39,20 +41,53 @@ class LatexStyParser:
         self.logger = logger or logging.getLogger(__name__)
 
         self.current_file_dir = None
+        self.current_file_path = None
+        self.parsed_files = set()
 
         self.if_else_block_handler = IfElseBlockHandler()
         self.new_definition_handler = NewDefinitionHandler()
+        self.command_processor = CommandProcessor()
 
     def clear(self):
         self.current_file_dir = None
+        self.current_file_path = None
+        self.parsed_files.clear()
         self.if_else_block_handler.clear()
         self.new_definition_handler.clear()
+        self.command_processor.clear()
 
     def _check_for_new_definitions(self, content: str):
         """Check for new definitions in the content and process them"""
         if self.new_definition_handler.can_handle(content):
             token, end_pos = self.new_definition_handler.handle(content)
             if token:
+                cmd_name = token["name"]
+                if token["type"] == "newif":
+                    self.if_else_block_handler.process_newif(cmd_name)
+                    self.command_processor.process_newif(cmd_name)
+
+                elif token["type"] == "newcommand":
+                    # check if there is potential recursion.
+                    if re.search(r"\\" + cmd_name + r"(?![a-zA-Z])", token["content"]):
+                        self.logger.warning(
+                            f"Potential recursion detected for newcommand: \\{cmd_name}, skipping..."
+                        )
+                        return None, end_pos
+                    self.command_processor.process_newcommand(
+                        cmd_name,
+                        token["content"],
+                        token["num_args"],
+                        token["defaults"],
+                        token["usage_pattern"],
+                    )
+                elif token["type"] == "def":
+                    self.command_processor.process_newdef(
+                        cmd_name,
+                        token["content"],
+                        token["num_args"],
+                        token["usage_pattern"],
+                        token["is_edef"],
+                    )
                 return token, end_pos
         return None, 0
 
@@ -95,6 +130,7 @@ class LatexStyParser:
         """
         if file_path:
             self.current_file_dir = os.path.dirname(os.path.abspath(file_path))
+            self.current_file_path = file_path
 
         content = strip_latex_comments(content)
 
@@ -135,6 +171,16 @@ class LatexStyParser:
                     break
                 continue
 
+            # check for user defined commands (important to check before new definitions in case of floating \csname)
+            if self.command_processor.can_handle(content[current_pos:]):
+                text, end_pos = self.command_processor.handle(content[current_pos:])
+                if end_pos > 0:
+                    # replace the matched user command with the expanded text
+                    content = (
+                        content[:current_pos] + text + content[current_pos + end_pos :]
+                    )
+                    continue
+
             new_tokens, end_pos = self._check_usepackage(content[current_pos:])
             if end_pos > 0:
                 current_pos += end_pos
@@ -154,7 +200,10 @@ class LatexStyParser:
                     content[current_pos:]
                 )
                 if end_pos > 0:
-                    block = token["if_content"]
+                    block = ""
+                    if token:
+                        if "@" not in token.get("type", ""):
+                            block = token.get("if_content", "")
                     content = (
                         content[:current_pos] + block + content[current_pos + end_pos :]
                     )
@@ -168,18 +217,25 @@ class LatexStyParser:
         self, file_path: str, extension: str = ".sty"
     ) -> List[Dict[str, str]]:
         try:
+            file_path = os.path.abspath(file_path)
+            if file_path in self.parsed_files:
+                self.logger.info(f"File already parsed, skipping: {file_path}")
+                return []
+
             self.logger.info(f"Parsing file: {file_path}, ext: {extension}")
             current_file_dir = self.current_file_dir
+            current_file_path = self.current_file_path
+
             content = read_tex_file_content(file_path, extension=extension)
+            self.parsed_files.add(file_path)
+
             out = self.parse(content, file_path=file_path)
             self.current_file_dir = current_file_dir
+            self.current_file_path = current_file_path
             return out
         except Exception as e:
             self.logger.error(f"Failed to parse file: {file_path}, error: {str(e)}")
-            self.logger.error(
-                "Stack trace:", exc_info=True
-            )  # This will log the full stack trace
-
+            self.logger.error("Stack trace:", exc_info=True)
             return []
 
 
@@ -190,9 +246,7 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         force=True,
         handlers=[
-            logging.FileHandler(
-                "logs/tex_parser.log"
-            ),  # Output to a file named 'tex_parser.log'
+            logging.FileHandler("logs/sty_parser.log"),
             logging.StreamHandler(),  # Optional: also output to console
         ],
     )
@@ -202,5 +256,5 @@ if __name__ == "__main__":
 
     parser = LatexStyParser(logger=logger)
 
-    file = "papers/arXiv-1512.03385v1/cvpr.sty"
+    file = "papers/new/arXiv-2010.11929v2/natbib.sty"
     tokens = parser.parse_file(file)

@@ -71,6 +71,10 @@ IF_PATTERNS_DEFAULT_LIST = OrderedDict(
         "ifdim": re.compile(ifdim_pattern),
         "ifcat": re.compile(ifcat_pattern),
         "ifcase": re.compile(r"\\ifcase" + default_if_pattern),
+        "@ifclassloaded": re.compile(r"\\@ifclassloaded\s*\{"),
+        "@ifpackageloaded": re.compile(r"\\@ifpackageloaded\s*\{"),
+        "@ifundefined": re.compile(r"\\@ifundefined\s*\{"),
+        "@ifstar": re.compile(r"\\@ifstar\s*\{"),
         "if": IF_PATTERN,
     }
 )
@@ -170,7 +174,7 @@ def try_handle_ifthenelse(
         if len(blocks) != 3:
             raise ValueError("Invalid \\ifthenelse structure")
         return {
-            "type": "conditional",
+            "type": "conditional-ifthenelse",
             "condition": blocks[0],
             "if_content": blocks[1],
             "else_content": blocks[2],
@@ -217,6 +221,27 @@ class IfElseBlockHandler(TokenHandler):
     def can_handle(self, content: str) -> bool:
         return any(pattern.match(content) for _, pattern in self.all_ifs)
 
+    def _handle_atif(
+        self, content: str, match: re.Match, name: str
+    ) -> Tuple[Optional[Dict], int]:
+        start_pos = match.end() - 1
+        max_blocks = 3
+        if name == "@ifstar":
+            max_blocks = 2
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "{", "}", max_blocks=max_blocks
+        )
+        if len(blocks) == 0:
+            return None, 0
+        if_content = blocks[1] if len(blocks) > 1 else ""
+        else_content = blocks[2] if len(blocks) > 2 else ""
+        return {
+            "type": "conditional-" + name,
+            "condition": blocks[0],
+            "if_content": if_content,
+            "else_content": else_content,
+        }, start_pos + end_pos
+
     def handle(
         self, content: str, prev_token: Optional[Dict] = None
     ) -> Tuple[Optional[Dict], int]:
@@ -226,6 +251,13 @@ class IfElseBlockHandler(TokenHandler):
                 if name == "ifthenelse":
                     token, end_pos = try_handle_ifthenelse(content, match)
                     return token, end_pos
+                elif name in [
+                    "@ifclassloaded",
+                    "@ifpackageloaded",
+                    "@ifundefined",
+                    "@ifstar",
+                ]:
+                    return self._handle_atif(content, match, name)
                 # elif name == "equal":
                 #     start_pos = match.end() - 1
                 #     blocks, end_pos = extract_nested_content_sequence_blocks(
@@ -270,7 +302,7 @@ class IfElseBlockHandler(TokenHandler):
                         print(ValueError(f"Unclosed conditional block: {e}"))
                         return None, 0
                     return {
-                        "type": "conditional",
+                        "type": "conditional-" + name,
                         "condition": condition,
                         "if_content": if_content,
                         "else_content": else_content,

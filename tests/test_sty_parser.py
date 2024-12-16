@@ -14,6 +14,8 @@ def test_sty_parser():
     assert tokens[0]["type"] == "newcommand"
     assert tokens[0]["name"] == "foo"
 
+    parser.clear()
+
     # regular parse way
     with open(os.path.join(dir_path, "samples/package1.sty"), "r") as f:
         content = f.read()
@@ -23,22 +25,30 @@ def test_sty_parser():
     assert tokens[0]["type"] == "newcommand"
     assert tokens[0]["name"] == "foo"
 
+    parser.clear()
+
     # package2
+    def check_tokens(tokens):
+        assert len(tokens) == 2
+        assert tokens[0]["type"] == "newcommand"
+        assert tokens[0]["name"] == "bar"
+
+        assert tokens[1]["type"] == "newcommand"
+        assert tokens[1]["name"] == "foo"
+
     tokens = parser.parse_file(os.path.join(dir_path, "samples/package2.sty"))
+    check_tokens(tokens)
 
-    assert len(tokens) == 2
-    assert tokens[0]["type"] == "newcommand"
-    assert tokens[0]["name"] == "bar"
-
-    assert tokens[1]["type"] == "newcommand"
-    assert tokens[1]["name"] == "foo"
+    parser.clear()
 
     # abs paths
     text = r"""
     \usepackage{%s, %s}
 """ % (
-        os.path.join(dir_path, "samples/package1.sty"),
         os.path.join(dir_path, "samples/package2.sty"),
+        os.path.join(dir_path, "samples/package1.sty"),
     )
     tokens = parser.parse(text)
-    assert len(tokens) == 3
+    check_tokens(tokens)
+
+    parser.clear()
