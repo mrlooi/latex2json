@@ -1,22 +1,60 @@
 from dataclasses import dataclass
-from typing import Dict, List
+from logging import Logger
+import logging
+from typing import Dict, List, Optional
 import re
 from src.tex_utils import extract_nested_content
+import os
 
 
 @dataclass
 class BibEntry:
-    entry_type: str
+    """Unified bibliography entry model for both BibTeX and bibitem"""
+
     citation_key: str
-    fields: Dict[str, str]
+    content: str
+    title: Optional[str]
+    # BibTeX related below
+    entry_type: Optional[
+        str
+    ]  # 'article', 'book', etc. for BibTeX; 'bibitem' for LaTeX bibitem
+    fields: Optional[Dict[str, str]]
+
+    @classmethod
+    def from_bibitem(cls, token: Dict) -> "BibEntry":
+        """Convert bibitem token to bibliography entry"""
+        return cls(
+            citation_key=token["cite_key"],
+            title=token.get("title"),
+            content=token["content"],
+            fields={},
+        )
+
+    @classmethod
+    def from_bibtex(
+        cls, entry_type: str, citation_key: str, fields: Dict[str, str]
+    ) -> "BibEntry":
+        """Convert BibTeX entry to bibliography entry"""
+        # Format content as string representation of fields
+        content = ", ".join(f"{k}={v}" for k, v in fields.items())
+
+        return cls(
+            entry_type=entry_type,
+            citation_key=citation_key,
+            title=fields.get("title"),
+            content=content,
+            fields=fields,
+        )
 
 
-class BibParser:
-    def __init__(self):
+class BibTexParser:
+    def __init__(self, logger: Logger = None):
         self.entries: List[BibEntry] = []
+        self.logger = logger or logging.getLogger(__name__)
 
     def parse(self, content: str) -> List[BibEntry]:
         """Parse BibTeX content and return list of BibEntry objects"""
+        self.logger.info("Starting BibTeX parsing")
         self.entries = []
         pos = 0
 
@@ -62,7 +100,7 @@ class BibParser:
                         field_start += 1
                     value, value_end = extract_nested_content(fields_text[field_start:])
                     if value is not None:
-                        fields[field_name] = value
+                        fields[field_name] = value.strip()
                         pos = field_start + value_end
                 else:
                     # Handle quoted values
@@ -79,16 +117,124 @@ class BibParser:
                 ):
                     pos += 1
 
-            entry = BibEntry(
+            entry = BibEntry.from_bibtex(
                 entry_type=entry_type, citation_key=citation_key, fields=fields
             )
             self.entries.append(entry)
 
         return self.entries
 
-    def to_dict(self) -> List[Dict]:
-        """Convert entries to list of dictionaries"""
-        return [
-            {"type": entry.entry_type, "key": entry.citation_key, **entry.fields}
-            for entry in self.entries
-        ]
+
+class BibParser:
+    def __init__(self, logger: logging.Logger = None):
+        # for logging
+        self.logger = logger or logging.getLogger(__name__)
+
+        self.bibtex_parser = BibTexParser(logger=self.logger)
+
+        # Move patterns here
+        self.bibitem_pattern = re.compile(
+            r"\\bibitem\s*(?:\[(.*?)\])?\{(.*?)\}\s*([\s\S]*?)(?=\\bibitem|$)",
+            re.DOTALL,
+        )
+        self.newblock_pattern = re.compile(r"\\newblock\b")
+
+    def parse(self, content: str) -> List[BibEntry]:
+        """Parse both BibTeX and bibitem entries from the content"""
+        entries = []  # Local variable instead of instance variable
+
+        # Check if content has bibliography environment
+        bib_env_pattern = r"\\begin{(\w*bibliography)}(.*?)\\end{\1}"
+        bib_env_match = re.search(bib_env_pattern, content, re.DOTALL)
+
+        if bib_env_match:
+            self.logger.info("Parsing bibliography environment content")
+            bib_content = bib_env_match.group(2)
+            entries.extend(self._parse_bibitems(bib_content))
+        elif content.strip().startswith("@"):
+            self.logger.info("Parsing BibTeX content")
+            entries.extend(self.bibtex_parser.parse(content))
+        else:
+            self.logger.info("Parsing standalone bibitem content")
+            entries.extend(self._parse_bibitems(content))
+
+        self.logger.debug(f"BibParser: Found {len(entries)} entries")
+        return entries
+
+    def _parse_bibitems(self, content: str) -> List[BibEntry]:
+        """Parse bibitem entries from content"""
+        entries = []
+        for match in self.bibitem_pattern.finditer(content):
+            item = match.group(3).strip()
+            if item:
+                # remove newblock
+                item = self.newblock_pattern.sub("", item)
+
+                entry = BibEntry(
+                    citation_key=match.group(2).strip(),
+                    content=item,
+                    title=match.group(1).strip() if match.group(1) else None,
+                    entry_type="bibitem",
+                    fields={},
+                )
+                entries.append(entry)
+        return entries
+
+    def parse_file(self, file_path: str) -> List[BibEntry]:
+        """Parse a bibliography file and return list of entries.
+
+        Args:
+            file_path: Path to the bibliography file (with or without extension)
+
+        Returns:
+            List[BibEntry]: List of parsed bibliography entries
+        """
+        exts = [".bbl", ".bib"]
+
+        # Try to find and read the bib file
+        bib_content = None
+
+        # Case 1: File already has correct extension
+        if file_path.endswith(tuple(exts)) and os.path.exists(file_path):
+            with open(file_path, "r") as f:
+                bib_content = f.read()
+
+        # Case 2: Need to try adding extensions
+        else:
+            for ext in exts:
+                full_path = file_path + ext
+                if os.path.exists(full_path):
+                    with open(full_path, "r") as f:
+                        bib_content = f.read()
+                    break
+
+        if bib_content:
+            return self.parse(bib_content)
+        else:
+            self.logger.warning(f"Bibliography file not found: {file_path}")
+            return []
+
+
+if __name__ == "__main__":
+    parser = BibParser()
+
+    # For BibTeX content
+    bibtex_content = """
+    @article{key1,
+    title={Some Title},
+    author={Author Name},
+    year={2023}
+    }
+    """
+    entries = parser.parse(bibtex_content)
+    print(entries)
+
+    # For bibitem content
+    bibitem_content = r"""
+    \begin{thebibliography}{1}
+    \bibitem[Title 1]{key1} Some content here
+    \bibitem{key2} More content here
+    \end{thebibliography}
+    """
+    entries = parser.parse(bibitem_content)
+    print(entries)

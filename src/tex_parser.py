@@ -3,6 +3,8 @@ import re
 from typing import List, Dict, Tuple, Union
 import sys, os, traceback
 
+from src.bib_parser import BibEntry, BibParser
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
@@ -25,7 +27,6 @@ from src.handlers import (
     ItemHandler,
     EnvironmentHandler,
     LegacyFormattingHandler,
-    BibItemHandler,
     AuthorHandler,
     TextFormattingHandler,
     IfElseBlockHandler,
@@ -68,6 +69,8 @@ class LatexParser:
 
         # STY parser
         self.sty_parser = LatexStyParser(logger=self.logger)
+        # Bib parser
+        self.bib_parser = BibParser(logger=self.logger)
 
         # Regex patterns for different LaTeX elements
         self.command_processor = CommandProcessor()
@@ -82,7 +85,6 @@ class LatexParser:
             EquationHandler(lambda x: self._expand_command(x, ignore_unicode=True)),
             CodeBlockHandler(),
             ItemHandler(),
-            BibItemHandler(self.parse),
             ContentCommandHandler(),
             # for tabular, on the first pass we process content and maintain the '\\' delimiter to maintain row integrity
             TabularHandler(
@@ -127,6 +129,7 @@ class LatexParser:
         self.if_else_block_handler.clear()
         self.new_definition_handler.clear()
         self.sty_parser.clear()
+        self.bib_parser.clear()
 
     def _expand_command(self, content: str, ignore_unicode: bool = False) -> str:
         """Expand LaTeX commands in the content"""
@@ -229,12 +232,14 @@ class LatexParser:
                 package_path = package_name.strip()
                 if self.current_file_dir:
                     package_path = os.path.join(self.current_file_dir, package_path)
+                if not package_path.endswith(".sty"):
+                    package_path += ".sty"
                 if os.path.exists(package_path):
                     tokens = self.sty_parser.parse_file(package_path)
                     for token in tokens:
                         self._process_new_definition_token(token)
-                else:
-                    self.logger.warning(f"Package file not found: {package_path}")
+                # else:
+                #     self.logger.warning(f"Package file not found: {package_path}")
             return match.end()
         return 0
 
@@ -299,6 +304,35 @@ class LatexParser:
             return end_pos
         return 0
 
+    def _convert_bibitem_to_token(self, entry: BibEntry) -> Dict:
+        content = entry.content
+        if entry.entry_type == "bibitem":
+            content = self.parse(content)
+        else:
+            content = {"type": "text", "content": content}
+        return {
+            "type": "bibitem",
+            "content": content,
+            "cite_key": entry.citation_key,
+            "title": entry.title,
+        }
+
+    def _parse_bib_file(self, file_path: str) -> Dict:
+        """Parse a bibliography file and return its contents as a token.
+
+        Args:
+            file_path: Path to the bibliography file (with or without extension)
+
+        Returns:
+            Dict with bibliography token containing parsed contents
+        """
+        if self.current_file_dir:
+            file_path = os.path.join(self.current_file_dir, file_path)
+
+        entries = self.bib_parser.parse_file(file_path)
+        tokens = [self._convert_bibitem_to_token(entry) for entry in entries]
+        return {"type": "bibliography", "content": tokens}
+
     def _check_handlers(self, content: str, tokens: List[Dict]) -> Tuple[bool, int]:
         """Process content through available handlers.
 
@@ -312,8 +346,15 @@ class LatexParser:
                 if token:
                     if isinstance(token, str):
                         token = {"type": "text", "content": token}
-                    elif token["type"] in ["input_file", "bibliography_file"]:
-                        ext = ".bbl" if token["type"] == "bibliography_file" else ".tex"
+                    elif token["type"] == "bibliography":
+                        entries = self.bib_parser.parse(token["content"])
+                        token["content"] = [
+                            self._convert_bibitem_to_token(entry) for entry in entries
+                        ]
+                    elif token["type"] == "bibliography_file":
+                        if token["content"]:
+                            token = self._parse_bib_file(token["content"])
+                    elif token["type"] == "input_file":
                         # open input file
                         if token["content"]:
                             file_path = token["content"]
@@ -321,7 +362,7 @@ class LatexParser:
                                 file_path = os.path.join(
                                     self.current_file_dir, file_path
                                 )
-                            input_tokens = self.parse_file(file_path, extension=ext)
+                            input_tokens = self.parse_file(file_path, extension=".tex")
                             if input_tokens:
                                 tokens.extend(input_tokens)
                         return True, end_pos
@@ -593,16 +634,16 @@ if __name__ == "__main__":
 
     parser = LatexParser(logger=logger)
 
-    file = "papers/arXiv-1512.03385v1/residual_v1_arxiv_release.tex"
+    # file = "papers/new/arXiv-2010.11929v2/main.tex"
+    file = "papers/tested/arXiv-2301.10303v4.tex"
     tokens = parser.parse_file(file)
-    # print(tokens)
 
 #     text = r"""
-# \begin{table}[t]
-# %\end{table}
-# %\begin{table}[t]
-# \end{table}
+# \def\eps{{\epsilon}}
+# \eps
+# \def\1{\bm{1}}
+# \1
 
 # """
-# tokens = parser.parse(text)
-# print(tokens)
+#     tokens = parser.parse(text)
+#     print(tokens)

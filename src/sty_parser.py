@@ -70,8 +70,8 @@ class LatexStyParser:
                     package_path = os.path.join(self.current_file_dir, package_name)
                 if os.path.exists(package_path):
                     tokens.extend(self.parse_file(package_path))
-                else:
-                    self.logger.warning(f"Package file not found: {package_path}")
+                # else:
+                #     self.logger.warning(f"Package file not found: {package_path}")
             return tokens, match.end()
         return tokens, 0
 
