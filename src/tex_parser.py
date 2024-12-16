@@ -224,16 +224,17 @@ class LatexParser:
         # check for STY file
         match = USEPACKAGE_PATTERN.match(content)
         if match:
-            package_name = match.group(1)
-            if not package_name.endswith(".sty"):
-                package_name += ".sty"
-            package_path = package_name
-            if self.current_file_dir:
-                package_path = os.path.join(self.current_file_dir, package_name)
-            if os.path.exists(package_path):
-                tokens = self.sty_parser.parse_file(package_path)
-                for token in tokens:
-                    self._process_new_definition_token(token)
+            package_names = match.group(1).strip()
+            for package_name in package_names.split(","):
+                package_path = package_name.strip()
+                if self.current_file_dir:
+                    package_path = os.path.join(self.current_file_dir, package_path)
+                if os.path.exists(package_path):
+                    tokens = self.sty_parser.parse_file(package_path)
+                    for token in tokens:
+                        self._process_new_definition_token(token)
+                else:
+                    self.logger.warning(f"Package file not found: {package_path}")
             return match.end()
         return 0
 

@@ -60,14 +60,18 @@ class LatexStyParser:
         match = USEPACKAGE_PATTERN.match(content) or INCLUDE_PATTERN.match(content)
         tokens = []
         if match:
-            package_name = match.group(1)
-            if not package_name.endswith(".sty"):
-                package_name += ".sty"
-            package_path = package_name
-            if self.current_file_dir:
-                package_path = os.path.join(self.current_file_dir, package_name)
-            if os.path.exists(package_path):
-                tokens = self.parse_file(package_path)
+            package_names = match.group(1).strip()
+            for package_name in package_names.split(","):
+                package_name = package_name.strip()
+                if not package_name.endswith(".sty"):
+                    package_name += ".sty"
+                package_path = package_name
+                if self.current_file_dir:
+                    package_path = os.path.join(self.current_file_dir, package_name)
+                if os.path.exists(package_path):
+                    tokens.extend(self.parse_file(package_path))
+                else:
+                    self.logger.warning(f"Package file not found: {package_path}")
             return tokens, match.end()
         return tokens, 0
 
