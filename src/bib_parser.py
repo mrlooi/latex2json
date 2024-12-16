@@ -3,7 +3,7 @@ from logging import Logger
 import logging
 from typing import Dict, List, Optional
 import re
-from src.tex_utils import extract_nested_content
+from src.tex_utils import extract_nested_content, strip_latex_comments
 import os
 
 
@@ -47,6 +47,10 @@ class BibEntry:
         )
 
 
+BibTexPattern = re.compile(r"@(\w+)\s*\{")
+BibTexFieldPattern = re.compile(r"(\w+)\s*=\s*")
+
+
 class BibTexParser:
     def __init__(self, logger: Logger = None):
         self.entries: List[BibEntry] = []
@@ -59,8 +63,7 @@ class BibTexParser:
         pos = 0
 
         # Find each entry starting with @
-        entry_pattern = r"@(\w+)\s*\{"
-        for match in re.finditer(entry_pattern, content):
+        for match in re.finditer(BibTexPattern, content):
             entry_type = match.group(1).lower()
             start_pos = match.end() - 1  # Position of the opening brace
 
@@ -79,11 +82,10 @@ class BibTexParser:
 
             # Parse fields
             fields = {}
-            field_pattern = r"(\w+)\s*=\s*"
             pos = 0
 
             while pos < len(fields_text):
-                field_match = re.search(field_pattern, fields_text[pos:])
+                field_match = re.search(BibTexFieldPattern, fields_text[pos:])
                 if not field_match:
                     break
 
@@ -125,6 +127,13 @@ class BibTexParser:
         return self.entries
 
 
+BibItemPattern = re.compile(
+    r"\\bibitem\s*(?:\[(.*?)\])?\{(.*?)\}\s*([\s\S]*?)(?=\\bibitem|$)",
+    re.DOTALL,
+)
+NewblockPattern = re.compile(r"\\newblock\b")
+
+
 class BibParser:
     def __init__(self, logger: logging.Logger = None):
         # for logging
@@ -132,15 +141,11 @@ class BibParser:
 
         self.bibtex_parser = BibTexParser(logger=self.logger)
 
-        # Move patterns here
-        self.bibitem_pattern = re.compile(
-            r"\\bibitem\s*(?:\[(.*?)\])?\{(.*?)\}\s*([\s\S]*?)(?=\\bibitem|$)",
-            re.DOTALL,
-        )
-        self.newblock_pattern = re.compile(r"\\newblock\b")
-
     def parse(self, content: str) -> List[BibEntry]:
         """Parse both BibTeX and bibitem entries from the content"""
+
+        content = strip_latex_comments(content).strip()
+
         entries = []  # Local variable instead of instance variable
 
         # Check if content has bibliography environment
@@ -151,7 +156,7 @@ class BibParser:
             self.logger.info("Parsing bibliography environment content")
             bib_content = bib_env_match.group(2)
             entries.extend(self._parse_bibitems(bib_content))
-        elif content.strip().startswith("@"):
+        elif re.search(BibTexPattern, content):
             self.logger.info("Parsing BibTeX content")
             entries.extend(self.bibtex_parser.parse(content))
         else:
@@ -164,11 +169,11 @@ class BibParser:
     def _parse_bibitems(self, content: str) -> List[BibEntry]:
         """Parse bibitem entries from content"""
         entries = []
-        for match in self.bibitem_pattern.finditer(content):
+        for match in BibItemPattern.finditer(content):
             item = match.group(3).strip()
             if item:
                 # remove newblock
-                item = self.newblock_pattern.sub("", item)
+                item = NewblockPattern.sub("", item)
 
                 entry = BibEntry(
                     citation_key=match.group(2).strip(),
