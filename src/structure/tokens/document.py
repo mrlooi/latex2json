@@ -9,13 +9,13 @@ class DocumentToken(EnvironmentToken):
 
 class TitleToken(BaseToken):
     type: TokenType = TokenType.TITLE
-    title: str
+    title: List[BaseToken]
     content: Optional[str] = None
 
 
 class SectionToken(BaseToken):
     type: TokenType = TokenType.SECTION
-    title: str
+    title: List[BaseToken]
     level: int
     labels: Optional[List[str]] = None
     content: Optional[List[BaseToken]] = []

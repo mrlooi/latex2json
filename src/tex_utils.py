@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, List, Tuple
 import re
 import os
 
@@ -245,21 +245,21 @@ def read_tex_file_content(file_path: str, extension: str = ".tex") -> str:
     """
     # Clean up inputs
     file_path = file_path.strip()
-    
+
     # Try with extension first if it's not already there
     if not file_path.endswith(extension):
         path_with_ext = file_path + extension
         if os.path.exists(path_with_ext):
             if os.path.isdir(path_with_ext):
                 raise FileNotFoundError(f"'{path_with_ext}' is a directory, not a file")
-            with open(path_with_ext, 'r') as f:
+            with open(path_with_ext, "r") as f:
                 return f.read()
-    
+
     # Then try exact path
     if os.path.exists(file_path):
         if os.path.isdir(file_path):
             raise FileNotFoundError(f"'{file_path}' is a directory, not a file")
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             return f.read()
 
     raise FileNotFoundError(f"Failed to read input file '{file_path}'")
@@ -316,6 +316,23 @@ def strip_latex_comments(text: str) -> str:
         lines.append(processed_line.rstrip())
 
     return "\n".join(lines)
+
+
+def flatten_all_to_string(tokens: List[Dict | str | List] | str) -> str:
+    if isinstance(tokens, str):
+        return tokens
+
+    def flatten_token(token):
+        if isinstance(token, str):
+            return token
+        elif isinstance(token, list):
+            return flatten_all_to_string(token)
+        elif isinstance(token, dict) and isinstance(token.get("content"), list):
+            return flatten_all_to_string(token["content"])
+        else:
+            return token["content"]
+
+    return " ".join(flatten_token(token) for token in tokens)
 
 
 if __name__ == "__main__":

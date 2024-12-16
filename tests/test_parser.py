@@ -2,6 +2,7 @@ import pytest
 from src.handlers.text_formatting import FRONTEND_STYLE_MAPPING
 from src.handlers.content_command import SECTION_LEVELS, PARAGRAPH_LEVELS
 from src.tex_parser import LatexParser
+from src.tex_utils import flatten_all_to_string
 from tests.latex_samples_data import TRAINING_SECTION_TEXT
 
 
@@ -20,21 +21,25 @@ def parsed_training_tokens(parser):
 # TestParserText1 class becomes:
 
 
+def get_title(token):
+    return flatten_all_to_string(token["title"])
+
+
 def test_parse_sections(parsed_training_tokens):
     sections = [token for token in parsed_training_tokens if token["type"] == "section"]
     assert len(sections) == 5
 
     start_level = SECTION_LEVELS["section"]
-    assert sections[0]["title"] == "Training"
+    assert get_title(sections[0]) == "Training"
     assert sections[0]["level"] == start_level
-    assert sections[1]["title"] == "Training Data and Batching"
+    assert get_title(sections[1]) == "Training Data and Batching"
     assert sections[1]["level"] == start_level + 1
-    assert sections[2]["title"] == "Hardware and Schedule"
+    assert get_title(sections[2]) == "Hardware and Schedule"
     assert sections[2]["level"] == start_level + 1
 
     regularization_section = None
     for section in sections:
-        if section["title"] == "Regularization":
+        if get_title(section) == "Regularization":
             regularization_section = section
             break
     assert regularization_section is not None
@@ -47,9 +52,9 @@ def test_parse_sections(parsed_training_tokens):
         token for token in parsed_training_tokens if token["type"] == "paragraph"
     ]
     assert len(paragraphs) == 2
-    assert paragraphs[0]["title"] == "Residual Dropout"
+    assert get_title(paragraphs[0]) == "Residual Dropout"
     assert paragraphs[0]["level"] == PARAGRAPH_LEVELS["paragraph"]
-    assert paragraphs[1]["title"] == "Label Smoothing"
+    assert get_title(paragraphs[1]) == "Label Smoothing"
     assert paragraphs[1]["level"] == PARAGRAPH_LEVELS["paragraph"]
 
 
@@ -63,14 +68,14 @@ def test_parse_subsections(parser):
     """
     parsed_tokens = parser.parse(text)
 
-    assert parsed_tokens[0]["title"] == "Training Data and Batching"
+    assert get_title(parsed_tokens[0]) == "Training Data and Batching"
     assert parsed_tokens[0]["level"] == SECTION_LEVELS["section"] + 1
-    assert parsed_tokens[1]["title"] == "Hardware and Schedule"
+    assert get_title(parsed_tokens[1]) == "Hardware and Schedule"
     assert parsed_tokens[1]["level"] == SECTION_LEVELS["section"] + 2
 
-    assert parsed_tokens[2]["title"] == "Regularization"
+    assert get_title(parsed_tokens[2]) == "Regularization"
     assert parsed_tokens[2]["level"] == PARAGRAPH_LEVELS["paragraph"]
-    assert parsed_tokens[3]["title"] == "Sub Regularization"
+    assert get_title(parsed_tokens[3]) == "Sub Regularization"
     assert parsed_tokens[3]["level"] == PARAGRAPH_LEVELS["subparagraph"]
 
 
@@ -1748,7 +1753,7 @@ def test_inputs_with_files(parser):
     input_tokens = parsed_tokens[1:-1]
     assert len(input_tokens) == 2
     assert input_tokens[0]["type"] == "section"
-    assert input_tokens[0]["title"] == "Example"
+    assert get_title(input_tokens[0]) == "Example"
     assert input_tokens[1]["type"] == "equation"
     assert input_tokens[1]["content"].strip() == "1+1=2"
 

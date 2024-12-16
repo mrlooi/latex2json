@@ -15,7 +15,7 @@ def latex_text():
 
     \begin{document}
 
-    \abstract{This is my abstract}
+    \abstract{This is my abstract, \textbf{cool yes?}}
 
     \paragraph{This is my paragraph}
     YEAAA baby
@@ -33,7 +33,7 @@ def latex_text():
         \subsection*{SubIntro2}
         SUBINTRO 2
         \paragraph{Paragraph me}
-        Hi there this is paragrpah
+        Hi there this is paragraph
 
     \section{Conclusion}
         TLDR: Best paper
@@ -55,21 +55,27 @@ def latex_text():
 @pytest.fixture
 def expected_output():
     return [
-        {"type": "title", "title": "My Title"},
+        {"type": "title", "title": [{"type": "text", "content": "My Title"}]},
         {
             "type": "document",
             "name": "document",
             "content": [
-                {"type": "abstract", "content": "This is my abstract"},
+                {
+                    "type": "abstract",
+                    "content": [
+                        {"type": "text", "content": "This is my abstract,"},
+                        {"type": "text", "content": "cool yes?", "styles": ["bold"]},
+                    ],
+                },
                 {
                     "type": "paragraph",
-                    "title": "This is my paragraph",
+                    "title": [{"type": "text", "content": "This is my paragraph"}],
                     "level": 1,
                     "content": [{"type": "text", "content": "YEAAA baby"}],
                 },
                 {
                     "type": "section",
-                    "title": "Intro",
+                    "title": [{"type": "text", "content": "Intro"}],
                     "level": 1,
                     "numbered": True,
                     "labels": ["sec:intro"],
@@ -83,7 +89,7 @@ def expected_output():
                         },
                         {
                             "type": "section",
-                            "title": "SubIntro",
+                            "title": [{"type": "text", "content": "SubIntro"}],
                             "level": 2,
                             "numbered": True,
                             "content": [
@@ -98,19 +104,21 @@ def expected_output():
                         },
                         {
                             "type": "section",
-                            "title": "SubIntro2",
+                            "title": [{"type": "text", "content": "SubIntro2"}],
                             "level": 2,
                             "numbered": False,
                             "content": [
                                 {"type": "text", "content": "SUBINTRO 2"},
                                 {
                                     "type": "paragraph",
-                                    "title": "Paragraph me",
+                                    "title": [
+                                        {"type": "text", "content": "Paragraph me"}
+                                    ],
                                     "level": 1,
                                     "content": [
                                         {
                                             "type": "text",
-                                            "content": "Hi there this is paragrpah",
+                                            "content": "Hi there this is paragraph",
                                         }
                                     ],
                                 },
@@ -120,14 +128,14 @@ def expected_output():
                 },
                 {
                     "type": "section",
-                    "title": "Conclusion",
+                    "title": [{"type": "text", "content": "Conclusion"}],
                     "level": 1,
                     "numbered": True,
                     "content": [
                         {"type": "text", "content": "TLDR: Best paper"},
                         {
                             "type": "section",
-                            "title": "mini conclusion",
+                            "title": [{"type": "text", "content": "mini conclusion"}],
                             "level": 2,
                             "numbered": True,
                             "content": [{"type": "text", "content": "Mini conclude"}],
@@ -137,7 +145,7 @@ def expected_output():
                 {"type": "appendix"},
                 {
                     "type": "section",
-                    "title": "Appendix",
+                    "title": [{"type": "text", "content": "Appendix"}],
                     "level": 1,
                     "numbered": True,
                     "content": [{"type": "text", "content": "My appendix"}],

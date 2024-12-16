@@ -308,8 +308,8 @@ class LatexParser:
         content = entry.content
         if entry.entry_type == "bibitem":
             content = self.parse(content)
-        else:
-            content = {"type": "text", "content": content}
+        # else:
+        #     content = {"type": "text", "content": content}
         return {
             "type": "bibitem",
             "content": content,
@@ -374,9 +374,11 @@ class LatexParser:
                     elif token["type"] == "url":
                         if "title" in token:
                             token["title"] = self.parse(token["title"])
-                    elif token["type"] in ["section", "paragraph"]:
+                    elif token["type"] in ["section", "paragraph", "title"]:
                         self.current_env = token
-                        token["title"] = self._expand_command(token["title"])
+                        token["title"] = self.parse(token["title"])
+                    elif token["type"] == "abstract":
+                        token["content"] = self.parse(token["content"])
                     elif isinstance(handler, BaseEnvironmentHandler):
                         # algorithmic keep as literal?
                         if token["type"] not in ["algorithmic", "tabular"]:

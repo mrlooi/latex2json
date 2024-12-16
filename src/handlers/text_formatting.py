@@ -5,7 +5,11 @@ import re
 
 from src.handlers.base import TokenHandler
 from src.patterns import BRACE_CONTENT_PATTERN
-from src.tex_utils import extract_nested_content, flatten, strip_latex_newlines
+from src.tex_utils import (
+    extract_nested_content,
+    flatten_all_to_string,
+    strip_latex_newlines,
+)
 
 
 # Add this new mapping for frontend styles
@@ -90,23 +94,6 @@ def parse_dual_braces_content(content: str, first_brace_start: int) -> Tuple[str
 
     end_pos = second_brace_start + second_brace_end
     return first, second, end_pos
-
-
-def flatten_all_to_string(tokens: List[Dict | str | List] | str) -> str:
-    if isinstance(tokens, str):
-        return tokens
-
-    def flatten_token(token):
-        if isinstance(token, str):
-            return token
-        elif isinstance(token, list):
-            return flatten_all_to_string(token)
-        elif isinstance(token, dict) and isinstance(token.get("content"), list):
-            return flatten_all_to_string(token["content"])
-        else:
-            return token["content"]
-
-    return " ".join(flatten_token(token) for token in tokens)
 
 
 class TextFormattingHandler(TokenHandler):
