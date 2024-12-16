@@ -153,7 +153,7 @@ RAW_PATTERNS = OrderedDict(
             r"topsep\b|parsep\b|"
             r"labelsep\s*\{?([^\}]*)\}?|"
             r"(?:midrule|toprule|bottomrule)(?:\[\d*[\w-]*\])?|"  # optional [trim]
-            r"cmidrule(?:\[([^\]]*)\])?\s*{([^}]+)}|"  # optional [trim] and {n-m}
+            r"cmidrule\s*(?:\((.+)\)\s*)?(?:\[([^\]]*)\]\s*)?{([^}]+)}|"  # optional (xxpt)[trim] and {n-m}
             r"hdashline(?:\[[\d,\s]*\])?|"  # optional [length,space]
             r"cdashline\s*{([^}]+)}|"  # {n-m}
             r"specialrule\s*{([^}]*)}\s*{([^}]*)}\s*{([^}]*)}|"  # {height}{above}{below}
@@ -181,6 +181,7 @@ RAW_PATTERNS = OrderedDict(
         ("pz@", r"(?:%s)?\\[pz]@(?![a-zA-Z@])" % number_regex),
         ("slash", r"\\/"),  # \/ (in latex, this is like an empty space)
         ("advance", r"\\advance\\[a-zA-Z@*\d]+(?:\s+by)?(?:\s*-)?\\[a-zA-Z@*\d]+"),
+        ("typeout", r"\\typeout\s*{"),
     ]
 )
 
@@ -251,6 +252,7 @@ class FormattingHandler(TokenHandler):
                     "lstset",
                     "addtocontents",
                     "hyphenation",
+                    "typeout",
                 ]:
                     # extracted nested
                     start_pos = match.end() - 1

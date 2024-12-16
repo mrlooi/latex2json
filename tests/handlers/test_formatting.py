@@ -263,6 +263,9 @@ def test_misc_formatting_commands(handler):
     \penalty1000
     \subjclass{Primary 01A80}
     \subjclass[xx]{Secondary 01A80}
+
+    \typeout{** WARNING: IEEEtran.bst: No hyphenation pattern has been}
+    \cmidrule(r{4pt}){2-6}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
