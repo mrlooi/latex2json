@@ -24,9 +24,45 @@ TABULAR_PATTERN = re.compile(
 )
 
 ROW_SPLIT_PATTERN = re.compile(r"\\\\(?:\s*\[[^\]]*\])?")
-MULTICOLUMN_PATTERN = re.compile(r"\\multicolumn{(\d+)}{[^}]*}{(.*)}")
-MULTIROW_PATTERN = re.compile(r"\\multirow{(\d+)}{[^}]*}{(.*)}")
+MULTICOLUMN_PATTERN = re.compile(r"\\multicolumn{(\d+)}{[^}]*}{(.*)}", re.DOTALL)
+MULTIROW_PATTERN = re.compile(r"\\multirow{(\d+)}{[^}]*}{(.*)}", re.DOTALL)
 CELL_SPLIT_PATTERN = re.compile(r"(?<!\\)&")
+
+
+def split_rows(latex_table: str) -> List[str]:
+    """
+    Split table content into rows while respecting nested structures.
+    Doesn't split on \\ that appears inside {...} blocks.
+    """
+    rows = []
+    current_row = []
+    nesting_level = 0
+    i = 0
+
+    while i < len(latex_table):
+        if latex_table[i] == "{":
+            nesting_level += 1
+            current_row.append(latex_table[i])
+        elif latex_table[i] == "}":
+            nesting_level -= 1
+            current_row.append(latex_table[i])
+        elif latex_table[i : i + 2] == r"\\" and nesting_level == 0:
+            # Only split on \\ when we're not inside brackets
+            current_row = "".join(current_row).strip()
+            if current_row:
+                rows.append(current_row)
+            current_row = []
+            i += 1  # Skip the second backslash
+        else:
+            current_row.append(latex_table[i])
+        i += 1
+
+    # Add the last row if it exists
+    current_row = "".join(current_row).strip()
+    if current_row:
+        rows.append(current_row)
+
+    return rows
 
 
 def parse_tabular(latex_table: str, cell_parser_fn=None) -> List[List[Dict]]:
@@ -40,50 +76,48 @@ def parse_tabular(latex_table: str, cell_parser_fn=None) -> List[List[Dict]]:
         - colspan: Number of columns this cell spans
     """
     # Split into rows, ignoring empty lines
-    rows = []
-    for row in ROW_SPLIT_PATTERN.split(latex_table):
-        row = row.strip()
-        if row:
-            rows.append(row)
+    rows = split_rows(latex_table)
 
     parsed_rows = []
 
     for row_idx, row in enumerate(rows):
-        cells = split_cells(row)
-        parsed_row = []
+        row = row.strip()
+        if row:
+            cells = split_cells(row)
+            parsed_row = []
 
-        for cell in cells:
-            # Parse nested multicolumn/multirow
-            content = cell
-            colspan = 1
-            rowspan = 1
+            for cell in cells:
+                # Parse nested multicolumn/multirow
+                content = cell
+                colspan = 1
+                rowspan = 1
 
-            # Handle multicolumn first
-            mcol_match = MULTICOLUMN_PATTERN.search(content)
-            if mcol_match:
-                colspan = int(mcol_match.group(1))
-                content = mcol_match.group(2).strip()
+                # Handle multicolumn first
+                mcol_match = MULTICOLUMN_PATTERN.search(content)
+                if mcol_match:
+                    colspan = int(mcol_match.group(1))
+                    content = mcol_match.group(2).strip()
 
-            # Then handle multirow within the content
-            mrow_match = MULTIROW_PATTERN.search(content)
-            if mrow_match:
-                rowspan = int(mrow_match.group(1))
-                content = mrow_match.group(2).strip()
+                # Then handle multirow within the content
+                mrow_match = MULTIROW_PATTERN.search(content)
+                if mrow_match:
+                    rowspan = int(mrow_match.group(1))
+                    content = mrow_match.group(2).strip()
 
-            # Create cell structure
-            parsed_content = cell_parser_fn(content) if cell_parser_fn else content
-            parsed_cell = parsed_content
-            if rowspan > 1 or colspan > 1:
-                parsed_cell = {
-                    "content": parsed_content,
-                    "rowspan": rowspan,
-                    "colspan": colspan,
-                }
+                # Create cell structure
+                parsed_content = cell_parser_fn(content) if cell_parser_fn else content
+                parsed_cell = parsed_content
+                if rowspan > 1 or colspan > 1:
+                    parsed_cell = {
+                        "content": parsed_content,
+                        "rowspan": rowspan,
+                        "colspan": colspan,
+                    }
 
-            parsed_row.append(parsed_cell)
+                parsed_row.append(parsed_cell)
 
-        if parsed_row:
-            parsed_rows.append(parsed_row)
+            if parsed_row:
+                parsed_rows.append(parsed_row)
 
     # strip out start/end empty rows (incl empty cells)
     if parsed_rows:
@@ -317,8 +351,8 @@ if __name__ == "__main__":
     handler = TabularHandler(cell_parser_fn=parse_cell)
 
     text = r"""
-\begin{tabularx}{5cm}{c}
-4\\
-\end{tabularx}
+	\begin{tabular}{@{}lllllr@{}}	
+		\multirow{2}{34mm}{Experiment Setup\\ (training set)\at(test set)}
+	\end{tabular}
     """.strip()
     token, end_pos = handler.handle(text.strip())

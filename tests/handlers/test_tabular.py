@@ -77,6 +77,23 @@ def test_tabular_with_multicolumn(handler):
     assert token["content"][1] == ["a", "b", "c"]
 
 
+def test_tabular_with_multirow(handler):
+    # Notice the \\ here is not escaped since it is inside braces!
+    text = r"""
+    \begin{tabular}{c}
+        \multirow{2}{34mm}{Experiment Setup\\ (training set)\at(test set)}
+    \end{tabular}
+    """.strip()
+    token, end_pos = handler.handle(text.strip())
+
+    assert token["type"] == "tabular"
+    assert len(token["content"]) == 1
+    first_row = token["content"][0]
+    assert first_row[0]["content"] == r"Experiment Setup\\ (training set)\at(test set)"
+    assert first_row[0]["rowspan"] == 2
+    assert first_row[0]["colspan"] == 1
+
+
 def test_tabular_with_equations(handler):
     text = r"""
     \begin{tabular}{{cc}}
