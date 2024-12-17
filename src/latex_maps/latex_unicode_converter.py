@@ -27,7 +27,7 @@ class LatexUnicodeConverter:
             # Add word boundary after the command to prevent partial matches
             escaped = re.escape(cmd)
             if escaped[-1].isalpha():
-                escaped += r"(?![a-zA-Z])"
+                escaped = r"(?:%s\{\}|%s(?![a-zA-Z]))" % (escaped, escaped)
             if cmd.startswith("\\ensuremath"):
                 patterns["ensuremath"].append(escaped)
             elif cmd.startswith("\\text"):
@@ -50,9 +50,15 @@ class LatexUnicodeConverter:
     def convert(self, text: str) -> str:
         result = text
 
+        def handle_match(match):
+            c = match.group(0).strip()
+            if c.endswith("{}"):
+                c = c[:-2].strip()
+            return self.latex2str.get(c, c)
+
         # Process in specific order: longer commands first
         for pattern in self.patterns.values():
-            result = pattern.sub(lambda m: self.latex2str[m.group(0)], result)
+            result = pattern.sub(handle_match, result)
 
         return result
 

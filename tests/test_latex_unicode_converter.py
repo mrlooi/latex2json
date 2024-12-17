@@ -15,6 +15,8 @@ def test_basic_conversion(converter):
     assert converter.convert(r"\{ssss\}") == "{ssss}"
     assert converter.convert(r"\S1") == "§1"
     assert converter.convert(r"\dots@") == "...@"
+    assert converter.convert(r"\L{}") == "Ł"
+    assert converter.convert(r"\textbackslash{}") == "\\"
 
 
 def test_accented_characters(converter):
