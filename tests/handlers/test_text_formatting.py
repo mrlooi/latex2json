@@ -98,6 +98,11 @@ def test_handle_outputs(handler):
     assert out == {"type": "text", "content": "sds"}
     assert text[end_pos:] == " pos"
 
+    text = r"\natexlab{123}"
+    out, end_pos = handler.handle(text)
+    assert out == {"type": "text", "content": "123"}
+    assert text[end_pos:] == ""
+
 
 def test_frac(handler):
     assert not handler.can_handle(r"\fracsss{pdf version}{text version}")

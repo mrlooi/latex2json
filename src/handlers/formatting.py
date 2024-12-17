@@ -132,7 +132,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "numbers",
             re.compile(
-                r"\\linenumbers\b|linesnumbered\b|\\(?:numberwithin)\s*\{[^}]*\}\s*\{[^}]*\}",
+                r"\\(?:linenumbers\b|linesnumbered\b|numberwithin\s*\{[^}]*\}\s*\{[^}]*\})",
                 re.IGNORECASE,
             ),
         ),
@@ -148,6 +148,7 @@ RAW_PATTERNS = OrderedDict(
             "newcolumntype",
             r"\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}(?:\s*\[\d+\])?\s*{",
         ),
+        ("columns", r"\\twocolumn\b"),
         # separators
         ("itemsep", r"\\itemsep\s*=\s*-?\d*\.?\d+\w+?\b"),
         (

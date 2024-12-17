@@ -39,6 +39,7 @@ FRONTEND_STYLE_MAPPING: Dict[str, str] = {
     "textstrikeout": "line-through",  # requires ulem package in LaTeX
     "sout": "line-through",  # another strikethrough command
     "textoverline": "overline",
+    "natexlab": None,
 }
 
 TEXT_COMMANDS = "|".join(FRONTEND_STYLE_MAPPING.keys())
