@@ -91,8 +91,8 @@ RAW_PATTERNS = OrderedDict(
         # setters
         ("lstset", r"\\lstset\s*{"),
         (
-            "counter",
-            r"\\(?:setcounter\s*\{([^}]+)\}\{([^}]+)\}|stepcounter\s*\{([^}]+)\}|value\s*\{([^}]+)\})",
+            "value",
+            r"\\value\s*\{([^}]+)\}",
         ),
         # New margin and size commands allowing any characters after the number
         (

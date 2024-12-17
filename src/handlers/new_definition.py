@@ -67,7 +67,7 @@ PATTERNS = {
         re.DOTALL,
     ),
     "newcounter": re.compile(
-        r"\\(?:re)?newcounter\s*" + BRACE_CONTENT_PATTERN, re.DOTALL
+        r"\\(?:(?:re)?newcounter|stepcounter)\s*" + BRACE_CONTENT_PATTERN, re.DOTALL
     ),
     "newother": re.compile(
         r"\\(?:re)?new(?:count|box|dimen|skip|muskip)\s*\\([^\s{[]+)"

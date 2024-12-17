@@ -9,13 +9,9 @@ from src.tex_utils import (
     find_matching_env_block,
 )
 
-inside_tabular_pattern = r"(?:\[[^\]]*\])?\{([^}]*)\}(.*?)"
 
-tabular_pattern_1 = (
-    r"\\begin\s*\{(tabular\*?|longtable|tabularx|tabulary)\}%s\\end\s*\{\1\}"
-    % (inside_tabular_pattern)
-)
-tabular_pattern_2 = r"\\tabular%s\\endtabular" % (inside_tabular_pattern)
+tabular_pattern_1 = r"\\begin\s*\{(tabular|longtable|tabularx|tabulary)\*?\}"
+tabular_pattern_2 = r"\\tabular(?![a-zA-Z@])"
 
 # Compile patterns for code blocks
 TABULAR_PATTERN = re.compile(

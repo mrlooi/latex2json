@@ -184,7 +184,6 @@ def test_misc_formatting_commands(handler):
     \pagestyle{empty}
     \numberwithin{equation}{section}
     \theoremstyle{conjecture}
-    \setcounter{theorem}{0}
     \noindent
     \bibliographystyle{plain}
     \abovedisplayskip
@@ -269,7 +268,6 @@ def test_misc_formatting_commands(handler):
     \cmidrule(r{4pt}){2-6}
 
     \FloatBarrier
-    \stepcounter{footnote}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
