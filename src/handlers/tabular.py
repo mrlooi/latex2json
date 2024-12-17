@@ -233,6 +233,9 @@ class TabularHandler(BaseEnvironmentHandler):
 
         # Extract content between begin and end
         inner_content = inner_content.strip()
+        # extract optional arg (if exists)
+        _, end_pos = extract_nested_content(inner_content, "[", "]")
+        inner_content = inner_content[end_pos:]
 
         token = {
             "type": "tabular",

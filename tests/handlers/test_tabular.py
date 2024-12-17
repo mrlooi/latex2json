@@ -20,7 +20,7 @@ def handler():
 
 def test_basic_tabular(handler):
     text = r"""
-    \begin{tabular}{c|c}
+    \begin{tabular}[]{c|c}
         a & b \\
         c & d
     \end{tabular}
