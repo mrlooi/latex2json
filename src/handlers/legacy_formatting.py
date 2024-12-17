@@ -126,31 +126,38 @@ class LegacyFormattingHandler(TokenHandler):
                         end_pos = closing_pos - 2
                         next_content = next_content[:end_pos]
 
-                    # check for similar patterns that aren't nested in braces
-
-                    pattern_or_open_brace_pattern = re.compile(
-                        pattern.pattern + "|" + OPENING_BRACE_PATTERN.pattern
-                    )
-
                     pos = -1
-                    while pos < len(next_content):
-                        out_end_pos = find_pattern_while_skipping_nested_envs(
-                            next_content, pattern_or_open_brace_pattern, max(pos, 0)
-                        )
-                        if out_end_pos != -1:
-                            pos = out_end_pos
-                            if pos < len(next_content) and next_content[pos] == "{":
-                                _, skip_len = extract_nested_content(next_content[pos:])
-                                pos += skip_len or 1
-                                continue
-                            else:
-                                # found same legacy pattern
-                                break
-                        else:
-                            pos += 1
+                    content_len = len(next_content)
+                    end_pos = content_len
 
-                    if pos != -1:
-                        end_pos = pos
+                    # if we find a similar pattern inside, we need to handle everything and skip nested environments
+                    if re.search(pattern.pattern, next_content):
+                        # find the next pattern or opening brace
+                        pattern_or_open_brace = re.compile(
+                            pattern.pattern + "|" + OPENING_BRACE_PATTERN.pattern
+                        )
+                        pos = 0
+
+                        while pos < len(next_content):
+                            # make sure to skip nested environments
+                            out_pos = find_pattern_while_skipping_nested_envs(
+                                next_content, pattern_or_open_brace, pos
+                            )
+
+                            if out_pos == -1:
+                                end_pos = len(next_content)
+                                break
+
+                            if next_content[out_pos] == "{":
+                                # Skip nested content
+                                _, skip_len = extract_nested_content(
+                                    next_content[out_pos:]
+                                )
+                                pos = out_pos + (skip_len or 1)
+                            else:
+                                # Found the pattern we're looking for
+                                end_pos = out_pos
+                                break
 
                     content_to_format = next_content[:end_pos]
                     total_pos = next_pos + end_pos
@@ -169,7 +176,22 @@ if __name__ == "__main__":
     # print(out)
     # print(text[end_pos:])
 
-    text = r"\bf1 hello } ejje"  # } \noindent \tt"
+    tabular_content = r"""
+\begin{center}
+\begin{tabular}{l|c c}
+\hline
+\large 1 % notice the large here should be contained
+\end{tabular}
+\end{center}
+""".strip()
+    text = (
+        r"""\small
+    %s
+
+    helloworld
+    \huge HUGE
+    """
+        % (tabular_content)
+    ).strip()
     out, end_pos = handler.handle(text)
     print(out)
-    print(text[end_pos:])

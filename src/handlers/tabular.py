@@ -26,7 +26,9 @@ MULTIROW_PATTERN = re.compile(r"\\multirow\s*{(\d+)}\s*{", re.DOTALL)
 CELL_SPLIT_PATTERN = re.compile(r"(?<!\\)&")
 
 
-MAKECELL_PATTERN = re.compile(r"\\makecell(?:\s*\[[^\]]*\])?\s*{", re.DOTALL)
+MAKECELL_SHORTSTACK_PATTERN = re.compile(
+    r"\\(?:makecell|shortstack)(?:\s*\[[^\]]*\])?\s*{", re.DOTALL
+)
 
 
 def split_latex_content(
@@ -100,7 +102,7 @@ def split_cells(row: str) -> List[str]:
     out_cells = []
     for cell in cells:
         if cell:
-            match = MAKECELL_PATTERN.search(cell)
+            match = MAKECELL_SHORTSTACK_PATTERN.search(cell)
             if match:
                 cell, end_pos = extract_nested_content(cell[match.end() - 1 :])
         out_cells.append(cell)
