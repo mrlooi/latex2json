@@ -177,7 +177,6 @@ class LatexStyParser:
                 continue
 
             # check for user defined commands (important to check before new definitions in case of floating \csname)
-            print(content[current_pos : current_pos + 10])
             if self.command_processor.can_handle(content[current_pos:]):
                 text, end_pos = self.command_processor.handle(content[current_pos:])
                 if end_pos > 0:

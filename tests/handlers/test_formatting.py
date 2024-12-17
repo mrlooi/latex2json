@@ -267,6 +267,8 @@ def test_misc_formatting_commands(handler):
 
     \typeout{** WARNING: IEEEtran.bst: No hyphenation pattern has been}
     \cmidrule(r{4pt}){2-6}
+
+    \FloatBarrier
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

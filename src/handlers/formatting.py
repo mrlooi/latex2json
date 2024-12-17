@@ -148,7 +148,7 @@ RAW_PATTERNS = OrderedDict(
             "newcolumntype",
             r"\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}(?:\s*\[\d+\])?\s*{",
         ),
-        ("columns", r"\\twocolumn\b"),
+        ("columns", r"\\(?:onecolumn|twocolumn|threecolumn)\b"),
         # separators
         ("itemsep", r"\\itemsep\s*=\s*-?\d*\.?\d+\w+?\b"),
         (
@@ -183,7 +183,10 @@ RAW_PATTERNS = OrderedDict(
         ("phantom", r"\\(?:hphantom|vphantom)\s*{"),
         (
             "other",
-            r"\\(?:ignorespaces|relax|\@tempboxa|box|global|@plus|@minus|null)\b",
+            re.compile(
+                r"\\(?:ignorespaces|relax|\@tempboxa|box|global|@plus|@minus|null|floatbarrier)\b",
+                re.IGNORECASE,
+            ),
         ),
         ("pz@", r"(?:%s)?\\[pz]@(?![a-zA-Z@])" % number_regex),
         ("slash", r"\\/"),  # \/ (in latex, this is like an empty space)

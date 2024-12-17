@@ -575,13 +575,13 @@ class LatexParser:
                                 content[max(0, pos - 100) : pos]
                                 + "-->"
                                 + content[pos : pos + 100]
-                            )
+                            ).strip()
                             self.logger.warning(
                                 f"\n*****\nUnknown command: Token: {token}\n***Surrounding content***\n{surrounding_content}\n*****"
                             )
                         else:
                             self.logger.warning(
-                                f"\n*****(Again) Unknown command token: {token}\n*****"
+                                f"*****(Again) Unknown command token: {token}*****"
                             )
                     continue
 
