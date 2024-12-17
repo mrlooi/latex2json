@@ -90,7 +90,10 @@ RAW_PATTERNS = OrderedDict(
         # ("font", r"\\(?:mdseries|bfseries|itshape|slshape|normalfont|ttfamily)\b"),
         # setters
         ("lstset", r"\\lstset\s*{"),
-        ("counter", r"\\(?:setcounter\s*\{([^}]+)\}\{([^}]+)\}|value\s*\{([^}]+)\})"),
+        (
+            "counter",
+            r"\\(?:setcounter\s*\{([^}]+)\}\{([^}]+)\}|stepcounter\s*\{([^}]+)\}|value\s*\{([^}]+)\})",
+        ),
         # New margin and size commands allowing any characters after the number
         (
             "margins",
@@ -188,6 +191,7 @@ RAW_PATTERNS = OrderedDict(
                 re.IGNORECASE,
             ),
         ),
+        ("newmdenv", re.compile(r"\\newmdenv\s*(?:\[(.*?)\])?\s*\{(.*?)\}", re.DOTALL)),
         ("pz@", r"(?:%s)?\\[pz]@(?![a-zA-Z@])" % number_regex),
         ("slash", r"\\/"),  # \/ (in latex, this is like an empty space)
         ("advance", r"\\advance\\[a-zA-Z@*\d]+(?:\s+by)?(?:\s*-)?\\[a-zA-Z@*\d]+"),

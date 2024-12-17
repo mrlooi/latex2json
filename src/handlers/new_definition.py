@@ -8,8 +8,10 @@ from src.tex_utils import (
     extract_nested_content_sequence_blocks,
 )
 
+command_pattern = r"\\([a-zA-Z@]+)"
 POST_NEW_COMMAND_PATTERN_STR = (
-    r"\*?\s*(?:{\\([^}]+)}|\\([^\s{[]+))(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{"
+    r"\*?\s*(?:{%s}|%s)(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{"
+    % (command_pattern, command_pattern)
 )
 
 DEF_COMMAND_PREFIX = r"(?:\\long)?\\(?:e|g)?def\s*\\"
@@ -26,7 +28,7 @@ EXPAND_PATTERN = re.compile(r"\\(?:expandafter|noexpand)(?:\w+)?(?![a-zA-Z])")
 START_CSNAME_PATTERN = re.compile(r"\\csname(?![a-zA-Z])")
 END_CSNAME_PATTERN = re.compile(r"\\endcsname(?![a-zA-Z])")
 
-command_with_opt_brace_pattern = r"(?:%s|\\[a-zA-Z@]+)" % (BRACE_CONTENT_PATTERN)
+command_with_opt_brace_pattern = r"(?:%s|%s)" % (BRACE_CONTENT_PATTERN, command_pattern)
 
 
 # Compile patterns for definition commands
@@ -470,7 +472,7 @@ if __name__ == "__main__":
         print()
 
     text = r"""
-    \newlength{\len} after"
+    \newcommand{\creditsectionheader}[1]{\parbox{\columnwidth}{\centering \textbf{\small #1}}\\}
     """.strip()
 
     print(handler.handle(text))

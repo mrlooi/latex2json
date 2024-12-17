@@ -41,6 +41,7 @@ RAW_PATTERNS = OrderedDict(
             r"\\(?:below|current)?pdfbookmark\s*(?:\[([^\]]*)\])?\s*{([^}]*)}\s*{",
         ),
         ("footnotemark", r"\\footnotemark(?:\[([^\]]*)\])?"),
+        ("footnotetext", r"\\footnotetext(?:\[([^\]]*)\])?\s*{"),
         # URLs
         ("url", r"\\url\s*{"),
         # Graphics
@@ -152,7 +153,7 @@ class ContentCommandHandler(TokenHandler):
                 "content": content,
             }
 
-        elif matched_type == "footnote":
+        elif matched_type == "footnote" or matched_type == "footnotetext":
             return {
                 "type": "footnote",
                 "content": content,  # Note: caller should parse this content for environments

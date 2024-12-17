@@ -50,6 +50,26 @@ def test_find_matching_delimiter_with_comments():
     assert text[start + 1 : end - 1].replace("\n", "").replace(" ", "") == "test%}POST"
 
 
+def test_find_matching_delimiter_with_double_backslash():
+    from src.tex_utils import find_matching_delimiter
+
+    # Test multiple backslashes
+    text = r"{not escaped} {\{escaped} \\\{escaped} \\{not escaped}"
+    start, end = find_matching_delimiter(text)
+    assert text[start:end] == r"{not escaped}"
+
+    start, end = find_matching_delimiter(text, start=end)
+    assert text[start:end] == r"{\{escaped}"
+
+    text = r"{\\{not escaped}}"
+    start, end = find_matching_delimiter(text)
+    assert text[start:end] == r"{\\{not escaped}}"
+
+    text = r"{\\\{escaped}"
+    start, end = find_matching_delimiter(text)
+    assert text[start:end] == r"{\\\{escaped}"
+
+
 def test_find_matching_env_block():
     # Basic test
     text = r"\begin{test}inner content\end{test}"

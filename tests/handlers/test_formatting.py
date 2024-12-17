@@ -269,6 +269,7 @@ def test_misc_formatting_commands(handler):
     \cmidrule(r{4pt}){2-6}
 
     \FloatBarrier
+    \stepcounter{footnote}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
@@ -305,6 +306,23 @@ def test_pzat_with_prevtoken(handler):
         assert token is None
         assert pos > 0
         assert prev_token["content"] == "FIRST "
+
+
+def test_newmdenv(handler):
+    text = r"""
+\newmdenv[
+  font=\ttfamily\small,
+  linewidth=0.5pt,
+  innerleftmargin=10pt,
+  innerrightmargin=10pt,
+  innertopmargin=10pt,
+  innerbottommargin=10pt,
+]{monobox}
+POST
+""".strip()
+    token, pos = handler.handle(text)
+    assert token is None
+    assert text[pos:].strip() == "POST"
 
 
 if __name__ == "__main__":

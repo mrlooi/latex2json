@@ -12,8 +12,25 @@ def find_matching_delimiter(
         - start_pos is the position of the opening delimiter
         - end_pos is the position of the matching closing delimiter
     Returns (-1, -1) if no valid delimiters found.
-    Skips content after unescaped % until the next line.
+    Handles:
+        - Nested delimiters
+        - Escaped characters (odd number of backslashes)
+        - LaTeX comments (unescaped % to end of line)
     """
+
+    def count_preceding_backslashes(pos: int) -> int:
+        """Count number of backslashes immediately preceding the position."""
+        count = 0
+        pos -= 1
+        while pos >= 0 and text[pos] == "\\":
+            count += 1
+            pos -= 1
+        return count
+
+    def is_escaped(pos: int) -> bool:
+        """Check if character at position is escaped by backslashes."""
+        return count_preceding_backslashes(pos) % 2 == 1
+
     # Skip leading whitespace
     while start < len(text) and text[start].isspace():
         start += 1
@@ -24,28 +41,29 @@ def find_matching_delimiter(
     stack = []
     i = start
     while i < len(text):
-        # Check for escaped characters
-        if i > 0 and text[i - 1] == "\\":
-            i += 1
-            continue
+        char = text[i]
 
-        # If we find an unescaped %, skip to the next line
-        if text[i] == "%":
+        # Handle comments: unescaped % skips to next line
+        if char == "%" and not is_escaped(i):
             i = text.find("\n", i)
             if i == -1:  # No more newlines found
                 break
             i += 1  # Move past the newline
             continue
 
-        if text[i] == open_delim:
-            stack.append(i)
-        elif text[i] == close_delim:
-            if not stack:
-                return -1, -1  # Unmatched closing delimiter
-            stack.pop()
-            if not stack:  # Found the matching delimiter
-                return start, i + 1
+        # Handle delimiters
+        if char in (open_delim, close_delim) and not is_escaped(i):
+            if char == open_delim:
+                stack.append(i)
+            else:  # close_delim
+                if not stack:
+                    return -1, -1  # Unmatched closing delimiter
+                stack.pop()
+                if not stack:  # Found the matching delimiter
+                    return start, i + 1
+
         i += 1
+
     return -1, -1  # No matching delimiter found
 
 
