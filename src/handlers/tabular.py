@@ -6,6 +6,7 @@ from src.handlers.environment import BaseEnvironmentHandler
 from src.tex_utils import (
     extract_nested_content,
     extract_nested_content_pattern,
+    extract_nested_content_sequence_blocks,
     find_matching_env_block,
 )
 
@@ -20,12 +21,12 @@ TABULAR_PATTERN = re.compile(
 )
 
 ROW_SPLIT_PATTERN = re.compile(r"\\\\(?:\s*\[[^\]]*\])?")
-MULTICOLUMN_PATTERN = re.compile(r"\\multicolumn{(\d+)}{[^}]*}{(.*)}", re.DOTALL)
-MULTIROW_PATTERN = re.compile(r"\\multirow{(\d+)}{[^}]*}{(.*)}", re.DOTALL)
+MULTICOLUMN_PATTERN = re.compile(r"\\multicolumn\s*{(\d+)}\s*{", re.DOTALL)
+MULTIROW_PATTERN = re.compile(r"\\multirow\s*{(\d+)}\s*{", re.DOTALL)
 CELL_SPLIT_PATTERN = re.compile(r"(?<!\\)&")
 
 
-MAKECELL_PATTERN = re.compile(r"\\makecell\s*{", re.DOTALL)
+MAKECELL_PATTERN = re.compile(r"\\makecell(?:\s*\[[^\]]*\])?\s*{", re.DOTALL)
 
 
 def split_latex_content(
@@ -137,13 +138,21 @@ def parse_tabular(latex_table: str, cell_parser_fn=None) -> List[List[Dict]]:
                 mcol_match = MULTICOLUMN_PATTERN.search(content)
                 if mcol_match:
                     colspan = int(mcol_match.group(1))
-                    content = mcol_match.group(2).strip()
+                    start_pos = mcol_match.end() - 1
+                    blocks, end_pos = extract_nested_content_sequence_blocks(
+                        content[start_pos:], max_blocks=2
+                    )
+                    content = blocks[-1].strip() if blocks else ""
 
                 # Then handle multirow within the content
                 mrow_match = MULTIROW_PATTERN.search(content)
                 if mrow_match:
                     rowspan = int(mrow_match.group(1))
-                    content = mrow_match.group(2).strip()
+                    start_pos = mrow_match.end() - 1
+                    blocks, end_pos = extract_nested_content_sequence_blocks(
+                        content[start_pos:], max_blocks=2
+                    )
+                    content = blocks[-1].strip() if blocks else ""
 
                 # Create cell structure
                 parsed_content = cell_parser_fn(content) if cell_parser_fn else content

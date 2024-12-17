@@ -52,7 +52,7 @@ def test_tabular_with_multicolumn(handler):
     text = r"""
     \begin{tabular}{|c|c|c|}
         \hline
-        \multicolumn{2}{|c|}{Header} & Value \\
+        \multicolumn{2}{|c|{xxx}}{Header} & Value \\
         \hline
         a & b & c \\
         \hline
@@ -213,7 +213,7 @@ def test_tabular_without_begin(handler):
 def test_makecell(handler):
     text = r"""
     \begin{tabular}{cc}
-        \makecell{a & b \\ c & d} & 22
+        \makecell[t]{a & b \\ c & d} & 22
     \end{tabular} 
     POST
     """.strip()

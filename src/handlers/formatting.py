@@ -187,7 +187,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "other",
             re.compile(
-                r"\\(?:ignorespaces|relax|\@tempboxa|box|global|@plus|@minus|null|floatbarrier)\b",
+                r"\\(?:ignorespaces|relax|\@tempboxa|box|global|@plus|@minus|null|floatbarrier|phantomsection)\b",
                 re.IGNORECASE,
             ),
         ),

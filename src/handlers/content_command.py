@@ -40,12 +40,12 @@ RAW_PATTERNS = OrderedDict(
             "pdfbookmark",
             r"\\(?:below|current)?pdfbookmark\s*(?:\[([^\]]*)\])?\s*{([^}]*)}\s*{",
         ),
-        ("footnotemark", r"\\footnotemark(?:\[(.+)\])?"),
-        ("footnotetext", r"\\footnotetext(?:\[.+\])?\s*{"),
+        ("footnotemark", r"\\footnotemark(?:\[([^\]]*)\])?"),
+        ("footnotetext", r"\\footnotetext(?:\[([^\]]*)\])?\s*{"),
         # URLs
         ("url", r"\\url\s*{"),
         # Graphics
-        ("includegraphics", r"\\includegraphics\s*(?:\[([^\]]*)\])?\s*{"),
+        ("includegraphics", r"\\include(?:graphics|pdf)\s*(?:\[([^\]]*)\])?\s*{"),
         ("graphicspath", r"\\graphicspath\s*{"),  # ignore?
         # Citations
         (
