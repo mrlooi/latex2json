@@ -5,6 +5,8 @@ from typing import Dict, Union
 
 latex2unicode: Dict[str, Union[str, int]] = {
     "\\dots": "...",
+    "\\textless": "<",
+    "\\textgreater": ">",
     "\\#": 35,
     "\\$": 36,
     "\\%": 37,
