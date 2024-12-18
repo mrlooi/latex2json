@@ -223,7 +223,7 @@ class TextFormattingHandler(TokenHandler):
             )
 
         return {
-            "type": "group",
+            "type": "group" if isinstance(extracted_content, list) else "text",
             "content": extracted_content,
         }, start_pos + end_pos
 
