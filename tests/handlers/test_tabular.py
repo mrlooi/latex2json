@@ -118,12 +118,12 @@ def test_tabular_with_equations(handler):
 
 def test_tabular_with_empty_cells(handler):
     text = r"""
-    \begin{tabular}{ccc}
+    \begin{tabular*}{\textwidth}{ccc}
         & & \\
         a & & c \\
         & b & \\
         & & \\
-    \end{tabular}
+    \end{tabular*}
     """.strip()
     token, end_pos = handler.handle(text.strip())
     assert token is not None

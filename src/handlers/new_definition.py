@@ -292,7 +292,7 @@ class NewDefinitionHandler(TokenHandler):
             for default in re.finditer(r"\[(.*?)\]", match.group(4)):
                 defaults.append(default.group(1))
 
-        pattern = r"\\" + re.escape(cmd_name) + r"(?![a-zA-Z])"
+        pattern = r"\\" + re.escape(cmd_name) + r"(?![a-zA-Z@])"
 
         token = {
             "type": "newcommand",

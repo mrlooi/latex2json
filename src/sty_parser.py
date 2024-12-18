@@ -34,6 +34,8 @@ DELIM_PATTERN = re.compile(r"(?<!\\)(?:\\\\|%|(?:^|[ \t])\{|\\\^|\\(?![$%&_#{}^~
 
 INCLUDE_PATTERN = re.compile(r"\\input\s*\{([^}]+)\}", re.DOTALL)
 
+AT_BEGIN_DOC_PATTERN = re.compile(r"\\AtBeginDocument\s*{", re.IGNORECASE)
+
 
 class LatexStyParser:
     def __init__(self, logger: logging.Logger = None):
@@ -71,28 +73,29 @@ class LatexStyParser:
                     self.if_else_block_handler.process_newif(cmd_name)
                     self.command_processor.process_newif(cmd_name)
 
-                elif token["type"] == "newcommand":
-                    # check if there is potential recursion.
-                    if re.search(r"\\" + cmd_name + r"(?![a-zA-Z@])", token["content"]):
-                        self.logger.warning(
-                            f"Potential recursion detected for newcommand: \\{cmd_name}, skipping..."
-                        )
-                        return None, end_pos
-                    self.command_processor.process_newcommand(
-                        cmd_name,
-                        token["content"],
-                        token["num_args"],
-                        token["defaults"],
-                        token["usage_pattern"],
-                    )
-                elif token["type"] == "def":
-                    self.command_processor.process_newdef(
-                        cmd_name,
-                        token["content"],
-                        token["num_args"],
-                        token["usage_pattern"],
-                        token["is_edef"],
-                    )
+                # elif token["type"] == "newcommand":
+                #     # check if there is potential recursion.
+                #     if re.search(r"\\" + cmd_name + r"(?![a-zA-Z@])", token["content"]):
+                #         self.logger.warning(
+                #             f"Potential recursion detected for newcommand: \\{cmd_name}, skipping..."
+                #         )
+                #         return None, end_pos
+                #     self.command_processor.process_newcommand(
+                #         cmd_name,
+                #         token["content"],
+                #         token["num_args"],
+                #         token["defaults"],
+                #         token["usage_pattern"],
+                #     )
+                # elif token["type"] == "def":
+                #     self.command_processor.process_newdef(
+                #         cmd_name,
+                #         token["content"],
+                #         token["num_args"],
+                #         token["usage_pattern"],
+                #         token["is_edef"],
+                #     )
+
                 return token, end_pos
         return None, 0
 
@@ -161,6 +164,10 @@ class LatexStyParser:
                     current_pos += end_pos
                     continue
 
+            # print(content[current_pos : current_pos + 20])
+            # if content[current_pos : current_pos + 20].startswith(r"\icmlrulerbox"):
+            #     raise Exception("WTF")
+
             # find the next delimiter (this block allows us to quickly identify and process chunks of text between special LaTeX delimiters
             # without it, we would have to parse the entire content string character by character. which would be slower.)
             # if next delimiter exists, we need to store the text before the next delimiter (or all remaining text if no delimiter)
@@ -175,6 +182,18 @@ class LatexStyParser:
                 if not next_delimiter:
                     break
                 continue
+
+            match = AT_BEGIN_DOC_PATTERN.match(content[current_pos:])
+            if match:
+                start_pos = current_pos + match.end() - 1
+                text, end_pos = extract_nested_content(content[start_pos:])
+                if text:
+                    # replace the matched user command with the expanded text
+                    text = text.strip()
+                    content = (
+                        content[:current_pos] + text + content[start_pos + end_pos :]
+                    )
+                    continue
 
             # check for user defined commands (important to check before new definitions in case of floating \csname)
             if self.command_processor.can_handle(content[current_pos:]):
@@ -265,3 +284,4 @@ if __name__ == "__main__":
 
     file = "papers/new/arXiv-2301.13741v3/icml2023.sty"
     tokens = parser.parse_file(file)
+    # print(tokens)

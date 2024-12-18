@@ -158,6 +158,7 @@ RAW_PATTERNS = OrderedDict(
             "separators",
             r"\\(?:"
             r"hline\b|"  # no args
+            r"center\b|"  # no args
             r"centerline\b|"  # no args
             r"cline\s*{([^}]+)}|"  # {n-m}
             r"topsep\b|parsep\b|partopsep\b|"

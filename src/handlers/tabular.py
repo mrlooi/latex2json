@@ -225,7 +225,14 @@ class TabularHandler(BaseEnvironmentHandler):
         env_type = "tabular"
         is_begin = match.group(0).startswith("\\begin")
         if is_begin:
-            env_type = match.group(1)  # tabular, tabular*, or tabularx
+            # tabular, tabular*, or tabularx
+            env_type = (
+                match.group(0)
+                .replace("\\begin", "")
+                .replace("{", "")
+                .replace("}", "")
+                .strip()
+            )
 
         # Strip out the beginning and end tags dynamically using the matched environment type
 
@@ -238,7 +245,7 @@ class TabularHandler(BaseEnvironmentHandler):
                 content, r"\\tabular", r"\\endtabular"
             )
         if start_pos == -1:
-            return None, 0
+            return None, match.end()
 
         total_pos = end_pos
 
@@ -254,22 +261,12 @@ class TabularHandler(BaseEnvironmentHandler):
         }
 
         # Extract column spec using nested content extraction
-        column_spec, end_pos = extract_nested_content(inner_content)
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            inner_content, max_blocks=2
+        )
 
-        if column_spec is not None:
-            # For tabularx, the first argument is the width
-            if env_type == "tabularx" or env_type == "tabulary":
-                width_spec, width_end = extract_nested_content(inner_content)
-                if width_spec is not None:
-                    token["width"] = width_spec.strip()
-                    # Get the actual column spec after the width
-                    column_spec, end_pos = extract_nested_content(
-                        inner_content[width_end:]
-                    )
-                    end_pos += (
-                        width_end  # Adjust end position to account for width spec
-                    )
-
+        if blocks:
+            column_spec = blocks[-1]
             token["column_spec"] = column_spec.strip()
 
             # Get the table content after the column spec
