@@ -147,7 +147,7 @@ def organize_content(in_tokens):
                 token["content"] = recursive_organize(token["content"])
 
             if isinstance(token, dict):
-                if token["type"] == "appendix":
+                if token["type"] == "appendix" or token["type"] == "bibliography":
                     section_stack.clear()
                     paragraph_stack.clear()
                     organized.append(token)
