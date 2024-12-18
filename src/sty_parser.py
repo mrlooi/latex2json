@@ -140,7 +140,8 @@ class LatexStyParser:
             self.current_file_dir = os.path.dirname(os.path.abspath(file_path))
             self.current_file_path = file_path
 
-        content = strip_latex_comments(content)
+        if isinstance(content, str):
+            content = strip_latex_comments(content)
 
         tokens = []
         current_pos = 0

@@ -349,10 +349,12 @@ class LatexParser:
                     if isinstance(token, str):
                         token = {"type": "text", "content": token}
                     elif token["type"] == "bibliography":
-                        entries = self.bib_parser.parse(token["content"])
-                        token["content"] = [
-                            self._convert_bibitem_to_token(entry) for entry in entries
-                        ]
+                        if isinstance(token["content"], str):
+                            entries = self.bib_parser.parse(token["content"])
+                            token["content"] = [
+                                self._convert_bibitem_to_token(entry)
+                                for entry in entries
+                            ]
                     elif token["type"] == "bibliography_file":
                         if token["content"]:
                             token = self._parse_bib_file(token["content"])
@@ -448,7 +450,8 @@ class LatexParser:
         if file_path:
             self.current_file_dir = os.path.dirname(os.path.abspath(file_path))
 
-        content = strip_latex_comments(content)
+        if isinstance(content, str):
+            content = strip_latex_comments(content)
 
         tokens = []
         current_pos = 0

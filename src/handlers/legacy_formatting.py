@@ -144,7 +144,7 @@ class LegacyFormattingHandler(TokenHandler):
                                 next_content, pattern_or_open_brace, pos
                             )
 
-                            if out_pos == -1:
+                            if out_pos == -1 or out_pos == len(next_content):
                                 end_pos = len(next_content)
                                 break
 
