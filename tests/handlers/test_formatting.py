@@ -268,6 +268,9 @@ def test_misc_formatting_commands(handler):
     \cmidrule(r{4pt}){2-6}
 
     \FloatBarrier
+
+    \paperwidth=8.5in
+    \paperheight=11in
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

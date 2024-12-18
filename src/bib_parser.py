@@ -53,13 +53,12 @@ BibTexFieldPattern = re.compile(r"(\w+)\s*=\s*")
 
 class BibTexParser:
     def __init__(self, logger: Logger = None):
-        self.entries: List[BibEntry] = []
         self.logger = logger or logging.getLogger(__name__)
 
     def parse(self, content: str) -> List[BibEntry]:
         """Parse BibTeX content and return list of BibEntry objects"""
         self.logger.info("Starting BibTeX parsing")
-        self.entries = []
+        entries = []
         pos = 0
 
         # Find each entry starting with @
@@ -122,9 +121,9 @@ class BibTexParser:
             entry = BibEntry.from_bibtex(
                 entry_type=entry_type, citation_key=citation_key, fields=fields
             )
-            self.entries.append(entry)
+            entries.append(entry)
 
-        return self.entries
+        return entries
 
 
 BibItemPattern = re.compile(
@@ -141,12 +140,15 @@ class BibParser:
 
         self.bibtex_parser = BibTexParser(logger=self.logger)
 
+    def clear(self):
+        pass
+
     def parse(self, content: str) -> List[BibEntry]:
         """Parse both BibTeX and bibitem entries from the content"""
 
         content = strip_latex_comments(content).strip()
 
-        entries = []  # Local variable instead of instance variable
+        entries = []
 
         # Check if content has bibliography environment
         bib_env_pattern = r"\\begin{(\w*bibliography)}(.*?)\\end{\1}"

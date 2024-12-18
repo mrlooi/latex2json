@@ -84,7 +84,7 @@ RAW_PATTERNS = OrderedDict(
         ),
         (
             "style",
-            r"\\(?:pagestyle|urlstyle|thispagestyle|theoremstyle|bibliographystyle|documentstyle)\s*\{[^}]*\}",
+            r"\\(?:pagestyle|urlstyle|thispagestyle|theoremstyle|bibliographystyle|documentstyle|setcitestyle)\s*\{[^}]*\}",
         ),
         ("newstyle", r"\\(?:newpagestyle|renewpagestyle)\s*\{[^}]*\}\s*{"),
         # ("font", r"\\(?:mdseries|bfseries|itshape|slshape|normalfont|ttfamily)\b"),
@@ -98,7 +98,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "margins",
             r"\\(?:rightmargin|leftmargin)\b|"
-            + r"\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|footskip|headheight|headsep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)"
+            + r"\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|skip|footskip|headheight|headsep|footnotesep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)"
             + r"\s*(?:%s)?"
             % (number_regex + r"(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b")
             + r"|(%s)?\\baselineskip" % (number_regex),
@@ -160,7 +160,7 @@ RAW_PATTERNS = OrderedDict(
             r"hline\b|"  # no args
             r"centerline\b|"  # no args
             r"cline\s*{([^}]+)}|"  # {n-m}
-            r"topsep\b|parsep\b|"
+            r"topsep\b|parsep\b|partopsep\b|"
             r"labelsep\s*\{?([^\}]*)\}?|"
             r"(?:midrule|toprule|bottomrule)(?:\[\d*[\w-]*\])?|"  # optional [trim]
             r"cmidrule\s*(?:\((.+)\)\s*)?(?:\[([^\]]*)\]\s*)?{([^}]+)}|"  # optional (xxpt)[trim] and {n-m}
@@ -176,6 +176,7 @@ RAW_PATTERNS = OrderedDict(
             r"colrule\b"
             r")",
         ),
+        ("paper", r"\\(?:paperwidth|paperheight)\s*=\s*%s(?:\w+)?" % number_regex),
         ("protect", r"\\protect\\[a-zA-Z]+(?:\s*(?:\[[^\]]*\]|\{[^}]*\})*)?"),
         ("addtocontents", r"\\(?:addtocontents|addtocounter)\s*\{[^}]*\s*\}\s*{"),
         ("backslash", r"\\(?:backslash|textbackslash|arraybackslash)\b"),
@@ -187,7 +188,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "other",
             re.compile(
-                r"\\(?:ignorespaces|relax|repeat|\@tempboxa|box|global|@plus|@minus|null|floatbarrier|phantomsection)\b",
+                r"\\(?:ignorespaces|relax|repeat|\@tempboxa|box|global|@plus|@minus|null|floatbarrier|footins|phantomsection)\b",
                 re.IGNORECASE,
             ),
         ),
