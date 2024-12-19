@@ -5,22 +5,29 @@ from src.latex_maps._latex2unicode_map import latex2unicode
 
 
 class LatexUnicodeConverter:
-    def __init__(self):
-        # create copy of latex2unicode
-        self.latex2str = self._init_latex2unicode()
-        self.patterns = self._create_categorized_regex_patterns()
+    # Class-level storage
+    _latex2str: Dict[str, str] = None
+    _patterns = None
 
-    def _init_latex2unicode(self):
+    @classmethod
+    def _ensure_initialized(cls):
+        if cls._latex2str is None:
+            cls._latex2str = cls._init_latex2unicode()
+            cls._patterns = cls._create_categorized_regex_patterns()
+
+    @classmethod
+    def _init_latex2unicode(cls):
         _latex2str: Dict[str, str] = {}
         for key, value in latex2unicode.items():
             _latex2str[key] = value if isinstance(value, str) else chr(value)
         return _latex2str
 
-    def _create_categorized_regex_patterns(self):
+    @classmethod
+    def _create_categorized_regex_patterns(cls):
         patterns = {"ensuremath": [], "text": [], "math": [], "font": [], "other": []}
 
         # Categorize each command
-        for cmd in self.latex2str.keys():
+        for cmd in cls._latex2str.keys():
             if not cmd.startswith("\\") and not cmd.startswith("{"):
                 continue
 
@@ -46,6 +53,12 @@ class LatexUnicodeConverter:
                 compiled_patterns[category] = re.compile("|".join(pattern_list))
 
         return compiled_patterns
+
+    def __init__(self):
+        self.__class__._ensure_initialized()
+        # Use direct reference to class variables
+        self.latex2str = self.__class__._latex2str
+        self.patterns = self.__class__._patterns
 
     def convert(self, text: str) -> str:
         result = text
