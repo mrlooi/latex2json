@@ -1,6 +1,7 @@
 import pytest
 from src.tex_parser import LatexParser
 from src.structure.builder import organize_content
+from src.handlers.text_formatting import FRONTEND_STYLE_MAPPING
 
 
 @pytest.fixture
@@ -15,7 +16,7 @@ def latex_text():
 
     \begin{document}
 
-    \abstract{This is my abstract, \textbf{cool yes?}}
+    \abstract{This is my abstract, \texttiny{cool yes?}}
 
     \paragraph{This is my paragraph}
     YEAAA baby
@@ -46,6 +47,10 @@ def latex_text():
     \section{Appendix}
         My appendix
 
+    \begin{thebibliography}{99}
+    \bibitem[Title]{key} Some content \tt cool
+    \end{thebibliography}
+
     \end{document}
     """
 
@@ -64,7 +69,11 @@ def expected_output():
                     "type": "abstract",
                     "content": [
                         {"type": "text", "content": "This is my abstract,"},
-                        {"type": "text", "content": "cool yes?", "styles": ["bold"]},
+                        {
+                            "type": "text",
+                            "content": "cool yes?",
+                            "styles": [FRONTEND_STYLE_MAPPING["texttiny"]],
+                        },
                     ],
                 },
                 {
@@ -97,7 +106,7 @@ def expected_output():
                                 {
                                     "type": "text",
                                     "content": "John Doe Sss",
-                                    "styles": ["bold"],
+                                    "styles": [FRONTEND_STYLE_MAPPING["textbf"]],
                                 },
                                 {"type": "text", "content": "ahama"},
                             ],
@@ -149,6 +158,26 @@ def expected_output():
                     "level": 1,
                     "numbered": True,
                     "content": [{"type": "text", "content": "My appendix"}],
+                },
+                {
+                    "type": "bibliography",
+                    "name": "thebibliography",
+                    "args": ["99"],
+                    "content": [
+                        {
+                            "type": "bibitem",
+                            "content": [
+                                {"type": "text", "content": "Some content "},
+                                {
+                                    "type": "text",
+                                    "content": "cool",
+                                    "styles": [FRONTEND_STYLE_MAPPING["texttt"]],
+                                },
+                            ],
+                            "cite_key": "key",
+                            "title": "Title",
+                        }
+                    ],
                 },
             ],
         },
