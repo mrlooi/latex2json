@@ -7,6 +7,7 @@ from src.handlers.base import TokenHandler
 from src.patterns import BRACE_CONTENT_PATTERN
 from src.tex_utils import (
     extract_nested_content,
+    extract_nested_content_sequence_blocks,
     flatten_all_to_string,
     strip_latex_newlines,
 )
@@ -32,7 +33,6 @@ FRONTEND_STYLE_MAPPING: Dict[str, str] = {
     "textlarge": "large",
     "texthuge": "xx-large",
     "text": None,
-    "textcolor": None,
     "textsuperscript": "superscript",
     "textsubscript": "subscript",
     "underline": "underline",
@@ -79,6 +79,7 @@ PATTERNS = {
     "fontsize": re.compile(r"\\fontsize" + (r"\s*" + BRACE_CONTENT_PATTERN) * 2),
     "selectfont": re.compile(r"\\selectfont\b"),
     "usefont": re.compile(r"\\usefont" + (r"\s*" + BRACE_CONTENT_PATTERN) * 4),
+    "color": re.compile(r"\\textcolor\s*{"),
 }
 
 
@@ -227,6 +228,18 @@ class TextFormattingHandler(TokenHandler):
             "content": extracted_content,
         }, start_pos + end_pos
 
+    def _handle_color(self, content: str, match: re.Match) -> Tuple[str, int]:
+        start_pos = match.end() - 1
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], max_blocks=2
+        )
+        text = ""
+        if len(blocks) == 2:
+            # TODO: Color?
+            color = blocks[0]
+            text = blocks[1]
+        return {"type": "text", "content": text}, start_pos + end_pos
+
     def handle(
         self, content: str, prev_token: Optional[Dict] = None
     ) -> Tuple[str, int]:
@@ -242,6 +255,8 @@ class TextFormattingHandler(TokenHandler):
                 return self._handle_texorpdfstring(content, match)
             elif name == "box":
                 return self._handle_box(content, match)
+            elif name == "color":
+                return self._handle_color(content, match)
             else:
                 return None, match.end()
 
