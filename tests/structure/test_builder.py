@@ -1,6 +1,6 @@
 import pytest
 from src.tex_parser import LatexParser
-from src.structure.builder import organize_content
+from src.structure.builder import TokenBuilder
 from src.handlers.text_formatting import FRONTEND_STYLE_MAPPING
 
 
@@ -197,7 +197,8 @@ def strip_content_str(content):
 
 def test_organize_content(latex_parser, latex_text, expected_output):
     tokens = latex_parser.parse(latex_text)
-    organized_tokens = organize_content(tokens)
+    token_builder = TokenBuilder()
+    organized_tokens = token_builder.organize_content(tokens)
 
     # Normalize both the organized tokens and expected output
     normalized_organized = strip_content_str(organized_tokens)

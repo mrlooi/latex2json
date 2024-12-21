@@ -94,30 +94,30 @@ class ContentCommandHandler(TokenHandler):
                     }, match.end()
                 elif pattern_name == "appendix":
                     return {"type": "appendix"}, match.end()
+                else:
+                    # Get position after command name
+                    start_pos = match.end()
 
-                # Get position after command name
-                start_pos = match.end()
+                    # Extract content between braces
+                    nested_content, end_pos = extract_nested_content(
+                        content[start_pos - 1 :]
+                    )
+                    if nested_content is None:
+                        return None, start_pos
 
-                # Extract content between braces
-                nested_content, end_pos = extract_nested_content(
-                    content[start_pos - 1 :]
-                )
-                if nested_content is None:
-                    return None, start_pos
+                    # Adjust end position
+                    end_pos = (
+                        start_pos + end_pos - 1
+                    )  # move back one to account for start_pos -1
 
-                # Adjust end position
-                end_pos = (
-                    start_pos + end_pos - 1
-                )  # move back one to account for start_pos -1
+                    # Expand any nested commands in the content
+                    if self.process_content_fn:
+                        nested_content = self.process_content_fn(nested_content)
 
-                # Expand any nested commands in the content
-                if self.process_content_fn:
-                    nested_content = self.process_content_fn(nested_content)
+                    # Create token based on command type
+                    token = self._create_token(pattern_name, match, nested_content)
 
-                # Create token based on command type
-                token = self._create_token(pattern_name, match, nested_content)
-
-                return token, end_pos
+                    return token, end_pos
 
         return None, 0
 
