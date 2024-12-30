@@ -5,6 +5,7 @@ from typing import Callable, Dict, Optional, Tuple
 from src.handlers.base import TokenHandler
 from src.patterns import NUMBER_PATTERN
 from src.tex_utils import extract_nested_content, extract_nested_content_sequence_blocks
+import decimal
 
 
 DEFINE_COLOR_PATTERN = re.compile(
@@ -132,8 +133,9 @@ RAW_PATTERNS = OrderedDict(
             ),
         ),
         # number
+        ("number", r"\\num(?:\[([^\]]*)\])?\s*{([^}]*)}"),
         (
-            "numbers",
+            "linenumbers",
             re.compile(
                 r"\\(?:linenumbers\b|linesnumbered\b|numberwithin\s*\{[^}]*\}\s*\{[^}]*\})",
                 re.IGNORECASE,
@@ -236,6 +238,38 @@ def strip_trailing_number_from_token(token: Dict) -> Dict:
 
 
 class FormattingHandler(TokenHandler):
+    @staticmethod
+    def format_number(number: str, options: Optional[str] = None) -> str:
+        """Format a number according to siunitx-style options.
+
+        Args:
+            number: The number to format as a string
+            options: Optional string containing formatting options like 'round-precision=1'
+
+        Returns:
+            Formatted number as a string
+        """
+        try:
+            if not options:
+                return number
+
+            # Parse options
+            if "round-precision" in options:
+                precision_match = re.search(r"round-precision=(\d+)", options)
+                if precision_match:
+                    precision = int(precision_match.group(1))
+                    decimal_num = decimal.Decimal(number)
+                    quantizer = decimal.Decimal("0." + "0" * precision)
+                    rounded = decimal_num.quantize(
+                        quantizer, rounding=decimal.ROUND_HALF_UP
+                    )
+                    return str(rounded)
+
+            return number
+
+        except (ValueError, decimal.InvalidOperation, AttributeError) as e:
+            return number
+
     def can_handle(self, content: str) -> bool:
         return any(pattern.match(content) for pattern in PATTERNS.values())
 
@@ -248,7 +282,15 @@ class FormattingHandler(TokenHandler):
             if match:
                 if pattern_name == "comment":
                     return None, match.end()
-                if pattern_name == "pz@" or match.group(0).startswith(r"\baselineskip"):
+                elif pattern_name == "number":
+                    options = match.group(1)
+                    number = match.group(2)
+
+                    formatted_number = self.format_number(number, options)
+                    return {"type": "text", "content": formatted_number}, match.end()
+                elif pattern_name == "pz@" or match.group(0).startswith(
+                    r"\baselineskip"
+                ):
                     if prev_token:
                         # check for number\pz@ e.g. 2\pz@ in previous token
                         # since \pz@ could be parsed after the prior number was extracted in previous parsing loop

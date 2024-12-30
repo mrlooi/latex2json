@@ -61,6 +61,11 @@ def test_handle_comments(handler):
     assert pos == len(comment.split("\n")[0])  # Length of comment up to \n
 
 
+def test_handle_numbers(handler):
+    token, pos = handler.handle(r"\num[round-precision=1]{1.33}")
+    assert token["content"] == "1.3"
+
+
 def test_handle_separators(handler):
     # Test handling of separator commands
     token, pos = handler.handle(r"\hline some text")
