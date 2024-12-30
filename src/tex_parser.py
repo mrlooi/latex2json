@@ -32,17 +32,16 @@ from src.handlers import (
     IfElseBlockHandler,
     DiacriticsHandler,
     ForLoopHandler,
+    CommandProcessor,
 )
 from src.handlers.environment import BaseEnvironmentHandler
-from src.patterns import PATTERNS
-from src.commands import CommandProcessor
 from src.tex_utils import (
     extract_nested_content,
     read_tex_file_content,
     strip_latex_comments,
 )
 from src.sty_parser import LatexStyParser
-from src.patterns import USEPACKAGE_PATTERN, WHITELISTED_COMMANDS
+from src.patterns import PATTERNS, USEPACKAGE_PATTERN, WHITELISTED_COMMANDS
 
 # Add these compiled patterns at module level
 # match $ or % or { or } only if not preceded by \

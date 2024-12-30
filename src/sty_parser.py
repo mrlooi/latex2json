@@ -3,7 +3,6 @@ import re
 from typing import List, Dict, Tuple, Union
 import sys, os
 
-from src.commands import CommandProcessor
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -19,6 +18,7 @@ logging.basicConfig(
 from src.handlers import (
     NewDefinitionHandler,
     IfElseBlockHandler,
+    CommandProcessor,
 )
 from src.tex_utils import (
     extract_nested_content,

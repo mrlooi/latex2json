@@ -55,34 +55,46 @@ class CommandProcessor:
     ):
         num_optional = len(defaults)
 
-        def handler(match, text):
-            start_pos = match.end()
-            end_pos = start_pos
-            args = defaults.copy()
+        if num_args == 0:
 
-            # Handle optional args
-            if num_optional:
-                blocks, end_pos = extract_nested_content_sequence_blocks(
-                    text[start_pos:], "[", "]", num_optional
-                )
-                end_pos += start_pos
-                for i, block in enumerate(blocks):
-                    args[i] = block
+            def handler(match, text):
+                # check if there is trailing {}
+                start_pos = match.end()
+                end_pos = start_pos
+                if text[start_pos : start_pos + 2] == "{}":
+                    end_pos += 2
+                return definition, end_pos
 
-            args_left = num_args - num_optional
-            if args_left > 0:
-                start_pos = end_pos
-                blocks, end_pos = extract_nested_content_sequence_blocks(
-                    text[start_pos:], "{", "}", args_left
-                )
-                end_pos += start_pos
-                for block in blocks:
-                    args.append(block)
+        else:
 
-            # fill remaining args with empty strings
-            args.extend([""] * (num_args - len(args)))
+            def handler(match, text):
+                start_pos = match.end()
+                end_pos = start_pos
+                args = defaults.copy()
 
-            return substitute_args(definition, args), end_pos
+                # Handle optional args
+                if num_optional:
+                    blocks, end_pos = extract_nested_content_sequence_blocks(
+                        text[start_pos:], "[", "]", num_optional
+                    )
+                    end_pos += start_pos
+                    for i, block in enumerate(blocks):
+                        args[i] = block
+
+                args_left = num_args - num_optional
+                if args_left > 0:
+                    start_pos = end_pos
+                    blocks, end_pos = extract_nested_content_sequence_blocks(
+                        text[start_pos:], "{", "}", args_left
+                    )
+                    end_pos += start_pos
+                    for block in blocks:
+                        args.append(block)
+
+                # fill remaining args with empty strings
+                args.extend([""] * (num_args - len(args)))
+
+                return substitute_args(definition, args), end_pos
 
         try:
             command = {
