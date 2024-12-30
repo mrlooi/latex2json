@@ -12,6 +12,11 @@ class TokenBuilder:
 
     def __init__(self):
         self.token_factory = TokenFactory()
+        self.reset_numbering()
+
+    def reset_numbering(self):
+        """Reset section numbering state"""
+        self.section_numbers = {1: 0, 2: 0, 3: 0}
 
     @staticmethod
     def _should_add_space(prev_content: str, next_content: str) -> bool:
@@ -21,6 +26,25 @@ class TokenBuilder:
             or next_content.startswith(TokenBuilder._NEXT_STARTS_WITH)
             or next_content.startswith(" ")
         )
+
+    def _update_section_numbering(self, token, reset_lower_levels=False):
+        """Handle section numbering logic in a centralized way"""
+        if not token.get("numbered", True):
+            return
+
+        level = token.get("level", 1)
+
+        # Reset lower level counters if needed
+        if reset_lower_levels:
+            for l in range(2, max(self.section_numbers.keys()) + 1):
+                self.section_numbers[l] = 0
+
+        # Increment current level counter
+        self.section_numbers[level] += 1
+
+        # Build section number string
+        number_parts = [str(self.section_numbers[l]) for l in range(1, level + 1)]
+        token["numbering"] = ".".join(number_parts)
 
     def _convert_inline_equations_to_text(self, tokens):
         converted_tokens = []
@@ -129,7 +153,6 @@ class TokenBuilder:
         paragraph_stack = []
 
         for token in tokens:
-            # Recursively organize content if token has nested content
             if isinstance(token, dict) and isinstance(token.get("content"), list):
                 token = token.copy()
                 token["content"] = self._recursive_organize(token["content"])
@@ -140,12 +163,12 @@ class TokenBuilder:
                     paragraph_stack.clear()
                     organized.append(token)
                 elif token["type"] == "section":
-                    paragraph_stack.clear()  # Clear paragraph stack for new section
+                    paragraph_stack.clear()
+                    self._update_section_numbering(token, reset_lower_levels=True)
                     self._manage_stack(token, section_stack, organized)
                 elif token["type"] == "paragraph":
                     self._manage_stack(token, paragraph_stack, organized, section_stack)
                 else:
-                    # Add other tokens to the deepest stack
                     target = (
                         paragraph_stack[-1]["content"]
                         if paragraph_stack
@@ -155,7 +178,6 @@ class TokenBuilder:
                     )
                     target.append(token)
             else:
-                # Handle non-dict tokens
                 target = (
                     paragraph_stack[-1]["content"]
                     if paragraph_stack
@@ -175,6 +197,7 @@ class TokenBuilder:
         Returns:
             List of organized and processed tokens
         """
+        self.reset_numbering()  # Reset numbering at the start of each document
         tokens = self._process_tokens(in_tokens)
         return self._recursive_organize(tokens)
 

@@ -17,6 +17,7 @@ class SectionToken(BaseToken):
     type: TokenType = TokenType.SECTION
     title: List[BaseToken]
     level: int
+    numbering: Optional[str] = None  # e.g. 3.1.2
     labels: Optional[List[str]] = None
     content: Optional[List[BaseToken]] = []
 

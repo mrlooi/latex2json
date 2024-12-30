@@ -50,7 +50,7 @@ from src.structure.tokens.metadata import (
     KeywordsToken,
 )
 
-TOKEN_MAP: Dict[TokenType, Type[BaseToken]] = {
+TokenMap: Dict[TokenType, Type[BaseToken]] = {
     # Document/Content Structure
     TokenType.DOCUMENT: DocumentToken,
     TokenType.TITLE: TitleToken,

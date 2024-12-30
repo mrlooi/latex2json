@@ -6,7 +6,7 @@ from src.structure.tokens.table_figure_list import (
 )
 from src.structure.tokens.types import TokenType
 from src.structure.tokens.base import BaseToken
-from src.structure.tokens.registry import TOKEN_MAP
+from src.structure.tokens.registry import TokenMap
 from src.structure.tokens.tabular import TabularToken
 
 
@@ -15,7 +15,7 @@ class TokenFactory:
 
     def __init__(self, logger: logging.Logger = None):
         self.logger = logger or logging.getLogger(__name__)
-        self._token_map = TOKEN_MAP.copy()  # Instance-specific token map
+        self._token_map = TokenMap.copy()  # Instance-specific token map
         self._custom_type_handlers: Dict[
             str, Callable[[Dict[str, Any]], BaseToken | None]
         ] = {}

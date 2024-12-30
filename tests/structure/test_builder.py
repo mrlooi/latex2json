@@ -46,6 +46,9 @@ def latex_text():
 
     \section{Appendix}
         My appendix
+    
+    \subsubsection{Abt appendix}
+    Yea this appendix is nice
 
     \begin{thebibliography}{99}
     \bibitem[Title]{key} Some content \tt cool
@@ -86,6 +89,7 @@ def expected_output():
                     "type": "section",
                     "title": [{"type": "text", "content": "Intro"}],
                     "level": 1,
+                    "numbering": "1",
                     "numbered": True,
                     "labels": ["sec:intro"],
                     "content": [
@@ -100,6 +104,7 @@ def expected_output():
                             "type": "section",
                             "title": [{"type": "text", "content": "SubIntro"}],
                             "level": 2,
+                            "numbering": "1.1",
                             "numbered": True,
                             "content": [
                                 {"type": "text", "content": "My name is "},
@@ -139,6 +144,7 @@ def expected_output():
                     "type": "section",
                     "title": [{"type": "text", "content": "Conclusion"}],
                     "level": 1,
+                    "numbering": "2",
                     "numbered": True,
                     "content": [
                         {"type": "text", "content": "TLDR: Best paper"},
@@ -146,6 +152,7 @@ def expected_output():
                             "type": "section",
                             "title": [{"type": "text", "content": "mini conclusion"}],
                             "level": 2,
+                            "numbering": "2.1",
                             "numbered": True,
                             "content": [{"type": "text", "content": "Mini conclude"}],
                         },
@@ -156,8 +163,21 @@ def expected_output():
                     "type": "section",
                     "title": [{"type": "text", "content": "Appendix"}],
                     "level": 1,
+                    "numbering": "3",
                     "numbered": True,
-                    "content": [{"type": "text", "content": "My appendix"}],
+                    "content": [
+                        {"type": "text", "content": "My appendix"},
+                        {
+                            "type": "section",
+                            "title": [{"type": "text", "content": "Abt appendix"}],
+                            "level": 3,
+                            "numbering": "3.0.1",
+                            "numbered": True,
+                            "content": [
+                                {"type": "text", "content": "Yea this appendix is nice"}
+                            ],
+                        },
+                    ],
                 },
                 {
                     "type": "bibliography",
