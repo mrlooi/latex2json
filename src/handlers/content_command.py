@@ -43,7 +43,7 @@ RAW_PATTERNS = OrderedDict(
         ("footnotemark", r"\\footnotemark(?:\[([^\]]*)\])?"),
         ("footnotetext", r"\\footnotetext(?:\[([^\]]*)\])?\s*{"),
         # URLs
-        ("url", r"\\url\s*{"),
+        ("url", r"\\(?:url|path)\s*{"),
         # Graphics
         ("includegraphics", r"\\include(?:graphics|pdf)\s*(?:\[([^\]]*)\])?\s*{"),
         ("graphicspath", r"\\graphicspath\s*{"),  # ignore?
