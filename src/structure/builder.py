@@ -17,6 +17,7 @@ class TokenBuilder:
     def reset_numbering(self):
         """Reset section numbering state"""
         self.section_numbers = {1: 0, 2: 0, 3: 0}
+        self.equation_number = 0  # Add equation counter
 
     @staticmethod
     def _should_add_space(prev_content: str, next_content: str) -> bool:
@@ -45,6 +46,14 @@ class TokenBuilder:
         # Build section number string
         number_parts = [str(self.section_numbers[l]) for l in range(1, level + 1)]
         token["numbering"] = ".".join(number_parts)
+
+    def _update_equation_numbering(self, token):
+        """Handle equation numbering logic"""
+        if not token.get("numbered", True):
+            return
+
+        self.equation_number += 1
+        token["numbering"] = str(self.equation_number)
 
     def _convert_inline_equations_to_text(self, tokens):
         converted_tokens = []
@@ -158,6 +167,9 @@ class TokenBuilder:
                 token["content"] = self._recursive_organize(token["content"])
 
             if isinstance(token, dict):
+                if token["type"] == "equation" and token.get("numbered"):
+                    self._update_equation_numbering(token)
+
                 if token["type"] == "appendix" or token["type"] == "bibliography":
                     section_stack.clear()
                     paragraph_stack.clear()

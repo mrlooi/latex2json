@@ -16,8 +16,10 @@ class EquationToken(BaseToken):
 
     content: str
     type: TokenType = TokenType.EQUATION
+    align: bool = False
     display: DisplayType = DisplayType.INLINE
     labels: Optional[List[str]] = None
+    numbering: Optional[str] = None
 
     @classmethod
     def preprocess_data(cls, data: Dict[str, Any]) -> Dict[str, Any]:

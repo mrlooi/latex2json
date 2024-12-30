@@ -41,6 +41,10 @@ def latex_text():
 
         \subsection{mini conclusion}
         Mini conclude
+        
+        \begin{align*}
+            F = ma
+        \end{align*}
 
     \appendix
 
@@ -99,6 +103,7 @@ def expected_output():
                             "content": "E = mc^2",
                             "display": "block",
                             "numbered": True,
+                            "numbering": "1",
                         },
                         {
                             "type": "section",
@@ -154,7 +159,15 @@ def expected_output():
                             "level": 2,
                             "numbering": "2.1",
                             "numbered": True,
-                            "content": [{"type": "text", "content": "Mini conclude"}],
+                            "content": [
+                                {"type": "text", "content": "Mini conclude"},
+                                {
+                                    "type": "equation",
+                                    "content": "F = ma",
+                                    "display": "block",
+                                    "align": True,
+                                },
+                            ],
                         },
                     ],
                 },
