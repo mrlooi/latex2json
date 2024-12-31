@@ -1,7 +1,7 @@
 import pytest
-from src.tex_parser import LatexParser
+from src.parser.tex_parser import LatexParser
 from src.structure.builder import TokenBuilder
-from src.handlers.text_formatting import FRONTEND_STYLE_MAPPING
+from src.parser import FRONTEND_STYLE_MAPPING
 
 
 @pytest.fixture

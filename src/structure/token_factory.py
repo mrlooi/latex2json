@@ -1,9 +1,6 @@
 import logging
 from typing import Dict, List, Type, Any, Callable, Union
 from src.structure.tokens.bibliography import BibliographyToken
-from src.structure.tokens.table_figure_list import (
-    IncludeGraphicsToken,
-)
 from src.structure.tokens.types import TokenType
 from src.structure.tokens.base import BaseToken
 from src.structure.tokens.registry import TokenMap
