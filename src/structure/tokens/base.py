@@ -28,11 +28,12 @@ class EnvironmentToken(BaseToken):
     name: Optional[str] = None
     title: Optional[str] = None
     labels: Optional[List[str]] = None
-    numbered: bool = False
 
 
 class MathEnvToken(EnvironmentToken):
     type: TokenType = TokenType.MATH_ENV
+    name: str
+    numbered: bool = False
 
 
 class TextToken(BaseToken):

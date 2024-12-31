@@ -1,3 +1,4 @@
+from typing import Dict
 from src.structure.token_factory import TokenFactory
 from src.structure.tokens.types import TokenType
 
@@ -12,12 +13,20 @@ class TokenBuilder:
 
     def __init__(self):
         self.token_factory = TokenFactory()
-        self.reset_numbering()
+        self.clear()
 
     def reset_numbering(self):
         """Reset section numbering state"""
         self.section_numbers = {1: 0, 2: 0, 3: 0}
         self.equation_number = 0  # Add equation counter
+        # math_env numbers
+        self.math_env_numbers: Dict[str, int] = {}  # key: name of env, value: number
+        self.table_env_numbers = 0
+        self.figure_env_numbers = 0
+        self.list_env_numbers = 0
+
+    def clear(self):
+        self.reset_numbering()
 
     @staticmethod
     def _should_add_space(prev_content: str, next_content: str) -> bool:
@@ -209,7 +218,7 @@ class TokenBuilder:
         Returns:
             List of organized and processed tokens
         """
-        self.reset_numbering()  # Reset numbering at the start of each document
+        self.clear()  # Reset numbering at the start of each document
         tokens = self._process_tokens(in_tokens)
         return self._recursive_organize(tokens)
 

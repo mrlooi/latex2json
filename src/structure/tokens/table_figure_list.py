@@ -11,6 +11,7 @@ class FigureToken(EnvironmentToken):
     """Represents figures"""
 
     type: TokenType = TokenType.FIGURE
+    numbered: bool = False
 
 
 # TABLES
@@ -18,6 +19,7 @@ class TableToken(EnvironmentToken):
     """Represents tables"""
 
     type: TokenType = TokenType.TABLE
+    numbered: bool = False
 
 
 # CAPTION
