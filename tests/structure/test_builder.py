@@ -28,6 +28,11 @@ def latex_text():
             E = mc^2
         \end{equation}
 
+        \begin{figure}[h]
+            \includegraphics[page=1]{mypdf.pdf}
+            \caption{My figure, from \cite{bibkey1}}
+        \end{figure}
+
         \subsection{SubIntro}
         My name is \textbf{John Doe} \textbf{Sss} ahama
 
@@ -55,7 +60,7 @@ def latex_text():
     Yea this appendix is nice
 
     \begin{thebibliography}{99}
-    \bibitem[Title]{key} Some content \tt cool
+    \bibitem[Title]{bibkey1} Some content \tt cool
     \end{thebibliography}
 
     \end{document}
@@ -104,6 +109,29 @@ def expected_output():
                             "display": "block",
                             "numbered": True,
                             "numbering": "1",
+                        },
+                        {
+                            "type": "figure",
+                            "name": "figure",
+                            "numbered": True,
+                            "title": "h",
+                            "content": [
+                                {
+                                    "type": "includegraphics",
+                                    "content": "mypdf.pdf",
+                                    "page": 1,
+                                },
+                                {
+                                    "type": "caption",
+                                    "content": [
+                                        {"type": "text", "content": "My figure, from"},
+                                        {
+                                            "type": "citation",
+                                            "content": "bibkey1",
+                                        },
+                                    ],
+                                },
+                            ],
                         },
                         {
                             "type": "section",
@@ -207,7 +235,7 @@ def expected_output():
                                     "styles": [FRONTEND_STYLE_MAPPING["texttt"]],
                                 },
                             ],
-                            "cite_key": "key",
+                            "cite_key": "bibkey1",
                             "title": "Title",
                         }
                     ],

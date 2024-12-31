@@ -2,7 +2,7 @@ import logging
 from typing import Dict, List, Type, Any, Callable, Union
 from src.structure.tokens.bibliography import BibliographyToken
 from src.structure.tokens.table_figure_list import (
-    GraphicsToken,
+    IncludeGraphicsToken,
 )
 from src.structure.tokens.types import TokenType
 from src.structure.tokens.base import BaseToken
@@ -22,13 +22,9 @@ class TokenFactory:
         self._init_handlers()
 
     def _init_handlers(self):
-        def handle_includegraphics(data: Dict[str, Any]) -> BaseToken:
-            return GraphicsToken(content=data["content"])
-
         def handle_date(data: Dict[str, Any]) -> None:
             return None
 
-        self.register_custom_type("includegraphics", handle_includegraphics)
         self.register_custom_type("date", handle_date)
 
     def create(self, data: Union[str, Dict[str, Any]]) -> BaseToken | None:

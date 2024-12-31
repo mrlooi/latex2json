@@ -29,11 +29,20 @@ class CaptionToken(BaseToken):
 
 
 # GRAPHICS
-class GraphicsToken(BaseToken):
-    """Represents graphics"""
+class IncludeGraphicsToken(BaseToken):
+    """Represents includegraphics"""
 
-    type: TokenType = TokenType.GRAPHICS
+    type: TokenType = TokenType.INCLUDEGRAPHICS
     content: str
+    page: Optional[int] = None
+
+
+class IncludePdfToken(BaseToken):
+    """Represents includepdf"""
+
+    type: TokenType = TokenType.INCLUDEPDF
+    content: str
+    pages: Optional[str] = None
 
 
 # LISTS AND ITEMS

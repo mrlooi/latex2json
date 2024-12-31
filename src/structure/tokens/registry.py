@@ -22,11 +22,12 @@ from src.structure.tokens.document import (
 )
 from src.structure.tokens.equation import EquationToken
 from src.structure.tokens.table_figure_list import (
+    IncludePdfToken,
     ListToken,
     ItemToken,
     TableToken,
     FigureToken,
-    GraphicsToken,
+    IncludeGraphicsToken,
     CaptionToken,
 )
 from src.structure.tokens.tabular import TabularToken
@@ -67,7 +68,8 @@ TokenMap: Dict[TokenType, Type[BaseToken]] = {
     TokenType.FIGURE: FigureToken,
     TokenType.TABLE: TableToken,
     TokenType.TABULAR: TabularToken,
-    TokenType.GRAPHICS: GraphicsToken,
+    TokenType.INCLUDEGRAPHICS: IncludeGraphicsToken,
+    TokenType.INCLUDEPDF: IncludePdfToken,
     TokenType.CAPTION: CaptionToken,
     # Lists
     TokenType.LIST: ListToken,
