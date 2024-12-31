@@ -3,7 +3,7 @@ from src.structure.tokens.base import BaseToken, EnvironmentToken
 from src.structure.tokens.types import TokenType
 
 
-class DocumentToken(EnvironmentToken):
+class DocumentToken(BaseToken):
     type: TokenType = TokenType.DOCUMENT
 
 
