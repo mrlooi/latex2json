@@ -45,7 +45,8 @@ RAW_PATTERNS = OrderedDict(
         # URLs
         ("url", r"\\(?:url|path)\s*{"),
         # Graphics
-        ("includegraphics", r"\\include(?:graphics|pdf)\s*(?:\[([^\]]*)\])?\s*{"),
+        ("includegraphics", r"\\includegraphics\s*(?:\[([^\]]*)\])?\s*{"),
+        ("includepdf", r"\\includepdf\s*(?:\[([^\]]*)\])?\s*{"),
         ("graphicspath", r"\\graphicspath\s*{"),  # ignore?
         # Citations
         (
@@ -197,7 +198,41 @@ class ContentCommandHandler(TokenHandler):
             return token
 
         elif matched_type == "includegraphics":
+            # Extract page number from the optional parameters if present
+            options = match.group(1)
+            page_number = None
+            if options:
+                page_match = re.search(r"page=(\d+)", options)
+                page_number = int(page_match.group(1)) if page_match else None
+                if page_number is not None:
+                    return {
+                        "type": "includegraphics",
+                        "content": content,
+                        "page": page_number,
+                    }
+
             return {"type": "includegraphics", "content": content}
+        elif matched_type == "includepdf":
+            # Extract page range from the optional parameters if present
+            options = match.group(1)
+            pages = None
+            if options:
+                # Match both pages=1-3 and pages={1-3} formats
+                pages_match = re.search(r"pages=(?:{([0-9-,]+)}|([0-9-,]+))", options)
+                # Use first non-None group (either braced or unbraced match)
+                pages = (
+                    next((g for g in pages_match.groups() if g is not None), None)
+                    if pages_match
+                    else None
+                )
+                if pages:
+                    return {
+                        "type": "includepdf",
+                        "content": content,
+                        "pages": pages,
+                    }
+
+            return {"type": "includepdf", "content": content}
 
         elif matched_type == "pdfbookmark":
             return {
@@ -214,4 +249,6 @@ class ContentCommandHandler(TokenHandler):
 
 if __name__ == "__main__":
     handler = ContentCommandHandler()
-    print(handler.handle(r"\section{{hello world}}"))
+    print(handler.handle(r"\includepdf[pages={1-3}]{mypdf.pdf}"))
+    print(handler.handle(r"\includepdf[pages=2]{mypdf.pdf}"))
+    print(handler.handle(r"\includepdf{mypdf.pdf}"))

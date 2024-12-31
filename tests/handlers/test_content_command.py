@@ -143,6 +143,21 @@ def test_handle_graphics(handler):
     token, pos = handler.handle(r"\includegraphics{image.png}")
     assert token == {"type": "includegraphics", "content": "image.png"}
 
+    # with page number
+    token, pos = handler.handle(r"\includegraphics[page=2]{mypdf.pdf}")
+    assert token == {"type": "includegraphics", "content": "mypdf.pdf", "page": 2}
+
+
+def test_handle_includepdf(handler):
+    token, pos = handler.handle(r"\includepdf[pages={1-3}]{mypdf.pdf}")
+    assert token == {"type": "includepdf", "content": "mypdf.pdf", "pages": "1-3"}
+
+    token, pos = handler.handle(r"\includepdf[pages=2]{mypdf.pdf}")
+    assert token == {"type": "includepdf", "content": "mypdf.pdf", "pages": "2"}
+
+    token, pos = handler.handle(r"\includepdf{mypdf.pdf}")
+    assert token == {"type": "includepdf", "content": "mypdf.pdf"}
+
 
 def test_handle_urls(handler):
     token, pos = handler.handle(r"\url{http://example.com}")
