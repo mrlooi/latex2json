@@ -10,7 +10,7 @@ data/
 .cursorignore
 
 # ignore latex files
-*.tex
+#*.tex
 
 # ignore pdfs
 *.pdf

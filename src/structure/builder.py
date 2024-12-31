@@ -233,7 +233,7 @@ class TokenBuilder:
 
 
 if __name__ == "__main__":
-    from src.tex_parser import LatexParser
+    from src.parser.tex_parser import LatexParser
     import json
 
     DEBUG = False
