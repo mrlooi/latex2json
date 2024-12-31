@@ -155,6 +155,9 @@ def test_handle_includepdf(handler):
     token, pos = handler.handle(r"\includepdf[pages=2]{mypdf.pdf}")
     assert token == {"type": "includepdf", "content": "mypdf.pdf", "pages": "2"}
 
+    token, pos = handler.handle(r"\includepdf[pages={1,3,5-7}]{mypdf.pdf}")
+    assert token == {"type": "includepdf", "content": "mypdf.pdf", "pages": "1,3,5-7"}
+
     token, pos = handler.handle(r"\includepdf{mypdf.pdf}")
     assert token == {"type": "includepdf", "content": "mypdf.pdf"}
 
