@@ -50,7 +50,7 @@ class TexReader:
         self.parser.clear()
         self.token_builder.clear()
 
-    def process_compressed(self, gz_path: str):
+    def process_compressed(self, gz_path: str, cleanup: bool = True):
         """Process a compressed TeX file and save results to JSON."""
         if not os.path.exists(gz_path):
             error_msg = f"Compressed file not found: {gz_path}"
@@ -58,13 +58,16 @@ class TexReader:
             raise FileNotFoundError(error_msg)
 
         try:
-            with TexFileExtractor.from_compressed(gz_path) as (main_tex, temp_dir):
+            with TexFileExtractor.from_compressed(gz_path, cleanup) as (
+                main_tex,
+                temp_dir,
+            ):
                 self.logger.info(
                     f"Found main TeX file in archive: {main_tex}, {gz_path}"
                 )
                 file_path = os.path.join(temp_dir, main_tex)
                 output = self.process_file(file_path)
-                return output
+                return output, temp_dir
         except Exception as e:
             error_msg = f"Failed to process compressed file {gz_path}: {str(e)}"
             self.logger.error(error_msg)
@@ -91,8 +94,8 @@ if __name__ == "__main__":
 
     try:
         # Example usage with compressed file
-        gz_file = "papers/arXiv-2301.10303v4.gz"
-        output = tex_reader.process_compressed(gz_file)
+        gz_file = "papers/arXiv-2301.10945v1.tar.gz"
+        output, temp_dir = tex_reader.process_compressed(gz_file)
         tex_reader.save_to_json(output)
 
     except Exception as e:

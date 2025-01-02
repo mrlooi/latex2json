@@ -2,6 +2,7 @@ import os
 import gzip
 import tarfile
 import tempfile
+import shutil
 from contextlib import contextmanager
 
 from src.tex_utils import strip_latex_comments
@@ -62,7 +63,7 @@ class TexFileExtractor:
 
     @staticmethod
     @contextmanager
-    def process_compressed_file(gz_path):
+    def process_compressed_file(gz_path, cleanup: bool = True):
         """Process a gzipped file (either single file or tar archive).
 
         Args:
@@ -110,9 +111,8 @@ class TexFileExtractor:
 
         finally:
             # Clean up temporary directory
-            import shutil
-
-            shutil.rmtree(temp_dir)
+            if cleanup:
+                shutil.rmtree(temp_dir)
 
     @classmethod
     def from_folder(cls, folder_path):
@@ -129,7 +129,7 @@ class TexFileExtractor:
 
     @classmethod
     @contextmanager
-    def from_compressed(cls, gz_path):
+    def from_compressed(cls, gz_path, cleanup: bool = True):
         """Create a TexReader instance from a compressed file.
 
         Args:
@@ -140,7 +140,7 @@ class TexFileExtractor:
                   main_tex_file: Name of the main TeX file
                   temp_dir: Path to temporary directory containing extracted files
         """
-        with cls.process_compressed_file(gz_path) as (main_tex, temp_dir):
+        with cls.process_compressed_file(gz_path, cleanup) as (main_tex, temp_dir):
             yield main_tex, temp_dir
 
 
