@@ -1,6 +1,6 @@
 import re
 from typing import Callable, Dict, Optional, Tuple
-from .base import TokenHandler
+from src.parser.handlers.base import TokenHandler
 
 # Compile patterns for code blocks
 PATTERNS = {

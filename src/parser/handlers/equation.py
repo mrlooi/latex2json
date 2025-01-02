@@ -3,8 +3,8 @@ import re
 from typing import Callable, Dict, Optional, Tuple
 from src.tex_utils import extract_nested_content
 from src.parser.patterns import LABEL_PATTERN
-from .base import TokenHandler
-from .environment import convert_any_env_pairs_to_begin_end
+from src.parser.handlers.base import TokenHandler
+from src.parser.handlers.environment import convert_any_env_pairs_to_begin_end
 
 EQUATION_ENV = {
     "equation",  # basic numbered equation

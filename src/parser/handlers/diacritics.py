@@ -2,7 +2,7 @@ from typing import Dict, Optional, Tuple
 import unicodedata
 import re
 
-from .base import TokenHandler
+from src.parser.handlers.base import TokenHandler
 from src.tex_utils import extract_nested_content, substitute_patterns
 
 # Unicode combining characters for various LaTeX accent commands

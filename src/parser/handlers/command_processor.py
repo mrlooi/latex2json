@@ -5,7 +5,7 @@ from typing import List, Dict, Optional
 from src.latex_maps.latex_unicode_converter import LatexUnicodeConverter
 
 from src.tex_utils import extract_nested_content_sequence_blocks, substitute_patterns
-from .new_definition import (
+from src.parser.handlers.new_definition import (
     END_CSNAME_PATTERN,
     START_CSNAME_PATTERN,
     extract_and_concat_nested_csname,

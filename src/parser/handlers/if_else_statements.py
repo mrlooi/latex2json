@@ -2,10 +2,10 @@ from collections import OrderedDict
 from typing import Dict, List, Optional, Tuple
 import re
 
-from .base import TokenHandler
+from src.parser.handlers.base import TokenHandler
+from src.parser.handlers.new_definition import extract_and_concat_nested_csname
 from src.tex_utils import extract_nested_content_sequence_blocks
 from src.parser.patterns import NUMBER_PATTERN
-from .new_definition import extract_and_concat_nested_csname
 
 # Could be character, command, or more complex token
 char_or_command_pattern = r"(?:{\s*)?(?:\\[a-zA-Z@]+|\S)(?:\s*})?"

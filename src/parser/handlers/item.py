@@ -1,6 +1,6 @@
 from typing import Callable, Dict, List, Optional, Tuple
 import re
-from .environment import (
+from src.parser.handlers.environment import (
     BaseEnvironmentHandler,
     find_pattern_while_skipping_nested_envs,
 )
