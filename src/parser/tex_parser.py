@@ -2,19 +2,13 @@ from collections import OrderedDict
 import re
 from typing import List, Dict, Tuple, Union
 import sys, os, traceback
+import logging
 
 from src.parser.bib_parser import BibEntry, BibParser
+from src.utils.logger import setup_logger
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-
-import logging
-
-logging.basicConfig(
-    level=logging.WARNING,
-    format="%(levelname)s: %(message)s",
-    force=True,  # This ensures the config is applied even if another module has configured logging
-)
 
 from src.parser.handlers import (
     CodeBlockHandler,
@@ -639,21 +633,9 @@ class LatexParser:
 
 if __name__ == "__main__":
 
-    # More detailed logging configuration for direct script execution
-    logging.basicConfig(
-        level=logging.DEBUG,  # More verbose when running directly
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        force=True,
-        handlers=[
-            logging.FileHandler(
-                "logs/tex_parser.log", mode="w"
-            ),  # Output to a file named 'tex_parser.log'
-            logging.StreamHandler(),  # Optional: also output to console
-        ],
-    )
     logging.getLogger("asyncio").setLevel(logging.WARNING)
 
-    logger = logging.getLogger(__name__)
+    logger = setup_logger(__name__, level=logging.DEBUG)
 
     parser = LatexParser(logger=logger)
 
