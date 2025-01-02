@@ -1,4 +1,5 @@
 import pytest
+import os
 from src.parser import FRONTEND_STYLE_MAPPING, SECTION_LEVELS, PARAGRAPH_LEVELS
 from src.parser.tex_parser import LatexParser
 from src.utils.tex_utils import flatten_all_to_string
@@ -15,6 +16,8 @@ def parser():
 def parsed_training_tokens(parser):
     return parser.parse(TRAINING_SECTION_TEXT)
 
+
+dir_path = os.path.dirname(os.path.abspath(__file__))
 
 # Convert test classes to groups of functions
 # TestParserText1 class becomes:
@@ -1737,10 +1740,12 @@ def test_inputs_with_files(parser):
     text = r"""
     PRE INPUT
 
-    \input{tests/parser/samples/example.tex}
+    \input{%s/samples/example.tex}
 
     POST INPUT
-    """
+    """ % (
+        dir_path
+    )
     parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) > 2
     assert parsed_tokens[0]["type"] == "text"
@@ -1763,10 +1768,12 @@ def test_bibliography_file(parser):
     text = r"""
     PRE BIBLIOGRAPHY
 
-    \bibliography{tests/parser/samples/bib}
+    \bibliography{%s/samples/bib}
 
     POST BIBLIOGRAPHY
-    """
+    """ % (
+        dir_path
+    )
     parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) == 3
     assert parsed_tokens[0]["type"] == "text"
