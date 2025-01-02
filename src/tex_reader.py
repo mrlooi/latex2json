@@ -1,174 +1,87 @@
+import logging
 import os
-import gzip
-import tarfile
-import tempfile
-from contextlib import contextmanager
-from src.tex_utils import strip_latex_comments
+import json
+from typing import List
+import warnings
+
+from src.structure.tokens.base import BaseToken
+from src.tex_file_extractor import TexFileExtractor
+from src.parser.tex_parser import LatexParser
+from src.structure.builder import TokenBuilder
 
 
-class TexFileExtractor:
-    """A class to handle reading and processing TeX files from various sources."""
+class TexReader:
+    """Class to handle reading and processing TeX files into tokens and JSON output."""
 
-    @staticmethod
-    def is_main_tex_file(content):
-        """Check if content contains markers indicating it's a main TeX file.
+    def __init__(self, logger: logging.Logger = None):
+        self.logger = logger or logging.getLogger(__name__)
 
-        Args:
-            content (str): The file content to check
+        self.parser = LatexParser(logger=self.logger)
+        self.token_builder = TokenBuilder(logger=self.logger)
 
-        Returns:
-            bool: True if the content appears to be a main TeX file
-        """
-        clean_content = strip_latex_comments(content)
-        if r"\documentclass" in clean_content:
-            return True
-        if r"\begin{document}" in clean_content:
-            return True
-        return False
+    def process_file(self, file_path: str) -> List[BaseToken]:
+        """Process a single TeX file and return the token output."""
+        if not os.path.exists(file_path):
+            self.logger.error(f"File {file_path} does not exist")
+            raise FileNotFoundError(f"File {file_path} does not exist")
 
-    @staticmethod
-    def find_main_tex_file(folder_path):
-        """Find the main TeX file in a directory.
+        tokens = self.parser.parse_file(file_path)
+        output = self.token_builder.build(tokens)
+        self.clear()
+        return output
 
-        Args:
-            folder_path (str): Path to the directory to search
+    def save_to_json(self, output: List[BaseToken], json_path="output.json"):
+        """Save token output to JSON file."""
 
-        Returns:
-            str: Name of the main TeX file
+        # serialize output to json (use model_dump(mode='json') instead of model_dump_json since latter adds unnecessary escape chars)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                module="pydantic",
+            )
+            json_output = [t.model_dump(mode="json") for t in output]
 
-        Raises:
-            FileNotFoundError: If no main TeX file is found
-        """
-        tex_files = [f for f in os.listdir(folder_path) if f.endswith(".tex")]
+        with open(json_path, "w") as f:
+            json.dump(json_output, f)
+        self.logger.info(f"Saved output to {json_path}")
 
-        if not tex_files:
-            raise FileNotFoundError(f"No .tex files found in {folder_path}")
+    def clear(self):
+        """Clear both parser and token builder states."""
+        self.parser.clear()
+        self.token_builder.clear()
 
-        for tex_file in tex_files:
-            file_path = os.path.join(folder_path, tex_file)
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    content = f.read()
-                if TexFileExtractor.is_main_tex_file(content):
-                    return tex_file
-            except Exception as e:
-                print(f"Error reading {tex_file}: {str(e)}")
-                continue
-
-        raise FileNotFoundError(
-            "No main TeX file found (no documentclass or begin{document} found)"
-        )
-
-    @staticmethod
-    @contextmanager
-    def process_compressed_file(gz_path):
-        """Process a gzipped file (either single file or tar archive).
-
-        Args:
-            gz_path (str): Path to the gzipped file
-
-        Yields:
-            tuple: (main_tex_file, temp_dir)
-                  main_tex_file: Name of the main TeX file
-                  temp_dir: Path to temporary directory containing extracted files
-        """
-        temp_dir = tempfile.mkdtemp()
-        try:
-            with gzip.open(gz_path, "rb") as f_in:
-                content = f_in.read()
-                is_tar = content.startswith(b"ustar") or gz_path.endswith(".tar.gz")
-
-                if is_tar:
-                    temp_tar = os.path.join(temp_dir, "temp.tar")
-                    with open(temp_tar, "wb") as f_out:
-                        f_out.write(content)
-
-                    with tarfile.open(temp_tar) as tar:
-
-                        def safe_extract(tar_info, kwds=None):
-                            if os.path.isabs(tar_info.name) or ".." in tar_info.name:
-                                return None
-                            return tar_info
-
-                        tar.extractall(temp_dir, filter=safe_extract)
-
-                    main_tex = TexFileExtractor.find_main_tex_file(temp_dir)
-                else:
-                    # Single file case
-                    temp_file = os.path.join(temp_dir, "temp_file")
-                    with open(temp_file, "wb") as f_out:
-                        f_out.write(content)
-
-                    with open(temp_file, "r", encoding="utf-8") as f:
-                        if TexFileExtractor.is_main_tex_file(f.read()):
-                            main_tex = "temp_file"
-                        else:
-                            raise FileNotFoundError("Extracted file is not a TeX file")
-
-                yield main_tex, temp_dir
-
-        finally:
-            # Clean up temporary directory
-            import shutil
-
-            shutil.rmtree(temp_dir)
-
-    @classmethod
-    def from_folder(cls, folder_path):
-        """Create a TexReader instance from a folder containing TeX files.
-
-        Args:
-            folder_path (str): Path to the folder
-
-        Returns:
-            tuple: (main_tex_file, folder_path)
-        """
-        main_tex = cls.find_main_tex_file(folder_path)
-        return main_tex, folder_path
-
-    @classmethod
-    @contextmanager
-    def from_compressed(cls, gz_path):
-        """Create a TexReader instance from a compressed file.
-
-        Args:
-            gz_path (str): Path to the compressed file
-
-        Yields:
-            tuple: (main_tex_file, temp_dir)
-                  main_tex_file: Name of the main TeX file
-                  temp_dir: Path to temporary directory containing extracted files
-        """
-        with cls.process_compressed_file(gz_path) as (main_tex, temp_dir):
-            yield main_tex, temp_dir
+    def process_compressed(self, gz_path: str):
+        """Process a compressed TeX file and save results to JSON."""
+        with TexFileExtractor.from_compressed(gz_path) as (main_tex, temp_dir):
+            self.logger.info(f"Found main TeX file in archive: {main_tex}")
+            file_path = os.path.join(temp_dir, main_tex)
+            output = self.process_file(file_path)
+            return output
 
 
 if __name__ == "__main__":
-    from src.parser.tex_parser import LatexParser
-    from src.structure.builder import TokenBuilder
+    logging.basicConfig(
+        level=logging.DEBUG,  # More verbose when running directly
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        force=True,
+        handlers=[
+            # logging.FileHandler(
+            #     "logs/tex_parser.log"
+            # ),  # Output to a file named 'tex_parser.log'
+            logging.StreamHandler(),  # Optional: also output to console
+        ],
+    )
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
 
-    parser = LatexParser()
-    token_builder = TokenBuilder()
+    logger = logging.getLogger(__name__)
 
-    # Example usage
+    tex_reader = TexReader(logger)
+
     try:
-        # # From compressed file
-        # gz_file = "papers/arXiv-1907.11692v1.tar.gz"
+        # Example usage with compressed file
         gz_file = "papers/arXiv-2301.10303v4.gz"
-        with TexFileExtractor.from_compressed(gz_file) as (main_tex, temp_dir):
-            print(f"Found main TeX file in archive: {main_tex}")
-            # Work with files in temp_dir...
-            file = os.path.join(temp_dir, main_tex)
-            tokens = parser.parse_file(file)
-            parser.clear()
-            output = token_builder.build(tokens)
-
-        # # From folder
-        # main_tex, folder = TexReader.from_folder("papers/new/arXiv-1907.11692v1")
-        # print(f"Found main TeX file in folder: {main_tex}")
+        output = tex_reader.process_compressed(gz_file)
+        tex_reader.save_to_json(output)
 
     except Exception as e:
         print(f"Error: {str(e)}")
-
-    with open("papers/tested/arXiv-math9404236v1.tex", "r", encoding="utf-8") as f:
-        print(TexFileExtractor.is_main_tex_file(f.read()))

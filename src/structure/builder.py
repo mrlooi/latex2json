@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, List
 from src.structure.token_factory import TokenFactory
+from src.structure.tokens.base import BaseToken
 from src.structure.tokens.types import TokenType
 
 
@@ -252,7 +253,7 @@ class TokenBuilder:
         tokens = self._process_tokens(in_tokens)
         return self._recursive_organize(tokens)
 
-    def build(self, tokens):
+    def build(self, tokens) -> List[BaseToken]:
         """
         Build the final output from organized tokens.
 
@@ -262,10 +263,10 @@ class TokenBuilder:
         Returns:
             List of processed tokens
         """
-        self.logger.info("Starting token building...")
-        self.logger.info("Starting token content organization...")
+        self.logger.debug("Starting token building...")
+        # self.logger.debug("Starting token content organization...")
         organized_tokens = self.organize_content(tokens)
-        self.logger.info("Token content organization complete")
+        # self.logger.debug("Token content organization complete")
         output = []
         for token in organized_tokens:
             data = self.token_factory.create(token)

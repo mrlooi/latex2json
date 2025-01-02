@@ -155,17 +155,17 @@ class BibParser:
         bib_env_match = re.search(bib_env_pattern, content, re.DOTALL)
 
         if bib_env_match:
-            self.logger.info("Parsing bibliography environment content")
+            self.logger.debug("Parsing bibliography environment content")
             bib_content = bib_env_match.group(2)
             entries.extend(self._parse_bibitems(bib_content))
         elif re.search(BibTexPattern, content):
-            self.logger.info("Parsing BibTeX content")
+            self.logger.debug("Parsing BibTeX content")
             entries.extend(self.bibtex_parser.parse(content))
         else:
-            self.logger.info("Parsing standalone bibitem content")
+            self.logger.debug("Parsing standalone bibitem content")
             entries.extend(self._parse_bibitems(content))
 
-        self.logger.debug(f"BibParser: Found {len(entries)} entries")
+        self.logger.info(f"BibParser: Found {len(entries)} entries")
         return entries
 
     def _parse_bibitems(self, content: str) -> List[BibEntry]:
