@@ -3,7 +3,7 @@ import unicodedata
 import re
 
 from src.parser.handlers.base import TokenHandler
-from src.tex_utils import extract_nested_content, substitute_patterns
+from src.utils.tex_utils import extract_nested_content, substitute_patterns
 
 # Unicode combining characters for various LaTeX accent commands
 ACCENT_MAP = {

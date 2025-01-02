@@ -5,7 +5,7 @@ import re
 
 from src.parser.handlers.base import TokenHandler
 from src.parser.patterns import BRACE_CONTENT_PATTERN
-from src.tex_utils import (
+from src.utils.tex_utils import (
     extract_nested_content,
     extract_nested_content_sequence_blocks,
     flatten_all_to_string,

@@ -6,7 +6,7 @@ from src.parser.handlers.base import TokenHandler
 from src.parser.handlers.environment import (
     find_pattern_while_skipping_nested_envs,
 )
-from src.tex_utils import extract_nested_content
+from src.utils.tex_utils import extract_nested_content
 
 
 # Font style mappings

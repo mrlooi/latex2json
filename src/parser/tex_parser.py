@@ -35,7 +35,7 @@ from src.parser.handlers import (
     CommandProcessor,
 )
 from src.parser.handlers.environment import BaseEnvironmentHandler
-from src.tex_utils import (
+from src.utils.tex_utils import (
     extract_nested_content,
     read_tex_file_content,
     strip_latex_comments,
@@ -609,6 +609,7 @@ class LatexParser:
 
         Args:
             file_path: Path to the LaTeX file to parse
+            extension: File extension to try if not found (default: .tex)
 
         Returns:
             List[Dict[str, str]]: List of parsed tokens
@@ -616,7 +617,12 @@ class LatexParser:
         try:
             self.logger.info(f"Parsing file: {file_path}, ext: {extension}")
             current_file_dir = self.current_file_dir
-            content = read_tex_file_content(file_path, extension=extension)
+            try:
+                content = read_tex_file_content(file_path, extension=extension)
+            except FileNotFoundError:
+                self.logger.error(f"File not found: {file_path}")
+                return []
+
             out = self.parse(content, file_path=file_path)
             self.logger.info(f"Finished parsing file: {file_path}")
             self.current_file_dir = current_file_dir
@@ -628,7 +634,6 @@ class LatexParser:
                 + "".join(traceback.format_tb(e.__traceback__, limit=10))
             )
             self.logger.warning(f"Continuing from failed parse at {file_path}")
-
             return []
 
 
@@ -641,7 +646,7 @@ if __name__ == "__main__":
         force=True,
         handlers=[
             logging.FileHandler(
-                "logs/tex_parser.log"
+                "logs/tex_parser.log", mode="w"
             ),  # Output to a file named 'tex_parser.log'
             logging.StreamHandler(),  # Optional: also output to console
         ],
@@ -652,7 +657,7 @@ if __name__ == "__main__":
 
     parser = LatexParser(logger=logger)
 
-    file = "papers/new/arXiv-2301.10945v1/main.tex"
+    file = "papers/new/arXiv-2005.14165v4/main.tex"
     # file = "papers/tested/arXiv-2301.10303v4.tex"
     tokens = parser.parse_file(file)
 

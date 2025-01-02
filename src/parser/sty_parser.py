@@ -20,7 +20,7 @@ from src.parser.handlers import (
     IfElseBlockHandler,
     CommandProcessor,
 )
-from src.tex_utils import (
+from src.utils.tex_utils import (
     extract_nested_content,
     read_tex_file_content,
     strip_latex_comments,

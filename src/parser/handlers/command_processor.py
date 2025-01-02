@@ -4,7 +4,7 @@ import re
 from typing import List, Dict, Optional
 from src.latex_maps.latex_unicode_converter import LatexUnicodeConverter
 
-from src.tex_utils import (
+from src.utils.tex_utils import (
     extract_nested_content_sequence_blocks,
     substitute_patterns,
     extract_nested_content,

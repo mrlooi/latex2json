@@ -3,7 +3,7 @@ from logging import Logger
 import logging
 from typing import Dict, List, Optional
 import re
-from src.tex_utils import extract_nested_content, strip_latex_comments
+from src.utils.tex_utils import extract_nested_content, strip_latex_comments
 import os
 
 

@@ -4,7 +4,7 @@ import re
 
 from src.parser.handlers.base import TokenHandler
 from src.parser.handlers.new_definition import extract_and_concat_nested_csname
-from src.tex_utils import extract_nested_content_sequence_blocks
+from src.utils.tex_utils import extract_nested_content_sequence_blocks
 from src.parser.patterns import NUMBER_PATTERN
 
 # Could be character, command, or more complex token

@@ -5,7 +5,7 @@ import tempfile
 import shutil
 from contextlib import contextmanager
 
-from src.tex_utils import strip_latex_comments
+from src.utils.tex_utils import strip_latex_comments
 
 
 class TexFileExtractor:

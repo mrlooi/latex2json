@@ -1,16 +1,16 @@
 import pytest
-from src.tex_utils import (
+from src.utils.tex_utils import (
     extract_nested_content_sequence_blocks,
     extract_nested_content_pattern,
     find_matching_env_block,
     has_comment_on_sameline,
+    find_matching_delimiter,
+    strip_latex_comments,
 )
 import re
 
 
 def test_find_matching_delimiter_with_comments():
-    from src.tex_utils import find_matching_delimiter
-
     # Basic comment case
     text = "{test} % {invalid}"
     start, end = find_matching_delimiter(text)
@@ -51,8 +51,6 @@ def test_find_matching_delimiter_with_comments():
 
 
 def test_find_matching_delimiter_with_double_backslash():
-    from src.tex_utils import find_matching_delimiter
-
     # Test multiple backslashes
     text = r"{not escaped} {\{escaped} \\\{escaped} \\{not escaped}"
     start, end = find_matching_delimiter(text)
@@ -239,8 +237,6 @@ def test_has_uncommented_percent_before():
 
 
 def test_strip_latex_comments():
-    from src.tex_utils import strip_latex_comments
-
     # Test basic single-line comments
     text = r"This is code % with a comment"
     assert strip_latex_comments(text) == "This is code"

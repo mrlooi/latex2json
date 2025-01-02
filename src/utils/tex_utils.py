@@ -260,25 +260,27 @@ def read_tex_file_content(file_path: str, extension: str = ".tex") -> str:
     Args:
         file_path: Path to the input file
         extension: Default file extension to try (e.g., ".tex")
+
+    Returns:
+        str: Content of the file
+
+    Raises:
+        FileNotFoundError: If file doesn't exist or is a directory
     """
-    # Clean up inputs
+    # Clean up input
     file_path = file_path.strip()
 
-    # Try with extension first if it's not already there
+    # Try both with and without extension
+    paths_to_try = [file_path]
     if not file_path.endswith(extension):
-        path_with_ext = file_path + extension
-        if os.path.exists(path_with_ext):
-            if os.path.isdir(path_with_ext):
-                raise FileNotFoundError(f"'{path_with_ext}' is a directory, not a file")
-            with open(path_with_ext, "r") as f:
-                return f.read()
+        paths_to_try.append(file_path + extension)
 
-    # Then try exact path
-    if os.path.exists(file_path):
-        if os.path.isdir(file_path):
-            raise FileNotFoundError(f"'{file_path}' is a directory, not a file")
-        with open(file_path, "r") as f:
-            return f.read()
+    for path in paths_to_try:
+        if os.path.exists(path):
+            if os.path.isdir(path):
+                continue
+            with open(path, "r") as f:
+                return f.read()
 
     raise FileNotFoundError(f"Failed to read input file '{file_path}'")
 

@@ -1,7 +1,7 @@
 from collections import OrderedDict
 import re
 from typing import Callable, Dict, Optional, Tuple
-from src.tex_utils import extract_nested_content
+from src.utils.tex_utils import extract_nested_content
 from src.parser.patterns import LABEL_PATTERN
 from src.parser.handlers.base import TokenHandler
 from src.parser.handlers.environment import convert_any_env_pairs_to_begin_end

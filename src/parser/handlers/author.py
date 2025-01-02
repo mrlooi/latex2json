@@ -2,7 +2,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 import re
 
 from src.parser.handlers.base import TokenHandler
-from src.tex_utils import extract_nested_content
+from src.utils.tex_utils import extract_nested_content
 
 AND_PATTERN = re.compile(r"\\and\b", re.IGNORECASE)
 BACKSLASH_PATTERN = re.compile(r"\\\\")

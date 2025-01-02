@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple
 import re
 
 from src.parser.handlers.base import TokenHandler
-from src.tex_utils import extract_nested_content_sequence_blocks
+from src.utils.tex_utils import extract_nested_content_sequence_blocks
 
 
 # ordered dict so that ifthenelse/ifnum etc is matched before general if

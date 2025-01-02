@@ -2,7 +2,7 @@ import re
 from typing import Callable, Dict, List, Optional, Tuple
 from src.parser.flatten import flatten_tokens
 from src.parser.handlers.environment import BaseEnvironmentHandler
-from src.tex_utils import (
+from src.utils.tex_utils import (
     extract_nested_content,
     extract_nested_content_pattern,
     extract_nested_content_sequence_blocks,

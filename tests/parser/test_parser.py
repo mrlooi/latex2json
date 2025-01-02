@@ -1,7 +1,7 @@
 import pytest
 from src.parser import FRONTEND_STYLE_MAPPING, SECTION_LEVELS, PARAGRAPH_LEVELS
 from src.parser.tex_parser import LatexParser
-from src.tex_utils import flatten_all_to_string
+from src.utils.tex_utils import flatten_all_to_string
 from tests.parser.latex_samples_data import TRAINING_SECTION_TEXT
 
 
