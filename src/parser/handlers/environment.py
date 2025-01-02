@@ -197,24 +197,36 @@ class BaseEnvironmentHandler(TokenHandler):
             token["numbered"] = True
 
         # Extract title if present (text within square brackets after environment name)
+        opt_found = False
         title, end_pos = extract_nested_content(inner_content, "[", "]")
-        if title:
+        if end_pos > 0:
             inner_content = inner_content[end_pos:]
+            opt_found = True
+        if title:
             token["title"] = title
 
         # Extract arguments based on environment type
-        if env_name in ENV_ARGS and ENV_ARGS[env_name].get("mandatory", 0) > 0:
-            args = []
-            num_args = ENV_ARGS[env_name].get("mandatory")
-            for _ in range(num_args):
-                # Handle as argument
-                arg, end_pos = extract_nested_content(inner_content, "{", "}")
+        if env_name in ENV_ARGS:
+            d = ENV_ARGS[env_name]
+
+            opt_args = d.get("optional", 0)
+            if opt_args > 0:
+                if opt_found:
+                    opt_args -= 1
+                args, end_pos = extract_nested_content_sequence_blocks(
+                    inner_content, "[", "]", max_blocks=opt_args
+                )
                 if end_pos > 0:
-                    inner_content = inner_content[
-                        end_pos:
-                    ]  # Remove argument from content
-                    args.append(arg)
-            token["args"] = args
+                    inner_content = inner_content[end_pos:]
+
+            req_args = d.get("mandatory", 0)
+            if req_args > 0:
+                args, end_pos = extract_nested_content_sequence_blocks(
+                    inner_content, "{", "}", max_blocks=req_args
+                )
+                if end_pos > 0:
+                    inner_content = inner_content[end_pos:]
+                token["args"] = args
 
         token["content"] = inner_content
 
