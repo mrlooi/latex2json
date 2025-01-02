@@ -79,6 +79,9 @@ PATTERNS = {
     "floatname": re.compile(r"\\floatname{([^}]*)}{([^}]*)}"),
     "expandafter": EXPAND_PATTERN,
     "endcsname": END_CSNAME_PATTERN,  # for trailing \endcsname?
+    "declarepairedelimiter": re.compile(
+        r"\\DeclarePairedDelimiter\s*\\([^\s{]+)\s*{([^}]*)}{([^}]*)}", re.DOTALL
+    ),
 }
 
 
@@ -115,8 +118,9 @@ class NewDefinitionHandler(TokenHandler):
             if match:
                 if pattern_name == "newenvironment":
                     return self._handle_newenvironment(content, match)
-                # declaremathoperator is for math mode
-                if pattern_name == "newcommand" or pattern_name.startswith("declare"):
+                elif pattern_name == "declarepairedelimiter":
+                    return self._handle_paired_delimiter(match)
+                elif pattern_name == "newcommand" or pattern_name.startswith("declare"):
                     return self._handle_newcommand(content, match)
                 elif pattern_name == "let":
                     return self._handle_def_prefix(
@@ -449,6 +453,21 @@ class NewDefinitionHandler(TokenHandler):
 
         return token, start_pos + end_pos - 1
 
+    def _handle_paired_delimiter(self, match) -> Tuple[Optional[Dict], int]:
+        r"""Handle \DeclarePairedDelimiter definitions"""
+        cmd_name = match.group(1)
+        left_delim = match.group(2)
+        right_delim = match.group(3)
+
+        token = {
+            "type": "paired_delimiter",
+            "name": cmd_name,
+            "left_delim": left_delim,
+            "right_delim": right_delim,
+        }
+
+        return token, match.end()
+
 
 if __name__ == "__main__":
     handler = NewDefinitionHandler()
@@ -472,7 +491,7 @@ if __name__ == "__main__":
         print()
 
     text = r"""
-    \newcommand{\creditsectionheader}[1]{\parbox{\columnwidth}{\centering \textbf{\small #1}}\\}
+    \DeclarePairedDelimiter\br{(}{)}
     """.strip()
 
     print(handler.handle(text))

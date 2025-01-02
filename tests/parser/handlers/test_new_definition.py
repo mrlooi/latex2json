@@ -481,5 +481,16 @@ def test_handle_newenvironment(handler):
     handler.clear()
 
 
+def test_paired_delimiter(handler):
+    content = r"\DeclarePairedDelimiter\br{(}{)} POST"
+    token, pos = handler.handle(content)
+    assert token["type"] == "paired_delimiter"
+    assert token["name"] == "br"
+    assert token["left_delim"] == "("
+    assert token["right_delim"] == ")"
+
+    assert content[pos:] == " POST"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
