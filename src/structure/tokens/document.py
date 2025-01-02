@@ -31,7 +31,7 @@ class AbstractToken(EnvironmentToken):
 
 
 class AppendixToken(BaseToken):
-    """Appendix token i.e. \appendix. Not an environment"""
-
     type: TokenType = TokenType.APPENDIX
-    content: Optional[str] = None
+    # if \appendix, then content is empty
+    # if \begin{appendices}, then content is the content inside the appendices env
+    content: Optional[List[BaseToken]] = []
