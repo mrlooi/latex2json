@@ -52,11 +52,23 @@ class TexReader:
 
     def process_compressed(self, gz_path: str):
         """Process a compressed TeX file and save results to JSON."""
-        with TexFileExtractor.from_compressed(gz_path) as (main_tex, temp_dir):
-            self.logger.info(f"Found main TeX file in archive: {main_tex}")
-            file_path = os.path.join(temp_dir, main_tex)
-            output = self.process_file(file_path)
-            return output
+        if not os.path.exists(gz_path):
+            error_msg = f"Compressed file not found: {gz_path}"
+            self.logger.error(error_msg)
+            raise FileNotFoundError(error_msg)
+
+        try:
+            with TexFileExtractor.from_compressed(gz_path) as (main_tex, temp_dir):
+                self.logger.info(
+                    f"Found main TeX file in archive: {main_tex}, {gz_path}"
+                )
+                file_path = os.path.join(temp_dir, main_tex)
+                output = self.process_file(file_path)
+                return output
+        except Exception as e:
+            error_msg = f"Failed to process compressed file {gz_path}: {str(e)}"
+            self.logger.error(error_msg)
+            raise RuntimeError(error_msg) from e
 
 
 if __name__ == "__main__":

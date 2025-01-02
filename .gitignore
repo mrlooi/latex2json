@@ -15,8 +15,9 @@ data/
 # ignore pdfs
 *.pdf
 
-# ignore pycache
+# ignore pycache/pytest
 __pycache__/
+.pytest_cache/
 
 # ignore pyc files
 *.pyc
@@ -30,3 +31,4 @@ venv/
 logs/
 
 *.gz
+
