@@ -62,7 +62,10 @@ RAW_PATTERNS = OrderedDict(
         ("subjclass", r"\\subjclass\s*(?:\[[^\]]*\])?\s*\{[^}]+\}"),
         # Formatting commands
         ("setup", r"\\(?:hypersetup|captionsetup)(?:\[([^\]]*)\])?\s*{"),
-        ("make", r"\\(?:maketitle|makeatletter|makeatother)\b"),
+        (
+            "make_or_contents",
+            r"\\(?:maketitle|makeatletter|makeatother|tableofcontents)\b",
+        ),
         (
             "page",
             r"\\enlargethispage\s*\{[^}]*\}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|break|scriptsize|sloppy|flushbottom|flushleft|flushright|flushtop)\b",
@@ -182,6 +185,7 @@ RAW_PATTERNS = OrderedDict(
         ("paper", r"\\(?:paperwidth|paperheight)\s*=\s*%s(?:\w+)?" % number_regex),
         ("protect", r"\\protect\\[a-zA-Z]+(?:\s*(?:\[[^\]]*\]|\{[^}]*\})*)?"),
         ("addtocontents", r"\\(?:addtocontents|addtocounter)\s*\{[^}]*\s*\}\s*{"),
+        ("counters", r"\\counterwithin\s*\{[^}]*}\s*\{[^}]*\}"),
         ("backslash", r"\\(?:backslash|textbackslash|arraybackslash)\b"),
         ("ensuremath", r"\\ensuremath\s*{"),
         ("hyphenation", r"\\hyphenation\s*{"),

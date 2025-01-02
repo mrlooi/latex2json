@@ -279,6 +279,8 @@ def test_misc_formatting_commands(handler):
 
     \paperwidth=8.5in
     \paperheight=11in
+    \tableofcontents
+    \counterwithin{table}{section}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
