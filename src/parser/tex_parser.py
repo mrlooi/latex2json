@@ -244,17 +244,17 @@ class LatexParser:
 
     def _process_new_definition_token(self, token: Dict) -> None:
         if token and "name" in token:
-            if token["type"] == "floatname":
-                self.env_handler.process_floatname(token["name"], token["title"])
-                return
-
             # do not process content commands e.g. section etc
             cmd_name = token.get("name", "")
             if not cmd_name:
                 return
-            if cmd_name in WHITELISTED_COMMANDS:
+
+            # handle envs first
+            # floatname for self defined envs
+            if token["type"] == "floatname":
+                self.env_handler.process_floatname(cmd_name, token["title"])
                 return
-            if token["type"] == "newenvironment":
+            elif token["type"] == "newenvironment":
                 self.env_handler.process_newenvironment(
                     cmd_name,
                     token["begin_def"],
@@ -262,7 +262,14 @@ class LatexParser:
                     token["num_args"],
                     token["optional_args"],
                 )
-            elif token["type"] == "newcommand":
+            elif token["type"] == "newtheorem":
+                self.env_handler.process_newtheorem(cmd_name, token["title"])
+
+            # then check commands
+            if cmd_name in WHITELISTED_COMMANDS:
+                return
+
+            if token["type"] == "newcommand":
                 # check if there is potential recursion.
                 if re.search(r"\\" + cmd_name + r"(?![a-zA-Z@])", token["content"]):
                     self.logger.warning(
@@ -293,8 +300,10 @@ class LatexParser:
                 self.command_processor.process_newlength(cmd_name)
             elif token["type"] == "newother":
                 self.command_processor.process_newX(cmd_name)
-            elif token["type"] == "newtheorem":
-                self.env_handler.process_newtheorem(cmd_name, token["title"])
+            elif token["type"] == "paired_delimiter":
+                self.command_processor.process_paired_delimiter(
+                    cmd_name, token["left_delim"], token["right_delim"]
+                )
 
     def _check_for_new_definitions(self, content: str) -> None:
         """Check for new definitions in the content and process them"""
@@ -643,7 +652,7 @@ if __name__ == "__main__":
 
     parser = LatexParser(logger=logger)
 
-    file = "papers/new/arXiv-2010.11929v2/main.tex"
+    file = "papers/new/arXiv-2301.10945v1/main.tex"
     # file = "papers/tested/arXiv-2301.10303v4.tex"
     tokens = parser.parse_file(file)
 

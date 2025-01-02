@@ -80,7 +80,8 @@ PATTERNS = {
     "expandafter": EXPAND_PATTERN,
     "endcsname": END_CSNAME_PATTERN,  # for trailing \endcsname?
     "declarepairedelimiter": re.compile(
-        r"\\DeclarePairedDelimiter\s*\\([^\s{]+)\s*{([^}]*)}{([^}]*)}", re.DOTALL
+        r"\\DeclarePairedDelimiter\s*(?:{\\([^\s{}]+)}|\\([^\s{]+))\s*{([^}]*)}{([^}]*)}",
+        re.DOTALL,
     ),
 }
 
@@ -455,9 +456,9 @@ class NewDefinitionHandler(TokenHandler):
 
     def _handle_paired_delimiter(self, match) -> Tuple[Optional[Dict], int]:
         r"""Handle \DeclarePairedDelimiter definitions"""
-        cmd_name = match.group(1)
-        left_delim = match.group(2)
-        right_delim = match.group(3)
+        cmd_name = match.group(1) or match.group(2) 
+        left_delim = match.group(3)
+        right_delim = match.group(4)
 
         token = {
             "type": "paired_delimiter",

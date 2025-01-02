@@ -4,7 +4,11 @@ import re
 from typing import List, Dict, Optional
 from src.latex_maps.latex_unicode_converter import LatexUnicodeConverter
 
-from src.tex_utils import extract_nested_content_sequence_blocks, substitute_patterns
+from src.tex_utils import (
+    extract_nested_content_sequence_blocks,
+    substitute_patterns,
+    extract_nested_content,
+)
 from src.parser.handlers.new_definition import (
     END_CSNAME_PATTERN,
     START_CSNAME_PATTERN,
@@ -103,6 +107,31 @@ class CommandProcessor:
             self.commands[command_name] = command
         except Exception as e:
             print(f"Error processing newcommand {command_name}: {e}")
+            raise e
+
+    def process_paired_delimiter(
+        self, command_name: str, left_delim: str, right_delim: str
+    ):
+        """Process a paired delimiter command like \br{content}"""
+        usage_pattern = r"\\" + command_name + r"\s*{"
+
+        def handler(match, text):
+            start_pos = match.end() - 1
+            content, end_pos = extract_nested_content(text[start_pos:], "{", "}")
+            if content is None:
+                return "", start_pos
+
+            end_pos += start_pos
+            return f"{left_delim}{content}{right_delim}", end_pos
+
+        try:
+            command = {
+                "pattern": re.compile(usage_pattern, re.DOTALL),
+                "handler": handler,
+            }
+            self.commands[command_name] = command
+        except Exception as e:
+            print(f"Error processing paired delimiter {command_name}: {e}")
             raise e
 
     def process_newdef(

@@ -491,6 +491,14 @@ def test_paired_delimiter(handler):
 
     assert content[pos:] == " POST"
 
+    content = r"\DeclarePairedDelimiter\abs{\lvert}{\rvert} POST"
+    token, pos = handler.handle(content)
+    assert token["type"] == "paired_delimiter"
+    assert token["name"] == "abs"
+    assert token["left_delim"] == r"\lvert"
+    assert token["right_delim"] == r"\rvert"
+    assert content[pos:] == " POST"
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

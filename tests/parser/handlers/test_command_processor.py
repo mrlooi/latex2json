@@ -67,5 +67,22 @@ def test_handle_newcommand(processor, newdef_handler):
     assert text[pos:] == " remaining"
 
 
+def test_paired_delimiter(processor, newdef_handler):
+    processor.clear()
+
+    content = r"\DeclarePairedDelimiter{\br}{(}{)}"
+    token, pos = newdef_handler.handle(content)
+    assert token is not None
+
+    processor.process_paired_delimiter(
+        token["name"], token["left_delim"], token["right_delim"]
+    )
+
+    content = r"\br{x} POST"
+    out_text, pos = processor.handle(content)
+    assert out_text == r"(x)"
+    assert content[pos:] == " POST"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
