@@ -80,7 +80,7 @@ PATTERNS = {
     "expandafter": EXPAND_PATTERN,
     "endcsname": END_CSNAME_PATTERN,  # for trailing \endcsname?
     "declarepairedelimiter": re.compile(
-        r"\\DeclarePairedDelimiter\s*(?:{\\([^\s{}]+)}|\\([^\s{]+))\s*{([^}]*)}{([^}]*)}",
+        r"\\DeclarePairedDelimiter\s*(?:{\\([^\s{}]+)}|\\([^\s{]+))\s*{",
         re.DOTALL,
     ),
 }
@@ -120,7 +120,7 @@ class NewDefinitionHandler(TokenHandler):
                 if pattern_name == "newenvironment":
                     return self._handle_newenvironment(content, match)
                 elif pattern_name == "declarepairedelimiter":
-                    return self._handle_paired_delimiter(match)
+                    return self._handle_paired_delimiter(content, match)
                 elif pattern_name == "newcommand" or pattern_name.startswith("declare"):
                     return self._handle_newcommand(content, match)
                 elif pattern_name == "let":
@@ -454,11 +454,19 @@ class NewDefinitionHandler(TokenHandler):
 
         return token, start_pos + end_pos - 1
 
-    def _handle_paired_delimiter(self, match) -> Tuple[Optional[Dict], int]:
+    def _handle_paired_delimiter(
+        self, content: str, match
+    ) -> Tuple[Optional[Dict], int]:
         r"""Handle \DeclarePairedDelimiter definitions"""
-        cmd_name = match.group(1) or match.group(2) 
-        left_delim = match.group(3)
-        right_delim = match.group(4)
+        cmd_name = match.group(1) or match.group(2)
+        start_pos = match.end() - 1  # -1 to go back {
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "{", "}", max_blocks=2
+        )
+        if len(blocks) != 2:
+            return None, start_pos
+        left_delim = blocks[0]
+        right_delim = blocks[1]
 
         token = {
             "type": "paired_delimiter",
@@ -467,7 +475,7 @@ class NewDefinitionHandler(TokenHandler):
             "right_delim": right_delim,
         }
 
-        return token, match.end()
+        return token, start_pos + end_pos
 
 
 if __name__ == "__main__":

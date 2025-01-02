@@ -1812,19 +1812,19 @@ def test_floatname(parser):
 
 def test_paired_delimiter(parser):
     text = r"""
-    \DeclarePairedDelimiter\braces{(}{)}
+    \DeclarePairedDelimiter\brc{\{}{\}}% { }
     \begin{equation}
-    1+1=\braces{2}
+    1+1=\brc{2}
     \end{equation}
 
-    This is \braces{x} equation
+    This is \brc{x} equation
     """
     parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) == 2
     assert parsed_tokens[0]["type"] == "equation"
-    assert parsed_tokens[0]["content"] == r"1+1=(2)"
+    assert parsed_tokens[0]["content"] == r"1+1=\{2\}"
     assert parsed_tokens[1]["type"] == "text"
-    assert parsed_tokens[1]["content"].strip() == "This is (x) equation"
+    assert parsed_tokens[1]["content"].strip() == "This is {x} equation"
 
 
 if __name__ == "__main__":
