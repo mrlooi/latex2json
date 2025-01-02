@@ -12,27 +12,40 @@ class ColoredFormatter(logging.Formatter):
 
     COLORS = {
         "DEBUG": Fore.BLUE,
-        "INFO": Fore.GREEN,
+        "INFO": Fore.WHITE,
         "WARNING": Fore.YELLOW,
         "ERROR": Fore.RED,
         "CRITICAL": Fore.RED + Style.BRIGHT,
     }
 
     def format(self, record):
+        # Store original message and levelname
+        original_msg = record.msg
+        original_levelname = record.levelname
+
         # Add color only if outputting to terminal
         if self._is_tty_output():
             record.levelname = f"{self.COLORS.get(record.levelname, '')}{record.levelname}{Style.RESET_ALL}"
             record.msg = (
                 f"{self.COLORS.get(record.levelname, '')}{record.msg}{Style.RESET_ALL}"
             )
-        return super().format(record)
+
+        formatted_message = super().format(record)
+
+        # Restore original values
+        record.msg = original_msg
+        record.levelname = original_levelname
+
+        return formatted_message
 
     def _is_tty_output(self):
         """Check if the output is going to a terminal"""
         return hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
 
 
-def setup_logger(name: str = None, level: int = logging.WARNING) -> logging.Logger:
+def setup_logger(
+    name: str = None, level: int = logging.WARNING, log_file: str = None
+) -> logging.Logger:
     """
     Set up and return a logger instance with colored output.
 
@@ -55,18 +68,17 @@ def setup_logger(name: str = None, level: int = logging.WARNING) -> logging.Logg
         datefmt="%Y-%m-%d %H:%M:%S",
     )
     console_handler.setFormatter(console_formatter)
+    logger.addHandler(console_handler)
 
     # Create file handler with non-colored formatter (optional)
-    file_handler = logging.FileHandler(f"logs/{name if name else 'root'}.log", mode="w")
-    file_formatter = logging.Formatter(
-        fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    file_handler.setFormatter(file_formatter)
-
-    # Add handlers to logger
-    logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
+    if log_file:
+        file_handler = logging.FileHandler(log_file, mode="w")
+        file_formatter = logging.Formatter(
+            fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        file_handler.setFormatter(file_formatter)
+        logger.addHandler(file_handler)
 
     # Set level
     logger.setLevel(level)

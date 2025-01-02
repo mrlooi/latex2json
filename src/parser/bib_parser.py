@@ -220,7 +220,7 @@ class BibParser:
             directory = os.path.dirname(file_path)
             main_bbl = os.path.join(directory, "main.bbl")
             if os.path.exists(main_bbl):
-                self.logger.info(f"Found main.bbl at: {main_bbl}")
+                self.logger.info(f"Bib fallback -> Found main.bbl")
                 with open(main_bbl, "r") as f:
                     bib_content = f.read()
 

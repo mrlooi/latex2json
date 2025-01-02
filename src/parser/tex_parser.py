@@ -434,7 +434,6 @@ class LatexParser:
         line_break_delimiter: str = "\n",
         handle_unknown_commands: bool = True,
         handle_legacy_formatting: bool = True,
-        file_path: str = None,
     ) -> List[Dict[str, str]]:
         """
         Parse LaTeX content string into tokens.
@@ -449,9 +448,6 @@ class LatexParser:
         Returns:
             List[Dict[str, str]]: List of parsed tokens
         """
-        if file_path:
-            self.current_file_dir = os.path.dirname(os.path.abspath(file_path))
-
         if isinstance(content, str):
             content = strip_latex_comments(content)
 
@@ -610,16 +606,19 @@ class LatexParser:
         """
         try:
             self.logger.info(f"Parsing file: {file_path}, ext: {extension}")
-            current_file_dir = self.current_file_dir
+
+            file_abspath = os.path.abspath(file_path)
+            if not self.current_file_dir:
+                self.current_file_dir = os.path.dirname(file_abspath)
+
             try:
                 content = read_tex_file_content(file_path, extension=extension)
             except FileNotFoundError:
                 self.logger.error(f"File not found: {file_path}")
                 return []
 
-            out = self.parse(content, file_path=file_path)
+            out = self.parse(content)
             self.logger.info(f"Finished parsing file: {file_path}")
-            self.current_file_dir = current_file_dir
             return out
         except Exception as e:
             self.logger.error(f"Failed to parse file: {file_path}, error: {str(e)}")
@@ -635,7 +634,7 @@ if __name__ == "__main__":
 
     logging.getLogger("asyncio").setLevel(logging.WARNING)
 
-    logger = setup_logger(__name__, level=logging.DEBUG)
+    logger = setup_logger(__name__, level=logging.DEBUG, log_file="logs/tex_parser.log")
 
     parser = LatexParser(logger=logger)
 

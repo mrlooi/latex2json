@@ -1737,11 +1737,11 @@ def test_inputs_with_files(parser):
     text = r"""
     PRE INPUT
 
-    \input{samples/example.tex}
+    \input{tests/parser/samples/example.tex}
 
     POST INPUT
     """
-    parsed_tokens = parser.parse(text, file_path=os.path.abspath(__file__))
+    parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) > 2
     assert parsed_tokens[0]["type"] == "text"
     assert parsed_tokens[0]["content"].strip() == "PRE INPUT"
@@ -1756,15 +1756,18 @@ def test_inputs_with_files(parser):
     assert input_tokens[1]["type"] == "equation"
     assert input_tokens[1]["content"].strip() == "1+1=2"
 
+
+def test_bibliography_file(parser):
+
     # bibliography file
     text = r"""
     PRE BIBLIOGRAPHY
 
-    \bibliography{samples/bib}
+    \bibliography{tests/parser/samples/bib}
 
     POST BIBLIOGRAPHY
     """
-    parsed_tokens = parser.parse(text, file_path=os.path.abspath(__file__))
+    parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) == 3
     assert parsed_tokens[0]["type"] == "text"
     assert parsed_tokens[0]["content"].strip() == "PRE BIBLIOGRAPHY"
