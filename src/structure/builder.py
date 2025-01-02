@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, List
 from src.structure.token_factory import TokenFactory
 from src.structure.tokens.types import TokenType
@@ -19,7 +20,9 @@ class TokenBuilder:
     _PREV_ENDS_WITH = ("(", "[", "{", "'", '"')
     _NEXT_STARTS_WITH = (":", ";", ")", "]", "}", ",", ".")
 
-    def __init__(self):
+    def __init__(self, logger: logging.Logger = None):
+        self.logger = logger or logging.getLogger(__name__)
+
         self.token_factory = TokenFactory()
         self.clear()
 
@@ -259,12 +262,16 @@ class TokenBuilder:
         Returns:
             List of processed tokens
         """
+        self.logger.info("Starting token building...")
+        self.logger.info("Starting token content organization...")
         organized_tokens = self.organize_content(tokens)
+        self.logger.info("Token content organization complete")
         output = []
         for token in organized_tokens:
             data = self.token_factory.create(token)
             if data:
                 output.append(data)
+        self.logger.info("Token building complete. %d tokens created" % (len(output)))
         return output
 
 
@@ -272,21 +279,27 @@ if __name__ == "__main__":
     from src.parser.tex_parser import LatexParser
     import json
 
-    DEBUG = False
+    logging.basicConfig(
+        level=logging.DEBUG,  # More verbose when running directly
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        force=True,
+        handlers=[
+            # logging.FileHandler(
+            #     "logs/tex_parser.log"
+            # ),  # Output to a file named 'tex_parser.log'
+            logging.StreamHandler(),  # Optional: also output to console
+        ],
+    )
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
 
-    parser = LatexParser()
+    logger = logging.getLogger(__name__)
 
-    # text = r"""
-    # \begin{thebibliography}{99}
-    # \bibitem[Title]{key} Some content \tt cool
-    # \end{thebibliography}
-    # """
-    # tokens = parser.parse(text)
+    parser = LatexParser(logger)
 
     file = "papers/new/arXiv-2010.11929v2/main.tex"
     tokens = parser.parse_file(file)
 
-    token_builder = TokenBuilder()
+    token_builder = TokenBuilder(logger=logger)
 
     # organized_tokens = token_builder.organize_content(tokens)
 
