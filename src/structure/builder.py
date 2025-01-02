@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 from src.structure.token_factory import TokenFactory
 from src.structure.tokens.types import TokenType
 
@@ -7,6 +7,14 @@ import copy
 
 
 class TokenBuilder:
+    """Handles the building and organization of document tokens including numbering and hierarchy.
+
+    Responsible for:
+    - Managing section, equation, table, and figure numbering
+    - Processing and organizing document structure
+    - Converting and concatenating tokens
+    """
+
     # Constants
     _PREV_ENDS_WITH = ("(", "[", "{", "'", '"')
     _NEXT_STARTS_WITH = (":", ";", ")", "]", "}", ",", ".")
@@ -18,12 +26,11 @@ class TokenBuilder:
     def reset_numbering(self):
         """Reset section numbering state"""
         self.section_numbers = {1: 0, 2: 0, 3: 0}
-        self.equation_number = 0  # Add equation counter
-        # math_env numbers
-        self.math_env_numbers: Dict[str, int] = {}  # key: name of env, value: number
-        self.table_env_numbers = 0
-        self.figure_env_numbers = 0
-        self.list_env_numbers = 0
+        self.math_env_number = 0  # resets when section changes
+        # equation, table, figure are simple sequential counters
+        self.equation_number = 0
+        self.table_env_number = 0
+        self.figure_env_number = 0
 
     def clear(self):
         self.reset_numbering()
@@ -48,6 +55,9 @@ class TokenBuilder:
         if reset_lower_levels:
             for l in range(2, max(self.section_numbers.keys()) + 1):
                 self.section_numbers[l] = 0
+            # Reset math environment counter when section changes
+            if level == 1:
+                self.math_env_number = 0
 
         # Increment current level counter
         self.section_numbers[level] += 1
@@ -57,12 +67,22 @@ class TokenBuilder:
         token["numbering"] = ".".join(number_parts)
 
     def _update_equation_numbering(self, token):
-        """Handle equation numbering logic"""
-        if not token.get("numbered", True):
-            return
-
         self.equation_number += 1
         token["numbering"] = str(self.equation_number)
+
+    def _update_table_env_numbering(self, token):
+        self.table_env_number += 1
+        token["numbering"] = str(self.table_env_number)
+
+    def _update_figure_env_numbering(self, token):
+        self.figure_env_number += 1
+        token["numbering"] = str(self.figure_env_number)
+
+    def _update_math_env_numbering(self, token):
+        self.math_env_number += 1
+        # Use current section number + sequential counter
+        section_prefix = str(self.section_numbers[1])
+        token["numbering"] = f"{section_prefix}.{self.math_env_number}"
 
     def _convert_inline_equations_to_text(self, tokens):
         converted_tokens = []
@@ -118,7 +138,7 @@ class TokenBuilder:
 
         return concatenated_tokens
 
-    def _process_tokens(self, in_tokens):
+    def _process_tokens(self, in_tokens: List[Dict]) -> List[Dict]:
         def recursive_process(tokens, should_concat=True):
             processed_tokens = []
             for token in tokens:
@@ -165,20 +185,39 @@ class TokenBuilder:
         token["content"] = []
         stack.append(token)
 
+    def _check_update_numbering(self, token: Dict[str, any]):
+        if token.get("numbered"):
+            if token["type"] == "equation":
+                self._update_equation_numbering(token)
+            elif token["type"] == "math_env":
+                self._update_math_env_numbering(token)
+            elif token["type"] == "table":
+                self._update_table_env_numbering(token)
+            elif token["type"] == "figure":
+                self._update_figure_env_numbering(token)
+
     def _recursive_organize(self, tokens):
         organized = []
         section_stack = []
         paragraph_stack = []
 
+        def append_to_section_or_paragraph(token):
+            target = (
+                paragraph_stack[-1]["content"]
+                if paragraph_stack
+                else (section_stack[-1]["content"] if section_stack else organized)
+            )
+            target.append(token)
+
         for token in tokens:
-            if isinstance(token, dict) and isinstance(token.get("content"), list):
-                token = token.copy()
-                token["content"] = self._recursive_organize(token["content"])
-
             if isinstance(token, dict):
-                if token["type"] == "equation" and token.get("numbered"):
-                    self._update_equation_numbering(token)
+                self._check_update_numbering(token)
 
+                # Recursively organize content if content is a list
+                if isinstance(token.get("content"), list):
+                    token["content"] = self._recursive_organize(token["content"])
+
+                # Clear section stacks/numbering if appendix and bibliography detected
                 if token["type"] == "appendix" or token["type"] == "bibliography":
                     section_stack.clear()
                     paragraph_stack.clear()
@@ -190,25 +229,13 @@ class TokenBuilder:
                 elif token["type"] == "paragraph":
                     self._manage_stack(token, paragraph_stack, organized, section_stack)
                 else:
-                    target = (
-                        paragraph_stack[-1]["content"]
-                        if paragraph_stack
-                        else (
-                            section_stack[-1]["content"] if section_stack else organized
-                        )
-                    )
-                    target.append(token)
+                    append_to_section_or_paragraph(token)
             else:
-                target = (
-                    paragraph_stack[-1]["content"]
-                    if paragraph_stack
-                    else (section_stack[-1]["content"] if section_stack else organized)
-                )
-                target.append(token)
+                append_to_section_or_paragraph(token)
 
         return organized
 
-    def organize_content(self, in_tokens):
+    def organize_content(self, in_tokens: List[Dict]) -> List[Dict]:
         """
         Main public method to organize and process tokens.
 

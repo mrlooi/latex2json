@@ -36,10 +36,18 @@ def latex_text():
         \subsection{SubIntro}
         My name is \textbf{John Doe} \textbf{Sss} ahama
 
+        \begin{theorem}
+            Theorem 1
+        \end{theorem}
+
         \subsection*{SubIntro2}
         SUBINTRO 2
         \paragraph{Paragraph me}
         Hi there this is paragraph
+
+        \begin{theorem*}
+            Theorem 2
+        \end{theorem*}
 
     \section{Conclusion}
         TLDR: Best paper
@@ -50,6 +58,11 @@ def latex_text():
         \begin{align*}
             F = ma
         \end{align*}
+
+        \begin{theorem}
+            Theorem 3
+        \end{theorem}
+
 
     \appendix
 
@@ -114,6 +127,7 @@ def expected_output():
                             "type": "figure",
                             "name": "figure",
                             "numbered": True,
+                            "numbering": "1",
                             "title": "h",
                             "content": [
                                 {
@@ -147,6 +161,15 @@ def expected_output():
                                     "styles": [FRONTEND_STYLE_MAPPING["textbf"]],
                                 },
                                 {"type": "text", "content": "ahama"},
+                                {
+                                    "type": "math_env",
+                                    "name": "theorem",
+                                    "content": [
+                                        {"type": "text", "content": "Theorem 1"}
+                                    ],
+                                    "numbering": "1.1",
+                                    "numbered": True,
+                                },
                             ],
                         },
                         {
@@ -166,7 +189,17 @@ def expected_output():
                                         {
                                             "type": "text",
                                             "content": "Hi there this is paragraph",
-                                        }
+                                        },
+                                        {
+                                            "type": "math_env",
+                                            "name": "theorem",
+                                            "content": [
+                                                {
+                                                    "content": "Theorem 2",
+                                                    "type": "text",
+                                                },
+                                            ],
+                                        },
                                     ],
                                 },
                             ],
@@ -194,6 +227,15 @@ def expected_output():
                                     "content": "F = ma",
                                     "display": "block",
                                     "align": True,
+                                },
+                                {
+                                    "type": "math_env",
+                                    "name": "theorem",
+                                    "content": [
+                                        {"type": "text", "content": "Theorem 3"}
+                                    ],
+                                    "numbering": "2.1",
+                                    "numbered": True,
                                 },
                             ],
                         },

@@ -33,7 +33,7 @@ class EnvironmentToken(BaseToken):
 class MathEnvToken(EnvironmentToken):
     type: TokenType = TokenType.MATH_ENV
     name: str
-    numbered: bool = False
+    numbering: Optional[str] = None
 
 
 class TextToken(BaseToken):
