@@ -75,20 +75,11 @@ class TexReader:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.DEBUG,  # More verbose when running directly
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        force=True,
-        handlers=[
-            # logging.FileHandler(
-            #     "logs/tex_parser.log"
-            # ),  # Output to a file named 'tex_parser.log'
-            logging.StreamHandler(),  # Optional: also output to console
-        ],
-    )
+    from src.utils.logger import setup_logger
+
     logging.getLogger("asyncio").setLevel(logging.WARNING)
 
-    logger = logging.getLogger(__name__)
+    logger = setup_logger(level=logging.INFO, log_file="logs/tex_reader.log")
 
     tex_reader = TexReader(logger)
 
