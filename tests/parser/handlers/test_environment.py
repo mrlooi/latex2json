@@ -185,5 +185,12 @@ def test_commenting_inside_env(handler):
     assert token["content"].strip() == expected.strip()
 
 
+def test_comment_env(handler):
+    content = r"\begin{comment} stuff \end{comment} post"
+    token, pos = handler.handle(content)
+    assert token is None
+    assert content[pos:] == " post"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

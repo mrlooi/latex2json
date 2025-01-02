@@ -12,7 +12,9 @@ compile_as = re.DOTALL | re.IGNORECASE
 PATTERNS = {
     "author": re.compile(r"\\author(?:\s*\[(.*?)\])?\s*{", compile_as),
     "email": re.compile(r"\\email\s*{", compile_as),
-    "affiliation": re.compile(r"\\affiliation\s*{", compile_as),
+    "affiliation": re.compile(
+        r"\\(?:affil|affiliation)(?:\s*\[(.*?)\])?\s*{", compile_as
+    ),
     "address": re.compile(r"\\address\s*{", compile_as),
     # \thanks usually found inside author block
     "thanks": re.compile(r"\\thanks\s*{", compile_as),

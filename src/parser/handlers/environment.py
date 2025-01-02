@@ -316,7 +316,12 @@ class BaseEnvironmentHandler(TokenHandler):
     ) -> Tuple[Optional[Dict], int]:
         matched, out = BaseEnvironmentHandler.try_match_env(content)
         if matched:
-            env_token = self._handle_environment(out["name"], out["content"])
+            env_name = out["name"]
+            # ignore begin{comment} env
+            if env_name == "comment":
+                return None, out["end_pos"]
+
+            env_token = self._handle_environment(env_name, out["content"])
             return env_token, out["end_pos"]
 
         return BaseEnvironmentHandler.try_match_group(content)
