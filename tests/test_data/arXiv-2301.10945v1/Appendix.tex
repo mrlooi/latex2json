@@ -1,0 +1,623 @@
+
+
+\section{Auxiliary Lemmas}
+All deferred proofs in the main text and appendix are directed to Appendix \ref{appendix:deferred_proof}.
+
+\subsection{Additional Notation}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{| c | l | l |}
+        \hline
+         \textrm{Symbol} & \textrm{Meaning} & \textrm{Less than} \\ \hline
+         $l_{f,0}$ & Bound of $\|\grad_x f\|, \|\grad_y f\|$ & $\cdot$ \\ \hline
+         $l_{f,1}$ & Smoothness of $f$ & $\cdot$ \\ \hline
+         $l_{g,0}$ & Bound of $\|\grad_x g\|$ & $\cdot$ \\ \hline
+         $l_{g,1}$ & Smoothness of $g$ & $\cdot$ \\ \hline
+         $\mu_g$ & Strong-convexity of $g$ & $\cdot$ \\ \hline
+         $l_{g,2}$ & Hessian-continuity of $g$ & $\cdot$ \\ \hline
+         $M_f$ & Second-order moment of $\grad f(x,y;\zeta)$ & $l_{f,0}^2 + \sigma_f^2$ \\ \hline
+         $M_g$ & Second-order moment of $\grad g(x,y;\phi)$ & $l_{g,0}^2 + \sigma_g^2$ \\ \hline
+         $l_{f,2}$ & Hessian-continuity of $f$ (with Assumption \ref{assumption:extra_smooth_f}) & $\cdot$ \\ \hline
+         $l_{F,1}$ & Smoothness of $F(x)$ & $l_{*,0} \left(l_{f,1} + \frac{l_{g,1}^2}{\mu_g} + \frac{2l_{f,0}l_{g,1}l_{g,2}}{\mu_g^2} \right)$\\ \hline
+         $l_{\lambda,0}$ & Lipschitzness of $y_\lambda^*(x)$ (for all $\lambda \ge 2l_{f,1}/\mu_g$) & $\frac{3 l_{g,1}}{\mu_g}$ \\ \hline
+         $l_{\lambda,1}$ & Smoothness of $y_\lambda^*(x)$ (for $\lambda \ge 2l_{f,1}/\mu_g$ with Assumption \ref{assumption:extra_smooth_f}) & $32 (l_{g,2} + \lambda^{-1} \cdot l_{f,2}) \frac{l_{g,1}^2}{\mu_g^3}$ \\ \hline
+         $l_{*,0}$ & $= 1 + \max_{\lambda \ge 2l_{f,1}/\mu_g}l_{\lambda,0}$ & $\cdot$ \\ \hline
+         $l_{*,1}$ & $= \max_{\lambda \ge 2l_{f,1}/\mu_g} l_{\lambda, 1}$ & $\cdot$ \\ \hline
+    \end{tabular}
+    \caption{Meaning of Constants}
+    \label{tab:constant_relations}
+\end{table}
+To simplify the representation for the movement of variables, we often use $q_k^x$, $q_k^y$ and $q_k^z$ defined as
+\begin{align}
+    q_k^x &:= \grad_x f(x_k, y_{k+1}) + \lambda_k (\grad_x g(x_k, y_{k+1}) - \grad_x g(x_k, z_{k+1})), \nonumber \\
+    q_{k,t}^y &:= \grad_y f(x_k, y_{k,t}) + \lambda_k \grad_y g(x_k, y_{k,t}), \nonumber \\
+    q_{k,t}^z &:= \grad_y g(x_k, z_{k,t}). \label{eq:qk_def}
+\end{align}
+The above quantities are the expected movements of $x_k, y_k^{(t)}, z_k^{(t)}$ respectively if there are no stochastic noises in gradient oracles. We also summarize symbols and their meanings for instance-specific constants in Table \ref{tab:constant_relations}.
+
+
+
+
+
+
+
+\subsection{Auxiliary Lemmas}
+We first state a few lemmas that will be useful in our main proofs.
+
+
+
+
+
+\begin{lemma}
+    \label{lemma:outer_F_smooth}
+    $F(x) = f(x, y^*(x))$ is $l_{F,1}$-smooth where
+    \begin{align*}
+        l_{F,1} \le l_{*,0} \left(l_{f,1} + \frac{l_{g,1}^2}{\mu_g} + \frac{2l_{f,0}l_{g,1}l_{g,2}}{\mu_g^2} \right).
+    \end{align*}
+\end{lemma}
+
+
+
+
+
+
+
+
+
+
+
+
+%\jycomment{may move the below to the end -- benefit of the below is we can work without additional Assumption on $\grad^2 f$. But this is not well tied with what's written in previous sections.} our primary targets to bound are $\|\grad \mL_{\lambda_k} (x_k,y_k)\|^2$ and $\|y_k - y^*(x_k)\|^2$, and we connect them with $\|\grad F(x_k)\|$ through the following lemma:
+\begin{lemma}
+    \label{lemma:relation_Lagrangian_F}
+    For any $x,y, \lambda > 0$, the following holds:
+    \begin{align*}
+        &\|\grad F(x) - \grad_x \mL_\lambda(x,y) + \grad_{xy}^2 g(x,y^*(x))^\top \grad^2_{yy} g(x,y^*(x))^{-1} \grad_y \mL_\lambda(x,y)\| \\
+        &\qquad \le 2 (l_{g,1}/\mu_g) \|y-y^*(x)\| \left(l_{f,1} + \lambda \cdot \min(2l_{g,1}, l_{g,2} \|y-y^*(x)\|)\right).
+    \end{align*}
+\end{lemma}
+
+\begin{lemma}
+    \label{lemma:nice_y_star_lagrangian}
+    Under Assumptions \ref{assumption:nice_functions}, \ref{assumption:extra_nice_g} and \ref{assumption:extra_smooth_f}, and $\lambda > 2l_{f,1} / \mu_g$, a function $y_{\lambda}^*(x)$ is $l_{\lambda,1}$-smooth: for any $x_1, x_2 \in X$, we have $$\|\grad y_\lambda^*(x_1) - \grad y_\lambda^*(x_2)\| \le l_{\lambda, 1} \|x_1 - x_2\|$$ where $l_{\lambda,1} \le 32 (l_{g,2} + \lambda^{-1} l_{f,2}) l_{g,1}^2 / \mu_g^3$.
+\end{lemma}
+
+%\dkcomment{To have a sharper estimate, we may use $\grad_x \mL_\lambda = O(\epsilon_x)$ and $\grad_y \mL_\lambda = O(\epsilon_y)$. Indeed, we only use the bound $\epsilon_x$ once in the proof of Corollary~\ref{corollary:bias_from_lambda}}
+
+
+
+
+
+
+
+
+
+\begin{lemma}
+    \label{lemma:y_star_contraction}
+    For any fixed $\lambda > 2l_{f,1} / \mu_g$, at every $k$ iteration conditioned on $\mathcal{F}_k$, we have
+    \begin{align*}
+        \Exs[\|y^*(x_{k+1}) - y^*(x_k)\|^2| \mathcal{F}_k] \le \xi^2 l_{*,0}^2 \left( \alpha_k^2 \Exs[\|q_k^x\|^2 | \mathcal{F}_k] + \alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2 \right). 
+    \end{align*}
+\end{lemma}
+
+
+
+
+\begin{lemma}
+    \label{lemma:y_star_smoothness_bound}
+    At every $k^{th}$ iteration, conditioned on $\mathcal{F}_k$, let $v_k$ be a random vector decided before updating $x_k$. Then for any $\eta_k > 0$, we have
+    \begin{align*}
+        \Exs[\vdot{v_k}{y^*(x_{k+1}) - y^*(x_k)} | \mathcal{F}_k ] &\le (\xi \alpha_k \eta_k + M \xi^2 l_{*,1}^2 \beta_k^2) \Exs[\|v_k\|^2 | \mathcal{F}_k] \\
+        &\quad + \left(\frac{\xi \alpha_k l_{*,0}^2}{4\eta_k} + \frac{\xi^2 \alpha_k^2}{4}\right) \Exs[\|q_k^x\|^2 | \mathcal{F}_k] + \frac{\xi^2}{4}(\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2),
+    \end{align*}
+    where $M := \max\left(l_{f,0}^2 + \sigma_f^2, l_{g,0}^2 + \sigma_g^2\right)$.
+\end{lemma}
+
+
+
+\begin{lemma}
+    \label{lemma:y_star_lambda_vdot_bound}
+    Under Assumptions \ref{assumption:nice_functions}-\ref{assumption:extra_smooth_f}, at every $k^{th}$ iteration, conditioned on $\mathcal{F}_k$, let $v_k$ be a random vector decided before updating $x_k$. Then for any $\eta_k > 0$, we have
+    \begin{align*}
+        \Exs[\vdot{v_k}{y_{\lambda_{k+1}}^*(x_{k+1}) - y_{\lambda_k}^*(x_k)} | \mathcal{F}_k ] &\le (\delta_k/\lambda_k + \xi \alpha_k \eta_k + M \xi^2 l_{\lambda_k,1}^2 \beta_k^2) \Exs[\|v_k\|^2 | \mathcal{F}_k] \\
+        &+ \left(\frac{\xi \alpha_k l_{*,0}^2}{4\eta_k} + \frac{\xi^2 \alpha_k^2}{4}\right) \Exs[\|q_k^x\|^2 | \mathcal{F}_k] + \frac{\xi^2}{4} (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2) + \frac{\delta_k l_{f,0}^2}{\lambda_k^3 \mu_g^2},
+    \end{align*}
+    where $M := \max\left(l_{f,0}^2 + \sigma_f^2, l_{g,0}^2 + \sigma_g^2\right)$.
+\end{lemma}
+
+\section{Main Results for Algorithm \ref{algo:algo_name}}
+\label{appendix:main_proof_non_convex}
+
+In this section, we prove our key estimate, Theorem \ref{theorem:general_nonconvex}. Our aim is to find the upper bound of  $\mathbb{V}_{k+1} - \mathbb{V}_k$ for the potential function $\mathbb{V}_k$ given in \eqref{eq:pot0}. For $x_k$ and $y_k$ given in Algorithm~\ref{algo:algo_name}, the following notations will be used:
+\begin{align}
+\label{eq:ikjk}
+    \I_k := \|y_k - y_{\lambda,k}^*\|^2 \hbox{ and } \J_k := \|z_k - y_k^*\|^2
+\end{align}
+where $y_{\lambda,k}^* := y_{\lambda_k}^*(x_k)$, $y_k^* := y^*(x_k)$, and $x^* = \arg \min_x F(x)$. Recall that $y^*_{\lambda}$ and $y^*$ are given in \eqref{eq:yls} and \eqref{problem:bilevel}, respectively.
+Using the above notation, the potential function given in \eqref{eq:pot0} can be rewritten as  \begin{align}
+\label{eq:pot}
+    \mathbb{V}_k := (F(x_k) - F(x^*)) + \lambda_k l_{g,1} \I_k + \frac{\lambda_k l_{g,1}}{2} \J_k
+\end{align}
+for each $k \in \mathbb{N}$. In the following three subsections, we find the upper bound of $\mathbb{V}_{k+1} - \mathbb{V}_k$ in terms of $\I_k$ and $\J_k$. The proof of Theorem \ref{theorem:general_nonconvex} is given in Section~\ref{sec:pfgeneral}.
+
+\subsection{Estimation of $F(x_{k+1}) - F(x_k)$}
+\label{sec:estf}
+
+The step size $\alpha_k$ is designed to satisfy
+\begin{align}
+    \textbf{(step-size rule):} \qquad \alpha_k \le \frac{1}{2\xi l_{F,1}}, \label{eq:step_cond_alpha_standard_F}
+\end{align}
+which is essential to obtain the negative term $- \frac{\xi \alpha_k}{4} \|q_k^x\|^2$ on the right hand side of \eqref{eq:fxfx}. This negativity plays an important role in the proof of Theorem \ref{theorem:general_nonconvex} in Section~\ref{sec:pfgeneral}.
+
+On the other hand, we also impose
+\begin{align}
+    \textbf{(step-size rule):} \qquad \frac{\xi}{T} \le \frac{\mu_g}{96 l_{g,1}}
+    \label{eq:step_cond_xi_beta}.
+\end{align} The terms, $\|y_{k+1} - y_{\lambda, k}^*\|^2$ and $\|z_{k+1} - y_k^*\|^2$, in the upper bound \eqref{eq:fxfx} will be estimated in Lemma~\ref{lem:gen20} and Lemma~\ref{lem:z_intermediate_contraction}, respectively. 
+
+\begin{proposition}
+\label{prop:g1}
+Under the step-size rules given in \eqref{eq:step_cond_alpha_standard_F}, and \eqref{eq:step_cond_xi_beta} and $\lambda_k \ge 2 l_{f,1} / \mu_g$, it holds that for each $k \in \mathbb{N}$
+\begin{align}
+\label{eq:fxfx}
+    \Exs[ F(x_{k+1}) - F(x_k) |\mathcal{F}_k] &\le -\frac{\xi \alpha_k}{4} \left( 2 \|\grad F(x_k)\|^2 + \|q_k^x\|^2 \right)  + \frac{T \mu_g \alpha_k \lambda_k^2}{32} \left(
+    2\|y_{k+1} - y_{\lambda, k}^*\|^2 + \|z_{k+1} - y_k^*\|^2 \right) \nonumber \\
+    &\quad + \frac{\xi^2 l_{F,1}}{2} (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2) + \frac{\xi \alpha_k}{2} \cdot 3 C_\lambda^2 \lambda_k^{-2},
+\end{align}
+where $q_k^x$ is given in \eqref{eq:qk_def}, and $C_\lambda := \frac{4 l_{f,0} l_{g,1}}{\mu_g^2} \left(l_{f,1} + \frac{2l_{f,0} l_{g,2}}{\mu_g}\right)$.
+\end{proposition}
+
+\begin{proof}
+From the smoothness of $F$, 
+\begin{align*}
+    \Exs[ F(x_{k+1}) - F(x_k) |\mathcal{F}_k] &\le \Exs[\vdot{\grad F(x_k)}{x_{k+1} - x_k} + \frac{l_{F,1}}{2} \|x_{k+1} - x_k\|^2|\mathcal{F}_k].
+\end{align*}
+As $q_k^x$ satisfies $\Exs[x_{k+1} - x_k|\mathcal{F}_k] = \alpha_k q_k^x$, 
+\begin{align*}
+    &\Exs[ F(x_{k+1}) - F(x_k) |\mathcal{F}_k] = -\xi \alpha_k \vdot{\grad_x F(x_k)}{q_k^x} + \frac{l_{F,1}}{2} \Exs[\|x_{k+1} - x_k\|^2  |\mathcal{F}_k] \\
+    &= -\frac{\xi \alpha_k}{2} (\|\grad F(x_k)\|^2 + \|q_k^x\|^2 - \| \grad F(x_k) - q_k^x \|^2) + \frac{l_{F,1}}{2} \Exs[ \|x_{k+1} - x_k\|^2 |\mathcal{F}_k].
+\end{align*}
+Note that
+\begin{align*}
+    \Exs[\|x_{k+1} - x_k\|^2] &\le \xi^2 \alpha_k^2 \Exs[\|q_k^x\|^2 + \xi^2 (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2),
+\end{align*}
+and thus with \eqref{eq:step_cond_alpha_standard_F} we have
+\begin{align*}
+    &\Exs[ F(x_{k+1}) - F(x_k) |\mathcal{F}_k] \le -\frac{\xi \alpha_k}{2} \|\grad F(x_k)\|^2 - \frac{\xi \alpha_k}{4} \|q_k^x\|^2 \\
+    &\quad + \frac{\xi \alpha_k}{2} \|\grad F(x_k) - q_k^x\|^2 + \frac{\xi^2 l_{F,1}}{2} (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2).
+\end{align*}
+
+    
+Next, we bound $\|\grad F(x_k) - q_k^x\|$ using the triangle inequality:
+\begin{align*}
+    \|q_k^x - \grad F(x_k)\| &= \|q_k^x - \grad \mL_{\lambda_k}^*(x_k) + \grad \mL_{\lambda_k}^*(x_k) - \grad F(x_k)\|  \\
+    &\le \|\grad_x f(x_k, y_{k+1}) - \grad_x f(x_k, y_{\lambda,k}^*)\| + \lambda_k \|\grad_x g(x_k, y_{k+1}) - \grad_x g(x_k, y_{\lambda, k}^*)\| \\
+    &\quad + \lambda_k \|\grad_x g(x_k, z_{k+1}) - \grad_x g(x_k, y_k^*)\| + \| \grad \mL_{\lambda_k}^*(x_k) - \grad F(x_k)\|.
+    %\\&\le (l_{f,1} + l_{g,1} \lambda_k) \|y_{k+1} - y_{\lambda,k}^*\| + l_{g,1} \lambda_k \|z_{k+1} - y_{k}^*\| + C_\lambda / \lambda_k, 
+\end{align*}
+From Lemma~\ref{lemma:l_star_lambda_approximate}, the term $\| \grad \mL_{\lambda_k}^*(x_k) - \grad F(x_k)\|$ is bounded by $C_\lambda / \lambda_k$. Combining with the regularity of $f$ and $g$ yields the following:
+\begin{align}
+\label{eq:fxfx1}
+    \|q_k^x - \grad F(x_k)\| \le 2 l_{g,1} \lambda_k \|y_{k+1} - y_{\lambda,k}^*\| + l_{g,1} \lambda_k \|z_{k+1} - y_{k}^*\| + C_\lambda / \lambda_k.
+\end{align}
+Note that $\lambda_k \ge 2 l_{f,1} / \mu_g$, and thus $l_{f,1} < l_{g,1} \lambda_k$.
+
+Finally, from Cauchy-Schwartz inequality $(a+b+c)^2 \le 3 (a^2 + b^2 + c^2)$, we get
+\begin{align}
+%\label{eq:fxfx}
+    &\Exs[ F(x_{k+1}) - F(x_k) |\mathcal{F}_k] \le -\frac{\xi \alpha_k}{2} \|\grad F(x_k)\|^2 - \frac{\xi \alpha_k}{4} \|q_k^x\|^2 \\
+    &\quad + \frac{\xi \alpha_k}{2} \cdot 3 C_\lambda^2 \lambda_k^{-2} + 3 \xi \alpha_k l_{g,1}  \lambda_k^2 \|z_{k+1} - y_k^*\|^2 + 6 \xi  \alpha_k l_{g,1} \lambda_k^2 \|y_{k+1} - y_{\lambda, k}^*\|^2  + \frac{\xi^2 l_{F,1}}{2} (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2). \nonumber
+\end{align}
+The step-size condition \eqref{eq:step_cond_xi_beta} concludes our claim.
+\end{proof}
+
+%In the lemma below, we use the assumption \eqref{eq:step_cond_alpha_standard_F} to ensure that the coefficient in front of $\|q_k^x\|^2$ is negative.
+
+
+
+
+
+
+%\section{Main Convergence Proofs}
+
+
+
+
+
+
+
+
+
+
+\subsection{Descent Lemma for $y_k$ towards $y_{\lambda,k}^*$}
+
+In this section, the upper bounds of $\I_{k+1}$ and $\|y_{k+1} - y_{\lambda, k}^*\|$ are provided, respectively, in Lemma~\ref{lem:gen2} and Lemma~\ref{lem:gen20}. The following rule is required to ensure that $\|y_{k+1} - y_{\lambda,k+1}\|^2$ contracts:
+\begin{align}
+    \textbf{(step-size rule):} \qquad & \frac{\delta_k}{\lambda_k} \le \frac{T \beta_k \mu_g}{32}, \hbox{ and } 2\xi^2 Ml_{*,1}^2 \beta_k^2 < T \beta_k \mu_g / 16. \label{eq:step_cond_beta_y_lambda}
+\end{align}
+The first condition holds directly from \eqref{eq:step_size_theoremb}, and the second condition holds since $\beta_k \le \frac{1}{4T\mu_g}$ and also
+\begin{align*}
+    \frac{\xi^2}{T^2} \le \frac{\mu_g^2}{8} (M l_{*,l}^2)^{-1},
+\end{align*}
+which also holds by \eqref{eq:step_size_theoremb} with sufficiently small $c_\xi$.
+
+%\dkcomment{Do we need \eqref{eq:step_cond_beta_y_lambda}?}
+
+%\dkcomment{Is $l_{\lambda,1}$ different from $l_{*,1}$?}
+%\dkcomment{We sometimes use the condition $\mathcal{F}_k$ and sometimes not. Please make everything consistent.}
+
+\begin{lemma}
+\label{lem:gen2}
+    Under the step-size rule  \eqref{eq:step_cond_beta_y_lambda}, it holds that for each $k \in \mathbb{N}$
+    \begin{align}
+    \Exs[\I_{k+1}| \mathcal{F}_k] &\le \left(1 + T \beta_k \mu_g / 4 \right) \Exs[\|y_{k+1} - y_{\lambda, k}^*\|^2 | \mathcal{F}_k] \nonumber\\
+    &\quad + O\left(\frac{\xi^2 l_{*,0}^2 \alpha_k^2 }{\mu_gT \beta_k}\right) \Exs[\|q_k^x\|^2 | \mathcal{F}_k] + O\left( \frac{\delta_k}{\lambda_k^3} \frac{l_{f,0}^2}{\mu_g^2} \right) + O(\xi^2 l_{*,0}^2) \cdot (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2).  \label{eq:y_star_lambda_contraction}
+\end{align}
+where $\I_k$ and $q_k^x$ are given in \eqref{eq:ikjk} and \eqref{eq:qk_def}, respectively.
+%\begin{align}
+%\label{lem:ykyl}
+%    \Exs[\|y_{k+1} - y_{\lambda, k+1}^*\|^2] &\le \left(1 - T \beta_k \mu_g / 4\right) \Exs[\|y_{k} - y_{\lambda, k}^*\|^2] + O\left(\frac{\xi^2 l_{*,0}^2 \alpha_k^2 }{\mu_gT \beta_k}\right) \|q_k^x\|^2 \nonumber \\
+%    &\quad + O\left( \frac{\delta_k}{\lambda_k^3} \frac{l_{f,0}^2}{\mu_g^2} \right) + O(T + \xi^2 l_{*,0}^2) \cdot (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2).
+%\end{align}
+\end{lemma}
+
+\begin{proof}
+We can start from 
+\begin{align*}
+    \|y_{k+1} - y_{\lambda, k+1}^*\|^2 = \underbrace{\|y_{k+1} - y_{\lambda, k}^*\|^2}_{(i)} + \underbrace{\|y_{\lambda, k+1}^* - y_{\lambda, k}^*\|^2}_{(ii)} - \underbrace{2\vdot{y_{k+1} - y_{\lambda, k}^*}{y_{\lambda, k+1}^* - y_{\lambda, k}^*}}_{(iii)}. 
+\end{align*}
+The upper bound of $(i)$ is given in Lemma~\ref{lem:gen20} below. To bound $(ii)$, we invoke Lemma \ref{lemma:y_star_lagrangian_continuity} to get 
+\begin{align*}
+    (ii): \Exs[\|y_{\lambda, k+1}^* - y_{\lambda, k}^*\|^2|\mathcal{F}_k] &\le \frac{4 \delta_k^2}{\lambda_k^2 \lambda_{k+1}^2} \frac{l_{f,0}^2}{\mu_g^2} + l_{*,0}^2 \Exs[\|x_{k+1} - x_k\|^2 | \mathcal{F}_k] \\
+    &\le \frac{4 \delta_k^2}{\lambda_k^4} \frac{l_{f,0}^2}{\mu_g^2} + \xi^2 l_{*,0}^2(\alpha_k^2 \Exs[\|q_k^x\|^2] + \alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_f^2).
+\end{align*}
+
+
+
+
+
+For $(iii)$, recall the smoothness of $y_{\lambda}^* (x)$ in Lemma \ref{lemma:nice_y_star_lagrangian}, and thus Lemma \ref{lemma:y_star_lambda_vdot_bound}. By setting $v = y_{k+1} - y_{\lambda, k}^*$ and $\eta_k = T \mu_g \lambda_k / (16 \xi)$, and get
+\begin{align*}
+    (iii)&\le (2\delta_k / \lambda_k + T \beta_k \mu_g / 8 + 2 M \xi^2 l_{*,1}^2 \beta_k^2) \Exs[\|y_{k+1}-y_{\lambda,k}^*\|^2 |\mathcal{F}_k] \nonumber \\
+    &\quad + \xi^2 \left(\frac{\alpha_k^2}{2} + \frac{8 \alpha_k^2 l_{*,0}^2}{\mu_g T \beta_k} \right) \|q_k^x\|^2 + \frac{\xi^2}{2} (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2) + \frac{2 \delta_k}{\lambda_k^3} \frac{l_{f,0}^2}{\mu_g^3}.    
+\end{align*}
+
+We sum up the $(i), (ii), (iii)$ to conclude 
+\begin{align}
+    \Exs[\I_{k+1}| \mathcal{F}_k] &\le \left(1 + 2\delta_k/\lambda_k +  T \beta_k \mu_g / 8 + 2M\xi^2 l_{*,1}^2 \beta_k^2 \right) \Exs[\|y_{k+1} - y_{\lambda, k}^*\|^2] \nonumber\\
+    &\quad + O\left(\frac{\xi^2 l_{*,0}^2 \alpha_k^2 }{\mu_gT \beta_k}\right) \|q_k^x\|^2  + O\left( \frac{\delta_k}{\lambda_k^3} \frac{l_{f,0}^2}{\mu_g^2} \right) + O(\xi^2 l_{*,0}^2) \cdot (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2).  %\label{eq:y_star_lambda_contraction}
+\end{align}
+Lastly, the step-size rule   \eqref{eq:step_cond_beta_y_lambda} yields our conclusion.
+%\eqref{eq:y_star_lambda_contraction}.
+% \dkcomment{Please explain the above. $l>1, \beta_k<1$...}
+%This yields our conclusion.
+\end{proof}
+
+Next, we note that $\alpha_k$ and $\beta_k$ are chosen to satisfy  
+\begin{align}
+    \textbf{(step size rules):} \qquad \alpha_k \le \frac{1}{8 l_{f,1}} \hbox{ and } \beta_k \le \frac{1}{8 l_{g,1}}, \label{eq:step_cond_alpha_beta_standard}
+\end{align}
+Note that $\beta_k \le \frac{1}{8l_{g,1}}$ is given from the step-size condition \eqref{eq:step_size_theorema}, and $\alpha_k \le \frac{1}{8 l_{g,1} \lambda_k} \le \frac{1}{8 l_{f,1}}$ since $\lambda_k \ge l_{f,1} / \mu_g$. 
+
+
+
+\begin{lemma}
+\label{lem:gen20}
+Under the step-size rule given in \eqref{eq:step_cond_alpha_beta_standard}, it holds that for each $k \in \mathbb{N}$
+\begin{align}
+    \Exs[\|y_{k+1} - y_{\lambda,k}^*\|^2 | \mathcal{F}_k] &\le (1 - 3 T \mu_g \beta_k / 4) \I_k + T (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2). \label{eq:y_star_lambda_intermediate_contraction}
+\end{align}
+\end{lemma}
+
+\begin{proof}
+Since $\Exs[y_{k}^{(t+1)} - y_k^{(t)} | \mathcal{F}_k] = - \alpha_k \grad_y q_k^{(t)} = - \alpha_k \grad_y \mL_{\lambda_k} (x_k, y_k^{(t)})$, we have
+\begin{align*}
+    \Exs[\|y_{k}^{(t+1)} - y_{\lambda, k}^*\|^2| \mathcal{F}_k] = \|y_{k}^{(t)} - y_{\lambda, k}^*\|^2 - 2\alpha_k \vdot{\grad_y q_k^{(t)}}{y_{k}^{(t)} - y_{\lambda, k}^*} + \Exs[\|y_{k}^{(t+1)} - y_k^{(t)}\|^2| \mathcal{F}_k]. 
+\end{align*}
+As we start from $\lambda_0 \ge 2\mu_f / \mu_g$, all $\mL_k$ is $(\lambda_k\mu_g/2)$-strongly convex in $y$, and we have
+\begin{align*}
+    \max \left( \frac{\lambda_k \mu_g }{2} \|y_k^{(t)} - y_{\lambda,k}^*\|^2 , \frac{1}{l_{f,1} + \lambda_k l_{g,1}} \|\grad_y q_k^{(t)}\|^2 \right) \le \vdot{\grad_y q_k^{(t)}}{y_k^{(t)} - y_{\lambda, k}^*}. 
+\end{align*}
+Using $\Exs[\|y_{k}^{(t+1)} - y_k^{(t)}\|^2|\mathcal{F}_k] \le \alpha_k^2 \|\grad_y q_k^{(t)} \|^2 + \alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2$, have
+\begin{align*}
+    (i): \Exs[\|y_{k}^{(t+1)} - y_{\lambda, k}^*\|^2|\mathcal{F}_k] &\le (1 - 3 \mu_g \beta_k / 4) \|y_k^{(t)} - y_{\lambda, k}^*\|^2 + (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2), 
+\end{align*}
+where we use $\alpha_k (l_{f,1} + \lambda_k l_{g,1}) = \alpha_k l_{f,1} + \beta_k l_{g,1} \le 1/4$ if we have \eqref{eq:step_cond_alpha_beta_standard}.
+Repeating this $T$ times, we get \eqref{eq:y_star_lambda_intermediate_contraction}. Note that $y_{k+1} = y_{k}^{(T)}$ and $y_{k} = y_{k}^{(0)}$.
+\end{proof}
+
+
+
+
+
+
+
+\subsection{Descent Lemma for $z_k$ towards $y^*_{k}$}
+
+Similar to the previous section, we provide the upper bound of $\J_{k+1}$ first and then estimate $\|z_{k+1}-y_{k}^*\|$ that appears in the upper bound. We work with the following step-size condition:
+\begin{align}
+    \textbf{(step-size rule):} \qquad 2 Ml_{*,1}^2 \xi^2 \beta_k^2 \le T \mu_g \gamma_k / 16, \label{eq:step_cond_beta_square_gamma}
+\end{align}
+This condition holds since $\beta_k \le \gamma_k$, and $\beta_k \le \frac{1}{4T\mu_g}$ and $\frac{\xi^2}{T^2} \le \frac{\mu_g^2}{8} (M l_{*,1}^2)^{-1}$.
+    
+\begin{lemma}
+    \label{lemma:z_contraction} 
+    Under the step-size rule \eqref{eq:step_cond_beta_square_gamma},    
+    at each $k^{th}$ iteration, the following holds:
+    \begin{align}
+    \Exs[\J_{k+1}|\mathcal{F}_k] &\le \left(1 + \frac{3T\gamma_k\mu_g}{8} \right) \cdot \Exs[\|z_{k+1}-y_{k}^*\|^2|\mathcal{F}_k] \nonumber \\
+    &\quad + O\left( \frac{\xi^2 \alpha_k^2  l_{*,0}^2}{T \mu_g \gamma_k} \right) \|q_k^x\|^2+  O\left(\xi^2 l_{*,0}^2 \right) (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2) \label{eq:z_contraction}.
+\end{align}
+%    In particular, if \dkcomment{Please add the assumptions, if necessary}, then
+%    \begin{align}
+%    \label{eq:z_contraction2}
+%    \Exs[\|z_{k+1}-y_{k+1}^*\|^2 | \mathcal{F}_k] &\le (1 - T \mu_g \gamma_k / 4) \| z_k - y_k^* \|^2 \\
+%    &\quad + O \left( \frac{\xi^2 l_{*,0}^2 \alpha_k^2}{T\mu_g\gamma_k} \right) \|q_k^x\|^2 + O(\xi^2 l_{*,0}^2) \alpha_k^2 \sigma_f^2 + O(T \gamma_k^2 + \xi^2 l_{*,0}^2 \beta_k^2) \sigma_g^2. \nonumber
+%    \end{align}
+\end{lemma}
+
+\begin{proof}
+We estimate each term in the following simple decomposition.
+%in order. 
+%We can start with a simple decomposition.
+\begin{align*}
+    \|z_{k+1} - y_{k+1}^*\|^2 = \underbrace{\|z_{k+1} - y_k^*\|^2}_{(i)} + \underbrace{\|y_{k+1}^* - y_k^*\|^2}_{(ii)} - 2 \underbrace{\vdot{z_{k+1}-y_{k}^*}{y_{k+1}^*-y_k^*}}_{(iii)}. 
+\end{align*}
+%We bound each term in order. 
+Lemma~\ref{lemma:y_star_lagrangian_continuity} implies that
+\begin{align*}
+    (ii): \Exs[\|y_{k+1}^* - y_k^*\|^2| \mathcal{F}_k] &\le l_{*,0}^2 \xi^2 (\alpha_k^2 \|\nabla_x q_k\|^2 + \alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2).
+\end{align*}
+For $(iii)$, we recall Lemma \ref{lemma:y_star_smoothness_bound} with $v_k = z_{k+1} - y_k^*$ and $\eta_k = T \mu_g \gamma_k / (8 \xi \alpha_k)$, we have
+\begin{align*}
+    (iii): \vdot{z_{k+1} - y_k^*}{y_{k+1}^* - y_k^*} &\le ( T \gamma_k \mu_g / 8 + M \xi^2 l_{*,1}^2 \beta_k^2) \Exs[\|z_{k+1}-y_k^*\|^2 | \mathcal{F}_k] \\
+    &\quad + \left( \frac{\xi^2 \alpha_k^2}{4} + \frac{2 \xi^2 \alpha_k^2 l_{*,0}^2}{T \mu_g \gamma_k} \right) \|q_k^x\|^2 + \frac{\xi^2}{4} (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2).
+\end{align*}
+The above bounds and Lemma~\ref{lem:z_intermediate_contraction}
+imply that
+\begin{align}
+    \Exs[\J_{k+1}|\mathcal{F}_k] &\le \left(1 + \frac{T\gamma_k\mu_g}{4} + 2 M \xi^2 l_{*,1}^2 \beta_k^2\right) \cdot \Exs[\|z_{k+1}-y_{k}^*\|^2|\mathcal{F}_k] \nonumber \\
+    &\quad + \xi^2 \alpha_k^2 \cdot \left( l_{*,0}^2 + \frac{4 l_{*,0}^2}{T \mu_g \gamma_k} + \frac{1}{2} \right) \|q_k^x\|^2+ \xi^2 \cdot \left(\frac{1}{2} + l_{*,0}^2 \right) (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2).
+\end{align}
+Using \eqref{eq:step_cond_beta_square_gamma}, we conclude.
+\end{proof}
+
+
+Next, $\gamma_k$ is chosen to satisfy the following step-size rules:
+\begin{align}
+    \textbf{(step-size rule):} \qquad l_{g,1} \gamma_k \le 1/4, \qquad T \mu_g \gamma_k \le 1/4, \label{eq:step_cond_gamma_standard}
+\end{align}
+which directly comes from \eqref{eq:step_size_theorema}. 
+
+\begin{lemma}
+\label{lem:z_intermediate_contraction}
+If \eqref{eq:step_cond_gamma_standard} holds, then for each $k \in \mathbb{N}$, the following holds:
+\begin{align}
+    \Exs[\|z_{k+1} - y_k^*\|^2 | \mathcal{F}_k] &\le (1 - 3 T \mu_g \gamma_k / 4) \J_k + T \gamma_k^2 \sigma_g^2. \label{eq:z_intermediate_contraction}
+    \end{align}
+%    where $\J_k=\|z_{k} - y_k^*\|^2$.
+\end{lemma}
+
+\begin{proof}
+We analyze one step iteration of the inner loop: for each $t = 0, \cdots, T-1$,
+\begin{align*}
+    \|z_{k}^{(t+1)} - y_k^*\|^2 &= \|z_{k}^{(t)} - y_k^*\|^2 + \|z_{k}^{(t+1)} - z_k^{(t)}\|^2 +  2\vdot{z_{k}^{(t+1)}-z_{k}^{(t)}}{z_{k}^{(t)}-y_k^*} \\
+    &= \|z_{k}^{(t)} - y_k^*\|^2 + \gamma_k^2 \|h_{gz}^{k,t} \|^2 - 2\gamma_k \vdot{h_{gz}^{k,t}}{z_{k}-y_k^*}.
+\end{align*}
+Here, $z_{k+1} = z_{k}^{(T)}$ and $z_{k} = z_{k}^{(0)}$. Note that $\Exs[h_{gz}^{k,t}] = \grad_y g(x_k, z_k^{(t)}) = \grad_y g_k(z_k^{(t)})$ where $g_k(z_k^{(t)}):= g(x_k, z_k^{(t)})$. Taking expectation,
+\begin{align*}
+    \Exs[\|z_{k}^{(t+1)} - y_k^*\|^2 | \mathcal{F}_{k} ] &\le \|z_{k}^{(t)} - y_k^*\|^2 + \gamma_k^2 \|\grad g_k (z_k^{(t)})\|^2 +  \gamma_k^2 \sigma_g^2 - 2\gamma_k \vdot{\grad g_k(z_k^{(t)})}{z_{k}^{(t)} -y_k^*}.
+\end{align*}
+% \jycomment{ Note on inequality below: this is known as coercivity / co-coercivity property of strongly-convex functions. You can find proofs in \href{http://www.seas.ucla.edu/~vandenbe/236C/lectures/gradient.pdf}{here}, page 17.}
+The strong convexity and smoothness of $g_k$ imply the coercivity and co-coercivity \cite{nesterov2018lectures}, that is,
+\begin{align*}
+    \max \left( \mu_g \|z_k^{(t)} -y_k^*\|^2, \frac{1}{l_{g,1}} \|\grad g_k (z_k^{(t)}) - \grad g_k(y_k^*)\|^2 \right) \le \vdot{\grad g_k(z_k^{(t)}) - \grad g_k(y_k^*)}{z_{k}^{(t)} - y_k^*}.
+\end{align*}
+Note that $y_k^*$ minimizes $g_k(y)$. Use this to cancel out $\gamma_k^2 \|\grad g_k (z_k^{(t)})\|^2$, yielding
+\begin{align*}
+    \Exs[\|z_{k}^{(t+1)} - y_k^*\|^2 | \mathcal{F}_k] &\le \|z_{k}^{(t)} - y_k^*\|^2 + \gamma_k^2 \sigma_g^2 - \gamma_k(1- l_{g,1} \gamma_k) \vdot{\grad g_k(z_k^{(t)})}{z_{k}^{(t)} -y_k^*} \nonumber \\
+    &\le (1 - 3 \mu_g \gamma_k / 4) \|z_{k}^{(t)} - y_k^*\|^2 + \gamma_k^2 \sigma_g^2.
+\end{align*}
+For this to hold, we need a step-size condition \eqref{eq:step_cond_gamma_standard}.
+We can repeat this relation for $T$ times, and we get \eqref{eq:z_intermediate_contraction}.
+\end{proof}
+
+
+
+
+
+
+\subsection{Proof of Theorem \ref{theorem:general_nonconvex}}
+\label{sec:pfgeneral}
+
+Recall $\mathbb{V}_k$ given in \eqref{eq:pot0}. In what follows, we examine    %$\mathbb{V}_{k+1} - \mathbb{V}_k$:
+\begin{align*}
+    \mathbb{V}_{k+1} - \mathbb{V}_k &= F(x_{k+1}) - F(x_k) + \lambda_{k+1} l_{g,1} \I_{k+1} - \lambda_k l_{g,1} \I_k \\ &+ \frac{\lambda_{k+1} l_{g,1}}{2} \J_{k+1} - \frac{\lambda_k l_{g,1}}{2} \J_k.
+    %\mathbb{V}_{k+1} - \mathbb{V}_k &= F(x_{k+1}) - F(x_k) + \frac{l_{f,1} + \lambda_{k+1} l_{g,1}}{2} \|y_{k+1} - y_{\lambda,k+1}^*\|^2 - \frac{l_{f,1} + \lambda_k l_{g,1}}{2} \|y_k - y_{\lambda,k}^*\|^2\\ &+ \frac{\lambda_{k+1} l_{g,1}}{2} \|z_{k+1} - y_{k+1}^*\|^2 - \frac{\lambda_k l_{g,1}}{2} \|z_k - y_k^*\|^2
+\end{align*}
+Using the estimate of $F(x_{k+1}) - F(x_k)$ given in Proposition~\ref{prop:g1} and rearranging the terms, we have
+\begin{align*}
+    \Exs[\mathbb{V}_{k+1} - \mathbb{V}_k | \mathcal{F}_k] 
+    &\le - \frac{\xi \alpha_k}{2} \|\grad F(x_k)\|^2  - \frac{\xi \alpha_k}{4} \Exs[\|q_k^x\|^2  |\mathcal{F}_k] + \frac{\xi \alpha_k}{2} \cdot 3 C_\lambda^2 \lambda_k^{-2} +\frac{\xi^2 l_{F,1}}{2} (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2) \\
+    &\quad + l_{g,1} \underbrace{\Exs[\lambda_{k+1} \I_{k+1}  + \frac{\lambda_k T \beta_k\mu_g }{16} \|y_{k+1} - y_{\lambda, k}^*\|^2  - \lambda_k \I_k |\mathcal{F}_k]}_{(i)}\\
+    &\quad + \frac{l_{g,1}}{2} \underbrace{\Exs[\lambda_{k+1} \J_{k+1} + \frac{\lambda_k T \gamma_k \mu_g }{32} \|z_{k+1} - y_k^*\|^2 - \lambda_k \J_k |\mathcal{F}_k]}_{(ii)}
+\end{align*}
+
+
+
+
+%\dkcomment{We can move every technical step to the previous sections. In that way, we can focus on the main idea in this proof.}
+
+\textbf{Estimation of $(i)$: } 
+%We can get a similar bound for $(ii)$ using \eqref{eq:y_star_lambda_intermediate_contraction}, which yields
+From Lemma~\ref{lem:gen2}, and $\lambda_{k+1} = \lambda_k + \delta_k$ yield that
+\begin{align*}
+    (i) &\le \lambda_k \left(1 + \frac{5 T \beta_k\mu_g }{16} + \frac{\delta_k}{\lambda_k} \right) \Exs[\|y_{k+1} - y_{\lambda, k}^*\|^2 | \mathcal{F}_k] -\lambda_k \I_k \\
+    &\quad + \underbrace{O(\xi^2 l_{\lambda,0}^2) \frac{\lambda_k \alpha_k^2}{\mu_g T \beta_k} \|q_k^x\|^2 + O(\xi^2 l_{*,0}^2) \lambda_k (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2) + O\left( \frac{l_{f,0}^2}{\mu_g^3} \right) \cdot \frac{\delta_k}{\lambda_k^2}}_{(iii)}.  
+\end{align*}
+Given the step-size rules \eqref{eq:step_cond_beta_y_lambda}, we obtain
+\begin{align*}
+    (i) &\le \lambda_k \left(1 + \frac{T \beta_k \mu_g}{2}\right) \Exs[\|y_{k+1} - y_{\lambda, k}^*\|^2 | \mathcal{F}_k] -\lambda_k \I_k  + (iii). 
+\end{align*}
+The estimation of $\|y_{k+1} - y_{\lambda, k}^*\|^2$ from Lemma~\ref{lem:gen20} yields that
+\begin{align*}
+    (i) &\le - \frac{\lambda_k T \mu_g \beta_k}{4} \I_k + O(\xi^2 l_{*,0}^2) \frac{\alpha_k}{\mu_g T} +  (iii),\\ 
+    &= - \frac{\lambda_k T \mu_g \beta_k}{4} \I_k + O(\xi^2 l_{*,0}^2) \frac{\alpha_k}{\mu_g T} + O(T + \xi^2 l_{*,0}^2) \lambda_k (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2) + O\left( \frac{l_{f,0}^2}{\mu_g^3} \right) \cdot \frac{\delta_k}{\lambda_k^2}.
+\end{align*}
+Here, we use $(1+a/2)(1-3a/4) \leq 1-a/4$ for $a>0$.
+%\dkcomment{Please check whether the last equality (35) is necessary}
+
+
+\medskip
+
+\textbf{Estimation of $(ii)$: }
+Lemma~\ref{lemma:z_contraction} yields that 
+\begin{align*}
+    (ii) &\le \lambda_k \left(1 + \frac{\delta_k}{\lambda_k} + \frac{3T\gamma_k\mu_g}{8} + \frac{\lambda_k T \beta_k \mu_g }{32}  \right) \Exs[\|z_{k+1} - y_k^*\|^2 | \mathcal{F}_k ] - \lambda_k \J_k \\
+    &\quad + \underbrace{O(\xi^2 l_{*,0}^2) \frac{\lambda_{k+1} \alpha_k^2}{T \mu_g  \gamma_k} \|q_k^x\|^2 + O(\xi^2  \lambda_{k+1} l_{*,0}^2) (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2)}_{(iv)}.
+\end{align*}
+With $\beta_k \le \gamma_k$, and thus $\delta_k / \lambda_k < T\mu_g \gamma_k / 32$, we have that 
+\begin{align*}
+    (ii) &\le \lambda_k \left(1 + \frac{T\gamma_k\mu_g}{2} \right) \Exs[\|z_{k+1} - y_k^*\|^2 | \mathcal{F}_k ] - \lambda_k \J_k + (iv)
+\end{align*}
+Similar to the argument for $(i)$ above, Lemma~\ref{lem:z_intermediate_contraction} yields
+\begin{align*}
+    (ii) &\le - \frac{\lambda_k T \mu_g \gamma_k}{4} \J_k + O(\xi^2 l_{*,0}^2) \frac{\alpha_k \beta_k}{T \mu_g \gamma_k} \|q_k^x\|^2 + O(\xi^2 \lambda_k l_{*,0}^2)  (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2) + O(\lambda_k) T\gamma_k^2 \sigma_g^2.
+\end{align*}
+
+
+
+
+%Here, we need the following:
+%\begin{align}
+%    \textbf{(step-size rules):} 3\xi \beta_k l_{g,1} < T \mu_g \gamma_k / 16, \label{eq:step_cond_delete_z}
+%\end{align}
+%along with a step-size rule %\eqref{eq:step_cond_beta_square_gamma}. 
+
+\medskip
+
+Plug the bound for $(i)$ and $(ii)$, after rearranging terms, we get
+\begin{align*}
+    \Exs[\mathbb{V}_{k+1} - \mathbb{V}_k | \mathcal{F}_k] &\le - \frac{\xi \alpha_k}{2} \|\grad F(x_k)\|^2  + \frac{\xi \alpha_k}{2} \cdot 3 C_\lambda^2 \lambda_k^{-2} +\frac{\xi^2 l_{F,1}}{2} (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2) \\
+    &\quad - \frac{\xi \alpha_k}{4} \left( 1 - O \left(\frac{\xi l_{g,1} l_{*,0}^2 \beta_k}{\mu_g T \gamma_k} \right) - O\left( \frac{\xi l_{g,1} l_{*,0}^2 }{\mu_g T} \right) \right) \Exs[\|q_k^x\|^2  |\mathcal{F}_k] \\
+    &\quad - \frac{\lambda_k l_{g,1} T \mu_g \beta_k}{4} \I_k -\frac{\lambda_k l_{g,1} T 
+    \mu_g \gamma_k}{4} \J_k \\
+    &\quad +  O(T + \xi^2 l_{*,0}^2) \cdot l_{g,1} \lambda_k (\alpha_k^2 \sigma_f^2 + (\beta_k^2 + \gamma_k^2) \sigma_g^2) + O\left(\frac{l_{g,1} l_{f,0}^2}{\mu_g^3} \right) \frac{\delta_k}{\lambda_k^2},
+\end{align*}
+A crucial step here is to ensure that terms driven by $\Exs[\|q_k^x\|^2]$ is negative. %\dkcomment{Can we write $O$ in the coefficient here explicitly?}
+To ensure this, we require 
+\begin{align*}
+    \textbf{(step-size rules):} \qquad &\xi l_{g,1} l_{*,0}^2 \beta_k \le c_1 \mu_g T \gamma_k, \nonumber \\ 
+    & \xi l_{g,1} l_{*,0}^2 \le c_2 \mu_g T , 
+\end{align*}
+for some absolute constants $c_1, c_2 > 0$, which holds by $\beta_k \le \gamma_k$ and \eqref{eq:step_size_theoremb} with sufficiently small $c_\xi > 0$. Once this holds, we can conclude that 
+\begin{align*}
+    \Exs[\mathbb{V}_{k+1} - \mathbb{V}_k | \mathcal{F}_k] &\le - \frac{\xi \alpha_k}{2} \|\grad F(x_k)\|^2 - \frac{\lambda_k T \mu_g \gamma_k}{4} \|z_k - y_k^*\|^2 - \frac{\lambda_k T \mu_g \beta_k}{4} \|y_k - y_{\lambda,k}^*\|^2 \nonumber \\
+    &\quad + O(\xi C_{\lambda}^2) \frac{\alpha_k}{\lambda_k^2} + O\left(\frac{l_{g,1} l_{f,0}^2}{\mu_g^3} \right) \frac{\delta_k}{\lambda_k^2} + O(\xi^2 l_{F,1}) (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2) \nonumber \\
+    &\quad + O(T + \xi^2 l_{*,0}^2) \cdot l_{g,1} \lambda_k (\alpha_k^2 \sigma_f^2 + (\beta_k^2 + \gamma_k^2) \sigma_g^2).
+\end{align*}
+We can sum over $k=0$ to $K-1$, and leaving only dominating terms, since $\sum_k \delta_k / \lambda_k^2 = O(1)$ (because $\delta_k / \lambda_k = O(1/k)$ and $\lambda_k = \poly(k)$), we have the theorem.
+
+%\end{proof}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\subsection{Proof of Corollary \ref{corollary:non_convex_F}}
+
+We first show that with the step-size design in theorem, $\lambda_k = \gamma_k / (2\alpha_k)$ for all $k$. To check this, by design, $\lambda_0 = \gamma_0 / (2\alpha_0)$ and by mathematical induction, 
+\begin{align*}
+    \frac{T \mu_g}{16} \alpha_k \lambda_k^2 = \frac{T}{32} \frac{c_\gamma}{2 c_\alpha} (k+k_0)^{-2c + a},
+\end{align*}
+and 
+\begin{align*}
+    \frac{c_\gamma}{2 c_\alpha} ((k + k_0 + 1)^{a-c} - (k+k_0)^{a-c}) \le \frac{(a-c) c_\gamma}{2 c_\alpha} (k+k_0)^{-1-c+a}.
+\end{align*}
+As long as $-2c + a \ge -1 - c + a$, or equivalently, $c \le 1$ and $T \ge 32$, it always holds that
+\begin{align}
+    \lambda_{k+1} = \frac{c_\gamma}{2c_\alpha} (k+k_0 + 1)^{a-c} = \frac{\gamma_{k+1}}{2\alpha_{k+1}}. \label{eq:lambda_math_induction}
+\end{align}
+
+Now applying the step-size designs, we obtain the following:
+\begin{align}
+    \sum_{k=0}^{K-1} \frac{\Exs[\|\grad F(x_k)\|^2]}{(k+k_0)^{a}} &\le O_{\texttt{P}} (1) \cdot \sum_{k} \frac{1}{(k+k_0)^{3a-2c}} + O_{\texttt{P}}(\sigma_f^2) \cdot \sum_{k} \frac{1}{(k+k_0)^{a+c}} \nonumber \\
+    &\quad + O_{\texttt{P}}(\sigma_g^2) \cdot \sum_{k} \frac{1}{(k+k_0)^{3c-a}} + O_{\texttt{P}}(1). 
+\end{align}
+We decide the rates $a,c \in [0,1]$ will be decided differently for different stochasticity. Let $b = a - c$. Note that with the step size deisng, we have $\lambda_k = \gamma_{k} / (2\alpha_k) = \frac{2\lambda_0}{k_0^{a-c}} (k+k_0)^{a-c} = O(k^{b})$. Let $R$ be a random variable uniformly distributed over $\{0,1, ..., K\}$. Note that the left hand side is larger than
+\begin{align*}
+    \frac{K}{(K+k_0)^a} \sum_{k=1}^{K-1} \frac{1}{K} \Exs[\|\grad F(x_k)\|^2] \ge K^{1-a} \cdot \Exs[\|\grad F(x_R)\|^2]. 
+\end{align*}
+We consider three regimes:
+
+\paragraph{Stochasticity in both upper-level and lower-level objectives: $\sigma_f^2, \sigma_g^2 > 0$.} In this case, we set $a = 5/7, c = 4/7$, and thus $\lambda_k = k^{1/7}$. The dominating term is $\sigma_g^2 \cdot \sum_k (\gamma_k^2 \lambda_k) = \sum_k O(k^{-1}) = O(\log K)$ and $C_\lambda^2 \cdot \sum_k(\alpha_k \lambda_k^{-2}) = O(\log K)$. From the left-hand side, we have $K^{1-a} = K^{2/7}$. Therefore,
+\begin{align*}
+    \Exs[\|\grad F(x_R)\|^2] = O\left( \frac{\log K}{K^{2/7}} \right).
+\end{align*}
+
+
+
+
+
+\paragraph{Stochasticity only in the upper-level: $\sigma_f^2 > 0, \sigma_g^2 = 0$.}
+In this case, we can take $a = 3/5, c = 2/5$. When $\sigma_g^2 = 0$, the dominating term is $\sigma_f \cdot \sum_k (\alpha_k^2 \lambda_k) = \sum_{k} O(k^{-1}) = O(\log K)$ and $O(C_\lambda^2) \cdot \sum_k (\alpha_k \lambda_k^{-2}) = \sum_{k} O(k^{-1}) = O(\log K)$. Since $K^{1-a} = O(K^{2/5})$, yielding
+\begin{align*}
+    \Exs[\|\grad F(x_R)\|^2] = O\left( \frac{\log K}{K^{2/5}} \right).
+\end{align*}
+
+
+\paragraph{Deterministic case: $\sigma_f^2 = 0, \sigma_g^2 = 0$.}
+Here, we can take $a = 1/3, c = 0$ with a dominating term $\sum_k (\alpha_k \lambda_k^{-2}) = O(\log K)$. Since there is no stochasticity in the algorithm, we have
+\begin{align*}
+    \|\grad F(x_K)\|^2 = O\left( \frac{\log K}{K^{2/3}} \right).
+\end{align*}
+
+
+
+
+
+
+
+
+\input{Appendix_Momentum}
+
+
+%\input{Comment_Box}
+
+
+
+
+
+
+\input{Appendix_Auxiliary}
+
+
+
+
+
+
+
+
+
+
+

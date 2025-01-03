@@ -1,0 +1,437 @@
+
+\section{Deferred Proofs for Lemmas}
+\label{appendix:deferred_proof}
+
+\subsection{Proofs for Main Lemmas}
+\subsubsection{Proof of Lemma \ref{lemma:l_star_lambda_approximate}}
+\begin{proof}
+    Let $y^*_\lambda(x) := \arg\min_y \mL_{\lambda}(x,y)$. Note that $\grad_y \mL_{\lambda} (x,y^*_\lambda(x)) = 0$, and thus
+    \begin{align*}
+        \grad \mL_{\lambda}^* (x) &= \grad_x \mL_{\lambda} (x, y_{\lambda}^*(x)) + \grad_x y_{\lambda}^*(x)^\top \grad_y \mL_{\lambda} (x, y_{\lambda}^*(x)) =  \grad_x \mL_{\lambda} (x, y_{\lambda}^*(x)).
+    \end{align*}
+    To compare this to $\grad F(x)$, we can invoke Lemma \ref{lemma:relation_Lagrangian_F} which gives
+    \begin{align*}
+        &\| \grad F(x) - \grad_x \mL_\lambda(x,y_{\lambda}^*(x) )  \| \\
+        &\qquad \le 2 (l_{g,1}/\mu_g) \|y_{\lambda}^*(x) - y^*(x)\| \left(l_{f,1} + \lambda \cdot \min(2l_{g,1}, l_{g,2} \|y^*(x) -  y_{\lambda}^*(x)\|)\right).
+    \end{align*}
+    From Lemma \ref{lemma:y_star_lagrangian_continuity}, we use $\|y_{\lambda}^*(x) - y^*(x)\| \le \frac{2l_{f,0}}{\lambda\mu_g}$, and get
+    \begin{align*}
+        \| \grad F(x) - \grad_x \mL_\lambda(x,y_{\lambda}^*(x) )  \| \le \frac{1}{\lambda} \cdot \frac{4l_{f,0} l_{g,1}}{\mu_g^2} \left( l_{f,1} + \frac{2  l_{f,0} l_{g,2}}{\mu_g} \right). 
+    \end{align*}
+\end{proof}
+
+
+
+
+\subsubsection{Proof of Lemma \ref{lemma:y_star_lagrangian_continuity}}
+\begin{proof}
+    Note that $\mL_{\lambda}(x,y)$ is at least $\frac{\lambda\mu_g}{2}$ strongly-convex in $y$ once $\lambda \ge 2 l_{f,1} \mu_g$. To see this,
+    \begin{align*}
+        \mL_{\lambda}(x,y) = f(x,y) + \lambda (g(x,y) - g^*(x)),
+    \end{align*}
+    which is at least $-l_{f,1} + \lambda \mu_g$-strongly convex in $y$. If $\lambda > 2l_{f,1} / \mu_g$, this implies at least $\lambda \mu_g / 2$ strong-convexity of $\mL_{\lambda} (x,y)$ in $y$. 
+
+    By the optimality condition at $y_{\lambda_1}^*(x_1)$ with $x_1, \lambda_1$, we have
+    \begin{align*}
+        \grad_y f(x_1, y_{\lambda_1}^*(x_1) ) + \lambda_1 \grad_y g(x_1, y_{\lambda_1}^*(x_1) ) = 0,
+    \end{align*}
+    which also implies that $\|g(x_1, y_{\lambda_1}^*(x_1) )\| \le l_{f,0} / \lambda_1$. Observe that
+    \begin{align*}
+        &\grad_y f(x_2, y_{\lambda_1}^*(x_1)) + \lambda_2 \grad_y g(x_2, y_{\lambda_1}^*(x_1)) \\
+        &\quad = (\grad_y f(x_2, y_{\lambda_1}^*(x_1)) - \grad_y f(x_1, y_{\lambda_1}^*(x_1))) + \grad_y f(x_1, y_{\lambda_1}^*(x_1)) \\
+        &\qquad + \lambda_2 (\grad_y g(x_2, y_{\lambda_1}^*(x_1)) - \grad_y g(x_1, y_{\lambda_1}^*(x_1))) + \lambda_2 \grad_y g(x_1, y_{\lambda_1}^*(x_1)) \\
+        &\quad = (\grad_y f(x_2, y_{\lambda_1}^*(x_1)) - \grad_y f(x_1, y_{\lambda_1}^*(x_1))) + \lambda_2 (\grad_y g(x_2, y_{\lambda_1}^*(x_1)) - \grad_y g(x_1, y_{\lambda_1}^*(x_1))) \\
+        &\qquad + (\lambda_2 - \lambda_1) \grad_y g(x_1, y_{\lambda_1}^*(x_1)),
+    \end{align*}
+    where in the last equality, we applied the optimality condition for $y_{\lambda_1}^*(x_1)$. Then applying the Lipschitzness of $\grad_y f$ and $\grad_y g$ in $x$, we have
+    \begin{align*}
+        \|\grad_y f(x_2, y_{\lambda_1}^*(x_1)) + \lambda_2 \grad_y g(x_2, y_{\lambda_1}^*(x_1))\| &\le l_{f,1} \|x_1 - x_2\| + l_{g,1} \lambda_2 \|x_2 - x_1\| + (\lambda_2 - \lambda_1) \frac{l_{f,0}}{\lambda_1}. 
+    \end{align*}
+    Since $\mL_{\lambda_2} (x_2, y)$ is $\lambda_2\mu_g/2$-strongly convex in $y$, from the coercivity property of strongly-convex functions, along with the optimality condition with $y^*_{\lambda_2}(x_2)$, we have
+    \begin{align*}
+        \frac{\lambda_2 \mu_g}{2} \|y_{\lambda_1}^*(x_1) - y^*_{\lambda_2}(x_2) \| \le \|\grad_y \mL_{\lambda_2} (x_2,y_{\lambda_1}^*(x_1))\| \le (l_{f,1}+\lambda_2 l_{g,1}) \|x_1 - x_2\| + \frac{\lambda_2 - \lambda_1}{\lambda_1} l_{f,0}.
+    \end{align*}
+    Dividing both sides by $(\lambda_2\mu_g/2)$ concludes the first part of the proof. 
+    Note that $y^*(x) = \lim_{\lambda \rightarrow \infty} y_\lambda^*(x)$. Thus, for any $x$ and finite $\lambda \ge 2l_{f,1} / \mu_g$,
+    \begin{align*}
+        \|y^*_{\lambda} (x) - y^*(x)\| \le \frac{2l_{f,0}}{\lambda\mu_g}. 
+    \end{align*}
+\end{proof}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\subsection{Proofs for Auxiliary Lemmas}
+\subsubsection{Proof of Lemma \ref{lemma:outer_F_smooth}}
+\begin{proof}
+    The proof can be also found in Lemma 2.2 in \cite{ghadimi2018approximation}. We provide the proof for the completeness. Recall that $\grad F(x)$ is given by
+    \begin{align*}
+        \grad F(x) = \grad_x f(x,y^*(x)) - \grad_{xy}^2 g(x,y^*(x)) \grad_{yy}^2 g(x,y^*(x))^{-1} \grad_y f(x,y^*(x)).
+    \end{align*}
+    Using the smoothness of functions and Hessian-continuity of $g$ in assumptions, for any $x_1, x_2 \in X$, we get
+    \begin{align*}
+        \|\grad F(x_1) - \grad F(x_2)\| &\le \left(l_{f,1}  + \frac{l_{f,0}}{\mu_g} l_{g,2} + \frac{l_{g,1}}{\mu_g} l_{g,1} \right) (\|x_1 - x_2\| + \|y^*(x_1) - y^*(x_2)\|) \\
+        &\quad + l_{g,1} l_{f,0} \| \grad_{yy}^2 g(x_1, y^*(x_1))^{-1} -  \grad_{yy}^2 g(x_2, y^*(x_2))^{-1} \| \\
+        &\le \left(l_{f,1}  + \frac{l_{f,0}}{\mu_g} l_{g,2} + \frac{l_{g,1}}{\mu_g}\right) l_{*,0} \|x_1 - x_2\|  + \frac{l_{g,1}l_{f,0}}{\mu_g^2} l_{g,2} l_{*,0} \|x_1 - x_2\|.
+    \end{align*}
+    Thus, 
+    \begin{align*}
+        l_{F,1} &\le l_{*,0} \left(l_{f,1} + \frac{l_{f,0} l_{g,2} + l_{g,1}^2}{\mu_g} + \frac{l_{f,0}l_{g,1}l_{g,2}}{\mu_g^2} \right) \\
+        &\le l_{*,0} \left(l_{f,1} + \frac{l_{g,1}^2}{\mu_g} + \frac{2l_{f,0}l_{g,1}l_{g,2}}{\mu_g^2} \right),
+    \end{align*}
+    where in the last inequality we used $l_{g,1}/\mu_g \ge 1$.
+\end{proof}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\subsubsection{Proof of Lemma \ref{lemma:relation_Lagrangian_F}}
+We use a short-hand $y^* = y^*(x)$.
+\begin{align*}
+    \grad_x \mL_\lambda(x,y) &= \grad_x f(x, y) + \lambda (\grad_x g(x,y) - \grad_x g(x, y^*)) \\
+    \grad_y \mL_\lambda(x,y) &= \grad_y f(x, y) + \lambda \grad_y g(x,y).
+\end{align*}
+Check that 
+\begin{align}
+    \grad F(x) - \grad_x \mL_\lambda(x,y) &= \grad_x f(x,y^*) - \grad_x f(x,y) \nonumber \\
+    &\quad - \grad_{xy}^2 g(x,y^*) \grad_{yy}^{2} g(x,y^*)^{-1} \grad_y f(x,y^*) - \lambda (\grad_x g(x,y) - \grad_x g(x, y^*)).  \label{eq:F_minus_gradx_lambda}
+\end{align}
+We can rearrange terms for $(\grad_x g(x,y) - \grad_x g(x, y^*))$ as the following:
+\begin{align}
+    \grad_x g(x,y) - \grad_x g(x, y^*) &= \grad_x g(x,y) - \grad_x g(x, y^*) - \grad_{xy} g(x,y^*)^\top (y-y^*) \nonumber \\
+    &\quad + \grad_{xy} g(x,y^*)^\top (y-y^*). \label{eq:lambda_gradx_expension}
+\end{align}
+Note that from the optimality condition for $y^*$, $\grad_{y} g(x,y^*)=0$ and from $\grad_x f(x,y) + \lambda \grad_y g(x,y) = \grad_y \mL(x,y)$, we can express $y - y^*$ as
+\begin{align}
+    y-y^* &= -\grad_{yy} g(x,y^*)^{-1} (\grad_y g(x,y) - \grad_y g(x,y^*) - \grad_{yy} g(x,y^*) (y-y^*)) \nonumber \\
+    &\quad + \frac{1}{\lambda} \grad_{yy} g(x,y^*)^{-1} \left(\grad_y \mL(x,y) - \grad_y f(x,y)\right). \label{eq:lambda_grady_expension}
+\end{align}
+Plugging \eqref{eq:lambda_gradx_expension} and \eqref{eq:lambda_grady_expension} back to \eqref{eq:F_minus_gradx_lambda}, we have
+\begin{align*}
+    \grad F(x) - \grad_x \mL_\lambda(x,y) &= (\grad_x f(x,y^*) - \grad_x f(x,y)) - \grad_{xy}^2 g(x,y^*) \grad_{yy}^{2} g(x,y^*)^{-1} (\grad_y f(x,y^*) - \grad_y f(x,y)) \\
+    &\quad - \grad_{xy}^2 g(x,y^*) \grad_{yy}^{2} g(x,y^*)^{-1} \grad_y \mL(x,y) \\
+    &\quad - \lambda (\grad_x g(x,y) - \grad_x g(x, y^*) - \grad_{xy}^2 g(x,y^*)^\top (y-y^*)) \\
+    &\quad + \lambda \grad_{xy}^2 g(x,y^*) \grad_{yy}^2 g(x,y^*)^{-1} (\grad_y g(x,y) - \grad_y g(x,y^*) - \grad_{yy}^2 g(x,y^*) (y-y^*)).
+\end{align*}
+
+By the smootheness of $\grad g$ from Assumption \ref{assumption:nice_functions}, we have
+\begin{align*}
+    \| \grad_y g(x, y) - \grad_y g(x, y^*) - \grad_{yy}^2 g(x, y^*) (y - y^*) \| \le l_{g,2} \|y - y^*\|^2.
+\end{align*}
+When $\|y - y^*\|$ is too large, the smoothness of $g$ can be more useful:
+\begin{align*}
+    \| \grad_y g(x, y) - \grad_y g(x, y^*) - \grad_{yy}^2 g(x, y^*) (y - y^*) \| \le 2 l_{g,1} \|y - y^*\|. 
+\end{align*}
+Similarly, we have
+\begin{align*}
+    \| \grad_x g(x, y) - \grad_x g(x, y^*) - \grad_{xy}^2 g(x, y^*)^\top (y - y^*) \| \le \min \left(l_{g,2} \|y - y^*\|^2, 2l_{g,1} \|y-y^*\| \right). 
+\end{align*}
+
+
+On the other hand, by smootheness of $f$, we also have
+\begin{align*}
+    \|\grad_x f(x,y^*) - \grad_x f(x,y) \| \le l_{f,1} \|y - y^*\|, \ \|\grad_y f(x,y^*) - \grad_y f(x,y) \| \le l_{f,1} \|y - y^*\|.  
+\end{align*}
+We can conclude that
+\begin{align*}
+    &\| \grad F(x) - \grad_x \mL_\lambda(x,y) + \grad_{xy}^2 g(x,y^*) \grad_{yy}^{2} g(x,y^*)^{-1} \grad_y \mL(x,y) \| \\
+    &\qquad \le l_{f,1} (1 + l_{g,1}/\mu_g) \|y - y^*\| + \lambda (1 + l_{g,1}/\mu_g) \|y-y^*\| \min(l_{g,2} \|y-y^*\|, 2l_{g,1}).
+\end{align*}
+We know that $l_{g,1}/\mu_g \ge 1$ and thus, we have
+\begin{align*}
+    &\| \grad F(x) - \grad_x \mL_\lambda(x,y) + \grad_{xy}^2 g(x,y^*) \grad_{yy}^{2} g(x,y^*)^{-1} \grad_y \mL(x,y) \| \\
+    &\qquad \le 2 (l_{g,1}/\mu_g) \|y-y^*\| \left(l_{f,1} + \lambda \cdot \min(2l_{g,1}, l_{g,2} \|y-y^*\|)\right),
+\end{align*}
+yielding the lemma.
+
+
+
+
+
+
+
+\subsubsection{Proof of Lemma \ref{lemma:nice_y_star_lagrangian}}
+\begin{proof}
+    Lipschitzness of $y_{\lambda}^*(x)$ is immediate from Lemma \ref{lemma:y_star_lagrangian_continuity}. By the optimality condition for $\grad y_\lambda^*(x)$, we have
+    \begin{align*}
+        \grad_y \mL_{\lambda} (x, y_{\lambda}^*(x)) = \grad_y f (x, y_{\lambda}^*(x)) + \lambda \grad_y g (x, y_{\lambda}^*(x)) = 0.
+    \end{align*}
+    Taking derivative with respect to $x$, we get
+    \begin{align*}
+        (\grad_{yy}^2 f(x, y_{\lambda}^*(x)) + \lambda \grad_{yy}^2 g(x, y_{\lambda}^*(x))) \grad y_{\lambda}^*(x) = -(\grad_{xy}^2 f(x, y_{\lambda}^*(x)) + \lambda \grad_{xy}^2 g(x, y_{\lambda}^*(x))).
+    \end{align*}
+    As $\lambda > 2l_{f,1} / \mu_g$, the left-hand side is positive definite with mininum eigenvalue larger than $\lambda \mu_g / 2$, and we have
+    \begin{align*}
+        \grad y_{\lambda}^*(x) = - \left(\frac{1}{\lambda} \grad_{yy}^2 f(x, y_{\lambda}^*(x)) + \grad_{yy}^2 g(x, y_{\lambda}^*(x)) \right)^{-1} \left( \frac{1}{\lambda} \grad_{xy}^2 f(x, y_{\lambda}^*(x)) + \grad_{xy}^2 g(x, y_{\lambda}^*(x)) \right).
+    \end{align*}
+    To get the smoothness result, we compare this at $x_1$ and $x_2$, yielding
+    \begin{align*}
+        \frac{\lambda \mu_g}{2} \|\grad y_{\lambda}^*(x_1) - \grad y_{\lambda}^*(x_2)\| &\le  (l_{f,2} + \lambda l_{g,2}) (\|x_1 - x_2\| + \|y_{\lambda}^*(x_1) - y_{\lambda}^*(x_2)\|) \max_{x \in X} \|\grad y_{\lambda}^*(x)\| \\
+        &\quad + (l_{f,2} + \lambda l_{g,2}) (\|x_1 - x_2\| + \|y_{\lambda}^*(x_1) - y_{\lambda}^*(x_2)\|) \\
+        &\le (l_{f,2} + \lambda l_{g,2}) (1 + l_{\lambda,0})^2 \|x_1 - x_2\|. 
+    \end{align*}
+    Arranging this, we get
+    \begin{align*}
+        \|\grad y_{\lambda}^*(x_1) - \grad y_{\lambda}^*(x_2)\| \le 32 \left(\frac{l_{f,2}}{\lambda} + l_{g,2}\right) \frac{l_{g,1}^2}{\mu_g^3} \|x_1-x_2\|.
+    \end{align*}
+\end{proof}
+
+
+
+
+
+
+
+
+\subsubsection{Proof of Lemma \ref{lemma:y_star_contraction}} 
+    \begin{proof}
+    This is immediate from Lipschitz continuity in Lemma \ref{lemma:y_star_lagrangian_continuity} with sending $\lambda_1 = \lambda_2$ to infinity. 
+    \begin{align*}
+        \Exs[\|y^*(x_{k+1}) - y^*(x_k)\|^2 | \mathcal{F}_k] &\le l_{*,0}^2 \Exs[\|x_{k+1} - x_k\|^2 | \mathcal{F}_k] \\
+        &\le l_{*,0}^2 \xi^2 \alpha_k^2 (\Exs[\|q_k^x\|^2|\mF_k] + \alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2). 
+    \end{align*}
+\end{proof}
+
+
+
+
+\subsubsection{Proof of Lemma \ref{lemma:y_star_smoothness_bound}}
+\label{appendix:proof:y_star_smoothness_bound}
+\begin{proof}
+    We can use the smoothness property of $y^*(x)$ as in \cite{chen2021closing}, which is crucial to control the noise variance induced from updating $x$. We can start with the following:
+    \begin{align*}
+        \vdot{v_k}{y_{k+1}^* - y_k^*} &= \vdot{v_k}{\grad y^*(x_k) (x_{k+1} - x_k)} \\
+        &\quad + \vdot{v_k}{y^*(x_{k+1}) - y^*(x_k) - \grad y^*(x_k) (x_{k+1} - x_k)}.
+    \end{align*}
+    On the first term, taking expectation and using $\vdot{a}{b} \le c \|a\|^2 + \frac{1}{4c} \|b\|^2$,
+    \begin{align*}
+        \Exs[\vdot{v_k}{\grad y^*(x_k) (x_{k+1} - x_k)} | \mathcal{F}_k] &= -\xi\alpha_k \Exs[\vdot{v_k}{\grad y^*(x_k) q_k^x } | \mathcal{F}_k] \\
+        &\le \xi\alpha_k \eta_k \Exs[\|v_k\|^2 | \mathcal{F}_k] + \frac{\xi \alpha_k}{4\eta_k} \Exs[\|\grad y^*(x_k) q_k^x\|^2 | \mathcal{F}_k] \\
+        &\le \xi \alpha_k \eta_k \Exs[\|v_k\|^2| \mathcal{F}_k] + \frac{\xi\alpha_k l_{*,0}^2}{4\eta_k} \Exs[\|q_k^x\|^2 | \mathcal{F}_k],
+    \end{align*}
+    where we used the Lipschitz continuity of $y^*(x)$. For the second term, using smoothness of $y^*(x)$, 
+    \begin{align*}
+        & \Exs[\vdot{v_k}{y^*(x_{k+1}) - y^*(x_k) - \grad y^*(x_k) (x_{k+1} - x_k)} | \mathcal{F}_k] \\
+        &\le \frac{l_{*,1}}{2} \Exs[ \|v_k\| \|x_{k+1}-x_k\|^2 | \mathcal{F}_k] \\
+        &\le \frac{l_{*,1}}{4} \Exs\left[ \left(l_{*,1} \|v_k\|^2 + \frac{1}{l_{*,1}} \right) \cdot \|x_{k+1}-x_k\|^2 | \mathcal{F}_k \right] \\
+        &\le \frac{l_{*,1}^2 }{4} \Exs[\|v_k\|^2 \cdot \Exs\left[\|x_{k} - x_{k+1}\|^2 | \mathcal{F}_{k}' \right] | \mathcal{F}_k] \\
+        &\quad + \frac{\xi^2}{4} \left(\alpha_k^2 \Exs[\|q_k^x\|^2]  + \alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2 \right),
+    \end{align*}
+    where $\mathcal{F}_k'$ is a sigma-algebra generated by stochastic noises up to $k^{th}$ iteration and $v_k$. Note that 
+    \begin{align*}
+        \Exs\left[\|x_{k} - x_{k+1}\|^2 | \mathcal{F}_{k}' \right] &\le \xi^2 \alpha_k^2 \Exs\left[\|q_k^x\|^2 | \mathcal{F}_{k} \right] + \xi^2 (\alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2),
+    \end{align*}
+    and from boundedness of $\grad_x f$ and $\grad_x g$ in Assumption \ref{assumption:bounded_grad_x}, we have $\alpha_k \|q_k^x\| \le \alpha_k l_{f,0} + 2 \beta_k l_{g,0}$. With $M_f = l_{f,0}^2 + \sigma_f^2$, $M_g = l_{g,0}^2 + \sigma_g^2$, and $M = \max(M_f, M_g)$, we get
+    \begin{align*}
+        \Exs\left[\|x_{k} - x_{k+1}\|^2 | \mathcal{F}_{k}' \right] \le 2 \xi^2 (M_f \alpha_k^2 + 2 M_g \beta_k^2) \le 4M\xi^2 l_{*,1}^2 \beta_k^2, 
+    \end{align*}
+    which yields
+    \begin{align*}
+        & \Exs[\vdot{v_k}{y^*(x_{k+1}) - y^*(x_k) - \grad y^*(x_k) (x_{k+1} - x_k)} | \mathcal{F}_k] \\
+        &\quad \le M \xi^2 l_{*,1}^2 \beta_k^2 \Exs[\|v_k\|^2 | \mathcal{F}_k]  
+        + \frac{\xi^2}{4} \left(\alpha_k^2 \Exs[\|q_k^x\|^2 | \mathcal{F}_k ]  + \alpha_k^2 \sigma_f^2 + \beta_k^2 \sigma_g^2 \right). 
+    \end{align*}
+    Combining all, we obtain the desired result. 
+\end{proof}
+
+
+
+
+
+
+
+
+
+
+
+
+\subsubsection{Proof of Lemma \ref{lemma:y_star_lambda_vdot_bound}}
+\label{appendix:proof:y_star_lambda_smoothness_bound}
+\begin{proof}
+    We can start with the following decomposition:
+    \begin{align*}
+        \vdot{v_k}{y_{\lambda_{k+1}}^*(x_{k+1}) - y_{\lambda_k}^* (x_k)} &= \vdot{v_k}{y_{\lambda_{k+1}}^*(x_{k+1}) - y_{\lambda_k}^* (x_{k+1})} \\
+        &\quad + \vdot{v_k}{\grad y_{\lambda_k}^*(x_k) (x_{k+1} - x_k)} \\
+        &\quad + \vdot{v_k}{y_{\lambda_k}^*(x_{k}) - y_{\lambda_k}^*(x_k) - \grad y_{\lambda_{k}}^*(x_k) (x_{k+1} - x_k)}.
+    \end{align*}
+    For the second and third terms, we can apply the smoothness of $y_{\lambda}(x)$ similarly in the proof in \ref{appendix:proof:y_star_smoothness_bound}. 
+    
+    On the first term, taking expectation and using $\vdot{a}{b} \le c \|a\|^2 + \frac{1}{4c} \|b\|^2$,
+    \begin{align*}
+        \Exs[\vdot{v_k}{y_{\lambda_{k+1}}^*(x_{k+1}) - y_{\lambda_k}^* (x_{k+1})} | \mathcal{F}_k]
+        &\le c \Exs[\|v_k\|^2] + \frac{1}{4c} \Exs[\|y_{\lambda_{k+1}}^*(x_{k+1}) - y_{\lambda_k}^* (x_{k+1})\|^2 ] \\
+        &\le c \Exs[\|v_k\|^2] + \frac{1}{c} \frac{\delta_k^2}{\lambda_k^2 \lambda_{k+1}^2} \frac{l_{f,0}^2}{\mu_g^2},
+    \end{align*}
+    where we applied Lemma \ref{lemma:y_star_lagrangian_continuity}. Take $c = \frac{\delta_k}{\lambda_k}$, getting
+    \begin{align*}
+        \Exs[\vdot{v_k}{y_{\lambda_{k+1}}^*(x_{k+1}) - y_{\lambda_k}^* (x_{k+1})} | \mathcal{F}_k]
+        &\le \frac{\delta_k}{\lambda_k} \Exs[\|v_k\|^2] + \frac{l_{f,0}^2 \delta_k}{\mu_g^2 \lambda_k^3}. 
+    \end{align*}
+    Adding this with bounds on other two terms, we get the lemma.
+\end{proof}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\subsection{Proofs for Auxiliary Lemmas with Momentum}
+
+\subsubsection{Proof of Lemma \ref{lemma:y_star_contraction_momentum}}
+Due to Lipschitz continuity of $y^*(x)$, we have
+\begin{align*}
+    \Exs[\|y^*(x_{k+1}) - y^*(x_k)\|^2] &\le l_{*,0}^2 \Exs[\|x_{k+1} - x_k\|^2] \\
+    &\le \xi^2 \alpha_k^2 l_{*,0}^2 \Exs[\|q_k^x + \tilde{e}_k^x\|^2] \le 2\xi^2 \alpha_k^2 l_{*,0}^2 (\Exs[\|q_k^x\|^2] + \Exs[\|\tilde{e}_k^x\|^2]).
+\end{align*}
+
+\subsubsection{Proof of Lemma \ref{lemma:y_star_lambda_contraction_momentum}}
+Using Lemma \ref{lemma:y_star_lagrangian_continuity}, we have
+\begin{align*}
+    \Exs[\|y_{\lambda_{k+1}}^*(x_{k+1}) - y_{\lambda_{k}}^*(x_k)\|^2] &\le \frac{8\delta_k^2}{\lambda_k^2\lambda_{k+1}^2} + 2 l_{\lambda,0}^2 \Exs[\|x_{k+1} - x_k\|^2] \\
+    &\le 4 \xi^2 \alpha_k^2 l_{*,0}^2 (\Exs[\|q_k^x\|^2] + \Exs[\|\tilde{e}_k^x\|^2]) + \frac{8\delta_k^2}{\lambda_k^4}.
+\end{align*}
+
+
+\subsubsection{Proof of Lemma \ref{lemma:descent_stochastic_noise_yz}}
+\label{appendix:proof_stochastic_noise_yz}
+We can start with unfolding the expression for $\Exs[\|\tilde{e}_{k+1}^z\|^2]$. 
+\begin{align*}
+    \Exs[\| \tilde{e}_{k+1}^z\|^2] &= \Exs[\| \tilde{h}_{z}^{k+1} - q_{k+1}^z\|^2] \\
+    &= \Exs[\| \grad_y g(x_{k+1}, z_{k+1}; \phi_{z}^{k+1}) + (1 - \eta_{k+1}) (\tilde{h}_{z}^{k} - \grad_y g(x_k, z_k; \phi_z^{k+1})) - q_{k+1}^z\|^2] \\
+    &= \Exs[\| (1 - \eta_{k+1}) \tilde{e}_k^z + \grad_y g(x_{k+1}, z_{k+1}; \phi_{z}^{k+1}) \\
+    &\qquad + (1 - \eta_{k+1}) (q_k^z - \grad_y g(x_k, z_k; \phi_z^{k+1})) - q_{k+1}^z\|^2] \\
+    &= (1 - \eta_{k+1})^2 \Exs[\| \tilde{e}_k^z\|^2 ] + \Exs[\|\eta_k (\grad_y g(x_{k+1}, z_{k+1}; \phi_{z}^{k+1}) - q_{k+1}^z) \\
+    &\qquad + (1-\eta_{k+1}) (\grad_y g(x_{k+1}, z_{k+1}; \phi_{z}^{k+1}) - \grad_y g(x_k, z_k; \phi_{z}^{k+1}) + q_{k}^z - q_{k+1}^z) \|^2].
+\end{align*}
+In the last equality, we used
+\begin{align*}
+    \Exs[ \Exs[ \vdot{\tilde{e}_k^{z}}{\grad_y g(x_{k+1}, z_{k+1}; \phi_{z}^{k+1}) - q_{k+1}^z} | \mathcal{F}_{k+1}] ] &= 0, \\
+    \Exs[ \Exs[ \vdot{\tilde{e}_k^{z}}{\grad_y g(x_{k}, z_{k}; \phi_{z}^{k+1}) - q_k^z} | \mathcal{F}_{k+1}] ] &= 0.
+\end{align*}
+Also note that 
+\begin{align*}
+    \Exs[\|\grad_y g(x_{k+1}, z_{k+1}; \phi_{z}^{k+1}) - q_{k+1}^z\|^2] \le \sigma_g^2,
+\end{align*}
+from the variance boundedness (Assumption \ref{assumption:gradient_variance}). We also observe that
+\begin{align*}
+    \Exs[\|\grad_y g(x_{k+1}, z_{k+1};\phi_{z}^{k+1}) - \grad_y g(x_k, z_k; \phi_{z}^{k+1}) \|^2] &\le l_{g,1}^2 (\|x_{k+1} - x_k\|^2 + \|z_{k+1} - z_k\|^2) \\
+    &= l_{g,1}^2 (\xi^2 \alpha_k^2 \|q_k^x + \tilde{e}_k^x\|^2 + \gamma_k^2 \|q_k^z + \tilde{e}_k^z\|^2), 
+\end{align*}
+due to Assumption \ref{assumption:nice_stochastic_fg}. The same inequality holds for $q_{k+1}^z - q_k^z$:
+\begin{align*}
+    \Exs[\|q_{k+1}^z - q_k^z \|^2] \le l_{g,1}^2 (\xi^2 \alpha_k^2 \|q_k^x + \tilde{e}_k^x\|^2 + \gamma_k^2 \|q_k^z + \tilde{e}_k^z\|^2). 
+\end{align*}
+Now we plug these inequalities and using $\|a+b\|^2 \le 2(\|a\|^2 + \|b\|^2)$ multiple times, we have
+\begin{align*}
+    \Exs[\|\tilde{e}_{k+1}^z\|^2] &\le (1 - \eta_{k+1})^2 (1 + 8 l_{g,1}^2 \gamma_k^2) \Exs[\|\tilde{e}_k^z\|^2] + 2 \eta_{k+1}^2 \sigma_g^2 \\
+    &\qquad + 8l_{g,1}^2 (1-\eta_{k+1})^2 \left( \xi^2\alpha_k^2 \Exs[\|q_k^x\|^2] + \xi^2\alpha_k^2 \Exs[\|\tilde{e}_k^x\|^2] + \gamma_k^2 \Exs[\|q_k^z\|^2] \right).
+\end{align*}
+
+
+Similarly, we can repeat similar steps for $\tilde{e}_{k+1}^y$. To simplify the notation, with slight abuse in notation, we let $q_k^y(\zeta, \phi) := \grad_y f(x_{k}, y_{k};\zeta) + \lambda_{k} \grad_y g (x_k, y_k; \phi)$. Note that $q_k^y = \Exs[q_k^y(\zeta, \phi)]$. Then we can get a similar bound for $\Exs[\| \tilde{e}_{k+1}^y \|^2]$:
+\begin{align*}
+    \Exs[\| \tilde{e}_{k+1}^y\|^2 ] &\le (1-\eta_{k+1})^2 \Exs[\| \tilde{e}_{k}^y\|^2 ] + 2 \eta_{k+1}^2 \Exs[\| q_{k+1}^y(\zeta_{y}^{k+1}, \phi_{y}^{k+1}) - q_{k+1}^y \|^2] \\
+    &\qquad + 2(1-\eta_{k+1})^2 \Exs[\| (q_{k+1}^y (\zeta_{y}^{k+1}, \phi_{y}^{k+1}) - q_k^y (\zeta_{y}^{k+1}, \phi_{y}^{k+1})) + (q_k^y - q_{k+1}^y)\|^2 ].
+\end{align*}
+Using the variance bound similarly, we have
+\begin{align*}
+    \Exs[\| q_{k+1}^y(\zeta_{y}^{k+1}, \phi_{y}^{k+1}) - q_{k+1}^y \|^2] \le \sigma_f^2 + \lambda_{k+1}^2 \sigma_g^2.
+\end{align*}
+Then, we unfold the last term such that
+\begin{align*}
+    \Exs[&\| (q_{k+1}^y (\zeta_{y}^{k+1}, \phi_{y}^{k+1}) - q_k^y (\zeta_{y}^{k+1}, \phi_{y}^{k+1})) + (q_k^y - q_{k+1}^y)\|^2 ] \\
+    &= \Exs[\| (\grad_y f(x_{k+1}, y_{k+1}; \zeta_y^{k+1}) - \grad_y f(x_{k}, y_{k}; \zeta_y^{k+1}) + \grad_y f(x_{k}, y_k) - \grad_y f(x_{k+1}, y_{k+1})) \\
+    &\quad + \lambda_k (\grad_y g(x_{k+1}, y_{k+1}; \phi_y^{k+1}) - \grad_y g(x_k, y_k; \phi_y^{k+1}) + \grad_y g(x_k, y_k) - \grad_y g(x_{k+1}, y_{k+1})) \\
+    &\quad + \delta_k (\grad_y g(x_{k+1},y_{k+1}; \phi_{y}^{k+1}) - \grad_y g(x_{k+1}, y_{k+1}) + \grad_y g(x_k,y_k) - \grad_y g(x_k, y_k; \phi_{y}^{k+1}) ) \|^2] \\
+    &\le 12 (l_{f,1}^2  + l_{g,1}^2 \lambda_k^2) (\|x_{k+1} - x_k\|^2 + \|y_{k+1} - y_k\|^2) + 12 \delta_k^2 \sigma_g^2 \\
+    &\le 24 (l_{f,1}^2 \alpha_k^2 + l_{g,1}^2 \beta_k^2) (\xi^2 \|q_k^x\|^2 + \xi^2 \|\tilde{e}_k^x\|^2 + \|q_k^y\|^2 + \|\tilde{e}_k^y\|^2) + 12 \delta_k^2 \sigma_g^2.
+\end{align*}
+We note that we set $\lambda_k \ge 2l_{f,1} / \mu_g$, and thus $l_{f,1} \le \lambda_k l_{g,1}$. In total, we get
+\begin{align*}
+    \Exs[\| \tilde{e}_{k+1}^y\|^2 ] &\le (1-\eta_{k+1})^2 (1 + 96 l_{g,1}^2 \beta_k^2 ) \Exs[\| \tilde{e}_{k}^y\|^2 ] + 2 \eta_{k+1}^2 (\sigma_f^2 + \lambda_{k+1}^2 \sigma_g^2) + 24 \delta_k^2 \sigma_g^2 \\
+    &\qquad + 96 (1-\eta_{k+1})^2 l_{g,1}^2 \beta_k^2 (\xi^2 \|q_k^x\|^2 + \xi^2 \|\tilde{e}_k^x\|^2 + \|q_k^y\|^2).
+\end{align*}
+
+
+
+\subsubsection{Proof of Lemma \ref{lemma:descent_stochastic_noise_x}}
+\label{appendix:proof_stochastic_noise_x}
+Similarly to the case for $\|\tilde{e}_{k+1}^y\|^2$, let us define $q_k^x (\zeta, \phi) := \grad_x f(x_k, y_{k+1}; \zeta) + \lambda_k (\grad_x g(x_k, y_{k+1}; \phi) - \grad_x g(x_k, z_{k+1}; \phi))$. We note that $\zeta_x^k, \phi_{x}^k$ are sampled after $y_{k+1}, z_{k+1}$ is updated but before $x_k$ is updated. Hence, 
+\begin{align*}
+    \Exs[\Exs[\vdot{\tilde{e}_k^x}{q_{k+1}^x(\zeta_x^{k+1}, \phi_{x}^{k+1}) - q_{k+1}^x} | \mathcal{F}_{k+1}']] = 0, \\
+    \Exs[\Exs[\vdot{\tilde{e}_k^x}{q_{k}^x(\zeta_x^{k+1}, \phi_{x}^{k+1}) - q_{k}^x} | \mathcal{F}_{k+1}']] = 0.
+\end{align*}
+Thus, following similar procedure, we have
+\begin{align*}
+    \Exs[\| \tilde{e}_{k+1}^x\|^2] &= \Exs[\| q_{k+1}^x(\zeta_x^{k+1}, \phi_{x}^{k+1}) + (1-\eta_{k+1}) (q_k^x + \tilde{e}_k^x - q_{k}^x (\zeta_x^{k+1}, \phi_{x}^{k+1}) ) - q_{k+1}^x \|^2] \\
+    &\le (1 - \eta_{k+1})^2 \Exs[\| \tilde{e}_k^x\|^2 ] + 2\eta_k^2 \Exs[\|q_{k+1}^x (\zeta_x^{k+1}, \phi_{x}^{k+1}) - q_{k+1}^x\|^2] \\
+    &\qquad + 2(1-\eta_{k+1})^2 \Exs[\| (q_{k+1}^x (\zeta_{x}^{k+1}, \phi_{x}^{k+1}) - q_k^x (\zeta_{x}^{k+1}, \phi_{x}^{k+1})) + (q_k^x - q_{k+1}^x)\|^2 ].
+\end{align*}
+Note that
+\begin{align*}
+    \Exs[&\|q_{k+1}^x (\zeta_x^{k+1}, \phi_{x}^{k+1}) - q_{k+1}^x\|^2] \\
+    &= \Exs[\|(\grad_x f(x_{k+1}, y_{k+2}; \zeta_x^{k+1}) - \grad_x f(x_{k+1}, y_{k+2})) \\
+    &\quad + \lambda_k (\grad_x g(x_{k+1}, y_{k+2}; \phi_x^{k+1}) - \grad_x g(x_{k+1}, y_{k+2})) + \lambda_k (\grad_x g(x_{k+1}, z_{k+2}; \phi_x^{k+1}) - \grad_x g(x_{k+1}, z_{k+2}))\|^2] \\
+    &\le 3 (\sigma_f^2 + \lambda_k^2 \sigma_g^2). 
+\end{align*}
+Finally, we have
+\begin{align*}
+    \Exs[&\| (q_{k+1}^x (\zeta_{x}^{k+1}, \phi_{x}^{k+1}) - q_k^x (\zeta_{x}^{k+1}, \phi_{x}^{k+1})) + (q_k^x - q_{k+1}^x)\|^2 ] \\
+    &= \Exs[\| (\grad_x f(x_{k+1}, y_{k+2}; \zeta_x^{k+1}) - \grad_x f(x_{k}, y_{k+1}; \zeta_x^{k+1}) + \grad_y f(x_{k}, y_{k+1}) - \grad_y f(x_{k+1}, y_{k+2})) \\
+    &\quad + \lambda_k (\grad_x g(x_{k+1}, y_{k+2}; \phi_x^{k+1}) - \grad_x g(x_k, y_{k+1}; \phi_x^{k+1}) + \grad_x g(x_k, y_{k+1}) - \grad_x g(x_{k+1}, y_{k+2})) \\
+    &\quad + \lambda_k (\grad_x g(x_{k+1}, z_{k+2}; \phi_x^{k+1}) - \grad_x g(x_k, z_{k+1}; \phi_x^{k+1}) + \grad_x g(x_k, z_{k+1}) - \grad_x g(x_{k+1}, z_{k+2})) \\
+    &\quad + \delta_k (\grad_y g(x_{k+1},y_{k+2}; \phi_{x}^{k+1}) - \grad_y g(x_{k+1}, y_{k+2}) + \grad_x g(x_k,y_{k+1}) - \grad_x g(x_k, y_{k+1}; \phi_{x}^{k+1}) ) \\
+    &\quad + \delta_k (\grad_x g(x_{k+1},z_{k+2}; \phi_{x}^{k+1}) - \grad_x g(x_{k+1}, z_{k+2}) + \grad_x g(x_k,z_{k+1}) - \grad_x g(x_k, z_{k+1}; \phi_{x}^{k+1}) ) \|^2].
+\end{align*}
+Using Cauchy-Schwartz inequality, we get
+\begin{align*}
+    \Exs[&\| (q_{k+1}^x (\zeta_{x}^{k+1}, \phi_{x}^{k+1}) - q_k^x (\zeta_{x}^{k+1}, \phi_{x}^{k+1})) + (q_k^x - q_{k+1}^x)\|^2 ] \\
+    &\le 30(l_{f,1}^2 + l_{g,1}^2 \lambda_k^2) (\|x_{k+1} - x_k\|^2 + \|y_{k+2} - y_{k+1}\|^2 + \|z_{k+2} - z_{k+1}\|^2) + 40 \delta_k^2 \sigma_g^2 \\
+    &\le 120 l_{g,1}^2 \lambda_k^2 (\xi^2 \alpha_k^2 (\|q_k^x\|^2 + \|\tilde{e}_k^x\|^2) + \alpha_{k+1}^2 (\|q_k^y\|^2 + \|\tilde{e}_k^y\|^2) + \gamma_{k+1}^2 (\|q_k^z\|^2 + \|\tilde{e}_k^z\|^2)) + 40 \delta_k^2 \sigma_g^2.
+\end{align*}
+Combining all, we obtain the result. 

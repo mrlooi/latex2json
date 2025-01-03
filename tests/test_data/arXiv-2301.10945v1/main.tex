@@ -1,0 +1,167 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+
+\usepackage{lipsum}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+
+% to avoid loading the natbib package, add option nonatbib:
+% \usepackage[nonatbib]{nips_2018}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{tgtermes}
+
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+
+%% Language and font encodings
+\usepackage[english]{babel}
+
+
+
+%% Useful packages
+\usepackage{amsmath}
+\usepackage{enumitem}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{bm}
+\usepackage{theorem}
+%\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+
+\newcommand{\algname}{\texttt{F$^2$SA}}
+\newcommand{\algnametwo}{\texttt{F$^3$SA}}
+
+
+\usepackage{mathtools}
+\newenvironment{proof}{\paragraph{\it Proof.}}{\hfill$\square$}
+
+\usepackage[title]{appendix}
+\usepackage{comment}
+\usepackage{amsfonts}
+\usepackage{dsfont}
+\usepackage{hyperref}
+\usepackage{lipsum}
+\usepackage{dsfont,subcaption,float}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+\usepackage{thm-restate}
+\usepackage[size=small,labelfont=bf]{caption}
+\newcommand{\rob}[1]{{\color{red}{RN: #1}}}
+
+
+\usepackage{xcolor}
+% \usepackage[notref,notcite]{showkeys} 
+%\newcommand{\todo}[1]{\textcolor{red}{\{TODO: #1\}}}
+% \newcommand{\yon}[1]{\textcolor{magenta}{\{Yon: #1\}}}
+% \newcommand{\yonDel}[1]{\textcolor{blue}{\{Yon, DELETE: #1\}}}
+
+\input{macros}
+
+\title{\bf{\LARGE{A Fully First-Order Method for Stochastic Bilevel Optimization}}}
+
+\usepackage{authblk}
+\author[1]{Jeongyeol Kwon}
+\author[1]{Dohyun Kwon}
+\author[1]{Stephen Wright} 
+\author[1]{Robert Nowak}
+\affil[1]{Wisconsin Institute for Discovery, UW-Madison}
+
+
+
+\begin{document}
+\maketitle
+
+
+\begin{abstract}
+    We consider stochastic unconstrained bilevel optimization problems when only the first-order gradient oracles are available. 
+    While numerous optimization methods have been proposed for tackling bilevel problems, existing methods either tend to require possibly expensive calculations involving Hessians of lower-level objectives, or lack rigorous finite-time performance guarantees. 
+    In this work, we propose a Fully First-order Stochastic Approximation (\algname) method, 
+    %% \jycomment{Algorithm name?}\swcomment{both names look OK}  
+    and study its non-asymptotic convergence properties. Specifically, we show that \algname~converges to an $\epsilon$-stationary solution of the bilevel problem after $\epsilon^{-7/2}, \epsilon^{-5/2}$, or $\epsilon^{-3/2}$ iterations (each iteration using $O(1)$ samples)  when stochastic noises are in both level objectives, only in the upper-level objective, or not present (deterministic settings), respectively. 
+    We further show that if we employ momentum-assisted gradient estimators, the iteration complexities can be improved to $\epsilon^{-5/2}, \epsilon^{-4/2}$, or $\epsilon^{-3/2}$, respectively. 
+    We demonstrate the superior practical performance of the proposed method over existing second-order based approaches on MNIST data-hypercleaning experiments.
+\end{abstract}
+
+
+\section{Introduction}
+\input{Introduction}
+
+\section{Preliminaries}
+\input{Preliminaries}
+
+
+
+
+\section{Algorithm}
+\label{section:algorithm}
+\input{Algorithm}
+
+
+\section{Main Results}
+\label{section:analysis}
+\input{Analysis}
+
+
+
+
+
+
+
+\section{Experiments}
+\label{section:experiment}
+\input{Experiment}
+
+
+
+
+\section{Future work}
+We study fully first-order methods for stochastic bilevel optimization and their non-asymptotic performance. We conclude the paper with discussions on several future directions. 
+
+\paragraph{Lower Bound} As we discussed, we observe a gap between the fully first-order method and existing methods that use second-order information of $g$. We conjecture that this gap is fundamental, and it would be an interesting future question to investigate the fundamental limits of fully first-order methods. 
+
+
+\paragraph{More Lower-Level Problems} There are already several recent work that considers a more challenging case when the lower-level optimization problem can be non-strongly-convex \cite{liu2021towards, liu2021value, arbel2022non} and non-smooth \cite{lu2023first}. The potential benefit of the first-order method over existing second-order based methods is that it can still be considered to tackle such scenarios, whereas the formula \eqref{eq:gradF} is only available for well-conditioned lower-level problems. We believe it is an important future direction to study a more general class of \eqref{problem:bilevel} beyond strongly-convex lower-level problems with fully first-order methods. Adding variable-dependent constraints to the lower-level problem would also lead to an interesting extension of fully first-order approaches. 
+ 
+
+\begin{comment}
+\paragraph{Generalization to Multi-Level Optimization}
+\dkcomment{Generalization to multi-level.}
+
+\dkcomment{Some remarks to the main theorems? \\
+1. The conjecture after Lemma 4.1. If we use the proximal operator, then can we remove the differentiability? \\
+2. What happens if the convexity of $g$ in $y$ holds locally in a big ball? \\
+3. Can we do this with degenerate convexity of $g$ in $y$?\\
+4. Can we find some example or counterexample of the convergence? \\
+5. What if $g^*$ is a constant? In that case, we don't have to use the $z$ variable. Then, can we get a better bound?
+}
+\end{comment}
+
+\bibliographystyle{abbrv}
+\bibliography{main}
+
+
+\newpage 
+
+\appendix
+
+
+\begin{appendices}
+\input{Appendix}
+\end{appendices}
+
+
+\end{document}

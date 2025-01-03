@@ -1,0 +1,133 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% THEOREMS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{condition}[theorem]{Condition}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{remark}
+\newtheorem{question}{Open Question}
+\newtheorem{remark}[theorem]{Remark}
+%\newenvironment{proof}{\paragraph{\it Proof.}}{\hfill$\square$}
+
+
+\DeclarePairedDelimiter\br{(}{)}% ( )
+\DeclarePairedDelimiter\brs{[}{]}% [ ]
+\DeclarePairedDelimiter\brc{\{}{\}}% { }
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}% | |
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}% || ||
+\DeclarePairedDelimiter\inner{\langle}{\rangle}% < >
+
+
+\newcommand{\tmu}{\tilde{\mu}}
+\newcommand{\tpi}{\tilde{\pi}}
+\newcommand{\tsigma}{\tilde{\sigma}}
+
+\newcommand{\htheta}{\hat{\theta}}
+\newcommand{\hpi}{\hat{\pi}}
+\newcommand{\hsigma}{\hat{\sigma}}
+\newcommand{\hrho}{\hat{\rho}}
+\newcommand{\poly}{\mathrm{poly}}
+
+
+\newcommand{\bbeta}{\bm{\beta}}		% bold beta
+\newcommand{\btheta}{\bm{\theta}}		% bold beta
+\newcommand{\betastar}{\bbeta^*}	% beta star
+\newcommand{\betapara}{{\bbeta}^{\parallel}}	% unit vector parallel to beta
+\newcommand{\betaperp}{{\bbeta}^{\perp}}		% unit vector orthogonal to beta
+\newcommand{\betastarpara}{\betastar^{\parallel}}  % unit vector parallel to beta star
+\newcommand{\bX}{\bm{X}}	% bold X
+\newcommand{\by}{\bm{y}}		% bold y
+
+
+\newcommand{\tO}{\tilde{O}}	% Log Order-complexity   
+\newcommand{\oR}{\overline{R}}	% opt R
+\newcommand{\oV}{\overline{V}}	% opt V
+\newcommand{\oQ}{\overline{Q}}	% opt Q
+\newcommand{\oGamma}{\overline{\Gamma}}	% opt Gamma
+
+\newcommand{\wQ}{\widetilde{Q}}	% approximated Q
+
+\newcommand{\KL}{\textrm{KL}} 
+
+\newcommand{\mC}{\mathcal{C}}	% Confidence
+\newcommand{\mS}{\mathcal{S}}	% States
+\newcommand{\mA}{\mathcal{A}}	% Actions
+\newcommand{\mO}{\mathcal{O}}	% Observations
+\newcommand{\mB}{\mathcal{B}}	% PSR parameters
+\newcommand{\mH}{\mathcal{H}}	% Histories 
+\newcommand{\mT}{\mathcal{T}}	% Tests
+\newcommand{\mY}{\mathcal{Y}}	% Tests
+\newcommand{\mP}{\mathcal{P}}	% Tests
+\newcommand{\mM}{\mathcal{M}}	% Model class
+\newcommand{\tmM}{\widetilde{\mathcal{M}}}	% Model class
+\newcommand{\tmpi}{\widetilde{\pi}}	% Model class
+
+\newcommand{\mX}{\mathcal{X}}	% Domain of Random Variable 
+\newcommand{\mF}{\mathcal{F}}	% Notation for function class 
+\newcommand{\mG}{\mathcal{G}}	% Generalized linear function class
+\newcommand{\mI}{\mathcal{I}}	% real space   
+\newcommand{\mD}{\mathcal{D}}	% over Domain
+\newcommand{\mR}{\mathcal{R}}	% real space   
+\newcommand{\mL}{\mathcal{L}}	% Lagrangian
+\newcommand{\mZ}{\mathcal{Z}}	% real space   
+\newcommand{\mNb}{\mathbb{N}}	% number
+\newcommand{\mRb}{\mathbb{R}}	% real space   
+\newcommand{\indic}[1]{\mathds{1}\left\{ #1 \right\}} % indicator function 
+
+\newcommand{\tPP}{\tilde{\mathds{P}}}    % probability 
+\newcommand{\PP}{\mathds{P}}    % probability 
+\newcommand{\vdot}[2]{\langle #1, #2 \rangle}
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
+\newcommand{\Eps}{\mathcal{E}}
+
+
+\newcommand{\Varh}{\widehat{Var}_{(s_t,a_t)}}
+\newcommand{\Var}{{Var}_{(s_t,a_t)}}
+\newcommand{\A}{\mathcal{A}}	% action
+
+\newcommand{\Exs}{\mathbb{E}}
+
+
+\newcommand{\brackets}[1]{\left[ #1 \right]}
+\newcommand{\parenth}[1]{\left( #1 \right)}
+\newcommand{\bigparenth}[1]{\big( #1 \big)}
+\newcommand{\biggparenth}[1]{\bigg( #1 \bigg)}
+\newcommand{\braces}[1]{\left\{ #1 \right \}}
+\newcommand{\abss}[1]{\left| #1 \right |}
+\newcommand{\angles}[1]{\left\langle #1 \right \rangle}
+\newcommand{\tp}{^\top}
+\newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
+
+\newcommand{\tssum}{\textstyle \sum}
+\newcommand{\moment}{\mathbf{M}}
+\newcommand{\grad}{\nabla}
+
+\allowdisplaybreaks
+
+\newif\ifdraft
+\drafttrue  % comment this line to enabble draft mode
+
+
+\newcommand{\blue}[1]{\textcolor{blue}{#1}}
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\newcommand{\green}[1]{\textcolor{green}{#1}}
+\newcommand{\magenta}[1]{\textcolor{magenta}{#1}}
+\newcommand{\orange}[1]{\textcolor{orange}{#1}}
+\newcommand{\purple}[1]{\textcolor{purple}{#1}}
+
+\newcommand{\jycomment}[1]{\ifdraft {\bf{{\red{{Jeongyeol --- #1}}}}}\else\fi}
+\newcommand{\cccomment}[1]{\ifdraft {\bf{{\purple{{Constantine --- #1}}}}}\else\fi}
+\newcommand{\swcomment}[1]{\ifdraft {\bf{{\purple{{Steve --- #1}}}}}\else\fi}
+\newcommand{\dkcomment}[1]{\ifdraft {\bf{{\blue{{Dohyun --- #1}}}}}\else\fi}
+
+
+
+\newcommand{\I}{\mathcal{I}}
+\newcommand{\J}{\mathcal{J}}

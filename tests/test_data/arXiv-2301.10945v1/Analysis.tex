@@ -1,0 +1,250 @@
+
+
+In this section, we provide non-asymptotic convergence guarantees of the proposed algorithms. For Algorithm~\ref{algo:algo_name}, we prove in  Theorem~\ref{theorem:general_nonconvex} that the weighted sum of $\|\grad F(x_k)\|^2$ in expectation is bounded from above. Choosing suitable step sizes, the estimate guarantees the convergence rate, which depends on the presence of stochastic noises in Corollaries \ref{corollary:non_convex_F}. The similar results with better convergence rates and weaker assumptions hold true for Algorithm~\ref{algo:algo_name2}, as shown in Theorem~\ref{theorem:general_momentum}
+and Corollary \ref{corollary:non_convex_momentum}.
+
+%Targeting three error measures,
+%$$\|\grad F(x_k)\|, \|z_k - y^*(x_k)\| \hbox{ and } \|y_k - y_{\lambda_k}^*(x_k)\|,$$
+%we obtain the 
+
+%Here, $y^*$ and $y^*_{\lambda}$ are given in \eqref{eq:yls} and \eqref{problem:bilevel}, respectively.
+
+
+%Our convergence results 
+
+%In  and , we obtain convergence rates of Algorithms~\ref{algo:algo_name} and \ref{algo:algo_name2}, which depend on the presence of stochastic noises. 
+
+%To analyze them, we target three error measures,
+%$$\|\grad F(x_k)\|, \|z_k - y^*(x_k)\| \hbox{ and } \|y_k - y_{\lambda_k}^*(x_k)\|,$$
+%where $y^*$ and $y^*_{\lambda}$ are given in \eqref{eq:yls} and \eqref{problem:bilevel}, respectively. While the convergence of the first two is standard in the literature, a new term $\|y_k - y_{\lambda_k}^*(x_k)\|$ arises as we work only with first-order derivatives.
+
+
+%to ensure that the iterations in Algorithm~\ref{algo:algo_name} converge.  
+
+%Algorithms~\ref{algo:algo_name} and \ref{algo:algo_name2}
+
+
+
+
+
+
+
+
+\subsection{Main Result for Algorithm \ref{algo:algo_name}}
+
+In this section we provide non-asymptotic convergence guarantees of the proposed algorithms. 
+For Algorithm~\ref{algo:algo_name}, we prove in  Theorem~\ref{theorem:general_nonconvex} that the weighted sum of $\|\grad F(x_k)\|^2$ in expectation is bounded from above. 
+By choosing suitable step sizes, the estimate yields a convergence rate.
+Dependence on stochastic noises is explicated in Corollaries~\ref{corollary:non_convex_F}. 
+Similar results with better convergence rates and weaker assumptions are proved for Algorithm~\ref{algo:algo_name2}; see Theorem~\ref{theorem:general_momentum}
+and Corollary~\ref{corollary:non_convex_momentum}.
+
+%Targeting three error measures,
+%$$\|\grad F(x_k)\|, \|z_k - y^*(x_k)\| \hbox{ and } \|y_k - y_{\lambda_k}^*(x_k)\|,$$
+%we obtain the 
+
+%Here, $y^*$ and $y^*_{\lambda}$ are given in \eqref{eq:yls} and \eqref{problem:bilevel}, respectively.
+
+
+%Our convergence results 
+
+%In  and , we obtain convergence rates of Algorithms~\ref{algo:algo_name} and \ref{algo:algo_name2}, which depend on the presence of stochastic noises. 
+
+%To analyze them, we target three error measures,
+%$$\|\grad F(x_k)\|, \|z_k - y^*(x_k)\| \hbox{ and } \|y_k - y_{\lambda_k}^*(x_k)\|,$$
+%where $y^*$ and $y^*_{\lambda}$ are given in \eqref{eq:yls} and \eqref{problem:bilevel}, respectively. While the convergence of the first two is standard in the literature, a new term $\|y_k - y_{\lambda_k}^*(x_k)\|$ arises as we work only with first-order derivatives.
+
+
+%to ensure that the iterations in Algorithm~\ref{algo:algo_name} converge.  
+
+%Algorithms~\ref{algo:algo_name} and \ref{algo:algo_name2}
+
+
+
+
+
+
+
+
+\subsection{Main Result for Algorithm \ref{algo:algo_name}}
+
+Two mild assumptions are required for exploiting the smoothness of $y_{\lambda}^*(x)$.
+\begin{assumption}
+    \label{assumption:bounded_grad_x}
+    THe gradient with respect to $x$ is bounded for functions $f$ and $g$:
+    \begin{enumerate}
+        \item[1.] For every $\bar{y}$, $\|\grad_x f(x, \bar{y})\| \le l_{f,0}$ for all $x \in X$.
+        \item[2.] For every $\bar{y}$, $\|\grad_x g(x, \bar{y})\| \le l_{g,0}$ for all $x \in X$.
+    \end{enumerate}
+\end{assumption}
+\begin{assumption}
+    \label{assumption:extra_smooth_f}
+    $f$ is two-times continuously differentiable, and $\grad^2 f$ is $l_{f,2}$-Lipschitz in $(x,y)$.
+\end{assumption}
+The smoothness of $y^*_\lambda(x)$ is used to keep the number of effective inner iterations constant throughout all outer-iterations, as in \cite{chen2021closing}. %While they are not strictly required for solving \eqref{algo:algo_name}, these extra conditions ensure the nice behavior of $y_{\lambda}^*(x)$, {\it i.e.,} $y_{\lambda}^*(x)$ is smooth for all range of $\lambda$ of interest:
+
+%\dkcomment{Where do we use this Lemma?}
+% We later show that Assumptions \ref{assumption:bounded_grad_x} and \ref{assumption:extra_smooth_f} are not required if we employ variance-reduction style techniques such as using momentum. %We leave it as future work to remove Assumption \ref{assumption:extra_smooth_f} in our analysis. Here is our main convergence result.
+
+
+
+
+
+
+% With suitable choices of the step sizes given later, we prove our convergence result below. 
+Before we state our convergence result, let us define some additional notation. We denote the second-moment bound of the $x$ update, $x_{k+1} - x_k$, as $M := \max(l_{f,0}^2 + \sigma_f^2, l_{g,0}^2 + \sigma_g^2)$. We also denote $l_{*,0} = \max(1, l_{\lambda_0,0})$ % \swcomment{please check this one - should $\lambda$ be $\lambda_0$?} 
+and $l_{*,1} = l_{\lambda_0,1}$ where $\lambda_0$ is the starting value of Lagrange multiplier. 
+
+We are now ready to state our main results for Algorithm \ref{algo:algo_name}.
+
+
+
+
+\begin{theorem}
+    \label{theorem:general_nonconvex}
+    Suppose that Assumptions \ref{assumption:nice_functions} - \ref{assumption:extra_smooth_f} hold, and parameters and step-sizes are chosen such that $\lambda_0 \ge 2l_{f,1} / \mu_g$ and
+    \begin{subequations}
+    \label{eq:step_size_theorem}
+    \begin{align}
+        & \beta_k \le \gamma_k \le \min \left(\frac{1}{4 l_{g,1}}, \frac{1}{4 T \mu_g} \right), \ \alpha_k \le \min \left( \frac{1}{8 l_{f,1}}, \frac{1}{2 \xi l_{F,1}} \right), \label{eq:step_size_theorema} \\
+        & \frac{\xi}{T} < c_\xi \mu_g \cdot \max \left( l_{g,1} l_{*,0}^2, \ l_{*,1} \sqrt{M} \right)^{-1}, \quad \frac{\delta_k}{\lambda_k} \le \frac{T \mu_g \beta_k}{16} \label{eq:step_size_theoremb}
+    \end{align}
+    \end{subequations}
+    for all $k \ge 0$ with a proper absolute constant $c_\xi > 0$. Then for any $K \ge 1$, Algorithm \ref{algo:algo_name} iterates satisfy
+    \begin{align*}
+        \sum_{k=0}^{K-1} \xi \alpha_k \Exs[\|\grad F(x_k)\|^2] &\le O_{\texttt{P}} (1) \cdot \sum_{k} \xi\alpha_k\lambda_k^{-2} + O_{\texttt{P}}(\sigma_f^2) \cdot \sum_{k} \alpha_k^2 \lambda_k + O_{\texttt{P}}(\sigma_g^2) \cdot \sum_{k} \gamma_k^2 \lambda_k + O_{\texttt{P}} (1), 
+    \end{align*}
+    where $O_{\texttt{P}}(1)$ are instance-dependent constants.
+\end{theorem}
+The proof of Theorem~\ref{theorem:general_nonconvex} is given in Appendix~\ref{appendix:main_proof_non_convex}. At a high level, our analysis investigates the decrease in expectation (with $k$) of the potential function $\mathbb{V}_k$ defined by
+\begin{align}
+\label{eq:pot0}
+    \mathbb{V}_k := &(F(x_k) - F^*) + l_{g,1} \lambda_k \|y_k - y_{\lambda_k}^* (x_k)\|^2  + \frac{\lambda_k l_{g,1}}{2} \|z_k - y^*(x_k)\|^2,
+\end{align}
+where $F^*$ is the minimum value of $F$ and $y^*_{\lambda}$ and $y^*$ are given in \eqref{eq:yls} and \eqref{problem:bilevel}, respectively. That is, in addition to the decrease in values of $F$ and $z_k - y_k^*$ which have been standardized in literature, we track the error between $y_k$ and $y_{\lambda_k}^* (x_k)$ since $y_{\lambda, k}^*$ is the key to compute true $\grad F(x_k)$ only with gradients. It is also shown in the proof that the right scaling factor for the tracking errors is $O_{\texttt{P}}(\lambda_k)$. 
+%Our aim is to find the upper bound of 
+%\[
+%    \Exs[\mathbb{V}_{k+1} - \mathbb{V}_{k} | \mathcal{F}_k].
+%\]
+%\swcomment{Need to mention that $\mathcal{F}_k$ is a filtration?} 
+% \swcomment{Actually I can't see that $\mathbb{V}_k$ is referenced again in the main text. Perhaps it appears only in the appendices?} 
+% \jycomment{re: ($\mathbb{V}_k$) is a legacy of older draft. I thought it might be good to give some ideas on the analysis. Does this paragraph look fine?}
+
+
+
+
+
+We now describe how we design step sizes. Note that the conditions \eqref{eq:step_size_theorema} are standard conditions on the step sizes for gradient-based methods with smooth functions. The conditions \eqref{eq:step_size_theoremb} arise from the double-loop nature of the problem, as discussed in Section \ref{sec:step}. In accordance with the step-size design rule \eqref{eq:step_size_theorem}, we propose the following: 
+\begin{align}
+    &T = \max \left(32, (c_{\xi} \mu_g)^{-1} \max \left(l_{g,1} l_{*,0}^2, \ \sqrt{M} l_{*,1} \right) \right), \nonumber \\
+    &\xi = 1, \alpha_k = \frac{c_\alpha}{(k+k_0)^a}, \ \gamma_k = \frac{c_\gamma}{(k+k_0)^c}, \label{eq:step_size_design}
+\end{align}
+and for the multiplier increase sequence $\{\delta_k\}$,
+\begin{align}
+    \delta_k = \min\left( \frac{T \mu_g }{16} \alpha_k \lambda_k^2, \ \frac{\gamma_k}{2\alpha_k} - \lambda_k \right), \label{eq:step_size_design_delta}
+\end{align}
+with some rate constants $a,c \in [0,1]$ and $a \ge c$. We design the starting value $\lambda_0$ of the Lagrange multiplier %\swcomment{Sometimes it's called "Lagrange multiplier" and sometimes "regularizer."} 
+and the constants as
+\begin{align}
+    &k_0 \ge \frac{4}{\mu_g} \max \left( \frac{ \xi l_{F,1}}{2}, T l_{g,1}, l_{f,1} \right), \ \lambda_0 \ge \frac{2l_{f,1}}{\mu_g} , \nonumber \\
+    &c_\gamma = \frac{1}{\mu_g k_0^{1-c}}, \ c_\alpha = \frac{1}{2\lambda_0 \mu_g k_0^{1-a}}. \label{eq:step_size_constant_design}
+\end{align}
+These choices simplify the convergence rate analysis, but any set of choices can be used as long as it satisfies \eqref{eq:step_size_theorem}. 
+With the choices above, we can specify the rate of convergence in three different regimes of stochastic noises.
+\begin{corollary}
+    \label{corollary:non_convex_F}
+    Suppose that the conditions of Theorem~\ref{theorem:general_nonconvex} hold,  with step-sizes designed as in \eqref{eq:step_size_design}, \eqref{eq:step_size_design_delta}, and
+    \eqref{eq:step_size_constant_design}. Let $R$ be a random variable drawn from a uniform distribution over $\{0, ..., K-1\}$. 
+    Then the following convergence results hold after $K$ iterations of Algorithm \ref{algo:algo_name}.
+    \begin{enumerate}
+        \item[(a)]  If stochastic noises are present in both upper-level objective $f$ and lower-level objective $g$ ({\it i.e.,} $\sigma_f^2, \sigma_g^2 > 0$), then by setting $a=5/7$ and $c=4/7$ in \eqref{eq:step_size_design} and \eqref{eq:step_size_constant_design}, we obtain 
+        $\Exs[\|\grad F(x_R)\|^2] \asymp \frac{\log K}{K^{2/7}}$,
+        \item[(b)] If stochastic noises are present only in $f$ ({\it i.e.,} $\sigma_f^2 > 0)$, $\sigma_g^2 = 0$), then by setting $a = 3/5$ and $c=2/5$ in \eqref{eq:step_size_design} and \eqref{eq:step_size_constant_design}, we obtain $\Exs[\|\grad F(x_R)\|^2] \asymp \frac{\log K}{K^{2/5}}$,
+        \item[(c)] If we have access to exact information about $f$ and $g$ ({\it i.e.,} $\sigma_f^2 = \sigma_g^2 = 0$), then by setting $a = 1/3$ and $c = 0$ in \eqref{eq:step_size_design} and \eqref{eq:step_size_constant_design}, we obtain $\|\grad F(x_K)\|^2 \asymp \frac{\log K}{K^{2/3}},$
+    \end{enumerate}
+   % \jycomment{Changed from $\grad F_R$ with prob... to $\Exs[\grad F_R]$.}
+    %with probability at least $2/3$.  \swcomment{Does this probabilistic statement apply only to (a) and (b)?}
+\end{corollary}
+As these results show, stronger convergence results can be proved when noise is present in fewer places in the problem. 
+If stochastic noise is present only in the upper-level rather than in both levels, the rate can be improved from $O(k^{-2/7})$ to $O(k^{-2/5})$. In deterministic settings (no noise), we get a rate of  $O(k^{-2/3})$. 
+This rate compares to the $O(k^{-1})$ rate that can be obtained with second-order based methods. 
+
+
+
+
+
+
+
+\subsection{Main Result for Algorithm \ref{algo:algo_name2}}
+When we use the momentum-assisting technique, we require the stochastic functions to be well-behaved as well.
+\begin{assumption}
+    \label{assumption:nice_stochastic_fg}
+    Assumption \ref{assumption:nice_functions} holds for $f(x,y;\zeta)$ and $g(x,y;\phi)$ with probability $1$. 
+\end{assumption}
+One technical benefit of the momentum technique is that now we no longer require the bounded-gradient assumption w.r.t. $x$ (Assumption~\ref{assumption:bounded_grad_x}) or the smoothness of Hessian of $f$ (Assumption~\ref{assumption:extra_smooth_f}) for the analysis, as we no longer make use of the smoothness of $y_\lambda^*$.
+% , which also helps to simplify the analysis.
+We show the following convergence result for Algorithm \ref{algo:algo_name2}.
+\begin{theorem}
+    \label{theorem:general_momentum}
+    Suppose Assumptions \ref{assumption:nice_functions}-\ref{assumption:gradient_variance} and \ref{assumption:nice_stochastic_fg} hold. If step-size parameters are chosen such that $\lambda_0 \ge 2l_{f,1} / \mu_g$ and 
+    \begin{subequations}
+        \label{eq:step_size_theorem_momentum}
+        \begin{align}
+        & \beta_k \le \gamma_k \le \frac{1}{16 l_{g,1}}, \ \xi \alpha_k \le \frac{1}{l_{F,1}},  \ \xi \le c_\xi \frac{\mu_g}{l_{g,1} l_{*,0}^2}, \ \frac{\delta_k}{\lambda_k} \le \frac{\mu_g \beta_k}{8} ,\label{eq:step_size_theorem_momentum_a} \\
+            & \eta_0 = \eta_1 = 1, \ \max \left( 2\frac{\gamma_{k-1} - \gamma_k}{\gamma_{k-1}}, c_\eta \frac{l_{g,1}^3}{\mu_g} \gamma_k^2 \right) \le \eta_{k+1} \le 1, \ \delta_k / \gamma_k = o(1), \label{eq:step_size_theorem_momentum_b}
+        \end{align}
+    \end{subequations}
+    with proper absolute constants $c_{\xi}, c_{\eta} > 0$, then for any $K \ge 1$, Algorithm \ref{algo:algo_name2} satisfy
+    \begin{align*}
+        \sum_{k=0}^{K-1} \xi \alpha_k \Exs[\|\grad F(x_k)\|^2] &\le O_{\texttt{P}} (1) \cdot \sum_{k} \xi\alpha_k\lambda_k^{-2} + O_{\texttt{P}}(\sigma_f^2) \cdot \sum_{k} \frac{\eta_{k+1}^2}{\gamma_k \lambda_k} + O_{\texttt{P}}(\sigma_g^2) \cdot \sum_{k} \frac{\eta_{k+1}^2 \lambda_k}{\gamma_k} + O_{\texttt{P}} (1), 
+    \end{align*}
+    where $O_{\texttt{P}}(1)$ are instance-dependent constants. 
+\end{theorem}
+The proof of Theorem \ref{theorem:general_momentum} appears in Appendix \ref{appendix:momentum_method}. 
+We introduce the following  step-size design, consistent with \eqref{eq:step_size_theorem_momentum}.
+\begin{subequations}
+    \label{eq:step_size_momentum_detail}
+    \begin{align}
+        &\alpha_k = \frac{c_\alpha}{(k+k_0)^a}, \ \gamma_k = \frac{c_\gamma}{(k+k_0)^c}, \ \eta_{k} = (k+1)^{-2c} \\
+        &\xi \le c_\xi \frac{\mu_g}{l_{g,1} l_{*,0}^2}, \ \delta_k = \frac{\gamma_k}{\alpha_k} - \lambda_k, \ \lambda_0 \ge \frac{2l_{f,1}}{\mu_g}, \\
+        &k_0 \ge \frac{128}{\mu_g} \max\left(\xi l_{F,1}, l_{g,1} \sqrt{\frac{c_\eta l_{g,1}}{\mu_g}} \right), c_\gamma = \frac{8}{\mu_g k_0^{1-c}}, \ c_\alpha = \frac{8}{\mu_g \lambda_0 k_0^{1-a}},
+    \end{align}
+\end{subequations}
+%\swcomment{What are the restrictions on $a$ and $c$?}
+with some rate constants $a,c \in [0,1]$ and $a \ge c$. As a corollary, we can obtain faster convergence rates for Algorithm~\ref{algo:algo_name2} than Algorithm~\ref{algo:algo_name}. 
+\begin{corollary}
+    \label{corollary:non_convex_momentum}
+   Suppose the conditions of Theorem~\ref{theorem:general_momentum} hold.
+   Suppose that Algorithm~\ref{algo:algo_name2} is run with step-sizes are designed as in \eqref{eq:step_size_momentum_detail}. Let $R$ be a random variable drawn from a uniform distribution over $\{0, ..., K-1\}$.
+   Then the following convergence results hold after $K$ iterations of Algorithm \ref{algo:algo_name2}.
+    \begin{enumerate}
+        \item[(a)]  If stochastic noises are present in both upper-level objective $f$ and lower-level objective $g$ ({\it i.e.,} $\sigma_f^2, \sigma_g^2 > 0$), then by setting $a=3/5$ and $c=2/5$ in~\eqref{eq:step_size_momentum_detail}, we obtain 
+        $\Exs[\|\grad F(x_R) \|^2] \asymp \frac{\log K}{K^{2/5}}$.
+        \item[(b)] If stochastic noises are present only in $f$ ({\it i.e.,} $\sigma_f^2 > 0)$, $\sigma_g^2 = 0$), then by setting $a = 1/2$ and $c=1/4$ in~\eqref{eq:step_size_momentum_detail}, we obtain $\Exs[\|\grad F(x_R)\|^2] \asymp \frac{\log K}{K^{1/2}}$.
+        \item[(c)] If we have access to exact information about $f$ and $g$ ({\it i.e.,} $\sigma_f^2 = \sigma_g^2 = 0$), then by setting $a = 1/3$ and $c = 0$ in~\eqref{eq:step_size_momentum_detail}, we obtain $\|\grad F(x_K)\|^2 \asymp \frac{\log K}{K^{2/3}}$.
+    \end{enumerate}
+    %with probability at least $2/3$.  \swcomment{Does this probabilistic statement apply only to (a) and (b)?}
+\end{corollary}
+%
+The improvements in rates are different in different stochasticity regimes. 
+For instance, the sample complexity required to achieve $\epsilon$-stationary point is $\tilde{O}_{\texttt{P}}(\epsilon^{-7/2})$ without momentum and $\tilde{O}_{\texttt{P}} (\epsilon^{-5/2})$ with momentum --- a factor of $O(\epsilon)$ improvement --- when stochastic noises are present in both levels. 
+In contrast, when stochastic noises are only in the upper-level objective, then the overall sample complexity is tightened from $\tilde{O}_{\texttt{P}}(\epsilon^{-5/2})$ to $\tilde{O}_{\texttt{P}}(\epsilon^{-2})$, an $O(\epsilon^{-0.5})$ improvement. 
+Whether Algorithm~\ref{algo:algo_name2} achieves the optimal sample complexity for fully first-order methods is an interesting topic for future work.
+
+
+
+
+\subsection{Discussion}
+Because our algorithms do not access second-order derivatives of $g$, their iteration convergence rate is slower, decreasing from  $O(k^{-1/2})$ (e.g., \cite{chen2021closing}) to $O(k^{-2/7})$ for algorithms without momentum and  from $O(k^{-2/3})$ (e.g., \cite{khanduri2021near}) to $O(k^{-2/5})$ for algorithms with momentum. 
+This is not unexpected since we use less information. 
+Our experiments, perhaps surprisingly, do not show a slowdown in the convergence speed.
+In fact, first-order methods even outperform existing methods that use second-order information of $g$, as we show in Section \ref{section:experiment}.
+We add that in practice, if a bias of $O(1/\lambda^2)$-bias in the solution is not critical to the overall performance, then we can set $\lambda_k := \lambda$ constant at all iterations and choose more aggressive step-sizes, {\it e.g,} $\alpha_k \asymp k^{-1/2}, \gamma_k \asymp k^{-1/2}$ as in \cite{chen2021closing}.
+Such a strategy yields faster convergence to a certain biased point. 
+
+When deterministic gradient oracles are available, the authors in \cite{ye2022bome} employed the so called {\it dynamic-barrier} method \cite{gong2021automatic} to decide the value of $\lambda_k$ at every iteration, based on $\|\grad_y g(x_k,z_{k+1}) - \grad_y g(x_k,y_{k+1})\|$. 
+Such an approach requires precise knowledge of the latter quantity, which is not available in stochastic settings. 
+Our result shows that  a simple design of polynomial-rate growth of $\lambda_k$ is sufficient; an adaptive choice is not needed for good practical performance. 
+Further, the convergence rate reported in \cite{ye2022bome} is $k^{-1/4}$, while our result guarantees $k^{-2/3}$ convergence rate in deterministic settings. 
+% This is due to our simple $\lambda_k$ design combined with single-loop style algorithm and tight analysis. 
+

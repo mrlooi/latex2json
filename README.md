@@ -19,7 +19,7 @@ pip install -r requirements.txt
 ## Usage
 
 ```python
-from src.tex_reader import TexReader
+from latex_parser.tex_reader import TexReader
 
 # Initialize the parser
 tex_reader = TexReader()

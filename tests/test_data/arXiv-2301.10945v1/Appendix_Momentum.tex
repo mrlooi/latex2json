@@ -1,0 +1,323 @@
+
+
+\section{Main Results for Algorithm \ref{algo:algo_name2}}
+\label{appendix:momentum_method}
+We start with a few definitions and additional auxiliary lemmas. We first define the momentum-assisted moving direction of variables. They can be recursively defined as
+\begin{align*}
+    \tilde{h}_{z}^{k} &:= \nabla_y g(x_k, z_{k}; \phi_{z}^{k}) + (1 - \eta_{k}) \left( \tilde{h}_{z}^{k-1} - \grad_y g(x_{k-1}, z_{k-1}; \phi_{z}^{k}) \right), \\
+    \tilde{h}_{fy}^{k} &:= \nabla_y f(x_k, y_{k}; \zeta_{y}^{k}) + (1 - \eta_{k}) \left( \tilde{h}_{fy}^{k-1} - \grad_y f(x_{k-1}, y_{k-1}; \zeta_{y}^{k}) \right), \\
+    \tilde{h}_{gy}^{k} &:= \nabla_y g (x_k, y_{k}; \phi_{y}^{k}) + (1 - \eta_{k}) \left( \tilde{h}_{gy}^{k-1} - \grad_y g (x_{k-1}, y_{k-1}; \phi_{y}^{k}) \right), 
+\end{align*}
+for the inner variable updates, and 
+\begin{align*}
+    \tilde{h}_{fx}^k &:= \nabla_x f(x_k, y_{k+1}; \zeta_{x}^k) + (1 - \eta_k) \left(\tilde{h}_{fx}^{k-1} - \nabla_x f(x_{k-1}, y_{k}; \zeta_{x}^k) \right), \\
+    \ \tilde{h}_{gxy}^k &:= \nabla_{x} g(x_k, y_{k+1}; \phi_{x}^k) + (1 - \eta_k) \left(\tilde{h}_{gxy}^{k-1} - \nabla_x g(x_{k-1}, y_{k}; \phi_{x}^k) \right), \\ 
+    \ \tilde{h}_{gxz}^k &:= \nabla_{x} g(x_k, z_{k+1}; \phi_{x}^k) + (1 - \eta_k) \left(\tilde{h}_{gxz}^{k-1} - \nabla_x g(x_{k-1}, z_{k}; \phi_{x}^k) \right).
+\end{align*}
+for the outer variable update with some proper choice of $\eta_k$. We also define stochastic error terms incurred by random sampling:
+\begin{align}
+    \tilde{e}_k^x &:= \tilde{h}_{fx}^k + \lambda_k (\tilde{h}_{gxy}^k - \tilde{h}_{gxz}^k) - q_k^x, \nonumber \\
+    \tilde{e}_k^y &:= (\tilde{h}_{fy}^k + \lambda_k \tilde{h}_{gy}^k) - q_k^y, \nonumber \\
+    \tilde{e}_k^z &:= \tilde{h}_{z}^k - q_k^z, \label{eq:def_ek}
+\end{align}
+where $q_k^x, q_k^y, q_k^z$ are 
+defined in \eqref{eq:qk_def} (we dropped $t$ from subscript since here we consider $T=1$). 
+
+
+\subsection{Additional Auxiliary Lemmas}
+The following lemmas are analogous of Lemma \ref{lemma:y_star_contraction}. 
+
+\begin{lemma}
+    \label{lemma:y_star_contraction_momentum}
+    At every $k$ iteration conditioned on $\mathcal{F}_k$, we have
+    \begin{align*}
+        \Exs[\|y^*(x_{k+1}) - y^*(x_k)\|^2| \mathcal{F}_k] \le 2\xi^2 l_{*,0}^2 \alpha_k^2 \left( \Exs[\|q_k^x\|^2 | \mathcal{F}_k] + \Exs[\|\tilde{e}_k^x\|^2] \right). 
+    \end{align*}
+\end{lemma}
+
+
+
+
+\begin{lemma}
+    \label{lemma:y_star_lambda_contraction_momentum}
+    At every $k$ iteration conditioned on $\mathcal{F}_k$, we have
+    \begin{align*}
+        \Exs[\|y_{\lambda_{k+1}}^*(x_{k+1}) - y_{\lambda_k}^*(x_k)\|^2| \mathcal{F}_k] \le 4\xi^2 l_{*,0}^2 \alpha_k^2 \left( \Exs[\|q_k^x\|^2 | \mathcal{F}_k] + \Exs[\|\tilde{e}_k^x\|^2] \right) + \frac{8\delta_k^2 l_{f,0}^2}{\lambda_k^4 \mu_g^2}. 
+    \end{align*}
+\end{lemma}
+
+
+
+
+\subsection{Descent Lemma for Noise Variances}
+A major change in the proof is that now we also track the decrease in stochastic error terms. Specifically, we show the following lemmas.
+\begin{lemma}
+    \label{lemma:descent_stochastic_noise_yz}
+    \begin{align*}
+        \Exs[\| \tilde{e}_{k+1}^z\|^2] &\le (1 - \eta_{k+1})^2 (1 + 8l_{g,1}^2 \gamma_k^2) \Exs[\|\tilde{e}_k^z\|^2] + 2 \eta_{k+1}^2 \sigma_g^2 \\
+        &\qquad + 8 l_{g,1}^2 (1-\eta_{k+1})^2 \left( \xi^2 \alpha_k^2 \Exs[\|q_k^x\|^2] + \xi^2 \alpha_k^2 \Exs[\|\tilde{e}_k^x\|^2] + \gamma_k^2 \Exs[\|q_k^z\|^2] \right), \\
+        \Exs[\| \tilde{e}_{k+1}^y\|^2] &\le (1-\eta_{k+1})^2 (1 + 96 l_{g,1}^2 \beta_k^2 ) \Exs[\| \tilde{e}_{k}^y\|^2 ] + 2 \eta_{k+1}^2 (\sigma_f^2 + \lambda_{k+1}^2 \sigma_g^2) + 12 \delta_k^2 \sigma_g^2 \\
+    &\qquad + 96 l_{g,1}^2 (1-\eta_{k+1})^2 \beta_k^2 (\xi^2 \|q_k^x\|^2 + \xi^2 \|\tilde{e}_k^x\|^2 + \|q_k^y\|^2).
+    \end{align*}
+\end{lemma}
+
+
+\begin{lemma}
+    \label{lemma:descent_stochastic_noise_x}
+    \begin{align*}
+        \Exs[\| \tilde{e}_{k+1}^x\|^2] &\le (1 - \eta_{k+1})^2 (1 + 240 l_{g,1}^2 \xi^2 \beta_k^2) \Exs[\|\tilde{e}_{k}^x\|^2 ] + 6\eta_{k+1}^2 (\sigma_f^2 + \lambda_{k+1}^2 \sigma_g^2) + 80 \delta_k^2 \sigma_g^2 \\
+        &\quad + 240 l_{g,1}^2 (1-\eta_{k+1})^2 \lambda_k^2 \left(\xi^2 \alpha_k^2 \|q_k^x\|^2 + \alpha_k^2 (\|q_k^y\|^2 + \|\tilde{e}_k^y\|^2) + \gamma_k^2 (\|q_k^z\|^2 + \|\tilde{e}_k^z\|^2) \right). 
+    \end{align*}
+\end{lemma}
+Equipped with these lemmas, we can now proceed as previously in the main proof for Algorithm \ref{algo:algo_name}. 
+
+\subsection{Descent Lemma for $z_k$ towards $y_k^*$}
+\begin{lemma}
+    \label{lemma:z_descent_1}
+    If $\gamma_k \mu_g < 1/8$, then
+    \begin{align*}
+        \Exs[\|z_{k+1} - y_{k+1}^*\|^2 | \mF_k] &\le (1 + \gamma_k \mu_g / 4) \Exs[\|z_{k+1} - y_k^*\|^2 | \mF_k] \\
+        &\quad + O\left( \frac{\xi^2 \alpha_k^2 l_{*,0}^2}{\gamma_k \mu_g} \right) \cdot (\Exs[\|q_k^x\|^2 | \mF_k] + \Exs[\|\tilde{e}_k^x\|^2 | \mF_k]). 
+    \end{align*}
+\end{lemma}
+\begin{proof}
+    As before, we can decompose $\|z_{k+1} - y_{k+1}^*\|^2$ as
+    \begin{align*}
+        \|z_{k+1} - y_{k+1}^*\|^2 &= \|z_{k+1} - y_k^*\|^2 + \|y_{k+1}^* - y_k^*\|^2 - 2\vdot{z_{k+1}-y_k^*}{y_{k+1}^* - y_k^*} \\
+        &\le \|z_{k+1} - y_k^*\|^2 + \left(1 + \frac{1}{8\gamma_k \mu_g} \right) \|y_{k+1}^* - y_k^*\|^2 + 4\gamma_k \mu_g \|z_{k+1}-y_k^*\|^2,
+    \end{align*}
+    where we used a general inequality $|\vdot{a}{b}| \le c\|a\|^2 + \frac{1}{4c} \|b\|^2$.
+    We can apply Lemma \ref{lemma:y_star_contraction_momentum} for $\|y_{k+1}^* - y_k^*\|^2$, yielding the lemma. 
+\end{proof}
+
+
+
+
+\begin{lemma}
+    \label{lemma:z_descent_2}
+    If $\gamma_k \le 1 / (16 l_{g,1})$, then
+    \begin{align*}
+        \Exs[\|z_{k+1} - y_{k}^*\|^2 | \mF_k] &\le (1 - \gamma_k \mu_g / 2) \Exs[\|z_{k} - y_k^*\|^2 | \mF_k] - \frac{\gamma_k}{l_{g,1}} \|q_k^z\|^2 + O\left(\frac{\gamma_k}{\mu_g} \right) \Exs[\|\tilde{e}_k^z\|^2 | \mF_k]). 
+    \end{align*}
+\end{lemma}
+\begin{proof}
+    Note that
+    \begin{align*}
+        \|z_{k+1} - y_k^*\|^2 &= \|z_k - y_k^*\|^2 + \gamma_k^2 \|\tilde{h}_z^k\|^2 - 2\gamma_k \vdot{\tilde{h}_z^k}{z_k - y_k^*} \\
+        &\le \|z_k - y_k^*\|^2 + 2\gamma_k^2 (\|q_k^z\|^2 + \|\tilde{e}_k^z\|^2) - 2\gamma_k \vdot{q_k^z}{z_k - y_k^*} - 2\gamma_k \vdot{\tilde{e}_k^z}{z_k - y_k^*}.
+    \end{align*}
+    Since $q_k^z = \grad_y g(x_k, z_k)$ by definition, by coercivity and co-coercivity of strongly-convex functions, we have
+    \begin{align*}
+        \left( \mu_g \|z_k - y_k^*\|^2, \frac{1}{l_{g,1}}\|q_k^z\|^2 \right) \le \vdot{q_k^z}{z_k - y_k^*},  
+    \end{align*}
+    and thus, given $\gamma_k \le 1/(16l_{g,1})$, we have
+    \begin{align*}
+        \Exs[z_{k+1} - y_k^*\|^2 | \mF_k] \le (1 - 3 \gamma_k \mu_g/4) \Exs[\|z_k - y_k^*\|^2 | \mF_k] - \frac{\gamma_k}{l_{g,1}} \|q_k^z\|^2 + 2\gamma_k^2 \Exs[\|\tilde{e}_k^z\|^2 | \mF_k] - 2\gamma_k \vdot{\tilde{e}_k^z}{z_k - y_k^*}.
+    \end{align*}
+    Finally, we can use general inequality $|\vdot{a}{b}| \le c\|a\|^2 + \frac{1}{4c} \|b\|^2$ to get
+    \begin{align*}
+        -2\gamma_k \vdot{\tilde{e}_k^z}{z_k - y_k^*} \le \frac{\gamma_k \mu_g}{4} \|z_k - y_k^*\|^2 + \frac{4\gamma_k}{\mu_g} \|\tilde{e}_k^z\|^2. 
+    \end{align*}
+    Plugging this back, with $\gamma_k^2 \ll \frac{\gamma_k}{\mu_g}$, we get the lemma. 
+\end{proof}
+
+
+
+
+
+
+
+\subsection{Descent Lemma for $y_k$ towards $y_{\lambda,k}^*$}
+\begin{lemma}
+    \label{lemma:y_descent_1}
+    If $\beta_k \mu_g < 1/8$, then
+    \begin{align*}
+        \Exs[\|y_{k+1} - y_{\lambda, k+1}^*\|^2 | \mF_k] &\le (1 + \beta_k \mu_g / 4) \Exs[\|y_{k+1} - y_{\lambda,k}^*\|^2 | \mF_k] \\
+        &\quad + O\left( \frac{\xi^2 \alpha_k^2 l_{*,0}^2}{\beta_k \mu_g} \right) \cdot (\Exs[\|q_k^x\|^2 | \mF_k] + \Exs[\|\tilde{e}_k^x\|^2 | \mF_k]) + O\left(\frac{\delta_k^2 l_{f,0}^2}{\lambda_k^4 \mu_g^2} \right). 
+    \end{align*}
+\end{lemma}
+\begin{proof}
+    As before, we can decompose $\|y_{k+1} - y_{\lambda, k+1}^*\|^2$ as
+    \begin{align*}
+        \|y_{k+1} - y_{\lambda,k+1}^*\|^2 &= \|y_{k+1} - y_{\lambda,k}^*\|^2 + \|y_{k+1}^* - y_{\lambda,k}^*\|^2 - 2\vdot{y_{k+1}-y_{\lambda,k}^*}{y_{\lambda,k+1}^* - y_{\lambda,k}^*} \\
+        &\le \|y_{k+1} - y_{\lambda,k}^*\|^2 + \left(1 + \frac{1}{8\beta_k \mu_g} \right) \|y_{\lambda,k+1}^* - y_{\lambda,k}^*\|^2 + 4\beta_k \mu_g \|y_{k+1}-y_{\lambda,k}^*\|^2,
+    \end{align*}
+    where we used a general inequality $|\vdot{a}{b}| \le c\|a\|^2 + \frac{1}{4c} \|b\|^2$.
+    We can apply Lemma \ref{lemma:y_star_lambda_contraction_momentum} for $\|y_{\lambda,k+1}^* - y_{\lambda,k}^*\|^2$, 
+    since $\beta_k \mu_g \le 1/16$, we get the lemma.
+\end{proof}
+
+
+
+\begin{lemma}
+    \label{lemma:y_descent_2}
+    If $\beta_k \le 1 / (16 l_{g,1})$, then
+    \begin{align*}
+        \Exs[\|y_{k+1} - y_{\lambda,k}^*\|^2 | \mF_k] &\le (1 - \beta_k \mu_g / 2) \Exs[\|y_{k} - y_{\lambda,k}^*\|^2 | \mF_k] - \frac{\alpha_k}{\lambda_k l_{g,1}} \|q_k^y\|^2 + O\left(\frac{\alpha_k^2}{\mu_g \beta_k} \right) \Exs[\|\tilde{e}_k^y\|^2 | \mF_k]). 
+    \end{align*}
+\end{lemma}
+\begin{proof}
+    Note that
+    \begin{align*}
+        \|y_{k+1} - y_{\lambda,k}^*\|^2 &= \|y_k - y_{\lambda,k}^*\|^2 + 2 \alpha_k^2 (\|q_k^y\|^2 + \|\tilde{e}_k^y\|^2) - 2\alpha_k \vdot{q_k^y}{y_k - y_{\lambda,k}^*} - 2\alpha_k \vdot{\tilde{e}_k^y}{y_k - y_{\lambda,k}^*},
+    \end{align*}
+    where we used $y_{k+1} - y_k = q_k^y + \tilde{e}_k^y$. Since $q_k^y = \grad_y \mL_{\lambda_k}$ by definition, again by coercivity and co-coercivity of strongly-convex $\mL_{\lambda_k}(x_k, \cdot)$, we have
+    \begin{align*}
+        \max \left( \frac{\lambda_k \mu_g}{2} \|y_k - y_{\lambda,k}^*\|^2, \frac{1}{l_{f,1} + \lambda_k l_{g,1}} \|q_k^y\|^2 \right) \le \vdot{q_k^y}{y_k - y_{\lambda,k}^*},  
+    \end{align*}
+    and thus, given $\alpha_k \lambda_k \le 1/(16 l_{g,1})$ and $l_{f,1} \le \lambda_k l_{g,1}$, we have
+    \begin{align*}
+        \Exs[y_{k+1} - y_{\lambda,k}^*\|^2 | \mF_k] &\le (1 - 3 \beta_k \mu_g/4) \Exs[\|z_k - y_k^*\|^2 | \mF_k] - \frac{\alpha_k}{\lambda_k l_{g,1}} \|q_k^y\|^2 \\
+        &\quad + 2\alpha_k^2 \Exs[\|\tilde{e}_k^y\|^2 | \mF_k] - 2\alpha_k \Exs[\vdot{\tilde{e}_k^y}{y_k - y_{\lambda,k}^*} | \mF_k].
+    \end{align*}
+    Finally, we can use general inequality $|\vdot{a}{b}| \le c\|a\|^2 + \frac{1}{4c} \|b\|^2$ to get
+    \begin{align*}
+        -2\alpha_k \vdot{\tilde{e}_k^y}{y_k - y_{\lambda,k}^*} \le \frac{\beta_k \mu_g}{4} \|y_k - y_{\lambda,k}^*\|^2 + \frac{4\alpha_k^2}{\beta_k \mu_g} \|\tilde{e}_k^y\|^2. 
+    \end{align*}
+    Plugging this back, with $\beta_k \mu_g \ll 1$, we get the lemma. 
+\end{proof}
+
+
+
+
+\subsection{Descent Lemma for $F(x_{k})$}
+\begin{lemma}
+    If $\xi \alpha_k l_{F,1} < 1$, then
+    \begin{align*}
+        \Exs[F(x_{k+1}) - F(x_k) | \mF_k] &\le -\frac{\xi \alpha_k}{4} \|\grad F(x_k)\|^2 - \frac{\xi \alpha_k}{4} \Exs[\|q_k^x\|^2| \mF_k] + 2 \xi \alpha_k \cdot \Exs[\|\tilde{e}_k^x\|^2 | \mF_k] \\
+        &\quad + \frac{3 \xi \alpha_k}{2} \left(4 l_{g,1}^2 \lambda_k^2 \|y_{k+1} - y_{\lambda,k}^*\|^2 + l_{g,1}^2 \lambda_k^2 \|z_{k+1} - y_k^*\|^2 + C_\lambda^2 / \lambda_k^2 \right). 
+    \end{align*}
+\end{lemma}
+\begin{proof}
+    Using the smoothness of $F$, 
+    \begin{align*}
+        F(x_{k+1}) - F(x_k) &\le \vdot{\grad F(x_k)}{x_{k+1} - x_k} + \frac{l_{F,1}}{2} \|x_{k+1} - x_k\|^2 .
+    \end{align*}
+    Note that $x_{k+1} - x_k = \xi \alpha_k (q_k^x + \tilde{e}_k^x)$, and thus 
+    \begin{align*}
+        &F(x_{k+1}) - F(x_k) \le -\xi \alpha_k \vdot{\grad_x F(x_k)}{q_k^x} -\xi \alpha_k \vdot{\grad_x F(x_k)}{\tilde{e}_k^x} + \frac{l_{F,1}}{2} \|x_{k+1} - x_k\|^2  \\
+        &\le -\frac{\xi \alpha_k}{2} (\|\grad F(x_k)\|^2 + \|q_k^x\|^2 - \| \grad F(x_k) - q_k^x \|^2) -\xi \alpha_k \vdot{\grad_x F(x_k)}{\tilde{e}_k^x} + \xi^2\alpha_k^2 l_{F,1} (\|q_k^x\|^2 + \| \tilde{e}_k^x\|^2).
+    \end{align*}
+    Using $|\vdot{a}{b}| \le c\|a\|^2 + \frac{1}{4c}\|b\|^2$, we have
+    \begin{align*}
+        -\xi\alpha_k \vdot{\grad F(x_k)}{\tilde{e}_k^x} \le \frac{\xi \alpha_k}{4} \|\grad_x F(x_k)\|^2 + \xi\alpha_k \|\tilde{e}_k^x\|^2.
+    \end{align*}
+    Finally, recall \eqref{eq:fxfx1}. Using $(a+b+c)^2 \le 3(a^2 + b^2 + c^2)$, we have
+    \begin{align*}
+        \|\grad F(x_k) - q_k^x\|^2 \le 3(4l_{g,1}^2\lambda_k^2 \|y_{k+1} - y_{\lambda,k}^*\|^2 + l_{g,1}^2 \lambda_k^2 \|z_{k+1} - y_k^*\|^2 + C_\lambda^2 / \lambda_k^2). 
+    \end{align*}
+    Combining all, with $\xi \alpha_k l_{F,1} < 1$, we get the lemma. 
+\end{proof}
+
+
+
+\subsection{Decrease in Potential Function}
+Define the potential function $\mathbb{V}_k$ as the following:
+\begin{align*}
+    \mathbb{V}_k := F(x_k) + l_{g,1} \lambda_k \|y_k - y_{\lambda, k}^*\|^2 + \frac{l_{g,1} \lambda_k }{2} \|z_k - y_k^*\|^2 + \frac{1}{c_\eta l_{g,1}^2 \gamma_{k-1}} \left(\frac{\|\tilde{e}_k^x\|^2}{\lambda_k} + \frac{\|\tilde{e}_k^y\|^2}{\lambda_k} + \lambda_k \|\tilde{e}_k^z\|^2 \right),
+\end{align*}
+with some absolute constant $c_\eta > 0$. We bound the difference in potential function:
+\begin{align*}
+    \Exs[ \mathbb{V}_{k+1} - \mathbb{V}_k | \mF_k] &\le -\frac{\xi \alpha_k}{4} \|\grad F(x_k)\|^2 - \frac{\xi \alpha_k}{4} \Exs[\|q_k^x\|^2 | \mF_k] + \frac{\xi\alpha_k}{2} \frac{3 C_\lambda^2}{\lambda_k^2} \\
+    &+ l_{g,1} \lambda_k \underbrace{\left( \left(1 + \frac{\delta_k}{\lambda_k} \right) \|y_{k+1} - y_{\lambda,k+1}^*\|^2 + 6 \xi\alpha_k\lambda_k l_{g,1} \|y_{k+1} - y_{\lambda,k}^*\|^2 - \|y_k - y_{\lambda,k}^*\|^2 \right)}_{(i)} \\
+    &+ \frac{l_{g,1} \lambda_k}{2} \underbrace{\left( \left(1 + \frac{\delta_k}{\lambda_k} \right) \|z_{k+1} - y_{k+1}^*\|^2 + 3 \xi\alpha_k\lambda_k l_{g,1} \|z_{k+1} - z_{k}^*\|^2 - \|z_k - y_{k}^*\|^2 \right)}_{(ii)} \\
+    &+ \frac{1}{c_\eta l_{g,1}^2 } \underbrace{\left( \frac{\Exs[\|\tilde{e}_{k+1}^x\|^2 | \mF_k]}{\gamma_k \lambda_k} - \frac{\Exs[ \|\tilde{e}_{k}^x\|^2 | \mF_k]}{\gamma_{k-1} \lambda_k} \right)}_{(iii)} + 2 \xi \alpha_k \Exs[\|\tilde{e}_k^x\|^2 | \mF_k]  \\
+    &+ \frac{1}{c_\eta l_{g,1}^2} \underbrace{\left( \frac{\Exs[\|\tilde{e}_{k+1}^y\|^2 | \mF_k]}{\gamma_k \lambda_k} - \frac{\Exs[ \|\tilde{e}_{k}^y\|^2 | \mF_k]}{\gamma_{k-1} \lambda_k} \right)}_{(iv)} + \frac{\lambda_k}{c_\eta l_{g,1}^2} \underbrace{\left( \frac{\Exs[\|\tilde{e}_{k+1}^z\|^2 | \mF_k]}{\gamma_k} - \frac{\Exs[ \|\tilde{e}_{k}^z\|^2 | \mF_k]}{\gamma_{k-1}} \right)}_{(v)}. 
+\end{align*}
+Using Lemmas \ref{lemma:y_descent_1}, \ref{lemma:y_descent_2}, \ref{lemma:z_descent_1} and \ref{lemma:z_descent_2}, given that $\delta_k/\lambda_k < \mu_g \beta_k / 8$, $(i)$ and $(ii)$ are bounded by
+\begin{align*}
+    (i) &\le -\frac{\mu_g \beta_k}{ 8 }\|y_{k} - y_{\lambda,k}^*\|^2 - \frac{\alpha_k}{\lambda_k l_{g,1}} \|q_k^y\|^2 + O\left( \frac{\xi^2 \alpha_k^2 l_{*,0}^2 }{\beta_k \mu_g} \Exs[\|q_k^x\|^2 + \|\tilde{e}_k^x\|^2 | \mathcal{F}_k] + \frac{\delta_k^2 l_{f,0}^2 }{\lambda_k^4 \mu_g^3 } + \frac{\alpha_k^2}{\beta_k \mu_g} \Exs[\|\tilde{e}_k^y\|^2 | \mathcal{F}_k] \right), \\
+    (ii) &\le -\frac{\mu_g \gamma_k}{ 8} \|z_{k} - y_k^*\|^2 - \frac{\gamma_k}{l_{g,1}} \|q_k^z\|^2 + O\left( \frac{\xi^2 \alpha_k^2 l_{*,0}^2 }{\gamma_k \mu_g} \Exs[\|q_k^x\|^2 + \|\tilde{e}_k^x\|^2 | \mathcal{F}_k] + \frac{\gamma_k}{\mu_g} \Exs[\|\tilde{e}_k^z\|^2 | \mathcal{F}_k] \right), 
+\end{align*}
+We can use Lemma \ref{lemma:descent_stochastic_noise_x} to bound $(iii), (iv)$ and $(v)$. Using the step-size condition given in \eqref{eq:step_size_theorem_momentum_b}, we have
+\begin{align*}
+    \frac{(1-\eta_{k+1} )}{\gamma_k} - \frac{1}{\gamma_{k-1}} &= \frac{\frac{\gamma_{k-1} - \gamma_{k}}{\gamma_{k-1}} - \eta_{k+1} }{\gamma_k} \le \frac{-\eta_{k+1}}{2 \gamma_k}. 
+\end{align*}
+Note that by the same step-size condition, $\eta_{k+1} \gg O(l_{g,1}^2 \gamma_k^2)$, and thus, 
+\begin{align*}
+    (iii) &\le -\frac{\eta_{k+1}}{2 \gamma_k \lambda_k} \Exs[\|\tilde{e}_k^x\|^2 | \mF_k] + O(\sigma_f^2) \cdot \frac{\eta_{k+1}^2}{\lambda_k \gamma_k} + O(\sigma_g^2) \cdot \left(\frac{\eta_{k+1}^2 \lambda_k}{\gamma_k} + \frac{\delta_k^2}{\gamma_k \lambda_k} \right) \\
+    &\quad + O(l_{g,1}^2) \cdot \left( \xi^2 \alpha_k \|q_k^x\|^2 + \alpha_k(\|q_k^y\|^2 + \|\tilde{e}_k^y\|^2) + \gamma_k \lambda_k (\|q_k^z\|^2 + \|\tilde{e}_k^z\|^2) \right). 
+\end{align*}
+Similarly, we can use Lemma \ref{lemma:descent_stochastic_noise_yz} and show that
+\begin{align*}
+    (iv) &\le -\frac{\eta_{k+1}}{2 \gamma_k \lambda_k} \Exs[\|\tilde{e}_k^y\|^2 | \mF_k] + O(\sigma_f^2) \cdot \frac{\eta_{k+1}^2}{\lambda_k \gamma_k} + O(\sigma_g^2) \cdot \left(\frac{\eta_{k+1}^2 \lambda_k}{\gamma_k} + \frac{\delta_k^2}{\gamma_k \lambda_k} \right) \\
+    &\quad + O(l_{g,1}^2) \alpha_k \cdot \left( \xi^2 \|q_k^x\|^2 + \xi^2 \|\tilde{e}_k^x\|^2 + \|q_k^y\|^2  \right), \\
+    (v) &\le -\frac{\eta_{k+1}}{2 \gamma_k} \Exs[\|\tilde{e}_k^z\|^2 | \mF_k] + O(\sigma_g^2) \cdot \frac{\eta_{k+1}^2}{\gamma_k}  + O(l_{g,1}^2) \cdot \left( \frac{\xi^2 \alpha_k^2}{\gamma_k} \|q_k^x\|^2 + \frac{\xi^2 \alpha_k^2}{\gamma_k} \|\tilde{e}_k^x\|^2 + \gamma_k \|q_k^z\|^2  \right). 
+\end{align*}
+
+
+Plugging inequalities for $(i)-(v)$ back and arranging terms, we get
+\begin{align*}
+    \Exs[ \mathbb{V}_{k+1} - \mathbb{V}_k | \mF_k] &\le -\frac{\xi \alpha_k}{4} \|\grad F(x_k)\|^2 - \frac{\xi \alpha_k}{4} \Exs[\|q_k^x\|^2| \mF_k] + \frac{3 C_{\lambda}^2}{2} \frac{\xi \alpha_k}{\lambda_k^2} - l_{g,1}\lambda_k (i) + \frac{l_{g,1} \lambda_k}{2} (ii) \\
+    &\quad + \frac{1}{c_\eta l_{g,1}^2} (iii) + 2\xi \alpha_k \Exs[\|\tilde{e}_k^x\|^2 | \mF_k] + \frac{1}{c_{\eta} l_{g,1}^2} (iv) + \frac{\lambda_k}{c_\eta l_{g,1}^2} (v) \\
+    &\le -\frac{\xi \alpha_k}{4} \|\grad F(x_k)\|^2 - \frac{\lambda_k l_{g,1} \mu_g \beta_k}{4} \|y_k - y_{\lambda,k}^*\|^2 - \frac{\lambda_k l_{g,1} \mu_g \gamma_k}{4}\|z_k - y_k^*\|^2 \\
+    &\quad - \frac{\xi \alpha_k}{4} \Exs[\|q_k^x\|^2 | \mF_k] \left(1 - O(\xi l_{g,1} l_{*,0}^2 / 
+    \mu_g) - O(\xi c_{\eta}^{-1}) \right) \\
+    &\quad - \alpha_k \Exs[\|q_k^y\|^2 |\mF_k] \left(1 - O(c_{\eta}^{-1}) \right) - \frac{\gamma_k \lambda_k}{2} \Exs[\|q_k^z\|^2 |\mF_k] \left(1 - O(c_{\eta}^{-1}) \right) \\
+    &\quad + O\left( \frac{C_\lambda^2 \xi \alpha_k}{\lambda_k^2} + \frac{l_{f,0}^2 l_{g,1} \delta_k^2}{\mu_g^3 \lambda_k^3} \right) + \text{noise variance terms},
+\end{align*}
+where noise variance terms are
+\begin{align*}
+    \text{noise terms} &= -\frac{\Exs[\|\tilde{e}_k^x\|^2 | \mF_k]}{c_{\eta} l_{g,1}^2} \left( \frac{\eta_{k+1}}{2\gamma_k\lambda_k} - O\left(l_{g,1}^2 \xi^2 \alpha_k \right) - (c_\eta \xi \alpha_k l_{g,1}^2) \right) \\
+    &\quad - \frac{\Exs[\|\tilde{e}_k^y\|^2 | \mF_k]}{l_{g,1}^2 c_{\eta}} \left( \frac{\eta_{k+1}}{2\gamma_k \lambda_k} - O(l_{g,1}^2) \alpha_k - O(c_\eta l_{g,1}^3 / \mu_g) \alpha_k \right) \\
+    &\quad - \frac{\lambda_k \Exs[\|\tilde{e}_k^z\|^2 | \mF_k]}{l_{g,1}^2 c_{\eta}} \left( \frac{\eta_{k+1}}{2\gamma_k} - O(l_{g,1}^2) \gamma_k - O(c_\eta l_{g,1}^3 / \mu_g) \gamma_k \right) \\
+    &\quad + \frac{1}{c_\eta l_{g,1}^2} 
+    \left( O(\sigma_f^2) \cdot \frac{\eta_{k+1}^2}{\lambda_k \gamma_k} + O(\sigma_g^2) \cdot \left( \frac{\eta_{k+1}^2 \lambda_k}{\gamma_k} + \frac{\delta_k^2}{\gamma_k \lambda_k} \right) \right). 
+\end{align*}
+For the all squared terms, with careful design of step-sizes, we can make the coefficient negative. Specifically, we need
+\begin{align*}
+    &\xi l_{g,1} l_{*,0}^2 / \mu_g \ll 1, \ c_\eta \gg 1,
+\end{align*}
+to negate $q_k^{(\cdot)}$ terms, and 
+\begin{align*}
+    1 > \eta_{k+1} \gg  c_{\eta} \gamma_k^2 (l_{g,1}^3/\mu_g),
+\end{align*}
+to suppress noise variance terms, as required in our step-size rules \eqref{eq:step_size_theorem_momentum}. Then, we can simplify the bound for the potential function difference:
+\begin{align*}
+    \Exs[\mathbb{V}_{k+1} - \mathbb{V}_k | \mF_k] &\le -\frac{\xi \alpha_k}{4} \|\grad F(x_k)\|^2 + O(\xi C_\lambda^2) \cdot \frac{\alpha_k}{\lambda_k^{2}} + O(l_{f,0}^2 l_{g,1}/\mu_g^3) \cdot \frac{\delta_k^2}{ \lambda_k^{3}} \\
+    &\quad + \frac{1}{c_\eta l_{g,1}^2} \left( O(\sigma_f^2) \cdot \frac{\eta_{k+1}^2}{\lambda_k \gamma_k} + O(\sigma_g^2) \cdot \left( \frac{\eta_{k+1}^2 \lambda_k}{\gamma_k} + \frac{\delta_k^2}{\gamma_k \lambda_k} \right) \right).
+\end{align*}
+
+
+\paragraph{Proof of Theorem \ref{theorem:general_momentum}}
+Summing the above over all $k = 0$ to $K-1$, using $\delta_k/ \lambda_k = O(1/k)$ and $1/\lambda_k, \delta_k / \gamma_k = o(1)$, we obtain Theorem \ref{theorem:general_momentum}. 
+
+
+
+
+\subsection{Proof of Corollary \ref{corollary:non_convex_momentum}}
+Using the step-sizes specified in \eqref{eq:step_size_momentum_detail}, since $\lambda_k = \gamma_k / 2\alpha_k \asymp k^{a-c}$, $\delta_k \asymp k^{a-c-1}$. As long as $a-c-1 < -c$, which is satisfied if $a < 1$, we have $\delta_k / \gamma_k = o(1)$. We can also check that 
+\begin{align*}
+    \frac{\delta_k}{\lambda_k} \le (k+k_0+1)^{-1} < \frac{\mu_g \beta_k}{8} = \frac{(k+k_0)^{-c}}{k_0^{1-c}},
+\end{align*}
+as long as and $c < 1$. Given the above, we have
+\begin{align*}
+    \sum_{k=0}^{K-1} \frac{\Exs[\|\grad F(x_k)\|^2]}{(k+k_0)^{a}} &\le O_{\texttt{P}} (1) \cdot \sum_{k} \frac{1}{(k+k_0)^{3a-2c}} + O_{\texttt{P}}(\sigma_f^2) \cdot \sum_{k} \frac{1}{(k+k_0)^{-2c-a}} \nonumber \\
+    &\quad + O_{\texttt{P}}(\sigma_g^2) \cdot \sum_{k} \frac{1}{(k+k_0)^{-4c+a}} + O_{\texttt{P}}(1). 
+\end{align*}
+Again, we consider three regimes:
+
+\paragraph{Stochasticity in both upper-level and lower-level objectives: $\sigma_f^2, \sigma_g^2 > 0$.} In this case, we set $a = 3/5, c = 2/5$, and thus $\lambda_k \asymp k^{1/5}$, which yields
+\begin{align*}
+    \Exs[\|\grad F(x_R)\|^2] \asymp \frac{\log K}{K^{2/5}}.
+\end{align*}
+
+
+
+
+
+\paragraph{Stochasticity only in the upper-level: $\sigma_f^2 > 0, \sigma_g^2 = 0$.}
+In this case, we can take $a = 2/4, c = 1/4$, and thus $\lambda_k \asymp k^{1/4}$, which yields
+\begin{align*}
+    \Exs[\|\grad F(x_R)\|^2] \asymp \frac{\log K}{K^{2/4}}.
+\end{align*}
+
+
+\paragraph{Deterministic case: $\sigma_f^2 = 0, \sigma_g^2 = 0$.}
+Here, we can take $a = 1/3, c = 0$ and since there is no stochasticity in the algorithm, we have
+\begin{align*}
+    \|\grad F(x_K)\|^2 \asymp \frac{\log K}{K^{2/3}}.
+\end{align*}
+
+
+

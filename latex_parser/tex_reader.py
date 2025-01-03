@@ -187,6 +187,31 @@ class TexReader:
             self.logger.error(error_msg, exc_info=True)
             raise RuntimeError(error_msg) from e
 
+    def process_folder(self, folder_path: str | Path) -> ProcessingResult:
+        """Process a folder containing TeX files and return results.
+
+        Args:
+            folder_path: Path to the folder containing TeX files
+
+        Returns:
+            ProcessingResult containing the processed tokens
+
+        Raises:
+            FileNotFoundError: If folder doesn't exist or no main TeX file found
+            TexProcessingError: If processing fails
+        """
+        folder_path = Path(folder_path)
+
+        def _process() -> ProcessingResult:
+            self._verify_file_exists(folder_path, file_type="Folder")
+            main_tex, _ = TexFileExtractor.from_folder(str(folder_path))
+            file_path = folder_path / main_tex
+            return self.process_file(file_path)
+
+        return self._handle_file_operation(
+            _process, f"Failed to process TeX folder {folder_path}"
+        )
+
 
 if __name__ == "__main__":
     from latex_parser.utils.logger import setup_logger
@@ -198,9 +223,14 @@ if __name__ == "__main__":
     tex_reader = TexReader(logger)
 
     try:
-        # Example usage with compressed file
-        gz_file = "papers/arXiv-2301.10945v1.tar.gz"
-        output, temp_dir = tex_reader.process_compressed(gz_file)
+        # # Example usage with compressed file
+        # gz_file = "papers/arXiv-2301.10945v1.tar.gz"
+        # output, temp_dir = tex_reader.process_compressed(gz_file)
+        # tex_reader.save_to_json(output)
+
+        # Example usage with folder
+        folder_path = "papers/tested/arXiv-2301.10945v1"
+        output = tex_reader.process_folder(folder_path)
         tex_reader.save_to_json(output)
 
     except Exception as e:

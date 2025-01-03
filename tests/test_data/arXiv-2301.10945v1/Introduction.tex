@@ -1,0 +1,124 @@
+
+Bilevel optimization \cite{colson2007overview} arises in many important applications that have two-level hierarchical structures, including meta-learning \cite{rajeswaran2019meta}, hyper-parameter optimization \cite{franceschi2018bilevel, bao2021stability}, model selection \cite{kunapuli2008bilevel, giovannelli2021bilevel}, adversarial networks \cite{goodfellow2020generative, gidel2018variational}, game theory \cite{stackelberg1952theory} and reinforcement learning \cite{konda1999actor, sutton2018reinforcement}. Bilevel optimization can be generally formulated as the following minimization problem:
+\begin{align}
+    &\min_{x \in X} \quad F(x) := f(x,y^*(x)) \nonumber \\
+    &\text{s.t.} \quad y^*(x) \in \arg \min_{y \in \mathbb{R}^{d_y}} g(x,y), \label{problem:bilevel} \tag{\textbf{P}}
+\end{align}
+where $f$ and $g$ are continuously differentiable functions and $X \subseteq \mathbb{R}^{d_x}$ is a convex set. 
+The outer objective $F$ depends on $x$ both directly and also indirectly via $y^*(x)$, which is a solution of the  lower-level problem of minimizing another function $g$, which is parametrized by $x$. 
+% where $F(x)$ depends on the variable $x$ and also on $y^*(x)$ that is the solution of the lower-level problem given $x$. 
+Throughout the paper, we assume that $X = \mathbb{R}^{d_x}$ (that is, there are no explicit constraints on $x$) and  that $g(x,y)$ is strongly convex in $y$, so that $y^*(x)$ is uniquely well-defined for all $x \in X$. 
+
+%\jycomment{Still not sure how to deal with the boundedness of $X$... \cite{hong2020two} considers a closed bounded set $X$, and define the convergence in terms of some Moreau envolope. Anyone familiar with this? Would it be easy to adjust the analysis using that?} 
+
+Among various approaches to \eqref{problem:bilevel}, iterative procedures have been predominant due to their simplicity and potential scalability in large-scale applications. Initiated by \cite{ghadimi2018approximation}, a flurry of recent works study efficient iterative procedures and their finite-time performance for solving \eqref{problem:bilevel}, see {\it e.g.,}  \cite{chen2021closing, hong2020two, khanduri2021near, chen2022single, dagreou2022framework, guo2021randomized, sow2022constrained, ji2021bilevel, yang2021provably}. The underlying idea is based on an algorithm of (stochastic) gradient descent type, applied to $F$, that is,
+\begin{align*}
+    x_{k+1} = x_k - \alpha_k \grad F(x_k),
+\end{align*}
+with some appropriate step-sizes $\{\alpha_k\}$. 
+Direct application of this approach requires us to  compute or estimate the so-called hyper-gradient of $F$ at $x$, which is
+\begin{align} \label{eq:gradF}
+    \grad F(x) = &\grad_x f (x, y^*(x)) - 
+    \grad_{xy}^2 g(x, y^*(x))  
+    \grad_{yy}^2 g(x, y^*(x))^{-1} \grad_y f(x, y^*(x)). 
+\end{align}
+There are two major obstacles in computing \eqref{eq:gradF}. 
+The first obstacle is that for every given $x$, we need to search for the optimal solution $y^*(x)$ of the lower problem, which results in updating the lower variable $y$ multiple times before updating $x$. 
+To tackle this issue, several ideas have been proposed in \cite{ghadimi2018approximation, hong2020two, chen2021closing} to effectively track $y^*(x)$ without waiting for too many inner iterations before updating $x$ (we discuss this further in Section \ref{section:related_work}).
+Following in the spirit of this approach, we show that a single-loop style algorithm can still be implemented using only first-order gradient estimators. 
+
+The second obstacle, which is the main focus of this work, centers around the presence of second-order derivatives of $g$ in \eqref{eq:gradF}.
+Existing approaches mostly require an explicit extraction of second-order information from $g$ with a major focus on estimating the Jacobian and inverse Hessian efficiently with stochastic noises \cite{ji2021bilevel, chen2022single, dagreou2022framework}. 
+We are particularly interested  in regimes in which such operations are costly and prohibitive \cite{mehra2021penalty, giovannelli2021bilevel}. 
+Some existing works avoid the second-order computation and only use the first-order information of both upper and lower objectives; see \cite{giovannelli2021bilevel, sow2022constrained, liu2021towards, ye2022bome}. 
+These works either lack a complete finite-time analysis \cite{giovannelli2021bilevel, liu2021towards} or are applicable only to deterministic functions \cite{ye2022bome, sow2022constrained}. 
+%As a result, despite the large literature, we still lack a simple and practical algorithm to tackle \eqref{problem:bilevel} in large-scale applications.
+
+
+Our goal in this paper is to study a {\it fully} first-order approach for stochastic bilevel optimization. 
+We propose a gradient-based approach that avoids  the estimation of Jacobian and Hessian of $g$, and finds an $\epsilon$-stationary solution of $F$ using only first-order gradients of $f$ and $g$. 
+Further,
+%% \swcomment{this term is a bit unclear, the following explanation is good} \jycomment{fixed} 
+the number of inner iterations  remains constant throughout all outer iterations of our algorithm. 
+We provide a finite-time analysis of our method with explicit convergence rates. 
+To our best knowledge, this work is the first to establish non-asymptotic convergence guarantees for stochastic bilevel optimization using only first-order gradient oracles.  
+
+
+\subsection{Overview of Main Results}
+The starting point of our approach is to convert \eqref{problem:bilevel} to an equivalent constrained single-level version:
+\begin{equation}
+    \min_{x \in X, \ y \in \mathbb{R}^{d_y}} \quad f(x,y) \ \quad \text{s.t.} \ \ \quad g(x,y) - g^*(x) \le 0, \label{problem:penalty_bilevel} \tag{\textbf{P'}}
+\end{equation}
+where $g^*(x) := g(x, y^*(x))$. 
+% We can view \eqref{problem:penalty_bilevel} from a constrained optimization perspective.  For instance, we can consider a Lagrangian function $\mL_{\lambda}$ with some multiplier $\lambda > 0$:
+The Lagrangian $\mL_{\lambda}$ for \eqref{problem:penalty_bilevel} with multiplier $\lambda > 0$ is
+\begin{align*}
+    \mL_\lambda(x,y) := f(x,y) + \lambda (g(x,y) - g^* (x)).
+\end{align*}
+We can minimize $\mL_{\lambda}$ for a given $\lambda$ by, for example, running (stochastic) gradient descent. 
+As noted in \cite{ye2022bome}, the gradient of $\mL_{\lambda}$ can be computed only with gradients of $f$ and $g$, and thus the entire procedure can be implemented using only with first-order derivatives. 
+In fact, such a reformulation has been attempted in several recent works (e.g., \cite{liu2021value, sow2022constrained, ye2022bome}). 
+However, the challenge in handling the constrained version \eqref{problem:penalty_bilevel} is to find an appropriate value of the multiplier $\lambda$. 
+Unfortunately, the desired solution $x^* = \arg\min_x F(x)$ can only be obtained at $\lambda = \infty$
+% \swcomment{This is also a consequence of the fact that constraint qualifications are not satisfied for \eqref{problem:penalty_bilevel}; the gradient of the constraint is zero at its minimizer. Should I insert a short mention of this? } \jycomment{Please go ahead.} 
+(in fact, the gradient of the constraint in \eqref{problem:penalty_bilevel} is zero with respect to $(x,y)$ at the minimizer, and thus the so-called {\it constraint qualifications} \cite{wright1999numerical} fail to hold). %\rob{could this be explained in a bit more detail, the "constraint qualifications"}
+%otherwise solving for $\mL_{\lambda}$ results in a biased solution. 
+However, with $\lambda=\infty$, $\mL_{\lambda}(x,y)$ has unbounded smoothness which prevents us from employing gradient-descent style approaches. 
+For these reasons, none of the previously proposed algorithms  can obtain a consistent estimator for the original problem $\min_x F(x)$ without access to second derivatives of $g$.
+
+Nonetheless, we find that \eqref{problem:penalty_bilevel} is the key to deriving a consistent estimator that converges to an $\epsilon$-stationary point of $F$ in finite time {\it without} access to second derivatives. 
+The main idea is to start with an initial value $\lambda=\lambda_0>0$ and gradually increase it on subsequent iterations: At iteration $k$,  $\lambda_k = O(k^b)$ for some $b \in (0, 1]$. 
+The success of this approach depends crucially on the growth rate captured by the parameter $b$. 
+On one hand, fast growth of $\lambda_k$  removes the bias quickly.
+On the other hand, fast growth of $\lambda_k$ forces a fast decay of step-sizes due to the growing nonsmoothness  of $\mL_{\lambda_k}$, which slows down the overall convergence. 
+
+
+Our main technical contribution is to characterize an explicit growth rate of $\lambda_k$ that optimizes the trade-off between bias and step-sizes, and to provide a non-asymptotic convergence guarantee with explicit rates for the proposed algorithm. 
+% We can summarize our results as the followings:
+\begin{itemize}
+    \item We propose a fully first-order method, \algname, for stochastic bilevel optimization. \algname~is a single-loop style algorithm: For every outer variable update we only update inner variables a constant number of times. 
+    \item We characterize explicit convergence rates of \algname~in different stochastic regimes. 
+    It converges to an $\epsilon$-stationary-point of \eqref{problem:bilevel} after $\tilde{O} (\epsilon^{-3.5})$, $\tilde{O}(\epsilon^{-2.5})$, or $\tilde{O}(\epsilon^{-1.5})$ iterations if both $\grad f$ and $\grad g$ contain stochastic noise, if only access to $\grad f$ is noisy, or if we are in deterministic settings, respectively. 
+    These complexities can be improved to $\tilde{O}(\epsilon^{-2.5}), \tilde{O}(\epsilon^{-2})$, or $\tilde{O}(\epsilon^{-1.5})$, respectively, if momentum or variance-reduction techniques are employed. 
+    The crux of the analysis is to understand the effect of the value of multipliers $\lambda_k$ on step-sizes, noise variances, and bias. 
+    \item We demonstrate the proposed algorithm on a data hyper-cleaning task for MNIST. 
+    Even though our theoretical guarantees are not better than existing methods that use second-order information, we illustrate that \algname~can even outperform such methods in practice. 
+\end{itemize}
+
+
+
+
+
+
+\subsection{Related Work}
+\label{section:related_work}
+
+
+Bilevel optimization has a long and rich history since its first introduction in \cite{bracken1973mathematical}. A number of algorithms have been proposed for bilevel optimization. Classical results include approximation descent \cite{vicente1994descent} and penalty function method \cite{ishizuka1992double, anandalingam1990solution, white1993penalty} for instance; see \cite{colson2007overview} for a comprehensive overview. These results often deal with a several special case of bilevel-optimization and only provide asymptotic convergence. Note that the penalty function methods in \cite{ishizuka1992double, anandalingam1990solution, white1993penalty} are specifically developed for the subclass of their own interest, and cannot be applied to general non-convex objectives $F$.
+
+
+
+More recent results on bilevel optimization focuses on non-asymptotic analysis when the lower-level problem is strongly-convex in $y$, since in this case $\grad F(x)$ can be expressed in the closed-form \eqref{eq:gradF} using the implicit function theorem \cite{couellan2015bi, couellan2016convergence}. As mentioned earlier, there are two major challenges in this setting: (i) finding a good approximation of $y^*(x)$, and (ii) the evaluation of Jacobian and Hessian inverse of $g$. The work in \cite{ghadimi2018approximation} establishes the first non-asymptotic analysis of a double-loop algorithm, where in the inner problem we find an approximate solution of $y^*(x)$ given $x$, and use it to evaluate an approximation of $\grad F(x)$. Furthermore, \cite{ghadimi2018approximation} uses the Neuman series approximation to estimate the Hessian inverse when we only have access to the stochastic oracles (of second-order derivatives). 
+
+
+
+
+
+The paper \cite{ghadimi2018approximation} was followed by a flurry of work that improved their result in numerous ways. 
+For instance, \cite{hong2020two, chen2021closing, chen2022single, ji2021bilevel} develop a single-loop style update by properly choosing two step-sizes for the inner and outer iterations, along with the improved sample complexity, {\it i.e.,} the total number of accesses to first and second-order stochastic oracles. 
+The overall convergence rate is further optimized by using variance-reduction and momentum techniques \cite{khanduri2021near, dagreou2022framework, guo2021randomized, yang2021provably, huang2021biadam}. 
+We do not aim to compete with the convergence rates obtained from this line of work, since all of these method have access to second-order derivatives, even though some computational cost might be saved if good automatic differentiation packages \cite{margossian2019review} are available. 
+Rather, we avoid the needs for second-order information altogether, allowing a simple algorithm with low per-iteration complexity for large scale applications.
+
+The results most closely related to ours can be found in \cite{ye2022bome, sow2022constrained}. 
+\cite{sow2022constrained} considers a primal-dual approach for \eqref{problem:penalty_bilevel}, but their main focus is to get a biased solution when $g$ is only convex (not strongly convex), so the lower-level problem may have multiple solutions. 
+Their analysis is restricted to the case in which the overall Lagrangian is strongly-convex in $x$ (which is not usually guaranteed) and they do not provide any guarantees in terms of the true objective $F$. 
+More recent work in \cite{ye2022bome} is the closest to ours, but they only consider  deterministic gradient oracles, and do not provide convergence guarantees in terms of $F$. 
+Moreover, they  prove a convergence guarantee of $O(k^{-1/4})$, whereas we show an improved guarantee of $\tilde{O}(k^{-2/3})$ in the deterministic case. 
+
+
+
+
+We note that there is a line of work that studies a different version of the bilevel problem which has no coupling between two variables $x$ and $y$ ({\it e.g.,} see \cite{ferris1991finite, solodov2007explicit, jiang2022conditional}). In \cite{amini2019iterative, amini2019iterative2}, the Lagrangian formulation is exploited with iteratively increasing multiplier. Note that the nature of single-variable bilevel formulation is different from \eqref{problem:bilevel} as the former is only interesting when the lower-level problem allows a multiple (convex) solution set. To our best knowledge, the idea of iteratively increasing $\lambda_k$ with its non-asymptotic guarantee is new in the context of solving \eqref{problem:bilevel}, and has the merit of avoiding (possibly) expensive second-order computation. 
+
+

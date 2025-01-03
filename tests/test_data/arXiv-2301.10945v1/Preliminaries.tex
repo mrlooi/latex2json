@@ -1,0 +1,44 @@
+We state several assumptions on \eqref{problem:bilevel} to specify the problem class of interest. We assume that optimal value of the outer-level objective is bounded below $F^* := \arg \min_x F(x) > -\infty$. We consider \eqref{problem:bilevel} with the following assumptions on objective functions:
+\begin{assumption} 
+    \label{assumption:nice_functions}
+    The following holds for objective functions $f$ and $g$:
+    \begin{enumerate}
+        \item[1.] $f$ is continuously differentiable and $l_{f,1}$-smooth jointly in $(x,y)$.
+        \item[2.]  $g$ is continuously differentiable and $l_{g,1}$-smooth jointly in $(x,y)$.
+        \item[3.] For every $\bar{x} \in X$, $\|\grad_y f(\bar{x}, y)\|$ is bounded by $l_{f,0}$ for all $y$.
+    \end{enumerate}
+\end{assumption}
+Assumption \ref{assumption:nice_functions} assumes the smoothness of both objective functions and boundedness of $\grad_y f$. This has been a standard assumption in bilevel optimization \cite{ghadimi2018approximation}. In this work, we focus on well-conditioned bilevel optimization problems, {\it i.e.,} when $F(x)$ is well-defined, continuous and smooth. The following assumption has been the standard sufficient condition for well-conditioned bilevel problems \cite{ghadimi2018approximation}:
+\begin{assumption}
+    \label{assumption:extra_nice_g}
+    The following holds for the lower-level objective $g$:
+    \begin{enumerate}
+        \item[1.] For every $\bar{x} \in X$, $g(\bar{x}, y)$ is $\mu_g$ strongly-convex in $y$ for some $\mu_g > 0$.
+        \item[2.] $g$ is two-times continuously differentiable, and $\grad^2 g$ is $l_{g,2}$-Lipschitz jointly in $(x,y)$.
+    \end{enumerate}
+\end{assumption}
+We assume that we can access first-order information of objective functions only through stochastic gradient oracles:
+\begin{assumption}
+    \label{assumption:gradient_variance}
+    We access the gradients of objective functions via unbiased estimators $\nabla f(x,y;\zeta), \nabla g(x,y;\phi)$ where:
+    \begin{align*}
+        & \Exs[\nabla f(x,y;\zeta)] = \nabla f(x, y), \\
+        & \Exs[\nabla g(x,y;\phi)] = \nabla g(x, y),
+    \end{align*}
+    and the variances of stochastic gradient estimators are bounded:
+    \begin{align*}
+        & \Exs[\|\nabla f(x,y; \zeta) - \nabla f(x, y)\|^2] \le \sigma_f^2, \\
+        & \Exs[\|\nabla g(x,y; \phi) - \nabla g(x, y)\|^2] \le \sigma_g^2.
+    \end{align*} 
+\end{assumption}
+Throughout the paper, we assume that Assumptions \ref{assumption:nice_functions}-\ref{assumption:gradient_variance} hold unless specified otherwise. We use the following definition as the optimality criteria for solving \eqref{problem:bilevel}:
+\begin{definition}[$\epsilon$-stationary point]
+    A point $x$ is called $\epsilon$-stationary if $\|\grad F(x)\|^2 \le \epsilon$. A stochastic algorithm is said to achieve an $\epsilon$-stationary point in $K$ iterations if $\Exs[\|\grad F(x_K)\|^2]\le \epsilon$ where the expectation is over the stochasticity of the algorithm.
+\end{definition}
+
+
+
+
+
+
+\paragraph{Notation.} We use $O_{\texttt{P}} (\cdot)$ when we state the order of constants which depends on instance-dependent parameters ({\it e.g.,} Lipschitz, strong-convexity, smoothness parameters). We say $a_k \asymp b_k$ if $a_k$ and $b_k$ decreases (or increases) in the same rate as $k \rightarrow \infty$, {\it i.e.,} $\lim_{k\rightarrow \infty} a_k/b_k = \Theta(1)$. Throughout the paper, $\|\cdot\|$ denotes the Euclidean norm on finite dimensional space. 

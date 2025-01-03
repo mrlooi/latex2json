@@ -1,0 +1,262 @@
+\begin{thebibliography}{10}
+
+\bibitem{amini2019iterative}
+M.~Amini and F.~Yousefian.
+\newblock An iterative regularized incremental projected subgradient method for
+  a class of bilevel optimization problems.
+\newblock In {\em 2019 American Control Conference (ACC)}, pages 4069--4074.
+  IEEE, 2019.
+
+\bibitem{amini2019iterative2}
+M.~Amini and F.~Yousefian.
+\newblock An iterative regularized mirror descent method for ill-posed
+  nondifferentiable stochastic optimization.
+\newblock {\em arXiv preprint arXiv:1901.09506}, 2019.
+
+\bibitem{anandalingam1990solution}
+G.~Anandalingam and D.~White.
+\newblock A solution method for the linear static stackelberg problem using
+  penalty functions.
+\newblock {\em IEEE Transactions on automatic control}, 35(10):1170--1173,
+  1990.
+
+\bibitem{arbel2022non}
+M.~Arbel and J.~Mairal.
+\newblock Non-convex bilevel games with critical point selection maps.
+\newblock {\em arXiv preprint arXiv:2207.04888}, 2022.
+
+\bibitem{bao2021stability}
+F.~Bao, G.~Wu, C.~Li, J.~Zhu, and B.~Zhang.
+\newblock Stability and generalization of bilevel programming in hyperparameter
+  optimization.
+\newblock {\em Advances in Neural Information Processing Systems},
+  34:4529--4541, 2021.
+
+\bibitem{bracken1973mathematical}
+J.~Bracken and J.~T. McGill.
+\newblock Mathematical programs with optimization problems in the constraints.
+\newblock {\em Operations Research}, 21(1):37--44, 1973.
+
+\bibitem{chen2022single}
+T.~Chen, Y.~Sun, Q.~Xiao, and W.~Yin.
+\newblock A single-timescale method for stochastic bilevel optimization.
+\newblock In {\em International Conference on Artificial Intelligence and
+  Statistics}, pages 2466--2488. PMLR, 2022.
+
+\bibitem{chen2021closing}
+T.~Chen, Y.~Sun, and W.~Yin.
+\newblock Closing the gap: Tighter analysis of alternating stochastic gradient
+  methods for bilevel problems.
+\newblock {\em Advances in Neural Information Processing Systems},
+  34:25294--25307, 2021.
+
+\bibitem{colson2007overview}
+B.~Colson, P.~Marcotte, and G.~Savard.
+\newblock An overview of bilevel optimization.
+\newblock {\em Annals of operations research}, 153(1):235--256, 2007.
+
+\bibitem{couellan2015bi}
+N.~Couellan and W.~Wang.
+\newblock Bi-level stochastic gradient for large scale support vector machine.
+\newblock {\em Neurocomputing}, 153:300--308, 2015.
+
+\bibitem{couellan2016convergence}
+N.~Couellan and W.~Wang.
+\newblock On the convergence of stochastic bi-level gradient methods.
+\newblock {\em Optimization}, 2016.
+
+\bibitem{dagreou2022framework}
+M.~Dagr{\'e}ou, P.~Ablin, S.~Vaiter, and T.~Moreau.
+\newblock A framework for bilevel optimization that enables stochastic and
+  global variance reduction algorithms.
+\newblock {\em arXiv preprint arXiv:2201.13409}, 2022.
+
+\bibitem{deng2012mnist}
+L.~Deng.
+\newblock The mnist database of handwritten digit images for machine learning
+  research [best of the web].
+\newblock {\em IEEE signal processing magazine}, 29(6):141--142, 2012.
+
+\bibitem{ferris1991finite}
+M.~C. Ferris and O.~L. Mangasarian.
+\newblock Finite perturbation of convex programs.
+\newblock {\em Applied Mathematics and Optimization}, 23(1):263--273, 1991.
+
+\bibitem{franceschi2018bilevel}
+L.~Franceschi, P.~Frasconi, S.~Salzo, R.~Grazzi, and M.~Pontil.
+\newblock Bilevel programming for hyperparameter optimization and
+  meta-learning.
+\newblock In {\em International Conference on Machine Learning}, pages
+  1568--1577. PMLR, 2018.
+
+\bibitem{ghadimi2018approximation}
+S.~Ghadimi and M.~Wang.
+\newblock Approximation methods for bilevel programming.
+\newblock {\em arXiv preprint arXiv:1802.02246}, 2018.
+
+\bibitem{gidel2018variational}
+G.~Gidel, H.~Berard, G.~Vignoud, P.~Vincent, and S.~Lacoste-Julien.
+\newblock A variational inequality perspective on generative adversarial
+  networks.
+\newblock In {\em International Conference on Learning Representations}, 2018.
+
+\bibitem{giovannelli2021bilevel}
+T.~Giovannelli, G.~Kent, and L.~N. Vicente.
+\newblock Bilevel stochastic methods for optimization and machine learning:
+  Bilevel stochastic descent and darts.
+\newblock {\em arXiv preprint arXiv:2110.00604}, 2021.
+
+\bibitem{gong2021automatic}
+C.~Gong, X.~Liu, and Q.~Liu.
+\newblock Automatic and harmless regularization with constrained and
+  lexicographic optimization: A dynamic barrier approach.
+\newblock {\em Advances in Neural Information Processing Systems},
+  34:29630--29642, 2021.
+
+\bibitem{goodfellow2020generative}
+I.~Goodfellow, J.~Pouget-Abadie, M.~Mirza, B.~Xu, D.~Warde-Farley, S.~Ozair,
+  A.~Courville, and Y.~Bengio.
+\newblock Generative adversarial networks.
+\newblock {\em Communications of the ACM}, 63(11):139--144, 2020.
+
+\bibitem{guo2021randomized}
+Z.~Guo, Q.~Hu, L.~Zhang, and T.~Yang.
+\newblock Randomized stochastic variance-reduced methods for multi-task
+  stochastic bilevel optimization.
+\newblock {\em arXiv preprint arXiv:2105.02266}, 2021.
+
+\bibitem{hong2020two}
+M.~Hong, H.-T. Wai, Z.~Wang, and Z.~Yang.
+\newblock A two-timescale framework for bilevel optimization: Complexity
+  analysis and application to actor-critic.
+\newblock {\em arXiv preprint arXiv:2007.05170}, 2020.
+
+\bibitem{huang2021biadam}
+F.~Huang and H.~Huang.
+\newblock Biadam: Fast adaptive bilevel optimization methods.
+\newblock {\em arXiv preprint arXiv:2106.11396}, 2021.
+
+\bibitem{ishizuka1992double}
+Y.~Ishizuka and E.~Aiyoshi.
+\newblock Double penalty method for bilevel optimization problems.
+\newblock {\em Annals of Operations Research}, 34(1):73--88, 1992.
+
+\bibitem{ji2021bilevel}
+K.~Ji, J.~Yang, and Y.~Liang.
+\newblock Bilevel optimization: Convergence analysis and enhanced design.
+\newblock In {\em International Conference on Machine Learning}, pages
+  4882--4892. PMLR, 2021.
+
+\bibitem{jiang2022conditional}
+R.~Jiang, N.~Abolfazli, A.~Mokhtari, and E.~Y. Hamedani.
+\newblock A conditional gradient-based method for simple bilevel optimization
+  with convex lower-level problem, 2022.
+
+\bibitem{khanduri2021near}
+P.~Khanduri, S.~Zeng, M.~Hong, H.-T. Wai, Z.~Wang, and Z.~Yang.
+\newblock A near-optimal algorithm for stochastic bilevel optimization via
+  double-momentum.
+\newblock {\em Advances in Neural Information Processing Systems},
+  34:30271--30283, 2021.
+
+\bibitem{konda1999actor}
+V.~Konda and J.~Tsitsiklis.
+\newblock Actor-critic algorithms.
+\newblock {\em Advances in neural information processing systems}, 12, 1999.
+
+\bibitem{kunapuli2008bilevel}
+G.~Kunapuli, K.~P. Bennett, J.~Hu, and J.-S. Pang.
+\newblock Bilevel model selection for support vector machines.
+\newblock {\em Data mining and mathematical programming}, 45:129--158, 2008.
+
+\bibitem{liu2021value}
+R.~Liu, X.~Liu, X.~Yuan, S.~Zeng, and J.~Zhang.
+\newblock A value-function-based interior-point method for non-convex bi-level
+  optimization.
+\newblock In {\em International Conference on Machine Learning}, pages
+  6882--6892. PMLR, 2021.
+
+\bibitem{liu2021towards}
+R.~Liu, Y.~Liu, S.~Zeng, and J.~Zhang.
+\newblock Towards gradient-based bilevel optimization with non-convex followers
+  and beyond.
+\newblock {\em Advances in Neural Information Processing Systems},
+  34:8662--8675, 2021.
+
+\bibitem{lu2023first}
+Z.~Lu and S.~Mei.
+\newblock First-order penalty methods for bilevel optimization.
+\newblock {\em arXiv preprint arXiv:2301.01716}, 2023.
+
+\bibitem{margossian2019review}
+C.~C. Margossian.
+\newblock A review of automatic differentiation and its efficient
+  implementation.
+\newblock {\em Wiley interdisciplinary reviews: data mining and knowledge
+  discovery}, 9(4):e1305, 2019.
+
+\bibitem{mehra2021penalty}
+A.~Mehra and J.~Hamm.
+\newblock Penalty method for inversion-free deep bilevel optimization.
+\newblock In {\em Asian Conference on Machine Learning}, pages 347--362. PMLR,
+  2021.
+
+\bibitem{nesterov2018lectures}
+Y.~Nesterov et~al.
+\newblock {\em Lectures on convex optimization}, volume 137.
+\newblock Springer, 2018.
+
+\bibitem{rajeswaran2019meta}
+A.~Rajeswaran, C.~Finn, S.~M. Kakade, and S.~Levine.
+\newblock Meta-learning with implicit gradients.
+\newblock {\em Advances in neural information processing systems}, 32, 2019.
+
+\bibitem{solodov2007explicit}
+M.~Solodov.
+\newblock An explicit descent method for bilevel convex optimization.
+\newblock {\em Journal of Convex Analysis}, 14(2):227, 2007.
+
+\bibitem{sow2022constrained}
+D.~Sow, K.~Ji, Z.~Guan, and Y.~Liang.
+\newblock A constrained optimization approach to bilevel optimization with
+  multiple inner minima.
+\newblock {\em arXiv preprint arXiv:2203.01123}, 2022.
+
+\bibitem{stackelberg1952theory}
+H.~v. Stackelberg et~al.
+\newblock Theory of the market economy.
+\newblock 1952.
+
+\bibitem{sutton2018reinforcement}
+R.~S. Sutton and A.~G. Barto.
+\newblock {\em Reinforcement learning: An introduction}.
+\newblock MIT press, 2018.
+
+\bibitem{vicente1994descent}
+L.~Vicente, G.~Savard, and J.~J{\'u}dice.
+\newblock Descent approaches for quadratic bilevel programming.
+\newblock {\em Journal of Optimization theory and applications},
+  81(2):379--399, 1994.
+
+\bibitem{white1993penalty}
+D.~J. White and G.~Anandalingam.
+\newblock A penalty function approach for solving bi-level linear programs.
+\newblock {\em Journal of Global Optimization}, 3(4):397--419, 1993.
+
+\bibitem{wright1999numerical}
+S.~Wright, J.~Nocedal, et~al.
+\newblock Numerical optimization.
+\newblock {\em Springer Science}, 35(67-68):7, 1999.
+
+\bibitem{yang2021provably}
+J.~Yang, K.~Ji, and Y.~Liang.
+\newblock Provably faster algorithms for bilevel optimization.
+\newblock {\em Advances in Neural Information Processing Systems},
+  34:13670--13682, 2021.
+
+\bibitem{ye2022bome}
+M.~Ye, B.~Liu, S.~Wright, P.~Stone, and Q.~Liu.
+\newblock Bome! bilevel optimization made easy: A simple first-order approach.
+\newblock {\em arXiv preprint arXiv:2209.08709}, 2022.
+
+\end{thebibliography}
