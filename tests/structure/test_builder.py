@@ -25,7 +25,7 @@ def latex_text():
 
         Some text here, $1+1=2$:
         \begin{equation}
-            E = mc^2
+            E = mc^2 \\ x = 1
         \end{equation}
 
         \begin{figure}[h]
@@ -83,7 +83,7 @@ def latex_text():
 
 
 @pytest.fixture
-def expected_output():
+def expected_organizer_output():
     return [
         {"type": "title", "title": [{"type": "text", "content": "My Title"}]},
         {
@@ -118,7 +118,7 @@ def expected_output():
                         {"type": "text", "content": "Some text here, $1+1=2$:"},
                         {
                             "type": "equation",
-                            "content": "E = mc^2",
+                            "content": "E = mc^2 \\\\ x = 1",
                             "display": "block",
                             "numbered": True,
                             "numbering": "1",
@@ -298,13 +298,51 @@ def strip_content_str(content):
     return content
 
 
-def test_organize_content(latex_parser, latex_text, expected_output):
+def test_organize_content(latex_parser, latex_text, expected_organizer_output):
     tokens = latex_parser.parse(latex_text)
     token_builder = TokenBuilder()
     organized_tokens = token_builder.organize_content(tokens)
 
     # Normalize both the organized tokens and expected output
     normalized_organized = strip_content_str(organized_tokens)
-    normalized_expected = strip_content_str(expected_output)
+    normalized_expected = strip_content_str(expected_organizer_output)
 
     assert normalized_organized == normalized_expected
+
+
+def test_builder_output_json(latex_parser, latex_text, expected_organizer_output):
+    import json
+
+    tokens = latex_parser.parse(latex_text)
+    token_builder = TokenBuilder()
+
+    output = token_builder.build(tokens)
+
+    # test json output
+    json_output = [t.model_dump(mode="json", exclude_none=True) for t in output]
+    json_output = strip_content_str(json_output)
+    normalized_expected = strip_content_str(expected_organizer_output)
+
+    # Recursively remove specified fields from the expected output
+    def remove_fields(data, fields_to_remove=["numbered"]):
+        if isinstance(data, dict):
+            for field in fields_to_remove:
+                data.pop(field, None)
+            # Special handling for bibliography and document types
+            if data.get("type") in ["bibliography", "document"]:
+                data.pop("name", None)
+                data.pop("args", None)
+            return {k: remove_fields(v, fields_to_remove) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [remove_fields(item, fields_to_remove) for item in data]
+        return data
+
+    normalized_expected = remove_fields(
+        normalized_expected, fields_to_remove=["numbered"]
+    )
+
+    # use dumps then loads for round trip test
+    json_output = json.dumps(json_output)
+    json_output = json.loads(json_output)
+
+    assert json_output == normalized_expected

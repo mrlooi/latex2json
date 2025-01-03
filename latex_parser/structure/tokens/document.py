@@ -34,4 +34,4 @@ class AppendixToken(BaseToken):
     type: TokenType = TokenType.APPENDIX
     # if \appendix, then content is empty
     # if \begin{appendices}, then content is the content inside the appendices env
-    content: Optional[List[BaseToken]] = []
+    content: Optional[List[BaseToken]] = None

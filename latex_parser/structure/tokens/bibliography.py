@@ -13,6 +13,7 @@ class BibItemToken(BaseToken):
 
     type: TokenType = TokenType.BIBITEM
     cite_key: str
+    title: Optional[str] = None
 
 
 class BibliographyToken(EnvironmentToken):
