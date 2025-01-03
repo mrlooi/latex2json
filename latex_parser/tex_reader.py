@@ -156,7 +156,7 @@ class TexReader:
         def _save() -> None:
             json_output = self.to_json(result)
             json_path.parent.mkdir(parents=True, exist_ok=True)
-            json_path.write_text(json_output)
+            json_path.write_text(json_output, encoding="utf-8")
             self.logger.info("Successfully saved output to %s", json_path)
 
         return self._handle_file_operation(

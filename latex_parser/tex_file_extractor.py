@@ -86,13 +86,11 @@ class TexFileExtractor:
                         f_out.write(content)
 
                     with tarfile.open(temp_tar) as tar:
-
-                        def safe_extract(tar_info, kwds=None):
-                            if os.path.isabs(tar_info.name) or ".." in tar_info.name:
-                                return None
-                            return tar_info
-
-                        tar.extractall(temp_dir, filter=safe_extract)
+                        # Check for path traversal attempts before extraction
+                        for member in tar.getmembers():
+                            if os.path.isabs(member.name) or ".." in member.name:
+                                continue
+                            tar.extract(member, temp_dir)
 
                     main_tex = TexFileExtractor.find_main_tex_file(temp_dir)
                 else:
