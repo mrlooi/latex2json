@@ -129,8 +129,12 @@ class TexReader:
         def _convert() -> str:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", module="pydantic")
-                json_output = [t.model_dump(mode="json") for t in result.tokens]
-            return json.dumps(json_output)
+                json_output = [
+                    t.model_dump(mode="json", exclude_none=True) for t in result.tokens
+                ]
+            return json.dumps(
+                json_output, ensure_ascii=False
+            )  # ensure_ascii=False to prevent unnecessary escape characters
 
         return self._handle_file_operation(_convert, "Failed to convert tokens to JSON")
 
