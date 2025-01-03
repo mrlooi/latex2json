@@ -261,8 +261,9 @@ class LatexStyParser:
             self.current_file_path = current_file_path
             return out
         except Exception as e:
-            self.logger.error(f"Failed to parse file: {file_path}, error: {str(e)}")
-            self.logger.error("Stack trace:", exc_info=True)
+            self.logger.error(
+                f"Failed to parse file: {file_path}, error: {str(e)}", exc_info=True
+            )
             return []
 
 

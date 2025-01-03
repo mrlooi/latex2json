@@ -43,7 +43,9 @@ class TokenFactory:
         try:
             return self._create_token(token_type, data)
         except Exception as e:
-            self.logger.error(f"Failed to create token of type {token_type}: {str(e)}")
+            self.logger.error(
+                f"Failed to create token of type {token_type}: {str(e)}", exc_info=True
+            )
             self.logger.error(f"Data: {data}")
             raise
 

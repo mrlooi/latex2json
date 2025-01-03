@@ -614,17 +614,15 @@ class LatexParser:
             try:
                 content = read_tex_file_content(file_path, extension=extension)
             except FileNotFoundError:
-                self.logger.error(f"File not found: {file_path}")
+                self.logger.error(f"File not found: {file_path}", exc_info=True)
                 return []
 
             out = self.parse(content)
             self.logger.info(f"Finished parsing file: {file_path}")
             return out
         except Exception as e:
-            self.logger.error(f"Failed to parse file: {file_path}, error: {str(e)}")
             self.logger.error(
-                "Stack trace:\n"
-                + "".join(traceback.format_tb(e.__traceback__, limit=10))
+                f"Failed to parse file: {file_path}, error: {str(e)}", exc_info=True
             )
             self.logger.warning(f"Continuing from failed parse at {file_path}")
             return []

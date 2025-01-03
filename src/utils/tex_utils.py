@@ -268,7 +268,7 @@ def read_tex_file_content(file_path: str, extension: str = ".tex") -> str:
         FileNotFoundError: If file doesn't exist or is a directory
     """
     # Clean up input
-    file_path = file_path.strip()
+    file_path = str(file_path).strip()
 
     # Try both with and without extension
     paths_to_try = [file_path]

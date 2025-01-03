@@ -1,49 +1,145 @@
 import logging
 import os
 import json
-from typing import List
+from typing import List, TypeVar, Callable, Any, Tuple, Optional
+from functools import wraps
 import warnings
+from dataclasses import dataclass
+from pathlib import Path
 
 from src.structure.tokens.base import BaseToken
 from src.tex_file_extractor import TexFileExtractor
 from src.parser.tex_parser import LatexParser
 from src.structure.builder import TokenBuilder
 
+T = TypeVar("T")
+
+
+@dataclass
+class ProcessingResult:
+    """Represents the result of processing a TeX file."""
+
+    tokens: List[BaseToken]
+    temp_dir: Optional[Path] = None
+
+
+class TexProcessingError(Exception):
+    """Base exception for TeX processing errors."""
+
+    pass
+
 
 class TexReader:
-    """Class to handle reading and processing TeX files into tokens and JSON output."""
+    """
+    Handles reading and processing TeX files into tokens and JSON output.
 
-    def __init__(self, logger: logging.Logger = None):
+    Attributes:
+        logger: Logger instance for tracking operations
+        parser: LaTeX parser instance
+        token_builder: Token builder instance
+    """
+
+    def __init__(self, logger: Optional[logging.Logger] = None):
         self.logger = logger or logging.getLogger(__name__)
-
         self.parser = LatexParser(logger=self.logger)
         self.token_builder = TokenBuilder(logger=self.logger)
 
-    def process_file(self, file_path: str) -> List[BaseToken]:
-        """Process a single TeX file and return the token output."""
-        if not os.path.exists(file_path):
-            self.logger.error(f"File {file_path} does not exist")
-            raise FileNotFoundError(f"File {file_path} does not exist")
+    def _handle_file_operation(
+        self, operation: Callable[..., T], error_msg: str, *args, **kwargs
+    ) -> T:
+        """
+        Generic error handler for file operations.
 
-        tokens = self.parser.parse_file(file_path)
-        output = self.token_builder.build(tokens)
-        self.clear()
-        return output
+        Args:
+            operation: Callable to execute
+            error_msg: Error message template
+            *args: Positional arguments for operation
+            **kwargs: Keyword arguments for operation
 
-    def save_to_json(self, output: List[BaseToken], json_path="output.json"):
-        """Save token output to JSON file."""
+        Returns:
+            Result of the operation
 
-        # serialize output to json (use model_dump(mode='json') instead of model_dump_json since latter adds unnecessary escape chars)
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                module="pydantic",
-            )
-            json_output = [t.model_dump(mode="json") for t in output]
+        Raises:
+            FileNotFoundError: If required files are missing
+            TexProcessingError: If processing fails
+        """
+        try:
+            return operation(*args, **kwargs)
+        except FileNotFoundError as e:
+            self.logger.error("File not found error: %s", str(e), exc_info=True)
+            raise
+        except Exception as e:
+            self.logger.error("%s: %s", error_msg, str(e), exc_info=True)
+            raise TexProcessingError(f"{error_msg}: {str(e)}") from e
 
-        with open(json_path, "w") as f:
-            json.dump(json_output, f)
-        self.logger.info(f"Saved output to {json_path}")
+    def _verify_file_exists(self, file_path: Path, file_type: str = "File") -> None:
+        """
+        Verify file exists and log appropriate error if not.
+
+        Args:
+            file_path: Path to verify
+            file_type: Type of file for error messaging
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+        """
+        if not file_path.exists():
+            raise FileNotFoundError(f"{file_type} not found: {file_path}")
+
+    def process_file(self, file_path: Path | str) -> ProcessingResult:
+        """
+        Process a single TeX file and return the token output.
+
+        Args:
+            file_path: Path to the TeX file
+
+        Returns:
+            ProcessingResult containing the processed tokens
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            TexProcessingError: If processing fails
+        """
+        file_path = Path(file_path)
+
+        def _process() -> ProcessingResult:
+            self._verify_file_exists(file_path)
+            tokens = self.parser.parse_file(file_path)
+            output = self.token_builder.build(tokens)
+            self.clear()
+            return ProcessingResult(tokens=output)
+
+        return self._handle_file_operation(
+            _process, f"Failed to process TeX file {file_path}"
+        )
+
+    def save_to_json(
+        self, result: ProcessingResult, json_path: Path | str = "output.json"
+    ) -> None:
+        """
+        Save token output to JSON file.
+
+        Args:
+            result: ProcessingResult containing tokens to save
+            json_path: Path where to save the JSON
+
+        Raises:
+            TexProcessingError: If saving fails
+        """
+        json_path = Path(json_path)
+
+        def _save() -> None:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", module="pydantic")
+                json_output = [t.model_dump(mode="json") for t in result.tokens]
+
+            json_path.parent.mkdir(parents=True, exist_ok=True)
+            json_path.write_text(json.dumps(json_output))
+            self.logger.info("Successfully saved output to %s", json_path)
+
+        return self._handle_file_operation(
+            _save, f"Failed to save JSON output to {json_path}"
+        )
 
     def clear(self):
         """Clear both parser and token builder states."""
@@ -54,7 +150,7 @@ class TexReader:
         """Process a compressed TeX file and save results to JSON."""
         if not os.path.exists(gz_path):
             error_msg = f"Compressed file not found: {gz_path}"
-            self.logger.error(error_msg)
+            self.logger.error(error_msg, exc_info=True)
             raise FileNotFoundError(error_msg)
 
         try:
@@ -70,7 +166,7 @@ class TexReader:
                 return output, temp_dir
         except Exception as e:
             error_msg = f"Failed to process compressed file {gz_path}: {str(e)}"
-            self.logger.error(error_msg)
+            self.logger.error(error_msg, exc_info=True)
             raise RuntimeError(error_msg) from e
 
 
