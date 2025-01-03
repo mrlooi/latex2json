@@ -67,23 +67,6 @@ class TestTexReader:
         with pytest.raises(RuntimeError, match="Failed to process.*"):
             tex_reader.process_compressed(str(invalid_file))
 
-    def test_save_to_json(
-        self, tex_reader: TexReader, sample_files: dict, tmp_path: Path
-    ):
-        """Verify JSON output functionality."""
-        result, _ = tex_reader.process_compressed(str(sample_files["single_file"]))
-        output_path = tmp_path / "output.json"
-
-        try:
-            tex_reader.save_to_json(result, output_path)
-
-            assert output_path.exists(), "JSON output file should be created"
-            assert output_path.stat().st_size > 0, "JSON output should not be empty"
-        finally:
-            # Clean up the output file
-            if output_path.exists():
-                output_path.unlink()
-
     @pytest.mark.parametrize("cleanup", [True, False])
     def test_cleanup_behavior(
         self, tex_reader: TexReader, sample_files: dict, cleanup: bool
@@ -109,3 +92,29 @@ class TestTexReader:
             assert any(temp_path.iterdir()), "Directory should contain extracted files"
             # Clean up manually
             shutil.rmtree(temp_dir)
+
+    def test_to_json(self, tex_reader: TexReader, sample_files: dict):
+        """Verify JSON conversion functionality."""
+        result, _ = tex_reader.process_compressed(str(sample_files["single_file"]))
+
+        json_str = tex_reader.to_json(result)
+        assert isinstance(json_str, str), "to_json should return a string"
+        assert json_str.startswith("["), "JSON output should be an array"
+        assert len(json_str) > 2, "JSON output should not be empty"
+
+    def test_save_to_json(
+        self, tex_reader: TexReader, sample_files: dict, tmp_path: Path
+    ):
+        """Verify JSON output functionality."""
+        result, _ = tex_reader.process_compressed(str(sample_files["single_file"]))
+        output_path = tmp_path / "output.json"
+
+        try:
+            tex_reader.save_to_json(result, output_path)
+
+            assert output_path.exists(), "JSON output file should be created"
+            assert output_path.stat().st_size > 0, "JSON output should not be empty"
+        finally:
+            # Clean up the output file
+            if output_path.exists():
+                output_path.unlink()

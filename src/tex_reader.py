@@ -112,6 +112,28 @@ class TexReader:
             _process, f"Failed to process TeX file {file_path}"
         )
 
+    def to_json(self, result: ProcessingResult) -> str:
+        """
+        Convert token output to JSON string.
+
+        Args:
+            result: ProcessingResult containing tokens to convert
+
+        Returns:
+            JSON string representation of the tokens
+
+        Raises:
+            TexProcessingError: If conversion fails
+        """
+
+        def _convert() -> str:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", module="pydantic")
+                json_output = [t.model_dump(mode="json") for t in result.tokens]
+            return json.dumps(json_output)
+
+        return self._handle_file_operation(_convert, "Failed to convert tokens to JSON")
+
     def save_to_json(
         self, result: ProcessingResult, json_path: Path | str = "output.json"
     ) -> None:
@@ -128,12 +150,9 @@ class TexReader:
         json_path = Path(json_path)
 
         def _save() -> None:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", module="pydantic")
-                json_output = [t.model_dump(mode="json") for t in result.tokens]
-
+            json_output = self.to_json(result)
             json_path.parent.mkdir(parents=True, exist_ok=True)
-            json_path.write_text(json.dumps(json_output))
+            json_path.write_text(json_output)
             self.logger.info("Successfully saved output to %s", json_path)
 
         return self._handle_file_operation(

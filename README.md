@@ -15,3 +15,21 @@ A Python-based tool for parsing and converting TeX files into structured token r
 ## Installation
 
 pip install -r requirements.txt
+
+## Usage
+
+```python
+from src.tex_reader import TexReader
+
+# Initialize the parser
+tex_reader = TexReader()
+
+# Process a compressed TeX file (supports .gz and .tar.gz)
+result, temp_dir = tex_reader.process_compressed("path/to/paper.tar.gz")
+
+# Convert to JSON
+json_output = tex_reader.to_json(result)
+
+# Or save directly to file
+tex_reader.save_to_json(result, "output.json")
+```
