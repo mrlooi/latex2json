@@ -1,7 +1,7 @@
 import re
 from collections import OrderedDict
 from typing import Callable, Dict, Optional, Tuple
-from latex_parser.handlers.base import TokenHandler
+from latex_parser.parser.handlers.base import TokenHandler
 from latex_parser.utils.tex_utils import extract_nested_content
 
 SECTION_LEVELS = {
