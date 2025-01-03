@@ -1,5 +1,5 @@
 import pytest
-from src.parser.bib_parser import BibParser
+from latex_parser.parser.bib_parser import BibParser
 import os
 
 dir_path = os.path.dirname(os.path.abspath(__file__))

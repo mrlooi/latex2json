@@ -1,5 +1,5 @@
 import pytest
-from src.parser.handlers.code_block import CodeBlockHandler
+from latex_parser.parser.handlers.code_block import CodeBlockHandler
 
 
 @pytest.fixture

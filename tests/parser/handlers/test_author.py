@@ -1,5 +1,5 @@
 import pytest
-from src.parser.handlers.author import AuthorHandler
+from latex_parser.parser.handlers.author import AuthorHandler
 
 
 def test_author_handler():

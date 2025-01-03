@@ -1,6 +1,6 @@
 import pytest
-from src.parser.handlers.formatting import FormattingHandler
-from src.parser.handlers.tabular import TabularHandler
+from latex_parser.parser.handlers.formatting import FormattingHandler
+from latex_parser.parser.handlers.tabular import TabularHandler
 
 
 @pytest.fixture

@@ -1,5 +1,5 @@
 import pytest
-from src.latex_maps.latex_unicode_converter import LatexUnicodeConverter
+from latex_parser.latex_maps.latex_unicode_converter import LatexUnicodeConverter
 
 
 @pytest.fixture

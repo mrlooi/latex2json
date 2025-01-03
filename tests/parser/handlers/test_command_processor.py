@@ -1,6 +1,6 @@
 import pytest
-from src.parser.handlers.new_definition import NewDefinitionHandler
-from src.parser.handlers.command_processor import CommandProcessor
+from latex_parser.parser.handlers.new_definition import NewDefinitionHandler
+from latex_parser.parser.handlers.command_processor import CommandProcessor
 import re
 
 

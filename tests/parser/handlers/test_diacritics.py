@@ -1,4 +1,7 @@
-from src.parser.handlers.diacritics import DiacriticsHandler, convert_tex_diacritics
+from latex_parser.parser.handlers.diacritics import (
+    DiacriticsHandler,
+    convert_tex_diacritics,
+)
 
 
 def test_diacritics():

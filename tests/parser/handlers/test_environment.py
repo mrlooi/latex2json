@@ -1,5 +1,5 @@
 import pytest
-from src.parser.handlers.environment import (
+from latex_parser.parser.handlers.environment import (
     EnvironmentHandler,
     convert_any_env_pairs_to_begin_end,
 )

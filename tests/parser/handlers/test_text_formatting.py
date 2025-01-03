@@ -1,5 +1,5 @@
 import pytest
-from src.parser.handlers.text_formatting import (
+from latex_parser.parser.handlers.text_formatting import (
     TextFormattingHandler,
     FRONTEND_STYLE_MAPPING,
 )

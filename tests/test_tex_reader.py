@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 import os
 
-from src.tex_reader import TexReader, ProcessingResult
+from latex_parser.tex_reader import TexReader, ProcessingResult
 
 
 @pytest.fixture

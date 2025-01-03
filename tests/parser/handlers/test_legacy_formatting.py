@@ -1,5 +1,5 @@
 import pytest
-from src.parser.handlers.legacy_formatting import LegacyFormattingHandler
+from latex_parser.parser.handlers.legacy_formatting import LegacyFormattingHandler
 
 
 @pytest.fixture

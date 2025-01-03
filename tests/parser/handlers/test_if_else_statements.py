@@ -1,5 +1,5 @@
 import pytest
-from src.parser.handlers.if_else_statements import (
+from latex_parser.parser.handlers.if_else_statements import (
     IfElseBlockHandler,
     extract_else_elseif_fi,
 )

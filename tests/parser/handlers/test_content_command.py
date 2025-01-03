@@ -1,5 +1,5 @@
 import pytest
-from src.parser.handlers.content_command import (
+from latex_parser.parser.handlers.content_command import (
     ContentCommandHandler,
     SECTION_LEVELS,
     PARAGRAPH_LEVELS,

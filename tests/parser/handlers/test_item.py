@@ -1,5 +1,5 @@
 import pytest
-from src.parser.handlers.item import ItemHandler
+from latex_parser.parser.handlers.item import ItemHandler
 
 
 @pytest.fixture

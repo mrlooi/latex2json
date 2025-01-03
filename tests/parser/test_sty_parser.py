@@ -1,5 +1,5 @@
 import pytest
-from src.parser.sty_parser import LatexStyParser
+from latex_parser.parser.sty_parser import LatexStyParser
 import os
 
 

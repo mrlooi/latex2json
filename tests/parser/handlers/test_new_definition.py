@@ -1,5 +1,5 @@
 import pytest
-from src.parser.handlers.new_definition import NewDefinitionHandler
+from latex_parser.parser.handlers.new_definition import NewDefinitionHandler
 import re
 
 
