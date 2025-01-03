@@ -278,29 +278,16 @@ class TokenBuilder:
 
 if __name__ == "__main__":
     from src.parser.tex_parser import LatexParser
-    import json
+    from src.utils.logger import setup_logger
 
-    logging.basicConfig(
-        level=logging.DEBUG,  # More verbose when running directly
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        force=True,
-        handlers=[
-            # logging.FileHandler(
-            #     "logs/tex_parser.log"
-            # ),  # Output to a file named 'tex_parser.log'
-            logging.StreamHandler(),  # Optional: also output to console
-        ],
-    )
+    logger = setup_logger(__name__, level=logging.DEBUG, log_file="logs/builder.log")
     logging.getLogger("asyncio").setLevel(logging.WARNING)
 
-    logger = logging.getLogger(__name__)
-
     parser = LatexParser(logger)
-
-    file = "papers/new/arXiv-2010.11929v2/main.tex"
-    tokens = parser.parse_file(file)
-
     token_builder = TokenBuilder(logger=logger)
+
+    file = "papers/new/arXiv-2005.14165v4/main.tex"
+    tokens = parser.parse_file(file)
 
     # organized_tokens = token_builder.organize_content(tokens)
 
