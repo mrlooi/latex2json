@@ -2,6 +2,7 @@ import pytest
 import logging
 import shutil
 from pathlib import Path
+import os
 
 from src.tex_reader import TexReader, ProcessingResult
 
@@ -12,12 +13,16 @@ def tex_reader():
     return TexReader(logger=logging.getLogger("test_logger"))
 
 
+dir_path = os.path.dirname(os.path.abspath(__file__))
+test_dir = Path(dir_path) / "test_data"
+
+
 @pytest.fixture
 def sample_files(request):
     """Provide paths to test files and ensure cleanup after tests."""
     test_files = {
-        "single_file": Path("tests/data/arXiv-2301.10303v4.gz"),
-        "directory": Path("tests/data/arXiv-1907.11692v1.tar.gz"),
+        "single_file": test_dir / "arXiv-2301.10303v4.gz",
+        "directory": test_dir / "arXiv-1907.11692v1.tar.gz",
     }
 
     # Verify test files exist
