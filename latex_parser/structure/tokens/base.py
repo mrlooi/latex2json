@@ -11,14 +11,44 @@ class BaseToken(BaseModel):
     styles: Optional[List[str]] = None
 
     def model_dump(self, **kwargs) -> Dict[str, Any]:
-        """Override model_dump to exclude None values by default"""
-        kwargs.setdefault("exclude_none", True)
-        return super().model_dump(**kwargs)
+        """Override model_dump to handle recursive content dumping and ensure JSON serializability"""
+        # Get exclude_none from kwargs or default to False
+        exclude_none = kwargs.get("exclude_none", False)
 
-    def model_dump_json(self, **kwargs) -> str:
-        """Override model_dump_json to exclude None values by default"""
-        kwargs.setdefault("exclude_none", True)
-        return super().model_dump_json(**kwargs)
+        # Get the basic model dump but exclude content as we'll handle it specially
+        result = super().model_dump(**kwargs)
+
+        # Helper function to ensure value is JSON serializable
+        def serialize_value(val):
+            if isinstance(val, BaseToken):
+                return val.model_dump(**kwargs)
+            elif isinstance(val, (str, int, float, bool, type(None))):
+                return val
+            elif isinstance(val, (list, tuple)):
+                return [serialize_value(v) for v in val]
+            elif isinstance(val, dict):
+                return {k: serialize_value(v) for k, v in val.items()}
+            else:
+                # Convert any other types to string representation
+                return str(val)
+
+        # Handle content field recursively
+        if isinstance(self.content, list):
+            result["content"] = [serialize_value(token) for token in self.content]
+        elif isinstance(self.content, dict):
+            result["content"] = {
+                key: serialize_value(token) for key, token in self.content.items()
+            }
+        elif isinstance(self.content, BaseToken):
+            result["content"] = self.content.model_dump(**kwargs)
+        else:
+            result["content"] = serialize_value(self.content)
+
+        # Remove None values if exclude_none is True
+        if exclude_none:
+            result = {k: v for k, v in result.items() if v is not None}
+
+        return result
 
 
 class EnvironmentToken(BaseToken):

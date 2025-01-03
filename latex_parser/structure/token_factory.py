@@ -130,7 +130,8 @@ if __name__ == "__main__":
     }
 
     try:
-        token = TokenFactory.create(token_data)
+        token_creator = TokenFactory()
+        token = token_creator.create(token_data)
         print(token)
         # # You can also register custom token types
         # class CustomToken(BaseToken):
