@@ -91,6 +91,10 @@ ENV_ARGS = {
 }
 
 
+def get_env_type(env_name: str) -> str:
+    return ENV_TYPES.get(env_name.lower(), "environment")
+
+
 def convert_any_env_pairs_to_begin_end(content: str) -> str:
     r"""Convert any \aa \endaa pairs to \begin{aa} \end{aa}"""
     pattern = re.compile(ENV_PAIR_PATTERN, re.DOTALL)
@@ -190,7 +194,7 @@ class BaseEnvironmentHandler(TokenHandler):
             "name": self._floatnames.get(env_name, env_name),
         }
 
-        env_type = ENV_TYPES.get(env_name.lower(), "environment")
+        env_type = get_env_type(env_name)
         token["type"] = env_type
 
         if not contains_asterisk and env_type in ["table", "figure", "math_env"]:
@@ -331,7 +335,7 @@ class BaseEnvironmentHandler(TokenHandler):
         matched, out = BaseEnvironmentHandler.try_match_env(content)
         if matched:
             env_name = out["name"]
-            env_type = ENV_TYPES.get(env_name, "environment")
+            env_type = get_env_type(env_name)
             return {
                 "type": env_type,
                 "name": env_name,
@@ -470,7 +474,9 @@ class EnvironmentHandler(BaseEnvironmentHandler):
                 env_name, inner_content
             )
 
-            return {"type": "environment", "name": env_name, "content": inner_content}
+            env_type = get_env_type(env_name)
+
+            return {"type": env_type, "name": env_name, "content": inner_content}
 
         return super()._handle_environment(env_name, inner_content)
 

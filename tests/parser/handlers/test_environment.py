@@ -3,11 +3,17 @@ from latex_parser.parser.handlers.environment import (
     EnvironmentHandler,
     convert_any_env_pairs_to_begin_end,
 )
+from latex_parser.parser.handlers.new_definition import NewDefinitionHandler
 
 
 @pytest.fixture
 def handler():
     return EnvironmentHandler()
+
+
+@pytest.fixture
+def newdef_handler():
+    return NewDefinitionHandler()
 
 
 def test_can_handle_environment(handler):
@@ -189,6 +195,32 @@ def test_comment_env(handler):
     content = r"\begin{comment} stuff \end{comment} post"
     token, pos = handler.handle(content)
     assert token is None
+    assert content[pos:] == " post"
+
+
+def test_newenvironment(handler, newdef_handler):
+    content = r"\newenvironment{proof}[1][default]{begin proof: #1}{end proof}"
+    token, pos = newdef_handler.handle(content)
+    assert token["name"] == "proof"
+    assert token["type"] == "newenvironment"
+    assert token["num_args"] == 1
+    assert token["optional_args"] == ["default"]
+
+    handler.process_newenvironment(
+        token["name"],
+        token["begin_def"],
+        token["end_def"],
+        token["num_args"],
+        token["optional_args"],
+    )
+
+    content = r"\begin{proof}[Proof 1]stuff\end{proof} post"
+    token, pos = handler.handle(content)
+    assert token["name"] == "proof"
+    assert (
+        token["type"] == "math_env"
+    )  # retains environment type even if newenvironment
+    assert token["content"].strip() == "begin proof: Proof 1\nstuff\nend proof"
     assert content[pos:] == " post"
 
 
