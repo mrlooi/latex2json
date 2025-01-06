@@ -120,7 +120,8 @@ RAW_PATTERNS = OrderedDict(
             r"hspace\*?\s*{([^}]+)}|"  # \hspace{length}
             r"hskip\s*"
             + number_regex
-            + r"(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b"  # \hskip 10pt
+            + r"(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b|"  # \hskip 10pt
+            r"linespread\s*\{[^}]*\}"  # Added \linespread{...}
             r")",
         ),
         # options
@@ -161,7 +162,7 @@ RAW_PATTERNS = OrderedDict(
         ),
         ("columns", r"\\(?:onecolumn|twocolumn|threecolumn)\b"),
         # separators
-        ("itemsep", r"\\itemsep\s*=\s*-?\d*\.?\d+\w+?\b"),
+        ("itemsep", r"\\itemsep\s*(=\s*)?-?\d*\.?\d+\w+?\b"),
         (
             "separators",
             r"\\(?:"
@@ -195,6 +196,12 @@ RAW_PATTERNS = OrderedDict(
         # Handle vspace separately
         ("vspace", r"\\vspace\*?\s*{[^}]+}"),
         ("phantom", r"\\(?:hphantom|vphantom)\s*{"),
+        (
+            "raise",
+            r"\\(?:raise|lower|raisebox)\s*(?:"
+            + number_regex
+            + r"\w+\b|\{[^}]*\})(?:\s*\{[^}]*\})*",
+        ),
         (
             "other",
             re.compile(

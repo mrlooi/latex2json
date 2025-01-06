@@ -25,9 +25,9 @@ RAW_PATTERNS = OrderedDict(
         ("part", r"\\part\*?\s*{"),
         ("chapter", r"\\chapter\*?\s*{"),
         ("paragraph", r"\\(?:(?:sub)*paragraph\*?)\s*{"),
-        ("footnote", r"\\footnote\s*{"),
-        ("caption", r"\\caption\s*{"),
-        ("captionof", r"\\captionof\s*{([^}]*?)}\s*{"),
+        ("footnote", r"\\footnote\*?\s*{"),
+        ("caption", r"\\caption\*?\s*{"),
+        ("captionof", r"\\captionof\*?\s*{([^}]*?)}\s*{"),
         # input
         ("input_file", r"\\(?:input|include)\s*{"),
         # REFs

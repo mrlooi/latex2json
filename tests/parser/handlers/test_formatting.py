@@ -204,6 +204,7 @@ def test_misc_formatting_commands(handler):
     \value{section}
     \allowdisplaybreaks
     \itemsep=0pt
+    \itemsep-0.2em
 
     \topmargin 0.0cm
     \oddsidemargin 0.2cm
@@ -281,6 +282,8 @@ def test_misc_formatting_commands(handler):
     \paperheight=11in
     \tableofcontents
     \counterwithin{table}{section}
+    \linespread{1.5}
+    \raise.17ex
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
