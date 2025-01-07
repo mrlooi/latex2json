@@ -6,15 +6,17 @@ from latex_parser.structure.tokens.types import TokenType
 from latex_parser.structure.tokens.base import BaseToken
 
 
+# Each tabular cell can be a string, a BaseToken, or None
+ContentElement = Union[str, BaseToken, None]
+
+
 class TableCell(BaseModel):
-    content: Union[str, BaseToken, List[Union[str, BaseToken]]]  # The cell's content
-    rowspan: Optional[int]  # Optional as not all cells have it
+    content: Union[ContentElement, List[ContentElement]]  # The cell's content
+    rowspan: Optional[int]
     colspan: Optional[int]
 
 
-# The actual cell can be either the TypedDict or simple types
-ContentElement = Union[str, BaseToken]
-CellType = Union[TableCell, ContentElement, List[ContentElement], None]
+CellType = Union[TableCell, ContentElement, List[ContentElement]]
 TabularRowType = List[CellType]
 TabularContentType = List[TabularRowType]
 
