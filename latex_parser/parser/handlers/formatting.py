@@ -97,6 +97,7 @@ RAW_PATTERNS = OrderedDict(
         # ("font", r"\\(?:mdseries|bfseries|itshape|slshape|normalfont|ttfamily)\b"),
         # setters
         ("lstset", r"\\lstset\s*{"),
+        ("setlist", r"\\setlist(?:\s*\[([^\]]*)\])?\s*{"),  # Added setlist pattern
         (
             "value",
             r"\\value\s*\{([^}]+)\}",
@@ -322,6 +323,7 @@ class FormattingHandler(TokenHandler):
                     "newstyle",
                     "setup",
                     "lstset",
+                    "setlist",
                     "addtocontents",
                     "hyphenation",
                     "typeout",

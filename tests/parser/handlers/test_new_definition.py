@@ -100,6 +100,7 @@ def test_handle_newlength(handler):
 
     contents = [
         r"\newlength{\len} after",
+        r"\newlength\len after",
         r"\renewlength{\len} after",
         r"\setlength{\len}{10pt} after",
         r"\setlength\len{1.5pt} after",
