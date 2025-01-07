@@ -6,7 +6,7 @@ from latex_parser.structure.tokens.types import TokenType
 class BaseToken(BaseModel):
     """Base class for all LaTeX tokens"""
 
-    content: Union[str, List["BaseToken"], Dict[str, "BaseToken"]]
+    content: Union[str, List["BaseToken"]]
     type: TokenType
     styles: Optional[List[str]] = None
 
@@ -35,12 +35,6 @@ class BaseToken(BaseModel):
         # Handle content field recursively
         if isinstance(self.content, list):
             result["content"] = [serialize_value(token) for token in self.content]
-        elif isinstance(self.content, dict):
-            result["content"] = {
-                key: serialize_value(token) for key, token in self.content.items()
-            }
-        elif isinstance(self.content, BaseToken):
-            result["content"] = self.content.model_dump(**kwargs)
         else:
             result["content"] = serialize_value(self.content)
 

@@ -47,6 +47,22 @@ class TestTabularToken:
         assert token.content[0][0].type == TokenType.TEXT
         assert token.content[0][0].content == "Hello"
 
+    def test_model_dump(self, token_factory):
+        # None is valid ie denoting empty cell. make sure it is not removed
+        data = {
+            "type": TokenType.TABULAR,
+            "content": [[{"content": None, "colspan": 2, "rowspan": 2}, "World"]],
+        }
+        token = TabularToken.process(data, token_factory.create)
+        out = token.model_dump()
+
+        expected = {
+            "type": TokenType.TABULAR,
+            "content": [[{"content": None, "colspan": 2, "rowspan": 2}, "World"]],
+        }
+
+        assert out == expected
+
 
 def create_bibitem(content: str, cite_key: str):
     return {

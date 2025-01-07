@@ -29,6 +29,37 @@ class TabularToken(BaseToken):
     type: TokenType = TokenType.TABULAR
     content: TabularContentType = Field(default_factory=list)
 
+    def model_dump(self, **kwargs) -> Dict[str, Any]:
+        """Override model_dump to handle TableCell instances"""
+        kwargs["exclude_none"] = False  # we need to keep None values in content
+        result = super().model_dump(**kwargs)
+
+        def process_cell(cell: CellType):
+            if isinstance(cell, TableCell):
+                cell_dict = cell.model_dump(**kwargs)
+                # Process the content field of TableCell recursively
+                if isinstance(cell.content, list):
+                    cell_dict["content"] = [process_cell(item) for item in cell.content]
+                elif isinstance(cell.content, BaseToken):
+                    cell_dict["content"] = cell.content.model_dump(**kwargs)
+                return cell_dict
+            elif isinstance(cell, BaseToken):
+                out = cell.model_dump(**kwargs)
+                if out.get("styles") is None:
+                    del out["styles"]
+                return out
+            elif isinstance(cell, list):
+                return [process_cell(item) for item in cell]
+            return cell
+
+        # Process each cell in the tabular content
+        result["content"] = [
+            [process_cell(cell) for cell in row] for row in self.content
+        ]
+        if result.get("styles") is None:
+            del result["styles"]
+        return result
+
     @classmethod
     def process(
         cls, data: Dict[str, Any], create_token: TokenCreator
