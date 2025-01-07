@@ -63,6 +63,13 @@ def latex_text():
             Theorem 3
         \end{theorem}
 
+        \begin{tabular}{|c|c|}
+            \hline
+            Cell 1 & \textbf{Cell 2} \\
+            \hline
+            \multicolumn{2}{|c|}{Spanning Cell} &  \\
+            \hline
+        \end{tabular}
 
     \appendix
 
@@ -237,6 +244,33 @@ def expected_organizer_output():
                                     "numbering": "2.1",
                                     "numbered": True,
                                 },
+                                {
+                                    "type": "tabular",
+                                    "environment": "tabular",
+                                    "column_spec": "|c|c|",
+                                    "content": [
+                                        [
+                                            "Cell 1",
+                                            [
+                                                {
+                                                    "type": "text",
+                                                    "content": "Cell 2",
+                                                    "styles": [
+                                                        FRONTEND_STYLE_MAPPING["textbf"]
+                                                    ],
+                                                }
+                                            ],
+                                        ],
+                                        [
+                                            {
+                                                "content": "Spanning Cell",
+                                                "colspan": 2,
+                                                "rowspan": 1,
+                                            },
+                                            None,
+                                        ],
+                                    ],
+                                },
                             ],
                         },
                     ],
@@ -324,7 +358,7 @@ def test_builder_output_json(latex_parser, latex_text, expected_organizer_output
     normalized_expected = strip_content_str(expected_organizer_output)
 
     # Recursively remove specified fields from the expected output
-    def remove_fields(data, fields_to_remove=["numbered"]):
+    def remove_fields(data, fields_to_remove=["numbered", "column_spec"]):
         if isinstance(data, dict):
             for field in fields_to_remove:
                 data.pop(field, None)
@@ -332,13 +366,15 @@ def test_builder_output_json(latex_parser, latex_text, expected_organizer_output
             if data.get("type") in ["bibliography", "document"]:
                 data.pop("name", None)
                 data.pop("args", None)
+            elif data.get("type") == "tabular":
+                data.pop("environment", None)
             return {k: remove_fields(v, fields_to_remove) for k, v in data.items()}
         elif isinstance(data, list):
             return [remove_fields(item, fields_to_remove) for item in data]
         return data
 
     normalized_expected = remove_fields(
-        normalized_expected, fields_to_remove=["numbered"]
+        normalized_expected, fields_to_remove=["numbered", "column_spec"]
     )
 
     # use dumps then loads for round trip test
