@@ -1,5 +1,5 @@
 import re
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 from latex_parser.parser.handlers.base import TokenHandler
 from latex_parser.parser.patterns import BRACE_CONTENT_PATTERN
 from latex_parser.utils.tex_utils import (
@@ -49,6 +49,7 @@ PATTERNS = {
     ),
     # Matches \def commands - always with backslash before command name
     "def": re.compile(DEF_COMMAND_PREFIX),
+    "@namedef": re.compile(r"\\@namedef\s*{([^}]*)}"),
     # Matches newtheorem with all its optional arguments
     "newtheorem": re.compile(
         r"\\newtheorem{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?", re.DOTALL
@@ -140,6 +141,8 @@ class NewDefinitionHandler(TokenHandler):
                         self._handle_def,
                         max_csname_blocks=1,
                     )
+                elif pattern_name == "@namedef":
+                    return self._handle_namedef(content, match)
                 elif pattern_name == "newtheorem":
                     return self._handle_newtheorem(match)
                 elif pattern_name == "crefname":
@@ -324,6 +327,23 @@ class NewDefinitionHandler(TokenHandler):
 
         return token, match.end()
 
+    def _handle_namedef(self, content: str, match) -> Tuple[Optional[Dict], int]:
+        r"""Handle \@namedef definitions"""
+        end_pos = match.end()
+        # convert to \def format
+        search_text = r"\def\\" + match.group(1) + content[end_pos:]
+        # run matching exactly same as \def
+        match = re.match(DEF_COMMAND_PREFIX, search_text)
+        if match:
+            return self._handle_def_prefix(
+                search_text,
+                match,
+                DEF_COMMAND_PATTERN,
+                self._handle_def,
+                max_csname_blocks=1,
+            )
+        return None, end_pos
+
     def _handle_def_prefix(
         self,
         content: str,
@@ -415,30 +435,9 @@ class NewDefinitionHandler(TokenHandler):
         # Get parameter pattern (now properly separated)
         param_pattern = match.group(3).strip() if match.group(3) else ""
 
-        usage_pattern = rf"{cmd_name}{param_pattern}"
-
-        # Don't escape the entire pattern, instead handle delimiters and parameters separately
-        parts = []
-        current_pos = 0
-        param_count = 0
-        for param in re.finditer(r"#(\d+)", usage_pattern):
-            # Add everything before the parameter as escaped text
-            before_param = usage_pattern[current_pos : param.start()]
-            if before_param:
-                parts.append(re.escape(before_param))
-
-            # Add the parameter pattern to capture delimiters and parameters e.g. {xxx} or x
-            # e.g. \def\foo#1{bar #1} \foo{xxx} will match 'xxx' arg, \foo xaaa will match 'x' arg
-            # Update regex to handle escaped braces and normal braces
-            parts.append(r"\s*(?:\{((?:[^{}]|\\\{|\\\}|{[^{}]*})*)\}|([^\}]+?))")
-
-            current_pos = param.end()
-            param_count += 1
-
-        # Add any remaining text after the last parameter
-        if current_pos < len(usage_pattern):
-            parts.append(re.escape(usage_pattern[current_pos:]))
-
+        parts, param_count = self._extract_def_pattern_parts(
+            rf"{cmd_name}{param_pattern}"
+        )
         parts = "".join(parts)
         # Add check at the very end to prevent partial matches (e.g., \foo matching \foobar)
         usage_pattern = r"\\" + parts + r"(?![a-zA-Z@])"
@@ -453,6 +452,31 @@ class NewDefinitionHandler(TokenHandler):
         }
 
         return token, start_pos + end_pos - 1
+
+    def _extract_def_pattern_parts(self, pattern: str) -> Tuple[List[str], int]:
+        # Don't escape the entire pattern, instead handle delimiters and parameters separately
+        parts = []
+        current_pos = 0
+        param_count = 0
+        for param in re.finditer(r"#(\d+)", pattern):
+            # Add everything before the parameter as escaped text
+            before_param = pattern[current_pos : param.start()]
+            if before_param:
+                parts.append(re.escape(before_param))
+
+            # Add the parameter pattern to capture delimiters and parameters e.g. {xxx} or x
+            # e.g. \def\foo#1{bar #1} \foo{xxx} will match 'xxx' arg, \foo xaaa will match 'x' arg
+            # Update regex to handle escaped braces and normal braces
+            parts.append(r"\s*(?:\{((?:[^{}]|\\\{|\\\}|{[^{}]*})*)\}|([^\}]+?))")
+
+            current_pos = param.end()
+            param_count += 1
+
+        # Add any remaining text after the last parameter
+        if current_pos < len(pattern):
+            parts.append(re.escape(pattern[current_pos:]))
+
+        return parts, param_count
 
     def _handle_paired_delimiter(
         self, content: str, match

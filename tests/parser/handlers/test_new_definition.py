@@ -232,6 +232,33 @@ def test_def_command_usage_patterns(handler):
     assert not re.match(pattern, r"\until text")
 
 
+def test_namedef(handler):
+    # similar to def
+
+    # Complex delimiters with parentheses and comma
+    content = r"\@namedef{pair}(#1,#2){#1 and #2}"
+    token, _ = handler.handle(content)
+    assert token["type"] == "def"
+    pattern = token["usage_pattern"]
+
+    assert re.match(pattern, r"\pair(asd sd ,b)")
+    assert re.match(pattern, r"\pair({complex}, {args})")
+    assert re.match(pattern, r"\pair(a,b)")
+    assert not re.match(pattern, r"\pair(a)")
+
+    # Special case with \end as delimiter
+    content = r"\@namedef{until}#1\end#2{This text until #1 #2}"
+    token, _ = handler.handle(content)
+    assert token["type"] == "def"
+
+    pattern = token["usage_pattern"]
+
+    assert re.match(pattern, r"\until some \end3")
+    assert re.match(pattern, r"\until{text}\end{section}")
+    assert re.match(pattern, r"\until stuff \end more")
+    assert not re.match(pattern, r"\until text")
+
+
 def test_let_command(handler):
     content = r"\let\foo=bar"
     token, _ = handler.handle(content)
