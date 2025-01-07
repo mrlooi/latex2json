@@ -7,16 +7,16 @@ from latex_parser.structure.tokens.base import BaseToken
 
 
 # Each tabular cell can be a string, a BaseToken, or None
-ContentElement = Union[str, BaseToken, None]
+ContentElement = Union[str, List[BaseToken], None]
 
 
 class TableCell(BaseModel):
-    content: Union[ContentElement, List[ContentElement]]  # The cell's content
+    content: ContentElement  # The cell's content
     rowspan: Optional[int]
     colspan: Optional[int]
 
 
-CellType = Union[TableCell, ContentElement, List[ContentElement]]
+CellType = Union[TableCell, ContentElement]
 TabularRowType = List[CellType]
 TabularContentType = List[TabularRowType]
 
@@ -37,15 +37,11 @@ class TabularToken(BaseToken):
         def process_cell(cell: CellType):
             if isinstance(cell, TableCell):
                 cell_dict = cell.model_dump(**kwargs)
-                # Process the content field of TableCell recursively
-                if isinstance(cell.content, list):
-                    cell_dict["content"] = [process_cell(item) for item in cell.content]
-                elif isinstance(cell.content, BaseToken):
-                    cell_dict["content"] = cell.content.model_dump(**kwargs)
+                cell_dict["content"] = process_cell(cell.content)
                 return cell_dict
             elif isinstance(cell, BaseToken):
                 out = cell.model_dump(**kwargs)
-                if out.get("styles") is None:
+                if "styles" in out and out["styles"] is None:
                     del out["styles"]
                 return out
             elif isinstance(cell, list):

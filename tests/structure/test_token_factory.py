@@ -38,14 +38,14 @@ class TestTabularToken:
     def test_process_nested_tokens(self, token_factory):
         data = {
             "type": TokenType.TABULAR,
-            "content": [[{"type": TokenType.TEXT, "content": "Hello"}, "World"]],
+            "content": [[[{"type": TokenType.TEXT, "content": "Hello"}], "World"]],
         }
 
         token = TabularToken.process(data, token_factory.create)
 
         assert isinstance(token, TabularToken)
-        assert token.content[0][0].type == TokenType.TEXT
-        assert token.content[0][0].content == "Hello"
+        assert token.content[0][0][0].type == TokenType.TEXT
+        assert token.content[0][0][0].content == "Hello"
 
     def test_model_dump(self, token_factory):
         # None is valid ie denoting empty cell. make sure it is not removed

@@ -195,7 +195,7 @@ class TabularHandler(BaseEnvironmentHandler):
     def can_handle(self, content: str) -> bool:
         return bool(re.match(TABULAR_PATTERN, content))
 
-    def _clean_cell(self, cell: List | Dict | str) -> List[Dict]:
+    def _clean_cell(self, cell: List | Dict | str) -> List[Dict] | str | None:
         if isinstance(cell, list):
             if len(cell) == 1:
                 return self._clean_cell(cell[0])
@@ -206,9 +206,10 @@ class TabularHandler(BaseEnvironmentHandler):
         elif isinstance(cell, dict):
             if "content" in cell and cell["type"] == "text" and "styles" not in cell:
                 return cell["content"]
+            return [cell]
         return cell
 
-    def _parse_cell(self, content: str) -> List[Dict]:
+    def _parse_cell(self, content: str) -> List[Dict] | str | None:
         if self.cell_parser_fn:
             content = self.cell_parser_fn(content)
         return self._clean_cell(content)
@@ -353,8 +354,6 @@ class TabularHandler(BaseEnvironmentHandler):
                         break
 
                 if cells:
-                    if len(cells) == 1:
-                        return cells[0]
                     return cells
                 return None
 

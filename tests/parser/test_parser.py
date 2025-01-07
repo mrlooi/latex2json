@@ -772,7 +772,7 @@ def test_complex_table(parser):
         \multirow{2}{*}{North} & Urban & $x^2 + y^2 = z^2$ & 180 \\
         & Rural & 100 & 120 \\
         \hline
-        \multirow{2}{*}{South} & Urban & 200 & \begin{align} \label{eq:1} E = mc^2 \\ $F = ma$ \end{align} \\
+        \multirow{2}{*}{\textbf{South} and \texttt{Texas}} & Urban & 200 & \begin{align} \label{eq:1} E = mc^2 \\ $F = ma$ \end{align} \\
         & & 130 & 160 \\
         Thing with \cite{elon_musk} & SpaceX & Tesla & Neuralink \\
         \H{o} & \HELLO{WORLD} & \textyen\textdollar & \unknown \\
@@ -814,7 +814,7 @@ def test_complex_table(parser):
     assert cells[2][0]["colspan"] == 1
 
     # Check inline equation cell
-    equation_cell = cells[2][2]
+    equation_cell = cells[2][2][0]
     assert equation_cell["type"] == "equation"
     assert equation_cell["content"] == "x^2 + y^2 = z^2"
     assert equation_cell["display"] == "inline"
@@ -822,10 +822,24 @@ def test_complex_table(parser):
     assert cells[3] == [None, "Rural", "100", "120"]
 
     assert cells[4][0]["rowspan"] == 2
-    assert cells[4][0]["content"] == "South"
+    assert cells[4][0]["content"] == [
+        {
+            "type": "text",
+            "content": "South",
+            "styles": [
+                FRONTEND_STYLE_MAPPING["textbf"],
+            ],
+        },
+        {"type": "text", "content": "and"},
+        {
+            "type": "text",
+            "content": "Texas",
+            "styles": [FRONTEND_STYLE_MAPPING["texttt"]],
+        },
+    ]
 
     # Check align environment cell
-    align_cell = cells[4][3]
+    align_cell = cells[4][3][0]
     assert align_cell["type"] == "equation"
     assert align_cell["display"] == "block"
     assert align_cell["labels"] == ["eq:1"]
@@ -842,7 +856,7 @@ def test_complex_table(parser):
         "ő",
         "HELLO WORLD",
         "¥$",
-        {"type": "command", "command": "\\unknown"},
+        [{"type": "command", "command": "\\unknown"}],
     ]
 
     # Check caption
@@ -1410,21 +1424,27 @@ def test_legacy_formatting(parser):
 
     tabular_content = parsed_tokens[0]["content"]
     assert len(tabular_content) == 2
-    assert tabular_content[0][0] == {
-        "type": "text",
-        "content": "aaa",
-        "styles": [FRONTEND_STYLE_MAPPING["texttt"]],
-    }, tabular_content[0][0]
-    assert tabular_content[0][1] == {
-        "type": "text",
-        "content": "bbb",
-        "styles": [FRONTEND_STYLE_MAPPING["textlarge"]],
-    }
-    assert tabular_content[1][0] == {
-        "type": "text",
-        "content": "eee",
-        "styles": [FRONTEND_STYLE_MAPPING["textsc"]],
-    }
+    assert tabular_content[0][0] == [
+        {
+            "type": "text",
+            "content": "aaa",
+            "styles": [FRONTEND_STYLE_MAPPING["texttt"]],
+        }
+    ]
+    assert tabular_content[0][1] == [
+        {
+            "type": "text",
+            "content": "bbb",
+            "styles": [FRONTEND_STYLE_MAPPING["textlarge"]],
+        }
+    ]
+    assert tabular_content[1][0] == [
+        {
+            "type": "text",
+            "content": "eee",
+            "styles": [FRONTEND_STYLE_MAPPING["textsc"]],
+        }
+    ]
     assert tabular_content[1][1] == [
         {
             "type": "text",
