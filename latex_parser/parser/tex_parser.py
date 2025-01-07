@@ -151,7 +151,7 @@ class LatexParser:
                 tokens[-1]["labels"].append(content)
                 self.labels[content] = tokens[-1]
             else:
-                tokens.append({"type": "label", "content": content})
+                self.add_token({"type": "label", "content": content}, tokens)
 
     def add_token(self, token: str | Dict, tokens: List[Dict]):
         # uncomment this if we want to merge self.current_str whitespaces
@@ -426,7 +426,7 @@ class LatexParser:
                 # For all other token types, expand any commands in their content
                 x = match.group(1) if match.groups() else match.group(0)
                 x = self._expand_command(x)
-                self.add_token({"type": matched_type, "content": x})
+                self.add_token({"type": matched_type, "content": x}, tokens)
 
             return True, match.end()
 
@@ -438,7 +438,7 @@ class LatexParser:
         line_break_delimiter: str = "\n",
         handle_unknown_commands: bool = True,
         handle_legacy_formatting: bool = True,
-    ) -> List[Dict[str, str]]:
+    ) -> List[Dict]:
         """
         Parse LaTeX content string into tokens.
 
