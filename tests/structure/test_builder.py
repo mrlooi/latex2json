@@ -321,12 +321,16 @@ def expected_organizer_output():
     ]
 
 
-def strip_content_str(content):
+def strip_content_str(content, omit_fields=["end_pos", "start_pos"]):
     """Helper function to remove newline characters from the content."""
     if isinstance(content, list):
-        return [strip_content_str(item) for item in content]
+        return [strip_content_str(item, omit_fields) for item in content]
     if isinstance(content, dict):
-        return {k: strip_content_str(v) for k, v in content.items()}
+        return {
+            k: strip_content_str(v, omit_fields)
+            for k, v in content.items()
+            if k not in omit_fields
+        }
     if isinstance(content, str):
         return content.replace("\n", "").strip()
     return content

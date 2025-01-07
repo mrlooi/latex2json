@@ -2,15 +2,18 @@ from typing import List, Dict
 from collections import OrderedDict
 
 
-def flatten_tokens(tokens: str | List[Dict[str, str]]) -> tuple[str, dict]:
+def flatten_tokens(
+    content: str, tokens: str | List[Dict[str, str]]
+) -> tuple[str, OrderedDict[str, str]]:
     flattened_content = ""
-    reference_map = OrderedDict()
+    reference_map = OrderedDict[str, str]()
     ref_counter = 1
 
     if isinstance(tokens, str):
         return tokens, {}
 
     for token in tokens:
+        # if the token is a text token, we should treat it as part of the flattened content
         if (
             token["type"] == "text"
             and isinstance(token["content"], str)
@@ -19,8 +22,8 @@ def flatten_tokens(tokens: str | List[Dict[str, str]]) -> tuple[str, dict]:
             flattened_content += token["content"]
         else:
             # Create a reference key and store token in map
-            ref_key = "{REF_" + str(ref_counter) + "}"
-            reference_map[ref_key] = token
+            ref_key = "{REF_%s}" % ref_counter
+            reference_map[ref_key] = content[token["start_pos"] : token["end_pos"]]
             # Add reference placeholder to flattened content
             flattened_content += ref_key
             ref_counter += 1

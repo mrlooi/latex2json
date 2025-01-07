@@ -151,9 +151,11 @@ class LatexParser:
                 tokens[-1]["labels"].append(content)
                 self.labels[content] = tokens[-1]
             else:
-                self.add_token({"type": "label", "content": content}, tokens)
+                tokens.append({"type": "label", "content": content})
 
-    def add_token(self, token: str | Dict, tokens: List[Dict]):
+    def add_token(
+        self, token: str | Dict, tokens: List[Dict], start_pos: int, end_pos: int
+    ):
         # uncomment this if we want to merge self.current_str whitespaces
         # if self.current_str:
         #     if tokens and tokens[-1].get('type') == 'text':
@@ -172,6 +174,10 @@ class LatexParser:
             if isinstance(token, str):
                 token_dict = {"type": "text", "content": token}
 
+            if isinstance(token_dict, dict):
+                token_dict["start_pos"] = start_pos
+                token_dict["end_pos"] = end_pos
+
             # Merge consecutive text tokens
             if isinstance(token_dict, list):
                 tokens.extend(token_dict)
@@ -183,6 +189,7 @@ class LatexParser:
                 and "styles" not in tokens[-1]
             ):
                 tokens[-1]["content"] += token_dict["content"]
+                tokens[-1]["end_pos"] = end_pos
             else:
                 tokens.append(token_dict)
 
@@ -201,8 +208,9 @@ class LatexParser:
                 inner_content, inner_end_pos = extract_nested_content(
                     content[end_pos - 1 :]
                 )
-                end_pos += inner_end_pos - 1
-                total_content += inner_content + "}"
+                if inner_content:
+                    end_pos += inner_end_pos - 1
+                    total_content += inner_content + "}"
 
             expanded = self._expand_command(total_content)
 
@@ -341,7 +349,9 @@ class LatexParser:
         tokens = [self._convert_bibitem_to_token(entry) for entry in entries]
         return {"type": "bibliography", "content": tokens}
 
-    def _check_handlers(self, content: str, tokens: List[Dict]) -> Tuple[bool, int]:
+    def _check_handlers(
+        self, content: str, tokens: List[Dict], start_pos: int = 0
+    ) -> Tuple[bool, int]:
         """Process content through available handlers.
 
         Returns:
@@ -397,12 +407,16 @@ class LatexParser:
                             token["content"] = self.parse(token["content"])
                             self.current_env = prev_env
 
-                    self.add_token(token, tokens)
+                    self.add_token(token, tokens, start_pos, start_pos + end_pos)
                 return True, end_pos
         return False, 0
 
     def _check_remaining_patterns(
-        self, content: str, tokens: List[Dict], line_break_delimiter: str = "\n"
+        self,
+        content: str,
+        tokens: List[Dict],
+        line_break_delimiter: str = "\n",
+        start_pos=0,
     ) -> Tuple[bool, int]:
         # Try each pattern
         for pattern_type, pattern in PATTERNS.items():
@@ -412,6 +426,7 @@ class LatexParser:
                 break
 
         if match:
+            end_pos = match.end()
             if matched_type == "label":
                 start_pos = match.end() - 1  # -1 to account for the label command '{'
                 label, end_pos = extract_nested_content(content[start_pos:])
@@ -419,16 +434,23 @@ class LatexParser:
                     self._handle_label(label, tokens)
                 return True, start_pos + end_pos
             elif matched_type == "newline" or matched_type == "break_spacing":
-                self.add_token(line_break_delimiter, tokens)
+                self.add_token(
+                    line_break_delimiter, tokens, start_pos, start_pos + end_pos
+                )
             elif matched_type == "line_continuation":
-                return True, match.end()
+                return True, end_pos
             else:
                 # For all other token types, expand any commands in their content
                 x = match.group(1) if match.groups() else match.group(0)
                 x = self._expand_command(x)
-                self.add_token({"type": matched_type, "content": x}, tokens)
+                self.add_token(
+                    {"type": matched_type, "content": x},
+                    tokens,
+                    start_pos,
+                    start_pos + end_pos,
+                )
 
-            return True, match.end()
+            return True, end_pos
 
         return False, 0
 
@@ -475,7 +497,9 @@ class LatexParser:
                     nested_tokens = self.parse(inner_content)
                     if nested_tokens:
                         for token in nested_tokens:
-                            self.add_token(token, tokens)
+                            self.add_token(
+                                token, tokens, current_pos, current_pos + end_pos
+                            )
                     current_pos += end_pos
                     continue
 
@@ -494,7 +518,7 @@ class LatexParser:
                 if text:
                     if handle_unknown_commands:
                         text = self._expand_command(text)
-                    self.add_token(text, tokens)
+                    self.add_token(text, tokens, current_pos, current_pos + next_pos)
                 current_pos += next_pos
                 if not next_delimiter:
                     break
@@ -551,14 +575,16 @@ class LatexParser:
                     continue
 
             # try each handler
-            matched, end_pos = self._check_handlers(content[current_pos:], tokens)
+            matched, end_pos = self._check_handlers(
+                content[current_pos:], tokens, current_pos
+            )
             current_pos += end_pos
             if matched:
                 continue
 
             # check remaining patterns
             matched, end_pos = self._check_remaining_patterns(
-                content[current_pos:], tokens, line_break_delimiter
+                content[current_pos:], tokens, line_break_delimiter, current_pos
             )
             current_pos += end_pos
             if matched:
@@ -569,7 +595,7 @@ class LatexParser:
                 token, end_pos = self._check_unknown_command(content[current_pos:])
                 current_pos += end_pos
                 if token:
-                    self.add_token(token, tokens)
+                    self.add_token(token, tokens, current_pos - end_pos, current_pos)
                     if token["type"] == "command":
                         cmd_name = token["command"]
                         if cmd_name not in self._unknown_commands:
@@ -590,7 +616,7 @@ class LatexParser:
                             )
                     continue
 
-            self.add_token(content[current_pos], tokens)
+            self.add_token(content[current_pos], tokens, current_pos, current_pos + 1)
             current_pos += 1
 
         return tokens
@@ -636,22 +662,34 @@ if __name__ == "__main__":
 
     logging.getLogger("asyncio").setLevel(logging.WARNING)
 
-    logger = setup_logger(__name__, level=logging.DEBUG, log_file="logs/tex_parser.log")
+    logger = setup_logger(__name__, level=logging.ERROR, log_file="logs/tex_parser.log")
 
     parser = LatexParser(logger=logger)
 
-    file = "papers/new/arXiv-2005.14165v4/main.tex"
-    # file = "papers/tested/arXiv-2301.10303v4.tex"
-    tokens = parser.parse_file(file)
+    # file = "papers/new/arXiv-2304.02643v1/segany.tex"
+    # # file = "papers/tested/arXiv-2301.10303v4.tex"
+    # tokens = parser.parse_file(file)
 
-#     text = r"""
-#         \newcommand{\@notice}{%
-#         % give a bit of extra room back to authors on first page
-#         \enlargethispage{2\baselineskip}%
-#         \@float{noticebox}[b]%
-#             \footnotesize\@noticestring%
-#         \end@float%
-#         }
-# """
-#     tokens = parser.parse(text)
-#     print(tokens)
+    text = r"""
+    \newcommand{\demph}[1]{\textcolor{demphcolor}{#1}}
+\newcommand{\mypm}[1]{{\scriptsize{{\demph{{\kern.4ex$\pm$\kern.1ex#1}}}}}}
+
+\begin{table}[t]\centering
+\resizebox{!}{19mm}{
+\tablestyle{4pt}{1.1}\begin{tabular}{@{}lcc@{}}
+{} & \multicolumn{2}{c}{mIoU at} \\
+{} & 1 point & 3 points \\
+\hline
+\multicolumn{3}{@{}l}{\emph{perceived gender presentation}} \\
+feminine & 54.4\mypm{1.7} & 90.4\mypm{0.6} \\
+masculine & 55.7\mypm{1.7} & 90.1\mypm{0.6} \\
+\hline
+\multicolumn{3}{@{}l}{\emph{perceived age group}} \\
+older & 62.9\mypm{6.7} & 92.6\mypm{1.3} \\
+middle & 54.5\mypm{1.3} & 90.2\mypm{0.5} \\
+young & 54.2\mypm{2.2} & 91.2\mypm{0.7} \\
+\end{tabular}}
+\end{table}
+"""
+    tokens = parser.parse(text)
+    # print(tokens)

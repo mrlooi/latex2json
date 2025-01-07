@@ -283,75 +283,20 @@ class TabularHandler(BaseEnvironmentHandler):
             )
 
             # then flatten it out to text form and pass it to parse_tabular
-            flattened_content, reference_map = flatten_tokens(processed_content)
+            flattened_content, reference_map = flatten_tokens(
+                inner_content, processed_content
+            )
+            print(processed_content)
+            print(flattened_content)
+            print(reference_map)
 
             def cell_parser_fn(content: str):
                 content = content.strip()
-                cells = []
-                current_pos = 0
-
                 # check if content even has any references
-                has_references = False
                 for ref_key in reference_map:
-                    if ref_key in content:
-                        has_references = True
-                        break
+                    content = content.replace(ref_key, reference_map[ref_key])
 
-                if not has_references:
-                    return self._parse_cell(content)
-
-                def parse_and_add_to_cell(text: str):
-                    if text:
-                        parsed_content = self._parse_cell(text)
-                        if parsed_content:
-                            if isinstance(parsed_content, str):
-                                cells.append(
-                                    {"type": "text", "content": parsed_content}
-                                )
-                            else:
-                                cells.extend(parsed_content)
-
-                while current_pos < len(content):
-                    # Look for the next reference key
-                    next_ref = None
-                    next_ref_pos = len(content)
-
-                    # Find the earliest occurring reference key
-                    for ref_key in reference_map:
-                        pos = content.find(ref_key, current_pos)
-                        if pos != -1 and pos < next_ref_pos:
-                            next_ref = ref_key
-                            next_ref_pos = pos
-
-                    # Handle text before the reference key
-                    if next_ref_pos > current_pos:
-                        text_before = content[current_pos:next_ref_pos].strip()
-                        if text_before:  # Only parse if there's actual text before
-                            parse_and_add_to_cell(text_before)
-
-                    # Handle the reference key if found
-                    if next_ref:
-                        cells.append(reference_map[next_ref])
-                        current_pos = next_ref_pos + len(next_ref)
-
-                        # Handle any text after the reference until the next reference or end
-                        next_ref_start = len(content)
-                        for ref_key in reference_map:
-                            pos = content.find(ref_key, current_pos)
-                            if pos != -1 and pos < next_ref_start:
-                                next_ref_start = pos
-
-                        if current_pos < next_ref_start:
-                            text_after = content[current_pos:next_ref_start].strip()
-                            if text_after:
-                                parse_and_add_to_cell(text_after)
-                            current_pos = next_ref_start
-                    else:
-                        # No more references found, handle remaining content
-                        remaining = content[current_pos:].strip()
-                        if remaining:
-                            parse_and_add_to_cell(remaining)
-                        break
+                cells = self._parse_cell(content)
 
                 if cells:
                     return cells
