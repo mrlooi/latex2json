@@ -48,7 +48,9 @@ class TokenBuilder:
             or next_content.startswith(" ")
         )
 
-    def _update_section_numbering(self, token, reset_lower_levels=False):
+    def _update_section_numbering(
+        self, token, reset_lower_levels=False, in_appendix=False
+    ):
         """Handle section numbering logic in a centralized way"""
         if not token.get("numbered", True):
             return
@@ -57,17 +59,22 @@ class TokenBuilder:
 
         # Reset lower level counters if needed
         if reset_lower_levels:
-            for l in range(2, max(self.section_numbers.keys()) + 1):
+            for l in range(level + 1, max(self.section_numbers.keys()) + 1):
                 self.section_numbers[l] = 0
-            # Reset math environment counter when section changes
-            if level == 1:
-                self.math_env_number = 0
 
         # Increment current level counter
         self.section_numbers[level] += 1
 
         # Build section number string
-        number_parts = [str(self.section_numbers[l]) for l in range(1, level + 1)]
+        # First number is a letter if in appendix i.e. 1->A, 2->B, etc.
+        first_num = (
+            chr(64 + self.section_numbers[1])
+            if in_appendix
+            else str(self.section_numbers[1])
+        )
+        number_parts = [first_num] + [
+            str(self.section_numbers[l]) for l in range(2, level + 1)
+        ]
         token["numbering"] = ".".join(number_parts)
 
     def _update_equation_numbering(self, token):
@@ -200,42 +207,68 @@ class TokenBuilder:
             elif token["type"] == "figure":
                 self._update_figure_env_numbering(token)
 
-    def _recursive_organize(self, tokens):
+    def _recursive_organize(self, tokens, in_appendix=False):
         organized = []
         section_stack = []
         paragraph_stack = []
+        root = organized  # Default root for content
 
-        def append_to_section_or_paragraph(token):
-            target = (
-                paragraph_stack[-1]["content"]
-                if paragraph_stack
-                else (section_stack[-1]["content"] if section_stack else organized)
-            )
-            target.append(token)
+        def get_current_target():
+            if paragraph_stack:
+                return paragraph_stack[-1]["content"]
+            if section_stack:
+                return section_stack[-1]["content"]
+            return root
 
         for token in tokens:
-            if isinstance(token, dict):
-                self._check_update_numbering(token)
+            if not isinstance(token, dict):
+                get_current_target().append(token)
+                continue
 
-                # Recursively organize content if content is a list
-                if isinstance(token.get("content"), list):
-                    token["content"] = self._recursive_organize(token["content"])
-
-                # Clear section stacks/numbering if appendix and bibliography detected
-                if token["type"] == "appendix" or token["type"] == "bibliography":
-                    section_stack.clear()
-                    paragraph_stack.clear()
-                    organized.append(token)
-                elif token["type"] == "section":
-                    paragraph_stack.clear()
-                    self._update_section_numbering(token, reset_lower_levels=True)
-                    self._manage_stack(token, section_stack, organized)
-                elif token["type"] == "paragraph":
-                    self._manage_stack(token, paragraph_stack, organized, section_stack)
+            # Handle appendix declaration
+            # if \begin{appendices}, then content is the content inside the appendices env
+            if token["type"] == "appendix":
+                in_appendix = True
+                if not token.get("content"):
+                    token["content"] = []
                 else:
-                    append_to_section_or_paragraph(token)
+                    token["content"] = self._recursive_organize(token["content"], True)
+                root = token["content"]  # Switch root to appendix content
+                section_stack.clear()
+                paragraph_stack.clear()
+                organized.append(token)
+                # reset section numbers since appendix
+                self.section_numbers = {1: 0, 2: 0, 3: 0}
+                continue
+
+            # Handle token numbering
+            self._check_update_numbering(token)
+
+            # Recursively process nested content
+            if isinstance(token.get("content"), list):
+                token["content"] = self._recursive_organize(
+                    token["content"], in_appendix
+                )
+
+            # Handle special token types
+            if token["type"] == "bibliography":
+                section_stack.clear()
+                paragraph_stack.clear()
+                organized.append(token)
+            elif token["type"] == "section":
+                paragraph_stack.clear()
+                self._update_section_numbering(
+                    token, reset_lower_levels=True, in_appendix=in_appendix
+                )
+                # Reset math environment counter when section changes
+                if token.get("level") == 1:
+                    self.math_env_number = 0
+
+                self._manage_stack(token, section_stack, root)
+            elif token["type"] == "paragraph":
+                self._manage_stack(token, paragraph_stack, root, section_stack)
             else:
-                append_to_section_or_paragraph(token)
+                get_current_target().append(token)
 
         return organized
 
@@ -286,9 +319,15 @@ if __name__ == "__main__":
     parser = LatexParser(logger)
     token_builder = TokenBuilder(logger=logger)
 
-    file = "papers/new/arXiv-2005.14165v4/main.tex"
-    tokens = parser.parse_file(file)
+    # file = "papers/new/arXiv-2005.14165v4/main.tex"
+    # tokens = parser.parse_file(file)
 
-    # organized_tokens = token_builder.organize_content(tokens)
+    text = r"""
+    \section{Section}
+        \subsection{Sub section 1}
+        \subsection{Sub section 2}
+    """
+    tokens = parser.parse(text)
 
     output = token_builder.build(tokens)
+    print(output)

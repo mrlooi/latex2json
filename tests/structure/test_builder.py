@@ -49,6 +49,11 @@ def latex_text():
             Theorem 2
         \end{theorem*}
 
+        \subsection{Last sub section}
+
+            \subsubsection{S3}
+            \subsubsection{S4}
+
     \section{Conclusion}
         TLDR: Best paper
 
@@ -73,11 +78,13 @@ def latex_text():
 
     \appendix
 
-    \section{Appendix}
-        My appendix
+    \section{My Appendix Section}
+        Here goes my appendix...
     
-    \subsubsection{Abt appendix}
-    Yea this appendix is nice
+        \subsection{Sub appendix 1}
+        Yea this appendix is nice
+
+        \subsection{Sub appendix 2}
 
     \begin{thebibliography}{99}
     \bibitem[Title]{bibkey1} Some content \tt cool
@@ -211,6 +218,31 @@ def expected_organizer_output():
                                 },
                             ],
                         },
+                        {
+                            "type": "section",
+                            "title": [{"type": "text", "content": "Last sub section"}],
+                            "level": 2,
+                            "numbered": True,
+                            "numbering": "1.2",
+                            "content": [
+                                {
+                                    "type": "section",
+                                    "title": [{"type": "text", "content": "S3"}],
+                                    "level": 3,
+                                    "numbered": True,
+                                    "numbering": "1.2.1",
+                                    "content": [],
+                                },
+                                {
+                                    "type": "section",
+                                    "title": [{"type": "text", "content": "S4"}],
+                                    "level": 3,
+                                    "numbered": True,
+                                    "numbering": "1.2.2",
+                                    "content": [],
+                                },
+                            ],
+                        },
                     ],
                 },
                 {
@@ -275,23 +307,44 @@ def expected_organizer_output():
                         },
                     ],
                 },
-                {"type": "appendix"},
                 {
-                    "type": "section",
-                    "title": [{"type": "text", "content": "Appendix"}],
-                    "level": 1,
-                    "numbering": "3",
-                    "numbered": True,
+                    "type": "appendix",
                     "content": [
-                        {"type": "text", "content": "My appendix"},
                         {
                             "type": "section",
-                            "title": [{"type": "text", "content": "Abt appendix"}],
-                            "level": 3,
-                            "numbering": "3.0.1",
+                            "title": [
+                                {"type": "text", "content": "My Appendix Section"}
+                            ],
+                            "level": 1,
+                            "numbering": "A",
                             "numbered": True,
                             "content": [
-                                {"type": "text", "content": "Yea this appendix is nice"}
+                                {"type": "text", "content": "Here goes my appendix..."},
+                                {
+                                    "type": "section",
+                                    "title": [
+                                        {"type": "text", "content": "Sub appendix 1"}
+                                    ],
+                                    "level": 2,
+                                    "numbering": "A.1",
+                                    "numbered": True,
+                                    "content": [
+                                        {
+                                            "type": "text",
+                                            "content": "Yea this appendix is nice",
+                                        }
+                                    ],
+                                },
+                                {
+                                    "type": "section",
+                                    "title": [
+                                        {"type": "text", "content": "Sub appendix 2"}
+                                    ],
+                                    "level": 2,
+                                    "numbering": "A.2",
+                                    "numbered": True,
+                                    "content": [],
+                                },
                             ],
                         },
                     ],
@@ -321,13 +374,17 @@ def expected_organizer_output():
     ]
 
 
-def strip_content_str(content):
+def strip_content_str(content, omit_fields=[]):
     """Helper function to remove newline characters from the content."""
     if isinstance(content, list):
-        return [strip_content_str(item) for item in content]
-    if isinstance(content, dict):
-        return {k: strip_content_str(v) for k, v in content.items()}
-    if isinstance(content, str):
+        return [strip_content_str(item, omit_fields) for item in content]
+    elif isinstance(content, dict):
+        return {
+            k: strip_content_str(v, omit_fields)
+            for k, v in content.items()
+            if k not in omit_fields
+        }
+    elif isinstance(content, str):
         return content.replace("\n", "").strip()
     return content
 
@@ -340,6 +397,42 @@ def test_organize_content(latex_parser, latex_text, expected_organizer_output):
     # Normalize both the organized tokens and expected output
     normalized_organized = strip_content_str(organized_tokens)
     normalized_expected = strip_content_str(expected_organizer_output)
+
+    assert normalized_organized == normalized_expected
+
+
+def test_organize_appendix(latex_parser):
+    latex_text = r"""
+    \begin{appendices}
+    \section{Appendix}
+        Here goes my appendix...
+    \end{appendices}
+    """
+
+    expected = [
+        {
+            "type": "appendix",
+            "content": [
+                {
+                    "type": "section",
+                    "title": [{"type": "text", "content": "Appendix"}],
+                    "level": 1,
+                    "numbering": "A",
+                    "numbered": True,
+                    "content": [
+                        {"type": "text", "content": "Here goes my appendix..."}
+                    ],
+                }
+            ],
+        }
+    ]
+
+    tokens = latex_parser.parse(latex_text)
+    token_builder = TokenBuilder()
+    organized_tokens = token_builder.organize_content(tokens)
+
+    normalized_organized = strip_content_str(organized_tokens, omit_fields=["name"])
+    normalized_expected = strip_content_str(expected)
 
     assert normalized_organized == normalized_expected
 
