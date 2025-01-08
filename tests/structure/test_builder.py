@@ -406,6 +406,10 @@ def test_organize_appendix(latex_parser):
     \begin{appendices}
     \section{Appendix}
         Here goes my appendix...
+        \subsection{Sub appendix 1}
+        \subsection{Sub appendix 2}
+        \subsubsection{Sub sub appendix 3}
+        \subsubsection*{Sub sub appendix 4}
     \end{appendices}
     """
 
@@ -420,7 +424,49 @@ def test_organize_appendix(latex_parser):
                     "numbering": "A",
                     "numbered": True,
                     "content": [
-                        {"type": "text", "content": "Here goes my appendix..."}
+                        {"type": "text", "content": "Here goes my appendix..."},
+                        {
+                            "type": "section",
+                            "title": [{"type": "text", "content": "Sub appendix 1"}],
+                            "level": 2,
+                            "numbering": "A.1",
+                            "numbered": True,
+                            "content": [],
+                        },
+                        {
+                            "type": "section",
+                            "title": [{"type": "text", "content": "Sub appendix 2"}],
+                            "level": 2,
+                            "numbering": "A.2",
+                            "numbered": True,
+                            "content": [
+                                {
+                                    "type": "section",
+                                    "title": [
+                                        {
+                                            "type": "text",
+                                            "content": "Sub sub appendix 3",
+                                        }
+                                    ],
+                                    "level": 3,
+                                    "numbering": "A.2.1",
+                                    "numbered": True,
+                                    "content": [],
+                                },
+                                {
+                                    "type": "section",
+                                    "title": [
+                                        {
+                                            "type": "text",
+                                            "content": "Sub sub appendix 4",
+                                        }
+                                    ],
+                                    "level": 3,
+                                    "numbered": False,
+                                    "content": [],
+                                },
+                            ],
+                        },
                     ],
                 }
             ],
