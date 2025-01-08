@@ -197,12 +197,11 @@ class BaseEnvironmentHandler(TokenHandler):
         env_type = get_env_type(env_name)
         token["type"] = env_type
 
-        if not contains_asterisk:
-            # ignore numbering of subfigures/tables?
-            if env_type == "math_env":
-                token["numbered"] = True
-            elif env_type in ["table", "figure"] and not env_name.startswith("sub"):
-                token["numbered"] = True
+        # ignore numbering of subfigures/tables?
+        if env_type == "math_env" and not contains_asterisk:
+            token["numbered"] = True
+        elif env_type in ["table", "figure"] and not env_name.startswith("sub"):
+            token["numbered"] = True
 
         # Extract title if present (text within square brackets after environment name)
         opt_found = False
