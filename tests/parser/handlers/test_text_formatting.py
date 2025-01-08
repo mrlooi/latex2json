@@ -207,3 +207,14 @@ def test_color(handler):
     token, pos = handler.handle(text)
     assert token["content"] == "This text s"
     assert text[pos:] == " POST"
+
+
+def test_columns(handler):
+    text = r"\onecolumn POST"
+    token, pos = handler.handle(text)
+    assert text[pos:] == " POST"
+
+    text = r"\twocolumn[This text s] POST"
+    token, pos = handler.handle(text)
+    assert token["content"] == "This text s"
+    assert text[pos:] == " POST"

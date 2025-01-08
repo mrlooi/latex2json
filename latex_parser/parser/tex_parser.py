@@ -153,7 +153,7 @@ class LatexParser:
             else:
                 self.add_token({"type": "label", "content": content}, tokens)
 
-    def add_token(self, token: str | Dict, tokens: List[Dict]):
+    def add_token(self, token: str | Dict | List[Dict], tokens: List[Dict]):
         # uncomment this if we want to merge self.current_str whitespaces
         # if self.current_str:
         #     if tokens and tokens[-1].get('type') == 'text':

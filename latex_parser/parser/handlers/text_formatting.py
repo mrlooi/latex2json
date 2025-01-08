@@ -80,6 +80,7 @@ PATTERNS = {
     "selectfont": re.compile(r"\\selectfont\b"),
     "usefont": re.compile(r"\\usefont" + (r"\s*" + BRACE_CONTENT_PATTERN) * 4),
     "color": re.compile(r"\\textcolor\s*{"),
+    "columns": re.compile(r"\\(?:onecolumn\b|twocolumn\s*\[?)"),
 }
 
 
@@ -240,6 +241,30 @@ class TextFormattingHandler(TokenHandler):
             text = blocks[1]
         return {"type": "text", "content": text}, start_pos + end_pos
 
+    def _handle_columns(self, content: str, match: re.Match) -> Tuple[str, int]:
+        match_str = match.group(0)
+
+        total_pos = match.end()
+        if match_str.endswith("["):
+            start_pos = match.end() - 1
+            total_pos = start_pos
+            extracted_content, end_pos = extract_nested_content(
+                content[start_pos:], "[", "]"
+            )
+            if end_pos > 0:
+                total_pos = start_pos + end_pos
+                if self.process_content_fn:
+                    return {
+                        "type": "group",
+                        "content": self.process_content_fn(extracted_content),
+                    }, total_pos
+                return {
+                    "type": "text",
+                    "content": extracted_content,
+                }, total_pos
+
+        return None, total_pos
+
     def handle(
         self, content: str, prev_token: Optional[Dict] = None
     ) -> Tuple[str, int]:
@@ -257,6 +282,8 @@ class TextFormattingHandler(TokenHandler):
                 return self._handle_box(content, match)
             elif name == "color":
                 return self._handle_color(content, match)
+            elif name == "columns":
+                return self._handle_columns(content, match)
             else:
                 return None, match.end()
 

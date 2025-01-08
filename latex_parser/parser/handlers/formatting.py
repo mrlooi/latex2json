@@ -161,7 +161,6 @@ RAW_PATTERNS = OrderedDict(
             "newcolumntype",
             r"\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}(?:\s*\[\d+\])?\s*{",
         ),
-        ("columns", r"\\(?:onecolumn|twocolumn|threecolumn)\b"),
         # separators
         ("itemsep", r"\\itemsep\s*(=\s*)?-?\d*\.?\d+\w+?\b"),
         (
