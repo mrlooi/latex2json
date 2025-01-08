@@ -298,60 +298,62 @@ class TabularHandler(BaseEnvironmentHandler):
                         break
 
                 if not has_references:
-                    return self._parse_cell(content)
-
-                def parse_and_add_to_cell(text: str):
-                    if text:
-                        parsed_content = self._parse_cell(text)
-                        if parsed_content:
-                            if isinstance(parsed_content, str):
-                                cells.append(
-                                    {"type": "text", "content": parsed_content}
-                                )
-                            else:
-                                cells.extend(parsed_content)
-
-                while current_pos < len(content):
-                    # Look for the next reference key
-                    next_ref = None
-                    next_ref_pos = len(content)
-
-                    # Find the earliest occurring reference key
-                    for ref_key in reference_map:
-                        pos = content.find(ref_key, current_pos)
-                        if pos != -1 and pos < next_ref_pos:
-                            next_ref = ref_key
-                            next_ref_pos = pos
-
-                    # Handle text before the reference key
-                    if next_ref_pos > current_pos:
-                        text_before = content[current_pos:next_ref_pos].strip()
-                        if text_before:  # Only parse if there's actual text before
-                            parse_and_add_to_cell(text_before)
-
-                    # Handle the reference key if found
-                    if next_ref:
-                        cells.append(reference_map[next_ref])
-                        current_pos = next_ref_pos + len(next_ref)
-
-                        # Handle any text after the reference until the next reference or end
-                        next_ref_start = len(content)
-                        for ref_key in reference_map:
-                            pos = content.find(ref_key, current_pos)
-                            if pos != -1 and pos < next_ref_start:
-                                next_ref_start = pos
-
-                        if current_pos < next_ref_start:
-                            text_after = content[current_pos:next_ref_start].strip()
-                            if text_after:
-                                parse_and_add_to_cell(text_after)
-                            current_pos = next_ref_start
+                    cells = self._parse_cell(content)
+                else:
+                    if self.cell_parser_fn:
+                        cells = self.cell_parser_fn(content)
                     else:
-                        # No more references found, handle remaining content
-                        remaining = content[current_pos:].strip()
-                        if remaining:
-                            parse_and_add_to_cell(remaining)
-                        break
+                        cells = [{"type": "text", "content": content}]
+
+                    out_cells = []
+                    for cell in cells:
+                        if isinstance(cell, dict) and cell.get("type") == "text":
+                            # fetch the references in text content and replace it with the reference content token(s) chunks
+                            # e.g. {type: "text", content: "hello `|REF_1|` world `|REF_2|`", styles: ["bold"]}
+                            # becomes {type: "text", content: "hello "}, REF_1 token, {type: "text", content: " world "}, REF_2 token
+                            # and all these token chunks maintain the same styles as original
+                            content = cell["content"]
+                            styles = cell.get("styles", [])
+                            chunks: List[Dict] = []
+                            current_pos = 0
+
+                            for ref_key in reference_map:
+                                # only one occurence of each reference key and in order
+                                if ref_key in content[current_pos:]:
+                                    # Find next reference position
+                                    ref_pos = content.find(ref_key, current_pos)
+
+                                    # Add text before reference if any
+                                    if ref_pos > current_pos:
+                                        text_chunk = {
+                                            "type": "text",
+                                            "content": content[current_pos:ref_pos],
+                                        }
+                                        chunks.append(text_chunk)
+
+                                    # Add reference token
+                                    ref_token = reference_map[ref_key].copy()
+                                    chunks.append(ref_token)
+
+                                    current_pos = ref_pos + len(ref_key)
+
+                            # Add remaining text if any
+                            if current_pos < len(content):
+                                text_chunk = {
+                                    "type": "text",
+                                    "content": content[current_pos:],
+                                }
+                                chunks.append(text_chunk)
+
+                            # now add style if exists
+                            if styles:
+                                for chunk in chunks:
+                                    cur_styles = chunk.get("styles", [])
+                                    chunk["styles"] = list(set(styles + cur_styles))
+                            out_cells.extend(chunks)
+                        else:
+                            out_cells.append(cell)
+                    cells = out_cells
 
                 if cells:
                     return cells

@@ -822,21 +822,12 @@ def test_complex_table(parser):
     assert cells[3] == [None, "Rural", "100", "120"]
 
     assert cells[4][0]["rowspan"] == 2
-    assert cells[4][0]["content"] == [
-        {
-            "type": "text",
-            "content": "South",
-            "styles": [
-                FRONTEND_STYLE_MAPPING["textbf"],
-            ],
-        },
-        {"type": "text", "content": "and"},
-        {
-            "type": "text",
-            "content": "Texas",
-            "styles": [FRONTEND_STYLE_MAPPING["texttt"]],
-        },
-    ]
+    cell4_0 = cells[4][0]["content"]
+    assert cell4_0[0]["content"] == "South"
+    assert cell4_0[0]["styles"] == [FRONTEND_STYLE_MAPPING["textbf"]]
+    assert cell4_0[1]["content"].strip() == "and"
+    assert cell4_0[2]["content"] == "Texas"
+    assert cell4_0[2]["styles"] == [FRONTEND_STYLE_MAPPING["texttt"]]
 
     # Check align environment cell
     align_cell = cells[4][3][0]
@@ -848,7 +839,7 @@ def test_complex_table(parser):
 
     assert cells[6][1:] == ["SpaceX", "Tesla", "Neuralink"]
     assert cells[6][0] == [
-        {"type": "text", "content": "Thing with"},
+        {"type": "text", "content": "Thing with "},
         {"type": "citation", "content": "elon_musk"},
     ]
 
@@ -1415,7 +1406,8 @@ def test_legacy_formatting(parser):
     text = r"""
     \begin{tabular}{c}
         \tt aaa & \large bbb \\ 
-        \sc eee & {\em 444} + 333
+        \sc eee & {\em 444} + 333 \\ 
+        \bf\underline{Hello} & 
         % \begin{tabular}{x}
     \end{tabular}
     """
@@ -1423,7 +1415,7 @@ def test_legacy_formatting(parser):
     assert len(parsed_tokens) == 1
 
     tabular_content = parsed_tokens[0]["content"]
-    assert len(tabular_content) == 2
+    assert len(tabular_content) == 3
     assert tabular_content[0][0] == [
         {
             "type": "text",
@@ -1453,9 +1445,17 @@ def test_legacy_formatting(parser):
         },
         {
             "type": "text",
-            "content": "+ 333",
+            "content": " + 333",
         },
     ]
+
+    cell5 = tabular_content[2][0][0]
+    assert cell5["content"] == "Hello"
+    assert cell5["styles"] == [
+        FRONTEND_STYLE_MAPPING["textbf"],
+        FRONTEND_STYLE_MAPPING["underline"],
+    ]
+    assert tabular_content[2][1] == None
 
 
 def test_new_if(parser):

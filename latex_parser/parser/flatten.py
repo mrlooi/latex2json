@@ -2,9 +2,9 @@ from typing import List, Dict
 from collections import OrderedDict
 
 
-def flatten_tokens(tokens: str | List[Dict[str, str]]) -> tuple[str, dict]:
+def flatten_tokens(tokens: str | List[Dict]) -> tuple[str, OrderedDict[str, Dict]]:
     flattened_content = ""
-    reference_map = OrderedDict()
+    reference_map = OrderedDict[str, Dict]()
     ref_counter = 1
 
     if isinstance(tokens, str):
@@ -19,10 +19,10 @@ def flatten_tokens(tokens: str | List[Dict[str, str]]) -> tuple[str, dict]:
             flattened_content += token["content"]
         else:
             # Create a reference key and store token in map
-            ref_key = "{REF_" + str(ref_counter) + "}"
-            reference_map[ref_key] = token
+            ref_key = "`|REF_%s|`" % ref_counter
+            reference_map[ref_key] = token.copy()
             # Add reference placeholder to flattened content
-            flattened_content += ref_key
+            flattened_content += ref_key + " "
             ref_counter += 1
 
     return flattened_content, reference_map

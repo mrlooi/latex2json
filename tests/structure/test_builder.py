@@ -346,6 +346,10 @@ def test_organize_content(latex_parser, latex_text, expected_organizer_output):
 
 def test_builder_output_json(latex_parser, latex_text, expected_organizer_output):
     import json
+    import warnings
+
+    # Suppress pydanticserialization warnings
+    warnings.filterwarnings("ignore")
 
     tokens = latex_parser.parse(latex_text)
     token_builder = TokenBuilder()

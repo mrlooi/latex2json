@@ -132,8 +132,8 @@ def test_tabular_with_empty_cells(handler):
     # stripped out start/end empty rows
     assert len(token["content"]) == 2
 
-    assert token["content"][0] == ["a", "", "c"]
-    assert token["content"][1] == ["", "b", ""]
+    assert token["content"][0] == ["a", None, "c"]
+    assert token["content"][1] == [None, "b", None]
 
 
 def test_can_handle_method(handler):
