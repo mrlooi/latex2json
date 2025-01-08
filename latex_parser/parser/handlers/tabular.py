@@ -349,7 +349,10 @@ class TabularHandler(BaseEnvironmentHandler):
                             if styles:
                                 for chunk in chunks:
                                     cur_styles = chunk.get("styles", [])
-                                    chunk["styles"] = list(set(styles + cur_styles))
+                                    # Preserve order while removing duplicates
+                                    chunk["styles"] = list(
+                                        dict.fromkeys(styles + cur_styles)
+                                    )
                             out_cells.extend(chunks)
                         else:
                             out_cells.append(cell)
