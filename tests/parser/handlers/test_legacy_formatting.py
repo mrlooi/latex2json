@@ -148,3 +148,10 @@ def test_nested_cases(handler):
     assert out.replace(" ", "").endswith("helloworld}")
 
     assert text[end_pos:].strip() == r"\huge HUGE"
+
+
+def test_trailing_legacy_format_patterns(handler):
+    # make sure the \large is not captured inside the \bf
+    text = r"\bf 1+1 \large\tt 2+2"
+    out, end_pos = handler.handle(text)
+    assert out + text[end_pos:] == r"\textbf{1+1} \large\tt 2+2"

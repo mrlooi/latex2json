@@ -110,6 +110,8 @@ class LegacyFormattingHandler(TokenHandler):
                     text, end_pos = extract_nested_content("{" + content[next_pos:])
                     content_to_format = text.strip()
                     total_pos = next_pos + end_pos - 1
+                    formatted_text = "\%s{%s}" % (modern_command, content_to_format)
+                    return formatted_text, total_pos
                 else:
                     # Handle cases like
                     # \tt ... {...} ... }  # up to the closing brace
@@ -159,9 +161,31 @@ class LegacyFormattingHandler(TokenHandler):
 
                     content_to_format = next_content[:end_pos]
                     total_pos = next_pos + end_pos
+                    formatted_text = "\%s{%s}" % (modern_command, content_to_format)
 
-                formatted_text = "\%s{%s}" % (modern_command, content_to_format)
-                return formatted_text, total_pos
+                    # check if content_to_format contains any of other legacy format patterns at the END
+                    modified_content = content_to_format.rstrip()
+                    if modified_content:
+                        # if we detect a legacy pattern at the end, we need to remove from content_to_format, and add to end of formatted_text instead
+                        trailing_patterns = []
+
+                        for pattern in LEGACY_FORMAT_MAPPING.keys():
+                            if modified_content.endswith("\\" + pattern):
+                                # Remove the pattern from the content
+                                modified_content = modified_content[
+                                    : -len("\\" + pattern)
+                                ].rstrip()
+                                trailing_patterns.append("\\" + pattern)
+
+                        if trailing_patterns:
+                            # Update content and formatting if we found trailing patterns
+                            formatted_text = "\%s{%s} %s" % (
+                                modern_command,
+                                modified_content,
+                                " ".join(reversed(trailing_patterns)),
+                            )
+
+                    return formatted_text, total_pos
 
         return None, 0
 
