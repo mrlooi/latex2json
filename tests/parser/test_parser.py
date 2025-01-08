@@ -1407,7 +1407,7 @@ def test_legacy_formatting(parser):
     \begin{tabular}{c}
         \tt aaa & \large bbb \\ 
         \sc eee & {\em 444} + 333 \\ 
-        \bf\underline{Hello} & 
+        \bf\underline{Hello} 55 & 
         % \begin{tabular}{x}
     \end{tabular}
     """
@@ -1449,12 +1449,15 @@ def test_legacy_formatting(parser):
         },
     ]
 
-    cell5 = tabular_content[2][0][0]
-    assert cell5["content"] == "Hello"
-    assert cell5["styles"] == [
+    cell5_0 = tabular_content[2][0][0]
+    assert cell5_0["content"] == "Hello"
+    assert cell5_0["styles"] == [
         FRONTEND_STYLE_MAPPING["textbf"],
         FRONTEND_STYLE_MAPPING["underline"],
     ]
+    cell5_1 = tabular_content[2][0][1]
+    assert cell5_1["content"].strip() == "55"
+    assert cell5_1["styles"] == [FRONTEND_STYLE_MAPPING["textbf"]]
     assert tabular_content[2][1] == None
 
 

@@ -160,7 +160,7 @@ class LegacyFormattingHandler(TokenHandler):
                     content_to_format = next_content[:end_pos]
                     total_pos = next_pos + end_pos
 
-                formatted_text = rf"\{modern_command}" + "{" + content_to_format + "}"
+                formatted_text = "\%s{%s}" % (modern_command, content_to_format)
                 return formatted_text, total_pos
 
         return None, 0
