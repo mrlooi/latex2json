@@ -235,11 +235,12 @@ class TextFormattingHandler(TokenHandler):
             content[start_pos:], max_blocks=2
         )
         text = ""
+        total_pos = start_pos + end_pos
         if len(blocks) == 2:
-            # TODO: Color?
-            color = blocks[0]
+            color = "color=" + blocks[0].strip()
             text = blocks[1]
-        return {"type": "text", "content": text}, start_pos + end_pos
+            return {"type": "text", "content": text, "styles": [color]}, total_pos
+        return {"type": "text", "content": text}, total_pos
 
     def _handle_columns(self, content: str, match: re.Match) -> Tuple[str, int]:
         match_str = match.group(0)

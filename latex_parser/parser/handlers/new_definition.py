@@ -84,6 +84,7 @@ PATTERNS = {
         r"\\DeclarePairedDelimiter\s*(?:{\\([^\s{}]+)}|\\([^\s{]+))\s*{",
         re.DOTALL,
     ),
+    "definecolor": re.compile(r"\\definecolor\s*{"),
 }
 
 
@@ -143,6 +144,8 @@ class NewDefinitionHandler(TokenHandler):
                     )
                 elif pattern_name == "@namedef":
                     return self._handle_namedef(content, match)
+                elif pattern_name == "definecolor":
+                    return self._handle_definecolor(content, match)
                 elif pattern_name == "newtheorem":
                     return self._handle_newtheorem(match)
                 elif pattern_name == "crefname":
@@ -499,6 +502,28 @@ class NewDefinitionHandler(TokenHandler):
             "name": cmd_name,
             "left_delim": left_delim,
             "right_delim": right_delim,
+        }
+
+        return token, start_pos + end_pos
+
+    def _handle_definecolor(self, content: str, match) -> Tuple[Optional[Dict], int]:
+        r"""Handle \definecolor definitions"""
+        start_pos = match.end() - 1  # -1 to go back {
+        # 3 blocks: name, format, value e.g. \definecolor{linkcolor}{HTML}{ED1C24}
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "{", "}", max_blocks=3
+        )
+        if len(blocks) != 3:
+            return None, start_pos
+        name = blocks[0]
+        format = blocks[1]
+        value = blocks[2]
+
+        token = {
+            "type": "definecolor",
+            "name": name,
+            "format": format,
+            "value": value,
         }
 
         return token, start_pos + end_pos

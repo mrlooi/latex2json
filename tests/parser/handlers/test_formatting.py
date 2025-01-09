@@ -93,30 +93,11 @@ def test_handle_invalid_input(handler):
 
 def test_handle_color_commands(handler):
     color_text = r"""
-% 1. Basic color commands
-\color{red}                    % Change text color
-% \textcolor{blue}{text}        % Color specific text
-
-% 2. Color definitions
-\definecolor{customred}{RGB}{255,0,0}
-\definecolor{customblue}{rgb}{0,0,1}        % rgb format
-\definecolor{custompink}{HTML}{FF00FF}      % hex format
-\definecolor{customgray}{gray}{0.5}         % grayscale
-\definecolor{customcolor}{cmyk}{0,1,0,0}    % cmyk format
-
-% 3. Color packages and their commands
+% 1. Color packages and their commands
 % xcolor package adds these:
 \rowcolor{gray}               % Table row color
 \columncolor{blue}            % Table column color
 \cellcolor{red}               % Single cell color
-
-% 4. Background color commands
-\pagecolor{lightgray}         % Page background
-\normalcolor                  % Reset to default color
-
-% 5. Color mixing commands (from xcolor)
-\color{red!50!blue}          % Mix red and blue 50-50
-\color{blue!20}              % 20% blue, 80% white
 """
 
     lines = color_text.strip().split("\n")
@@ -285,7 +266,7 @@ def test_misc_formatting_commands(handler):
     \linespread{1.5}
     \raise.17ex
     \setlist[enumerate]{itemsep=-0.5mm,partopsep=0pt}
-
+    \pagecolor{lightgray}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

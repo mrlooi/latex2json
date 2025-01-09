@@ -205,6 +205,7 @@ def test_ignore_custom_fonts(handler):
 def test_color(handler):
     text = r"\textcolor{red}{This text s} POST"
     token, pos = handler.handle(text)
+    assert token["styles"] == ["color=red"]
     assert token["content"] == "This text s"
     assert text[pos:] == " POST"
 

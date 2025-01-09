@@ -537,5 +537,15 @@ def test_paired_delimiter(handler):
     assert content[pos:] == " POST"
 
 
+def test_definecolor(handler):
+    content = r"\definecolor{linkcolor}{HTML}{ED1C24} POST"
+    token, pos = handler.handle(content)
+    assert token["type"] == "definecolor"
+    assert token["name"] == "linkcolor"
+    assert token["format"] == "HTML"
+    assert token["value"] == "ED1C24"
+    assert content[pos:] == " POST"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

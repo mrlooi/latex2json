@@ -11,23 +11,10 @@ from latex_parser.utils.tex_utils import (
 import decimal
 
 
-DEFINE_COLOR_PATTERN = re.compile(
-    r"""
-    \\definecolor\*?        # \definecolor command
-    {[^}]*}                # color name in braces
-    {[^}]*}  # color model eg RGB, rgb, HTML, gray, cmyk
-    {[^}]*}                # color values
-    """,
-    re.VERBOSE,
-)
-COLOR_COMMANDS_PATTERN = re.compile(
+COLOR_CELLS_PATTERN = re.compile(
     r"""
     \\(?:
-        color\*?{[^}]*}                      # \color{..}
-        |(?:row|column|cell)color\*?{[^}]*}   # \rowcolor, \columncolor, \cellcolor
-        |pagecolor\*?{[^}]*}                  # \pagecolor{..}
-        |normalcolor                          # \normalcolor
-        |color\s*{[^}]*![^}]*}                  # color mixing like \color{red!50!blue}
+        (?:row|column|cell)color\*?{[^}]*}   # \rowcolor, \columncolor, \cellcolor
     )
     """,
     re.VERBOSE,
@@ -71,7 +58,7 @@ RAW_PATTERNS = OrderedDict(
         ),
         (
             "page",
-            r"\\enlargethispage\s*\{[^}]*\}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|break|scriptsize|sloppy|flushbottom|flushleft|flushright|flushtop)\b",
+            r"\\enlargethispage\s*\{[^}]*\}|\\pagecolor\*?{[^}]*}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|break|scriptsize|sloppy|flushbottom|flushleft|flushright|flushtop)\b",
         ),
         (
             "pagebreak",
@@ -222,8 +209,7 @@ PATTERNS = OrderedDict(
     (key, pattern if isinstance(pattern, re.Pattern) else re.compile(pattern))
     for key, pattern in RAW_PATTERNS.items()
 )
-PATTERNS["color"] = COLOR_COMMANDS_PATTERN
-PATTERNS["definecolor"] = DEFINE_COLOR_PATTERN
+PATTERNS["color_cells"] = COLOR_CELLS_PATTERN
 # PATTERNS['and'] = re.compile(r'\\and\b', re.IGNORECASE)
 
 number_regex_compiled = re.compile(number_regex)

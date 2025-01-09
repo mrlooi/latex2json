@@ -155,3 +155,20 @@ def test_trailing_legacy_format_patterns(handler):
     text = r"\bf 1+1 \large\tt 2+2"
     out, end_pos = handler.handle(text)
     assert out + text[end_pos:] == r"\textbf{1+1} \large\tt 2+2"
+
+
+def test_color_formatting(handler):
+    text = r"\color{red}Haha \normalcolor aaa"
+    out, end_pos = handler.handle(text)
+    assert out == r"\textcolor{red}{Haha }"
+    assert text[end_pos:] == r"\normalcolor aaa"
+
+    text = r"\color{red} Haha \color{blue} aaa"
+    out, end_pos = handler.handle(text)
+    assert out == r"\textcolor{red}{ Haha }"
+    assert text[end_pos:] == r"\color{blue} aaa"
+
+    text = r"\normalcolor Haha"
+    out, end_pos = handler.handle(text)
+    assert out == ""
+    assert text[end_pos:] == " Haha"

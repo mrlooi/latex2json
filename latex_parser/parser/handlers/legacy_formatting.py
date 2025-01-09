@@ -76,9 +76,12 @@ SIZE_PATTERN = re.compile(
     r"\\(" + "|".join(LEGACY_SIZE_MAPPING.keys()) + r")(?![a-zA-Z])\s*\{?"
 )
 
+COLOR_PATTERN = re.compile(r"\\(color\s*\{|normalcolor\b)")
+
 PATTERNS = {
     "font": FONT_PATTERN,
     "size": SIZE_PATTERN,
+    "color": COLOR_PATTERN,
 }
 
 
@@ -99,18 +102,32 @@ class LegacyFormattingHandler(TokenHandler):
             match = pattern.match(content)
 
             if match:
+                matched_str = match.group(0)
+                if matched_str == "\\normalcolor":
+                    return "", match.end()
+
                 command = match.group(1)
                 next_pos = match.end(0)
                 modern_command = LEGACY_FORMAT_MAPPING.get(command)
                 if not modern_command:
                     modern_command = command
 
-                if match.group(0).endswith("{"):
-                    # simple \tt{text}
+                if matched_str.startswith("\\color"):
+                    # our regex is \color{
                     text, end_pos = extract_nested_content("{" + content[next_pos:])
+                    modern_command = "textcolor{%s}" % text
+                    end_pos -= 1  # remove the opening brace
+                    if end_pos > 0:
+                        matched_str += content[next_pos : next_pos + end_pos]
+                        next_pos += end_pos
+
+                if matched_str.endswith("{"):
+                    # simple \tt{text}
+                    next_pos -= 1  # remove the opening brace
+                    text, end_pos = extract_nested_content(content[next_pos:])
                     content_to_format = text.strip()
-                    total_pos = next_pos + end_pos - 1
-                    formatted_text = "\%s{%s}" % (modern_command, content_to_format)
+                    total_pos = next_pos + end_pos
+                    formatted_text = "\\%s{%s}" % (modern_command, content_to_format)
                     return formatted_text, total_pos
                 else:
                     # Handle cases like
@@ -161,7 +178,7 @@ class LegacyFormattingHandler(TokenHandler):
 
                     content_to_format = next_content[:end_pos]
                     total_pos = next_pos + end_pos
-                    formatted_text = "\%s{%s}" % (modern_command, content_to_format)
+                    formatted_text = "\\%s{%s}" % (modern_command, content_to_format)
 
                     # check if content_to_format contains any of other legacy format patterns at the END
                     modified_content = content_to_format.rstrip()
@@ -179,7 +196,7 @@ class LegacyFormattingHandler(TokenHandler):
 
                         if trailing_patterns:
                             # Update content and formatting if we found trailing patterns
-                            formatted_text = "\%s{%s} %s" % (
+                            formatted_text = "\\%s{%s} %s" % (
                                 modern_command,
                                 modified_content,
                                 " ".join(reversed(trailing_patterns)),
@@ -198,22 +215,9 @@ if __name__ == "__main__":
     # print(out)
     # print(text[end_pos:])
 
-    tabular_content = r"""
-\begin{center}
-\begin{tabular}{l|c c}
-\hline
-\large 1 % notice the large here should be contained
-\end{tabular}
-\end{center}
-""".strip()
-    text = (
-        r"""\small
-    %s
-
-    helloworld
-    \huge HUGE
-    """
-        % (tabular_content)
-    ).strip()
+    text = r"""
+    \color{red} Haha \normalcolor
+    """.strip()
     out, end_pos = handler.handle(text)
     print(out)
+    print(text[end_pos:])
