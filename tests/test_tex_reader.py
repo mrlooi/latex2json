@@ -3,7 +3,8 @@ import logging
 import shutil
 from pathlib import Path
 import os
-from enum import Enum, auto
+from enum import Enum
+import json
 
 from latex_parser.tex_reader import TexReader, ProcessingResult
 
@@ -99,8 +100,10 @@ class TestTexReader:
 
         json_str = tex_reader.to_json(result)
         assert isinstance(json_str, str), "to_json should return a string"
-        assert json_str.startswith("["), "JSON output should be an array"
-        assert len(json_str) > 2, "JSON output should not be empty"
+
+        out = json.loads(json_str)
+        assert "tokens" in out
+        assert isinstance(out["tokens"], list)
 
     def test_save_to_json(self, tex_reader: TexReader, tmp_path: Path):
         """Verify JSON output functionality."""

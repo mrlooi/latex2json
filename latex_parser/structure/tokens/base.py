@@ -6,9 +6,9 @@ from latex_parser.structure.tokens.types import TokenType
 class BaseToken(BaseModel):
     """Base class for all LaTeX tokens"""
 
-    content: Union[str, List["BaseToken"]]
     type: TokenType
     styles: Optional[List[str]] = None
+    content: Union[str, List["BaseToken"]]
 
     def model_dump(self, **kwargs) -> Dict[str, Any]:
         """Override model_dump to handle recursive content dumping and ensure JSON serializability"""

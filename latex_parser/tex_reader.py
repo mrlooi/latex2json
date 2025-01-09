@@ -1,7 +1,7 @@
 import logging
 import os
 import json
-from typing import List, TypeVar, Callable, Any, Tuple, Optional
+from typing import Dict, List, TypeVar, Callable, Any, Tuple, Optional
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,6 +20,7 @@ class ProcessingResult:
 
     tokens: List[BaseToken]
     temp_dir: Optional[Path] = None
+    color_map: Optional[Dict[str, Dict[str, str]]] = None
 
 
 class TexProcessingError(Exception):
@@ -105,8 +106,9 @@ class TexReader:
             self._verify_file_exists(file_path)
             tokens = self.parser.parse_file(file_path)
             output = self.token_builder.build(tokens)
+            color_map = self.parser.get_colors()
             self.clear()
-            return ProcessingResult(tokens=output)
+            return ProcessingResult(tokens=output, color_map=color_map)
 
         return self._handle_file_operation(
             _process, f"Failed to process TeX file {file_path}"
@@ -132,9 +134,12 @@ class TexReader:
                 json_output = [
                     t.model_dump(mode="json", exclude_none=True) for t in result.tokens
                 ]
-            return json.dumps(
-                json_output, ensure_ascii=False
-            )  # ensure_ascii=False to prevent unnecessary escape characters
+            data = {
+                "tokens": json_output,
+                "color_map": result.color_map,
+            }
+            # ensure_ascii=False to prevent unnecessary escape characters
+            return json.dumps(data, ensure_ascii=False)
 
         return self._handle_file_operation(_convert, "Failed to convert tokens to JSON")
 
@@ -233,7 +238,7 @@ if __name__ == "__main__":
         # tex_reader.save_to_json(output)
 
         # Example usage with folder
-        folder_path = "papers/tested/arXiv-2301.10945v1"
+        folder_path = "papers/new/arXiv-2304.02643v1"
         output = tex_reader.process_folder(folder_path)
         tex_reader.save_to_json(output)
 

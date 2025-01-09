@@ -34,13 +34,16 @@ class TabularToken(BaseToken):
         kwargs["exclude_none"] = False  # we need to keep None values in content
         result = super().model_dump(**kwargs)
 
+        kwargs_base = kwargs.copy()
+        kwargs_base["exclude_none"] = True
+
         def process_cell(cell: CellType):
             if isinstance(cell, TableCell):
                 cell_dict = cell.model_dump(**kwargs)
                 cell_dict["content"] = process_cell(cell.content)
                 return cell_dict
             elif isinstance(cell, BaseToken):
-                out = cell.model_dump(**kwargs)
+                out = cell.model_dump(**kwargs_base)
                 if "styles" in out and out["styles"] is None:
                     del out["styles"]
                 return out
