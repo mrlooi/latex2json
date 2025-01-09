@@ -259,6 +259,15 @@ def test_namedef(handler):
     assert re.match(pattern, r"\until stuff \end more")
     assert not re.match(pattern, r"\until text")
 
+    # Special case for stuff with special chars e.g. @/. (usage via csname)
+    content = r"\@namedef{ver@everyshi.sty}{Hi there}"
+    token, _ = handler.handle(content)
+    assert token["type"] == "def"
+
+    pattern = token["usage_pattern"]
+
+    assert re.match(pattern, r"\csname ver@everyshi.sty \endcsname")
+
 
 def test_let_command(handler):
     content = r"\let\foo=bar"

@@ -331,7 +331,9 @@ class NewDefinitionHandler(TokenHandler):
         r"""Handle \@namedef definitions"""
         end_pos = match.end()
         # convert to \def format
-        search_text = r"\def\\" + match.group(1) + content[end_pos:]
+        search_text = (
+            r"\def \csname " + match.group(1) + r" \endcsname " + content[end_pos:]
+        )
         # run matching exactly same as \def
         match = re.match(DEF_COMMAND_PREFIX, search_text)
         if match:
