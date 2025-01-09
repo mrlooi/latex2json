@@ -64,6 +64,9 @@ class LatexParser:
         self.current_file_dir = None
         self.current_str = ""
 
+        # color definitions via \definecolor
+        self.colors = {}  # e.g. {"mycolor": {"format": "HTML", "value": "FF0000"}}
+
         # STY parser
         self.sty_parser = LatexStyParser(logger=self.logger)
         # Bib parser
@@ -116,6 +119,7 @@ class LatexParser:
     def clear(self):
         self.labels = {}
         self._unknown_commands = {}
+        self.colors = {}
         self.current_str = ""
         self.current_file_dir = None
         self.current_env = None
@@ -127,6 +131,9 @@ class LatexParser:
         self.new_definition_handler.clear()
         self.sty_parser.clear()
         self.bib_parser.clear()
+
+    def get_colors(self) -> Dict[str, Dict[str, str]]:
+        return self.colors.copy()
 
     def _expand_command(self, content: str, ignore_unicode: bool = False) -> str:
         """Expand LaTeX commands in the content"""
@@ -245,6 +252,13 @@ class LatexParser:
             # do not process content commands e.g. section etc
             cmd_name = token.get("name", "")
             if not cmd_name:
+                return
+
+            if token["type"] == "definecolor":
+                self.colors[cmd_name] = {
+                    "format": token["format"],
+                    "value": token["value"],
+                }
                 return
 
             # handle envs first

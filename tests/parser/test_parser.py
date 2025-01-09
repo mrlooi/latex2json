@@ -1860,5 +1860,20 @@ def test_paired_delimiter(parser):
     assert parsed_tokens[1]["content"].strip() == "This is {x} equation"
 
 
+def test_definecolor(parser):
+    text = r"""
+    \definecolor{mycolor}{HTML}{FF0000}
+    \color{mycolor} Haha
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "Haha"
+    assert parsed_tokens[0]["styles"] == ["color=mycolor"]
+
+    color_map = parser.get_colors()
+    assert color_map == {"mycolor": {"format": "HTML", "value": "FF0000"}}
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
