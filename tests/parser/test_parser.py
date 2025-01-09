@@ -1860,7 +1860,7 @@ def test_paired_delimiter(parser):
     assert parsed_tokens[1]["content"].strip() == "This is {x} equation"
 
 
-def test_definecolor(parser):
+def test_textcolor(parser):
     text = r"""
     \definecolor{mycolor}{HTML}{FF0000}
     \color{mycolor} Haha 
@@ -1883,6 +1883,24 @@ def test_definecolor(parser):
 
     color_map = parser.get_colors()
     assert color_map == {"mycolor": {"format": "HTML", "value": "FF0000"}}
+
+    text = r"""
+    \color{red}
+    \large Provided
+    \normalcolor Bruh
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 2
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "Provided"
+    assert parsed_tokens[0]["styles"] == [
+        "color=red",
+        FRONTEND_STYLE_MAPPING["textlarge"],
+    ]
+
+    assert parsed_tokens[1]["type"] == "text"
+    assert parsed_tokens[1]["content"].strip() == "Bruh"
+    assert parsed_tokens[1].get("styles", []) == []
 
 
 if __name__ == "__main__":

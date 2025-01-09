@@ -106,9 +106,29 @@ def parse_dual_braces_content(content: str, first_brace_start: int) -> Tuple[str
     return first, second, end_pos
 
 
+def is_text_token(token: Dict) -> bool:
+    return isinstance(token, dict) and token.get("type") == "text"
+
+
 class TextFormattingHandler(TokenHandler):
     def can_handle(self, content: str) -> bool:
         return any(pattern.match(content) for pattern in PATTERNS.values())
+
+    def _process_content(self, content: str):
+        if self.process_content_fn:
+            out = self.process_content_fn(content)
+            if is_text_token(out):
+                return out
+            elif isinstance(out, list) and len(out) == 1 and is_text_token(out[0]):
+                return out[0]
+            return {
+                "type": "group",
+                "content": out,
+            }
+        return {
+            "type": "text",
+            "content": content,
+        }
 
     def _handle_styled(self, content: str, match: re.Match) -> Tuple[str, int]:
         command = match.group(1)
@@ -198,15 +218,8 @@ class TextFormattingHandler(TokenHandler):
         first, second, end_pos = out
 
         # choose 2nd one in texorpdfstring
-        if self.process_content_fn:
-            return {
-                "type": "group",
-                "content": self.process_content_fn(second),
-            }, end_pos
-        return {
-            "type": "text",
-            "content": second,
-        }, end_pos
+        token = self._process_content(second)
+        return token, end_pos
 
     def _handle_box(self, content: str, match: re.Match) -> Tuple[str, int]:
         start_pos = match.end() - 1
@@ -236,11 +249,17 @@ class TextFormattingHandler(TokenHandler):
         )
         text = ""
         total_pos = start_pos + end_pos
+        styles = []
         if len(blocks) == 2:
             color = "color=" + blocks[0].strip()
+            styles = [color]
             text = blocks[1]
-            return {"type": "text", "content": text, "styles": [color]}, total_pos
-        return {"type": "text", "content": text}, total_pos
+
+        token = self._process_content(text)
+        if styles:
+            cur_styles = token.get("styles", [])
+            token["styles"] = list(dict.fromkeys(styles + cur_styles))
+        return token, total_pos
 
     def _handle_columns(self, content: str, match: re.Match) -> Tuple[str, int]:
         match_str = match.group(0)
@@ -254,15 +273,8 @@ class TextFormattingHandler(TokenHandler):
             )
             if end_pos > 0:
                 total_pos = start_pos + end_pos
-                if self.process_content_fn:
-                    return {
-                        "type": "group",
-                        "content": self.process_content_fn(extracted_content),
-                    }, total_pos
-                return {
-                    "type": "text",
-                    "content": extracted_content,
-                }, total_pos
+                token = self._process_content(extracted_content)
+                return token, total_pos
 
         return None, total_pos
 
