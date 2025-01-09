@@ -1863,13 +1863,23 @@ def test_paired_delimiter(parser):
 def test_definecolor(parser):
     text = r"""
     \definecolor{mycolor}{HTML}{FF0000}
-    \color{mycolor} Haha
+    \color{mycolor} Haha 
+    \normalcolor Normal
+    \textcolor{mycolor}{Hi there}
     """
     parsed_tokens = parser.parse(text)
-    assert len(parsed_tokens) == 1
+    assert len(parsed_tokens) == 3
     assert parsed_tokens[0]["type"] == "text"
     assert parsed_tokens[0]["content"].strip() == "Haha"
     assert parsed_tokens[0]["styles"] == ["color=mycolor"]
+
+    assert parsed_tokens[1]["type"] == "text"
+    assert parsed_tokens[1]["content"].strip() == "Normal"
+    assert parsed_tokens[1].get("styles", []) == []
+
+    assert parsed_tokens[2]["type"] == "text"
+    assert parsed_tokens[2]["content"].strip() == "Hi there"
+    assert parsed_tokens[2]["styles"] == ["color=mycolor"]
 
     color_map = parser.get_colors()
     assert color_map == {"mycolor": {"format": "HTML", "value": "FF0000"}}
