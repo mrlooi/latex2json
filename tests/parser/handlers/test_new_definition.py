@@ -40,6 +40,30 @@ def test_handle_newcommand(handler):
     assert content[pos:] == " POST"
 
 
+def test_handle_newcommand_special_characters(handler):
+    # special characters
+    content = r"\newcommand{\<}{\langle} POST"
+    token, pos = handler.handle(content)
+    assert token["name"] == "<"
+    assert token["content"] == r"\langle"
+    assert content[pos:] == " POST"
+
+    text = r"\<a"
+    match = re.match(token["usage_pattern"], text)
+    assert match and text[match.end() :] == "a"
+
+    content = r"\newcommand{\(}{\left(} POST"
+    token, pos = handler.handle(content)
+    assert token["name"] == "("
+    assert token["content"] == r"\left("
+    assert content[pos:] == " POST"
+
+    assert re.match(token["usage_pattern"], r"\(")
+    text = r"\(a"
+    match = re.match(token["usage_pattern"], text)
+    assert match and text[match.end() :] == "a"
+
+
 def test_handle_renewcommand(handler):
     content = r"\renewcommand{\cmd}{new definition}"
     token, pos = handler.handle(content)

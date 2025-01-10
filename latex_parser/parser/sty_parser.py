@@ -75,7 +75,7 @@ class LatexStyParser:
 
                 # elif token["type"] == "newcommand":
                 #     # check if there is potential recursion.
-                #     if re.search(r"\\" + cmd_name + r"(?![a-zA-Z@])", token["content"]):
+                #     if re.search(token["usage_pattern"], token["content"]):
                 #         self.logger.warning(
                 #             f"Potential recursion detected for newcommand: \\{cmd_name}, skipping..."
                 #         )

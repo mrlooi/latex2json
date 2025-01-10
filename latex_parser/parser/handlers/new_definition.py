@@ -8,7 +8,12 @@ from latex_parser.utils.tex_utils import (
     extract_nested_content_sequence_blocks,
 )
 
-command_pattern = r"\\([a-zA-Z@]+)"
+# Command pattern matches:
+# 1. Standard commands: letters and @ (e.g., \foo, \@foo)
+# 2. Non-letter commands (e.g., \<, \>, \=, \,, \., \;, \!, \|, \$, \%, \&, \#, \_, \{, \}, \<<, \>>)
+# 3. Active character ~ which can behave like a command
+command_pattern = r"\\([a-zA-Z@]+|[<>=,\.;!|$%&#_{}()\[\]~]+)"
+
 POST_NEW_COMMAND_PATTERN_STR = (
     r"\*?\s*(?:{%s}|%s)(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{"
     % (command_pattern, command_pattern)
@@ -303,7 +308,10 @@ class NewDefinitionHandler(TokenHandler):
             for default in re.finditer(r"\[(.*?)\]", match.group(4)):
                 defaults.append(default.group(1))
 
-        pattern = r"\\" + re.escape(cmd_name) + r"(?![a-zA-Z@])"
+        # Don't add negative lookahead for commands ending in special chars
+        needs_lookahead = cmd_name[-1].isalnum()
+        postfix = r"(?![a-zA-Z@])" if needs_lookahead else ""
+        pattern = r"\\" + re.escape(cmd_name) + postfix
 
         token = {
             "type": "newcommand",
@@ -551,7 +559,8 @@ if __name__ == "__main__":
         print()
 
     text = r"""
-    \DeclarePairedDelimiter\br{(}{)}
+    \renewcommand{\(}{\left(}
     """.strip()
 
-    print(handler.handle(text))
+    out, _ = handler.handle(text)
+    print(out)
