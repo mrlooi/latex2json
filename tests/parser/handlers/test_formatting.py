@@ -270,6 +270,7 @@ def test_misc_formatting_commands(handler):
     \pacs{98.70.Vc}
     \parindent = 0 pt
     \parskip = 5 pt
+    \kern.4ex
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

@@ -30,6 +30,10 @@ declare_pattern_N_blocks = {
     "SetMathAlphabet": 6,
 }
 
+number_points_suffix = (
+    number_regex + r"\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)(?=[^a-zA-Z]|$)"
+)
+
 RAW_PATTERNS = OrderedDict(
     [
         # Comments
@@ -94,8 +98,7 @@ RAW_PATTERNS = OrderedDict(
             "margins",
             r"\\(?:rightmargin|leftmargin)\b|"
             + r"\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|skip|footskip|headheight|headsep|footnotesep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)"
-            + r"\s*(\=?\s*(?:%s))?"
-            % (number_regex + r"\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b")
+            + r"\s*(\=?\s*(?:%s))?" % (number_points_suffix)
             + r"|(%s)?\\baselineskip" % (number_regex),
         ),
         # width
@@ -106,12 +109,12 @@ RAW_PATTERNS = OrderedDict(
             r"\\(?:"
             r"quad|qquad|xspace|,|;|:|\!|"  # \quad, \qquad, \, \; \:
             r"hspace\*?\s*{([^}]+)}|"  # \hspace{length}
-            r"hskip\s*"
-            + number_regex
-            + r"(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b|"  # \hskip 10pt
-            r"linespread\s*\{[^}]*\}"  # Added \linespread{...}
+            r"hskip\s*%s" % (number_points_suffix)  # \hskip 10pt
+            + r"|linespread\s*\{[^}]*\}"  # Added \linespread{...}
             r")",
         ),
+        # \kern, which is technically spacing but more like a length between characters. so ignore
+        ("kern", r"\\kern\s*%s" % (number_points_suffix)),
         # options
         (
             "options",
