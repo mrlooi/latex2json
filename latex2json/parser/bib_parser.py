@@ -215,14 +215,23 @@ class BibParser:
                         bib_content = f.read()
                     break
 
-        # Case 3: Try main.bbl in the same directory as file_path
+        # Case 3: Try main.bbl first, then any .bbl file in the same directory
         if not bib_content:
             directory = os.path.dirname(file_path)
             main_bbl = os.path.join(directory, "main.bbl")
+
             if os.path.exists(main_bbl):
-                self.logger.info(f"Bib fallback -> Found main.bbl")
+                self.logger.info("Bib fallback -> Found main.bbl")
                 with open(main_bbl, "r") as f:
                     bib_content = f.read()
+            else:
+                # Look for any .bbl file
+                bbl_files = [f for f in os.listdir(directory) if f.endswith(".bbl")]
+                if bbl_files:
+                    first_bbl = os.path.join(directory, bbl_files[0])
+                    self.logger.info(f"Bib fallback -> Found {bbl_files[0]}")
+                    with open(first_bbl, "r") as f:
+                        bib_content = f.read()
 
         if bib_content:
             return self.parse(bib_content)
