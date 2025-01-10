@@ -33,3 +33,7 @@ json_output = tex_reader.to_json(result)
 # Or save directly to file
 tex_reader.save_to_json(result, "output.json")
 ```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
