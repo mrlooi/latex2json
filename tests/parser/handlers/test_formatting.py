@@ -267,6 +267,7 @@ def test_misc_formatting_commands(handler):
     \raise.17ex
     \setlist[enumerate]{itemsep=-0.5mm,partopsep=0pt}
     \pagecolor{lightgray}
+    \pacs{98.70.Vc}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

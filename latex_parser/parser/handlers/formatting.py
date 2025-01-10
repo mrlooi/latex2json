@@ -201,6 +201,8 @@ RAW_PATTERNS = OrderedDict(
         ("slash", r"\\/"),  # \/ (in latex, this is like an empty space)
         ("advance", r"\\advance\\[a-zA-Z@*\d]+(?:\s+by)?(?:\s*-)?\\[a-zA-Z@*\d]+"),
         ("typeout", r"\\typeout\s*{"),
+        # other...
+        ("physics", r"\\pacs\s*\{(.*?)\}"),
     ]
 )
 
