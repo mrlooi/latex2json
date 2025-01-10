@@ -1,5 +1,5 @@
 import pytest
-from latex_parser.parser.handlers.if_else_statements import (
+from latex2json.parser.handlers.if_else_statements import (
     IfElseBlockHandler,
     extract_else_elseif_fi,
 )

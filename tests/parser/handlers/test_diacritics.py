@@ -1,4 +1,4 @@
-from latex_parser.parser.handlers.diacritics import (
+from latex2json.parser.handlers.diacritics import (
     DiacriticsHandler,
     convert_tex_diacritics,
 )

@@ -1,5 +1,5 @@
 import pytest
-from latex_parser.parser.handlers.author import AuthorHandler
+from latex2json.parser.handlers.author import AuthorHandler
 
 
 def test_author_handler():

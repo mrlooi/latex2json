@@ -1,5 +1,5 @@
 import pytest
-from latex_parser.parser.handlers.text_formatting import (
+from latex2json.parser.handlers.text_formatting import (
     TextFormattingHandler,
     FRONTEND_STYLE_MAPPING,
 )

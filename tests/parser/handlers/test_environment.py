@@ -1,9 +1,9 @@
 import pytest
-from latex_parser.parser.handlers.environment import (
+from latex2json.parser.handlers.environment import (
     EnvironmentHandler,
     convert_any_env_pairs_to_begin_end,
 )
-from latex_parser.parser.handlers.new_definition import NewDefinitionHandler
+from latex2json.parser.handlers.new_definition import NewDefinitionHandler
 
 
 @pytest.fixture

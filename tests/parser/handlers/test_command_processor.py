@@ -1,6 +1,6 @@
 import pytest
-from latex_parser.parser.handlers.new_definition import NewDefinitionHandler
-from latex_parser.parser.handlers.command_processor import CommandProcessor
+from latex2json.parser.handlers.new_definition import NewDefinitionHandler
+from latex2json.parser.handlers.command_processor import CommandProcessor
 import re
 
 

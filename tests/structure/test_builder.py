@@ -1,7 +1,7 @@
 import pytest
-from latex_parser.parser.tex_parser import LatexParser
-from latex_parser.structure.builder import TokenBuilder
-from latex_parser.parser import FRONTEND_STYLE_MAPPING
+from latex2json.parser.tex_parser import LatexParser
+from latex2json.structure.builder import TokenBuilder
+from latex2json.parser import FRONTEND_STYLE_MAPPING
 
 
 @pytest.fixture

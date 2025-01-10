@@ -1,5 +1,5 @@
 import pytest
-from latex_parser.parser.handlers.equation import EquationHandler
+from latex2json.parser.handlers.equation import EquationHandler
 
 
 @pytest.fixture

@@ -6,7 +6,7 @@ import os
 from enum import Enum
 import json
 
-from latex_parser.tex_reader import TexReader, ProcessingResult
+from latex2json.tex_reader import TexReader, ProcessingResult
 
 
 @pytest.fixture

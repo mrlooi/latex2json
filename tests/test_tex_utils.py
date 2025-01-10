@@ -1,5 +1,5 @@
 import pytest
-from latex_parser.utils.tex_utils import (
+from latex2json.utils.tex_utils import (
     extract_nested_content_sequence_blocks,
     extract_nested_content_pattern,
     find_matching_env_block,

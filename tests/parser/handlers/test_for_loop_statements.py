@@ -1,5 +1,5 @@
 import pytest
-from latex_parser.parser.handlers.for_loop_statements import ForLoopHandler
+from latex2json.parser.handlers.for_loop_statements import ForLoopHandler
 
 
 @pytest.fixture

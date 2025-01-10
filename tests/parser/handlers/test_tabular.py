@@ -1,6 +1,6 @@
 import pytest
-from latex_parser.parser.handlers.formatting import FormattingHandler
-from latex_parser.parser.handlers.tabular import TabularHandler
+from latex2json.parser.handlers.formatting import FormattingHandler
+from latex2json.parser.handlers.tabular import TabularHandler
 
 
 @pytest.fixture

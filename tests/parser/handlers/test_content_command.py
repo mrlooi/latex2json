@@ -1,5 +1,5 @@
 import pytest
-from latex_parser.parser.handlers.content_command import (
+from latex2json.parser.handlers.content_command import (
     ContentCommandHandler,
     SECTION_LEVELS,
     PARAGRAPH_LEVELS,

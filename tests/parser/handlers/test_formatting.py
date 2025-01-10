@@ -1,6 +1,6 @@
 import datetime
 import pytest
-from latex_parser.parser.handlers.formatting import (
+from latex2json.parser.handlers.formatting import (
     FormattingHandler,
     strip_trailing_number_from_token,
 )

@@ -1,8 +1,8 @@
 import pytest
-from latex_parser.structure.tokens.types import TokenType
-from latex_parser.structure.tokens.tabular import TabularToken, TableCell
-from latex_parser.structure.tokens.bibliography import BibliographyToken, BibItemToken
-from latex_parser.structure.token_factory import TokenFactory
+from latex2json.structure.tokens.types import TokenType
+from latex2json.structure.tokens.tabular import TabularToken, TableCell
+from latex2json.structure.tokens.bibliography import BibliographyToken, BibItemToken
+from latex2json.structure.token_factory import TokenFactory
 
 
 @pytest.fixture

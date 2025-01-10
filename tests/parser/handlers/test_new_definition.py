@@ -1,5 +1,5 @@
 import pytest
-from latex_parser.parser.handlers.new_definition import NewDefinitionHandler
+from latex2json.parser.handlers.new_definition import NewDefinitionHandler
 import re
 
 
