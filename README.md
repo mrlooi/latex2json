@@ -77,6 +77,8 @@ This parser has been successfully tested on the following arxiv papers, includin
 
 And many more across math, physics, and computer science.
 
+You may view some of the JSON outputs in [arxiv latex2json samples](https://drive.google.com/drive/u/5/folders/1lZTWIq5q_vjMs5GUScuvdDjnktpXRajV)
+
 ## Limitations
 
 - Does not currently support specialized LaTeX drawing commands and environments (e.g., `\draw`, TikZ diagrams, Chess commands et). Treats them as unknown command tokens i.e. type: "command"
