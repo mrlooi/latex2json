@@ -85,7 +85,7 @@ You may view some of the JSON outputs in [arxiv latex2json samples](https://driv
 - May not handle certain custom or non-standard LaTeX packages fully
 - Does not preserve latex visual formatting and counters
 
-### Output Structure
+## Output Structure
 
 The parser generates a structured JSON output that preserves the document hierarchy. Here's a simplified example:
 
