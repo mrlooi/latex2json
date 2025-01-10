@@ -268,6 +268,8 @@ def test_misc_formatting_commands(handler):
     \setlist[enumerate]{itemsep=-0.5mm,partopsep=0pt}
     \pagecolor{lightgray}
     \pacs{98.70.Vc}
+    \parindent = 0 pt
+    \parskip = 5 pt
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

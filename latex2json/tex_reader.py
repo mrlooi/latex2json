@@ -103,6 +103,7 @@ class TexReader:
         file_path = Path(file_path)
 
         def _process() -> ProcessingResult:
+            self.clear()
             self._verify_file_exists(file_path)
             tokens = self.parser.parse_file(file_path)
             output = self.token_builder.build(tokens)

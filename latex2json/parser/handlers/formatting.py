@@ -94,8 +94,8 @@ RAW_PATTERNS = OrderedDict(
             "margins",
             r"\\(?:rightmargin|leftmargin)\b|"
             + r"\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|skip|footskip|headheight|headsep|footnotesep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)"
-            + r"\s*(?:%s)?"
-            % (number_regex + r"(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b")
+            + r"\s*(\=?\s*(?:%s))?"
+            % (number_regex + r"\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)\b")
             + r"|(%s)?\\baselineskip" % (number_regex),
         ),
         # width

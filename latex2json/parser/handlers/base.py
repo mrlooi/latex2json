@@ -23,4 +23,4 @@ class TokenHandler(ABC):
         raise NotImplementedError
 
     def clear(self):
-        self.process_content_fn = None
+        pass
