@@ -2,13 +2,13 @@
 
 A python package for parsing LaTeX files into structured token representations and JSON output.
 
-This parser focuses on extracting document content rather than preserving LaTeX's visual formatting.
+Currently supports a wide variety of latex papers on arxiv.
 
+This parser focuses on extracting document content rather than preserving LaTeX's visual format:
 - While the semantic structure (sections, equations, etc.) is maintained, layout-specific elements like page formatting, column arrangements, and table styling are not represented in the JSON output.
 - Section, figure, table and equation counters etc may deviate from the original latex implementation.
 - Text formatting is preserved as much as possible.
 
-Currently supports a wide variety of latex papers on arxiv.
 
 ## Features
 
