@@ -490,6 +490,10 @@ class LatexParser:
                 # convert text before next delimiter to tokens
                 text = content[current_pos : current_pos + next_pos]
                 if text:
+                    # skip delimited braces for next pass
+                    if text.endswith("{"):
+                        text = text[:-1]
+                        next_pos -= 1
                     if handle_unknown_commands:
                         text = self._expand_command(text)
                     self.add_token(text, tokens)

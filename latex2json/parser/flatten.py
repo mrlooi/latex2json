@@ -22,7 +22,7 @@ def flatten_tokens(tokens: str | List[Dict]) -> tuple[str, OrderedDict[str, Dict
             ref_key = "`|REF_%s|`" % ref_counter
             reference_map[ref_key] = token.copy()
             # Add reference placeholder to flattened content
-            flattened_content += ref_key + " "
+            flattened_content += ref_key
             ref_counter += 1
 
     return flattened_content, reference_map

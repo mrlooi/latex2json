@@ -1407,7 +1407,7 @@ def test_legacy_formatting(parser):
     text = r"""
     \begin{tabular}{c}
         \tt aaa & \large bbb \\ 
-        \sc eee & {\em 444} + 333 \\ 
+        \sc eee & {\em 444}+ 333 \\ 
         \bf\underline{Hello} 55 & 
         % \begin{tabular}{x}
     \end{tabular}
@@ -1446,7 +1446,7 @@ def test_legacy_formatting(parser):
         },
         {
             "type": "text",
-            "content": " + 333",
+            "content": "+ 333",
         },
     ]
 
@@ -1917,6 +1917,42 @@ def test_subfloat(parser):
     ]
 
     assert parsed_tokens[1]["content"].strip() == "POST"
+
+
+def test_delim_braces(parser):
+    text = r"""{\color{darkgreen}20}/{\color{darkgray}30}"""
+
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 3
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"] == "20"
+    assert parsed_tokens[0]["styles"] == ["color=darkgreen"]
+
+    assert parsed_tokens[1]["type"] == "text"
+    assert parsed_tokens[1]["content"] == "/"
+
+    assert parsed_tokens[2]["type"] == "text"
+    assert parsed_tokens[2]["content"] == "30"
+    assert parsed_tokens[2]["styles"] == ["color=darkgray"]
+
+    text = r"""
+    \begin{tabular}{cc}
+        w {\color{darkgreen}20}/{\color{darkgray}30}
+    \end{tabular} 
+"""
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "tabular"
+    assert parsed_tokens[0]["content"] == [
+        [
+            [
+                {"type": "text", "content": "w"},
+                {"type": "text", "content": "20", "styles": ["color=darkgreen"]},
+                {"type": "text", "content": "/"},
+                {"type": "text", "content": "30", "styles": ["color=darkgray"]},
+            ]
+        ]
+    ]
 
 
 def test_sty_usepackage(parser):

@@ -183,6 +183,59 @@ def parse_tabular(latex_table: str, cell_parser_fn=None) -> List[List[Dict]]:
     return parsed_rows
 
 
+def extract_table_structures(content: str) -> Tuple[str, Dict[str, Dict]]:
+    """Extract multicolumn, multirow and makecell structures and replace with references"""
+    reference_map = {}
+    ref_counter = 0
+    current_content = content
+
+    # Define patterns and their block counts
+    patterns = {
+        MULTICOLUMN_PATTERN: 2,
+        MULTIROW_PATTERN: 2,
+        MAKECELL_SHORTSTACK_PATTERN: 1,
+    }
+
+    for pattern, block_count in patterns.items():
+        pos = 0
+        while True:
+            match = pattern.search(current_content[pos:])
+            if not match:
+                break
+
+            start_pos = pos + match.end() - 1
+            blocks, end_pos = extract_nested_content_sequence_blocks(
+                current_content[start_pos:], max_blocks=block_count
+            )
+
+            if not blocks:
+                pos = start_pos + 1
+                continue
+
+            # Create reference key and store original content
+            ref_key = f"`|TABLE_STRUCT_{ref_counter}|`"
+            ref_counter += 1
+
+            original_content = current_content[
+                pos + match.start() : start_pos + end_pos
+            ]
+            reference_map[ref_key] = {
+                "type": "table_structure",
+                "content": original_content,
+            }
+
+            # Replace content with reference
+            current_content = (
+                current_content[: pos + match.start()]
+                + ref_key
+                + current_content[start_pos + end_pos :]
+            )
+
+            pos += match.start() + len(ref_key)
+
+    return current_content, reference_map
+
+
 class TabularHandler(BaseEnvironmentHandler):
     def __init__(
         self,
@@ -272,10 +325,10 @@ class TabularHandler(BaseEnvironmentHandler):
             # Get the table content after the column spec
             inner_content = inner_content[end_pos:]
 
-            # now, we need to parse the table content first into an intermediate format
-            # then we can pass it to parse_tabular
-            # the reason is that we want to process the content first before we determine row and column splits
-            # e.g. there could be \\ inside a nested cell block, so if we dont process first, we will split the row incorrectly
+            # First extract table structures
+            inner_content, table_structures = extract_table_structures(inner_content)
+
+            # Process content with structures extracted
             processed_content = (
                 self.process_content_fn(inner_content)
                 if self.process_content_fn
@@ -284,6 +337,12 @@ class TabularHandler(BaseEnvironmentHandler):
 
             # then flatten it out to text form and pass it to parse_tabular
             flattened_content, reference_map = flatten_tokens(processed_content)
+
+            # then set back the table structures to the original content
+            for ref_key, structure in table_structures.items():
+                flattened_content = flattened_content.replace(
+                    ref_key, structure["content"]
+                )
 
             def cell_parser_fn(content: str):
                 content = content.strip()
@@ -385,9 +444,8 @@ if __name__ == "__main__":
 
     text = r"""
     \begin{tabular}{cc}
-        \makecell{a & b \\ c & d} & 22
+        w {\color{darkgreen}20}/{\color{darkgray}30}
     \end{tabular} 
-    POST
     """.strip()
     token, end_pos = handler.handle(text)
     print(token)
