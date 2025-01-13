@@ -68,6 +68,7 @@ This parser has been successfully tested on the following arxiv papers, includin
 
 - [math/0503066] Stable signal recovery from incomplete and inaccurate measurements (Math/Numerical Analysis, 2006)
 - [1509.05363] The Erdos discrepancy problem (Math/combinatorics, 2015)
+- [hep-th/0603057] Dynamics of dark energy (Physics/High Energy Physics, 2006)
 - [1706.03762v7] Attention is all you need (AI/ML, 2017)
 - [2303.08774v6] GPT-4 Technical Report (AI/ML, 2023)
 - [2301.10945v1] A Fully First-Order Method for Stochastic Bilevel Optimization (Computer Science/Optimization, 2023)
