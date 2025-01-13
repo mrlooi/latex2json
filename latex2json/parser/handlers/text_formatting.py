@@ -81,6 +81,7 @@ PATTERNS = {
     "usefont": re.compile(r"\\usefont" + (r"\s*" + BRACE_CONTENT_PATTERN) * 4),
     "color": re.compile(r"\\textcolor\s*{"),
     "columns": re.compile(r"\\(?:onecolumn\b|twocolumn\s*\[?)"),
+    "subfloat": re.compile(r"\\subfloat\s*\["),
 }
 
 
@@ -278,6 +279,35 @@ class TextFormattingHandler(TokenHandler):
 
         return None, total_pos
 
+    def _handle_subfloat(self, content: str, match: re.Match) -> Tuple[str, int]:
+        start_pos = match.end() - 1
+        caption, end_pos = extract_nested_content(content[start_pos:], "[", "]")
+        caption = caption.strip()
+
+        total_pos = start_pos + end_pos
+        block, end_pos = extract_nested_content(content[total_pos:])
+        if block:
+            total_pos += end_pos
+
+        caption = self._process_content(caption)
+        if not isinstance(caption, list):
+            caption = [caption]
+        caption_token = {
+            "type": "caption",
+            "content": caption,
+        }
+        out_tokens = [caption_token]
+        if block:
+            block = self._process_content(block)
+            if not isinstance(block, list):
+                block = [block]
+            out_tokens.extend(block)
+
+        return {
+            "type": "group",
+            "content": out_tokens,
+        }, total_pos
+
     def handle(
         self, content: str, prev_token: Optional[Dict] = None
     ) -> Tuple[str, int]:
@@ -297,6 +327,8 @@ class TextFormattingHandler(TokenHandler):
                 return self._handle_color(content, match)
             elif name == "columns":
                 return self._handle_columns(content, match)
+            elif name == "subfloat":
+                return self._handle_subfloat(content, match)
             else:
                 return None, match.end()
 

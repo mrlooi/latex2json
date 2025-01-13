@@ -1904,6 +1904,21 @@ def test_textcolor(parser):
     assert parsed_tokens[1].get("styles", []) == []
 
 
+def test_subfloat(parser):
+    text = r"""
+    \subfloat[Caption]{Content} POST
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 2
+    assert parsed_tokens[0]["type"] == "group"
+    assert parsed_tokens[0]["content"] == [
+        {"type": "caption", "content": [{"type": "text", "content": "Caption"}]},
+        {"type": "text", "content": "Content"},
+    ]
+
+    assert parsed_tokens[1]["content"].strip() == "POST"
+
+
 def test_sty_usepackage(parser):
     text = r"""
     \usepackage{%s/package2}

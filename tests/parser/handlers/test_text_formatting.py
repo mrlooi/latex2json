@@ -219,3 +219,14 @@ def test_columns(handler):
     token, pos = handler.handle(text)
     assert token["content"] == "This text s"
     assert text[pos:] == " POST"
+
+
+def test_subfloat(handler):
+    text = r"\subfloat[Caption]{Content} POST"
+    token, pos = handler.handle(text)
+    assert token["type"] == "group"
+    assert token["content"] == [
+        {"type": "caption", "content": [{"type": "text", "content": "Caption"}]},
+        {"type": "text", "content": "Content"},
+    ]
+    assert text[pos:] == " POST"
