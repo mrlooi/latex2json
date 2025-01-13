@@ -45,6 +45,12 @@ Python 3.7 or higher
 pip install -r requirements.txt
 ```
 
+### Testing
+
+```bash
+pytest tests/
+```
+
 ## Quick Start
 
 ```python
@@ -54,9 +60,9 @@ from latex2json.tex_reader import TexReader
 tex_reader = TexReader()
 
 # Process a regular TeX file/folder
-result = tex_reader.process_folder("/path/to/folder")
+result = tex_reader.process("/path/to/folder_or_file")
 # Or process a compressed TeX file (supports .gz and .tar.gz)
-result, temp_dir = tex_reader.process_compressed("path/to/paper.tar.gz")
+result, temp_dir = tex_reader.process("path/to/paper.tar.gz")
 
 # Convert to JSON
 json_output = tex_reader.to_json(result)
