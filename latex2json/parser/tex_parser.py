@@ -39,14 +39,9 @@ from latex2json.parser.patterns import (
     PATTERNS,
     USEPACKAGE_PATTERN,
     WHITELISTED_COMMANDS,
+    DELIM_PATTERN,
 )
 
-# Add these compiled patterns at module level
-# match $ or % or { or } only if not preceded by \
-# Update DELIM_PATTERN to also match double backslashes and opening braces {
-DELIM_PATTERN = re.compile(
-    r"(?<!\\)(?:\\\\|\$|%|(?:^|[ \t])\{|\s{|\\\^|\\(?![$%&_#{}^~\\]))"
-)
 UNKNOWN_COMMAND_PATTERN = re.compile(r"(\\[@a-zA-Z\*]+(?:\s*{)?)")
 
 
@@ -74,7 +69,7 @@ class LatexParser:
 
         # Regex patterns for different LaTeX elements
         self.command_processor = CommandProcessor()
-        self.env_handler = EnvironmentHandler()
+        self.env_handler = EnvironmentHandler(logger=self.logger)
 
         self.legacy_formatting_handler = LegacyFormattingHandler()
         self.if_else_block_handler = IfElseBlockHandler()

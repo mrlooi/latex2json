@@ -7,6 +7,7 @@ from latex2json.utils.tex_utils import (
     extract_nested_content_sequence_blocks,
     find_matching_env_block,
 )
+import logging
 
 BEGIN_GROUP_PATTERN = re.compile(r"\\(?:begin|b)group\b")
 
@@ -162,8 +163,9 @@ def find_pattern_while_skipping_nested_envs(
 
 
 class BaseEnvironmentHandler(TokenHandler):
-    def __init__(self, **kwargs):
+    def __init__(self, logger=None, **kwargs):
         super().__init__(**kwargs)
+        self.logger = logger or logging.getLogger(__name__)
         self._newtheorems: Dict[str, str] = {}
         self._floatnames: Dict[str, str] = {}
 
@@ -279,8 +281,12 @@ class BaseEnvironmentHandler(TokenHandler):
                 "end_pos": end_pos,
                 "content": inner_content,
             }
-            if end_pos == -1:
-                return False, token
+            if end_pos <= 0:
+                # could not find matching env block. default to end of match
+                end_pos = match.end()
+                token["end_pos"] = end_pos
+                token["incomplete"] = True
+                return True, token
 
             return True, token
         return False, 0
@@ -324,6 +330,10 @@ class BaseEnvironmentHandler(TokenHandler):
         matched, out = BaseEnvironmentHandler.try_match_env(content)
         if matched:
             env_name = out["name"]
+            if out.get("incomplete"):
+                self.logger.warning(
+                    f"Could not find matching env block for {env_name}, defaulting to end of match"
+                )
             # ignore begin{comment} env
             if env_name == "comment":
                 return None, out["end_pos"]

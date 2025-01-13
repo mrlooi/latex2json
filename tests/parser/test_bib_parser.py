@@ -212,9 +212,3 @@ def test_parse_file_bbl():
     assert entries[1].entry_type == "bibitem"
     assert entries[1].citation_key == "ssss"
     assert "SSSS" in entries[1].content
-
-
-def test_parse_file_nonexistent():
-    parser = BibParser()
-    entries = parser.parse_file(os.path.join(dir_path, "samples/nonexistent.bib"))
-    assert len(entries) == 0

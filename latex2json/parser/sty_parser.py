@@ -25,12 +25,11 @@ from latex2json.utils.tex_utils import (
     read_tex_file_content,
     strip_latex_comments,
 )
-from latex2json.parser.patterns import USEPACKAGE_PATTERN, WHITELISTED_COMMANDS
-
-# Add these compiled patterns at module level
-# match $ or % or { or } only if not preceded by \
-# Update DELIM_PATTERN to also match double backslashes and opening braces {
-DELIM_PATTERN = re.compile(r"(?<!\\)(?:\\\\|%|(?:^|[ \t])\{|\\\^|\\(?![$%&_#{}^~\\]))")
+from latex2json.parser.patterns import (
+    USEPACKAGE_PATTERN,
+    WHITELISTED_COMMANDS,
+    DELIM_PATTERN,
+)
 
 INCLUDE_PATTERN = re.compile(r"\\input\s*\{([^}]+)\}", re.DOTALL)
 

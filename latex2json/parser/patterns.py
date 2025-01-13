@@ -5,6 +5,13 @@ from collections import OrderedDict
 BRACE_CONTENT_PATTERN = r"\{([^}]+)\}"
 NUMBER_PATTERN = r"[-+]?\d*\.?\d+"
 
+# Add these compiled patterns at module level
+# match $ or % or { or } only if not preceded by \
+# Update DELIM_PATTERN to also match double backslashes and opening braces {
+DELIM_PATTERN = re.compile(
+    r"(?<!\\)(?:\\\\|\$|%|(?:^|[ \t])\{|\s{|\\\^|\\(?![$%&_#{}^~\\]))"
+)
+
 USEPACKAGE_PATTERN = re.compile(
     r"\\(?:usepackage|RequirePackage)(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}",
     re.DOTALL,
