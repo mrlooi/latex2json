@@ -62,7 +62,7 @@ RAW_PATTERNS = OrderedDict(
         ),
         (
             "page",
-            r"\\enlargethispage\s*\{[^}]*\}|\\pagecolor\*?{[^}]*}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|break|scriptsize|sloppy|flushbottom|flushleft|flushright|flushtop)\b",
+            r"\\enlargethispage\s*\{[^}]*\}|\\pagecolor\*?{[^}]*}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|break|scriptsize|scriptstyle|sloppy|flushbottom|flushleft|flushright|flushtop)\b",
         ),
         (
             "pagebreak",
@@ -173,7 +173,9 @@ RAW_PATTERNS = OrderedDict(
             r"morecmidrules\b|"  # no args
             r"fboxsep\s*{([^}]+)}|"  # {length}
             r"tabcolsep\b|"
-            r"colrule\b"
+            r"colrule\b|"
+            r"noalign\b|"
+            r"arrayrulewidth\b"
             r")",
         ),
         ("paper", r"\\(?:paperwidth|paperheight)\s*=\s*%s(?:\w+)?" % number_regex),

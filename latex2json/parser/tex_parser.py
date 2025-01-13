@@ -449,7 +449,7 @@ class LatexParser:
         """
         if isinstance(content, str):
             content = strip_latex_comments(content)
-            
+
         if preprocess:
             content = self.preprocess(content)
 
