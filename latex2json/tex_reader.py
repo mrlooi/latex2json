@@ -222,6 +222,38 @@ class TexReader:
             _process, f"Failed to process TeX folder {folder_path}"
         )
 
+    def process(self, input_path: str | Path, cleanup: bool = True) -> ProcessingResult:
+        """
+        Process input which can be a single file, folder, or compressed archive.
+
+        Args:
+            input_path: Path to the input (file, folder, or compressed archive)
+            cleanup: Whether to clean up temporary files (for compressed archives)
+
+        Returns:
+            ProcessingResult containing the processed tokens
+
+        Raises:
+            FileNotFoundError: If input doesn't exist
+            TexProcessingError: If processing fails
+        """
+        input_path = Path(input_path)
+        self._verify_file_exists(input_path)
+
+        def _process() -> ProcessingResult:
+            if input_path.is_dir():
+                return self.process_folder(input_path)
+            elif input_path.suffix in [".gz", ".tar.gz", ".tgz"]:
+                result, temp_dir = self.process_compressed(str(input_path), cleanup)
+                result.temp_dir = temp_dir
+                return result
+            else:
+                return self.process_file(input_path)
+
+        return self._handle_file_operation(
+            _process, f"Failed to process input {input_path}"
+        )
+
 
 if __name__ == "__main__":
     from latex2json.utils.logger import setup_logger
@@ -232,16 +264,33 @@ if __name__ == "__main__":
 
     tex_reader = TexReader(logger)
 
-    try:
-        # # Example usage with compressed file
-        # gz_file = "papers/arXiv-2301.10945v1.tar.gz"
-        # output, temp_dir = tex_reader.process_compressed(gz_file)
-        # tex_reader.save_to_json(output)
+    # # Example usage with compressed file
+    # gz_file = "papers/arXiv-2301.10945v1.tar.gz"
+    # output, temp_dir = tex_reader.process_compressed(gz_file)
+    # tex_reader.save_to_json(output)
 
-        # Example usage with folder
-        folder_path = "papers/new/arXiv-2304.02643v1"
-        output = tex_reader.process_folder(folder_path)
-        tex_reader.save_to_json(output)
-
-    except Exception as e:
-        print(f"Error: {str(e)}")
+    # Example usage with folder
+    target_folder = "outputs"
+    folders = [
+        # "papers/new/arXiv-math0503066v2",
+        # "papers/tested/arXiv-1509.05363v6",
+        # "papers/tested/arXiv-1706.03762v7",
+        # "papers/tested/arXiv-2303.08774v6",
+        # "papers/tested/arXiv-2301.10945v1",
+        # "papers/tested/arXiv-1907.11692v1",
+        # "papers/tested/arXiv-1712.01815v1",
+        # "papers/new/arXiv-2304.02643v1",
+        # "papers/tested/arXiv-2010.13219v3",
+        # "papers/tested/arXiv-1710.09829v2",
+        "papers/tested/arXiv-1512.03385v1",
+        # "papers/new/arXiv-hep-th0603057v3",
+        "papers/tested/arXiv-math9404236v1.tex",
+        # "papers/tested/arXiv-2301.10303v4.tex",
+        # "papers/tested/arXiv-2105.02865v3.tex",
+        "papers/arXiv-2301.10945v1.tar.gz",
+    ]
+    for folder in folders:
+        save_path = target_folder + "/" + folder.split("/")[-1] + ".json"
+        output = tex_reader.process(folder)
+        tex_reader.save_to_json(output, save_path)
+        print("SAVED TO", save_path)
