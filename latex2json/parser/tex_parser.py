@@ -34,7 +34,7 @@ from latex2json.utils.tex_utils import (
     read_tex_file_content,
     strip_latex_comments,
 )
-from latex2json.parser.sty_parser import LatexStyParser
+from latex2json.parser.tex_preprocessor import LatexPreprocessor
 from latex2json.parser.patterns import (
     PATTERNS,
     USEPACKAGE_PATTERN,
@@ -62,8 +62,6 @@ class LatexParser:
         # color definitions via \definecolor
         self.colors = {}  # e.g. {"mycolor": {"format": "HTML", "value": "FF0000"}}
 
-        # STY parser
-        self.sty_parser = LatexStyParser(logger=self.logger)
         # Bib parser
         self.bib_parser = BibParser(logger=self.logger)
 
@@ -102,6 +100,9 @@ class LatexParser:
         ]
         self.new_definition_handler = NewDefinitionHandler()
 
+        # Add preprocessor
+        self.preprocessor = LatexPreprocessor(logger=self.logger)
+
     # getter for commands
     @property
     def commands(self):
@@ -118,13 +119,17 @@ class LatexParser:
         self.current_str = ""
         self.current_file_dir = None
         self.current_env = None
+
         self.command_processor.clear()
         # handlers
         for handler in self.handlers:
             handler.clear()
         self.if_else_block_handler.clear()
         self.new_definition_handler.clear()
-        self.sty_parser.clear()
+
+        # preprocessor
+        self.preprocessor.clear()
+        # bib parser
         self.bib_parser.clear()
 
     def get_colors(self) -> Dict[str, Dict[str, str]]:
@@ -221,26 +226,6 @@ class LatexParser:
             return token, end_pos
 
         return None, 0
-
-    def _check_usepackage(self, content: str) -> None:
-        # check for STY file
-        match = USEPACKAGE_PATTERN.match(content)
-        if match:
-            package_names = match.group(1).strip()
-            for package_name in package_names.split(","):
-                package_path = package_name.strip()
-                if self.current_file_dir:
-                    package_path = os.path.join(self.current_file_dir, package_path)
-                if not package_path.endswith(".sty"):
-                    package_path += ".sty"
-                if os.path.exists(package_path):
-                    tokens = self.sty_parser.parse_file(package_path)
-                    for token in tokens:
-                        self._process_new_definition_token(token)
-                # else:
-                #     self.logger.warning(f"Package file not found: {package_path}")
-            return match.end()
-        return 0
 
     def _process_new_definition_token(self, token: Dict) -> None:
         if token and "name" in token:
@@ -447,6 +432,7 @@ class LatexParser:
         line_break_delimiter: str = "\n",
         handle_unknown_commands: bool = True,
         handle_legacy_formatting: bool = True,
+        preprocess: bool = False,
     ) -> List[Dict]:
         """
         Parse LaTeX content string into tokens.
@@ -463,6 +449,9 @@ class LatexParser:
         """
         if isinstance(content, str):
             content = strip_latex_comments(content)
+            
+        if preprocess:
+            content = self.preprocess(content)
 
         tokens = []
         current_pos = 0
@@ -507,11 +496,6 @@ class LatexParser:
                 current_pos += next_pos
                 if not next_delimiter:
                     break
-                continue
-
-            end_pos = self._check_usepackage(content[current_pos:])
-            if end_pos > 0:
-                current_pos += end_pos
                 continue
 
             # check for user defined commands (important to check before new definitions in case of floating \csname)
@@ -604,6 +588,18 @@ class LatexParser:
 
         return tokens
 
+    def preprocess(self, content: str) -> str:
+        # Preprocess content before parsing
+        content, definition_tokens = self.preprocessor.preprocess(
+            content, self.current_file_dir
+        )
+
+        # Process any definition tokens
+        for token in definition_tokens:
+            self._process_new_definition_token(token)
+
+        return content
+
     def parse_file(
         self, file_path: str, extension: str = ".tex"
     ) -> List[Dict[str, str]]:
@@ -630,7 +626,7 @@ class LatexParser:
                 self.logger.error(f"File not found: {file_path}", exc_info=True)
                 return []
 
-            out = self.parse(content)
+            out = self.parse(content, preprocess=True)
             self.logger.info(f"Finished parsing file: {file_path}")
             return out
         except Exception as e:

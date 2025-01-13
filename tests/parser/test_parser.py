@@ -18,6 +18,7 @@ def parsed_training_tokens(parser):
 
 
 dir_path = os.path.dirname(os.path.abspath(__file__))
+samples_dir_path = os.path.join(dir_path, "samples")
 
 # Convert test classes to groups of functions
 # TestParserText1 class becomes:
@@ -1763,11 +1764,11 @@ def test_inputs_with_files(parser):
     text = r"""
     PRE INPUT
 
-    \input{%s/samples/example.tex}
+    \input{%s/example.tex}
 
     POST INPUT
     """ % (
-        dir_path
+        samples_dir_path
     )
     parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) > 2
@@ -1791,11 +1792,11 @@ def test_bibliography_file(parser):
     text = r"""
     PRE BIBLIOGRAPHY
 
-    \bibliography{%s/samples/bib}
+    \bibliography{%s/bib}
 
     POST BIBLIOGRAPHY
     """ % (
-        dir_path
+        samples_dir_path
     )
     parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) == 3
@@ -1901,6 +1902,38 @@ def test_textcolor(parser):
     assert parsed_tokens[1]["type"] == "text"
     assert parsed_tokens[1]["content"].strip() == "Bruh"
     assert parsed_tokens[1].get("styles", []) == []
+
+
+def test_sty_usepackage(parser):
+    text = r"""
+    \usepackage{%s/package2}
+
+    \bar
+    """ % (
+        samples_dir_path
+    )
+    parsed_tokens = parser.parse(text, preprocess=True)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "foo"
+
+
+def test_preprocess_and_def_beginend(parser):
+    text = r"""
+    \def\bea{\begin{eqnarray}}
+    \def\eea{\end{eqnarray}}
+    
+    \bea
+    1+1=2
+    \eea
+    """
+    parsed_tokens = parser.parse(text, preprocess=True)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "equation"
+    assert parsed_tokens[0]["content"].strip() == r"1+1=2"
+
+    assert "bea" in parser.commands
+    assert "eea" in parser.commands
 
 
 if __name__ == "__main__":
