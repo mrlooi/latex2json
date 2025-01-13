@@ -77,6 +77,7 @@ This parser has been successfully tested on the following arxiv papers, includin
 - [hep-th/0603057] Dynamics of dark energy (Physics/High Energy Physics, 2006)
 - [1706.03762v7] Attention is all you need (AI/ML, 2017)
 - [2303.08774v6] GPT-4 Technical Report (AI/ML, 2023)
+- [1703.06870] Mask R-CNN (Computer Vision, 2017)
 - [2301.10945v1] A Fully First-Order Method for Stochastic Bilevel Optimization (Computer Science/Optimization, 2023)
 - [1907.11692v1] RoBERTa: A Robustly Optimized BERT Pretraining Approach (AI/ML, 2019)
 - [1712.01815v1] Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm (AI/ML, 2017) # limitations on /chess related commands
