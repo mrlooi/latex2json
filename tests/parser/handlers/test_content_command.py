@@ -60,6 +60,9 @@ def test_handle_captions(handler):
     token, pos = handler.handle(r"\caption{A simple caption}")
     assert token == {"type": "caption", "content": "A simple caption"}
 
+    token, pos = handler.handle(r"\caption[crit]{A simple caption}")
+    assert token == {"type": "caption", "content": "A simple caption"}
+
     # Test captionof
     token, pos = handler.handle(r"\captionof{figure}{A figure caption}")
     assert token == {

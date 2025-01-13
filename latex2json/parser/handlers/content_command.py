@@ -17,6 +17,8 @@ PARAGRAPH_LEVELS = {
     "subparagraph": 2,
 }
 
+OPTIONAL_BRACE_PATTERN = r"(?:\[([^\]]*)\])?"
+
 RAW_PATTERNS = OrderedDict(
     [
         # 1. Commands that need nested brace handling (simplified patterns)
@@ -26,39 +28,44 @@ RAW_PATTERNS = OrderedDict(
         ("chapter", r"\\chapter\*?\s*{"),
         ("paragraph", r"\\(?:(?:sub)*paragraph\*?)\s*{"),
         ("footnote", r"\\footnote\*?\s*{"),
-        ("caption", r"\\caption\*?\s*{"),
+        ("caption", r"\\caption\*?\s*%s\s*{" % OPTIONAL_BRACE_PATTERN),
         ("captionof", r"\\captionof\*?\s*{([^}]*?)}\s*{"),
         # input
         ("input_file", r"\\(?:input|include)\s*{"),
         # REFs
         ("ref", r"\\(?:c|auto|eq|page)?ref\*?\s*{"),
-        ("hyperref", r"\\hyperref\s*\[([^]]*)\]\s*{"),
+        ("hyperref", r"\\hyperref\s*%s\s*{" % OPTIONAL_BRACE_PATTERN),
         ("href", r"\\href\s*{([^}]*)}\s*{"),
         # bookmarks (similar to refs?)
-        ("bookmark", r"\\bookmark\s*(?:\[([^\]]*)\])?\s*{"),
+        ("bookmark", r"\\bookmark\s*%s\s*{" % OPTIONAL_BRACE_PATTERN),
         (
             "pdfbookmark",
-            r"\\(?:below|current)?pdfbookmark\s*(?:\[([^\]]*)\])?\s*{([^}]*)}\s*{",
+            r"\\(?:below|current)?pdfbookmark\s*%s\s*{([^}]*)}\s*{"
+            % OPTIONAL_BRACE_PATTERN,
         ),
-        ("footnotemark", r"\\footnotemark(?:\[([^\]]*)\])?"),
-        ("footnotetext", r"\\footnotetext(?:\[([^\]]*)\])?\s*{"),
+        ("footnotemark", r"\\footnotemark%s" % OPTIONAL_BRACE_PATTERN),
+        ("footnotetext", r"\\footnotetext%s\s*{" % OPTIONAL_BRACE_PATTERN),
         # URLs
         ("url", r"\\(?:url|path)\s*{"),
         # Graphics
-        ("includegraphics", r"\\includegraphics\s*(?:\[([^\]]*)\])?\s*{"),
-        ("includepdf", r"\\includepdf\s*(?:\[([^\]]*)\])?\s*{"),
+        ("includegraphics", r"\\includegraphics\s*%s\s*{" % OPTIONAL_BRACE_PATTERN),
+        ("includepdf", r"\\includepdf\s*%s\s*{" % OPTIONAL_BRACE_PATTERN),
         ("graphicspath", r"\\graphicspath\s*{"),  # ignore?
         # Citations
         (
             "citation",
-            r"\\(?:c(?:ite|itep|itet|itealt|itealp|iteauthor))(?:\[([^\]]*)\])?\s*{",
+            r"\\(?:c(?:ite|itep|itet|itealt|itealp|iteauthor))%s\s*{"
+            % OPTIONAL_BRACE_PATTERN,
         ),
         # Citations with just braces
         ("citetext", r"\\(?:citetext|citenum)\s*{"),
         # Citations with two braces
         ("defcitealias", r"\\defcitealias\s*{([^}]*)}\s*{"),
         # Citations with optional brackets (year/author specific)
-        ("citeyear", r"\\(?:citeyear|citeyearpar|citefullauthor)(?:\[([^\]]*)\])?\s*{"),
+        (
+            "citeyear",
+            r"\\(?:citeyear|citeyearpar|citefullauthor)%s\s*{" % OPTIONAL_BRACE_PATTERN,
+        ),
         # Title
         ("title", r"\\title\s*{"),
         # appendix
