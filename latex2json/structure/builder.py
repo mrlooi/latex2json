@@ -117,35 +117,32 @@ class TokenBuilder:
 
     def _concat_text_with_same_styles(self, tokens):
         concatenated_tokens = []
-        current_text = None
+        current_text_token = None
 
         for token in tokens:
             if isinstance(token, dict) and token.get("type") == "text":
-                if current_text is None:
-                    current_text = token
+                if current_text_token is None:
+                    current_text_token = token
                 else:
-                    prev_content = current_text["content"]
+                    prev_content = current_text_token["content"]
                     next_content = token["content"]
-                    add_space = self._should_add_space(prev_content, next_content)
                     # merge text tokens with same style
-                    if current_text.get("styles") == token.get("styles"):
-
-                        current_text["content"] += (
+                    if current_text_token.get("styles") == token.get("styles"):
+                        add_space = self._should_add_space(prev_content, next_content)
+                        current_text_token["content"] += (
                             " " + next_content if add_space else next_content
                         )
                     else:
-                        concatenated_tokens.append(current_text)
-                        current_text = token
-                        if add_space:
-                            token["content"] = " " + token["content"]
+                        concatenated_tokens.append(current_text_token)
+                        current_text_token = token
             else:
-                if current_text is not None:
-                    concatenated_tokens.append(current_text)
-                    current_text = None
+                if current_text_token is not None:
+                    concatenated_tokens.append(current_text_token)
+                    current_text_token = None
                 concatenated_tokens.append(token)
 
-        if current_text is not None:
-            concatenated_tokens.append(current_text)
+        if current_text_token is not None:
+            concatenated_tokens.append(current_text_token)
 
         return concatenated_tokens
 
