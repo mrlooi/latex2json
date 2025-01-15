@@ -168,8 +168,6 @@ def test_date_command(handler):
 
 def test_misc_formatting_commands(handler):
     text = r"""
-    \documentclass[12pt,a4paper,reqno]{amsart}
-    \documentclass{XXX}
     \hypersetup{colorlinks,linkcolor={blue},citecolor={blue},urlcolor={red}}  
     \pagestyle{empty}
     \numberwithin{equation}{section}

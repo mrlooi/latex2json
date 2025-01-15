@@ -8,6 +8,10 @@ def preprocessor():
     return LatexPreprocessor()
 
 
+dir_path = os.path.dirname(os.path.abspath(__file__))
+sample_path = os.path.join(dir_path, "samples")
+
+
 def test_newcommand_processing(preprocessor):
     text = r"""
     \newcommand{\test}{TEST}
@@ -51,15 +55,25 @@ def test_newif_processing(preprocessor):
 
 def test_usepackage_processing(preprocessor):
     # Create a test directory path
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    sample_path = os.path.join(dir_path, "samples")
-
     text = r"\usepackage{package1}"
     processed, tokens = preprocessor.preprocess(text, file_dir=sample_path)
     assert processed.strip() == ""
     assert len(tokens) == 1
     assert tokens[0]["type"] == "newcommand"
     assert tokens[0]["name"] == "foo"
+
+
+def test_documentclass_processing(preprocessor):
+    text = r"""
+    \documentclass{basecls}
+    \somecmd
+    """
+    processed, tokens = preprocessor.preprocess(text, file_dir=sample_path)
+    assert processed.strip() == "Some command"
+    assert len(tokens) == 1
+
+    assert tokens[0]["type"] == "newcommand"
+    assert tokens[0]["name"] == "somecmd"
 
 
 def test_recursive_command_warning(preprocessor, caplog):

@@ -55,11 +55,6 @@ RAW_PATTERNS = OrderedDict(
         # date
         ("date", r"\\date\s*\{"),
         ("today", r"\\today\b"),
-        # top level commands
-        (
-            "documentclass",
-            r"\\documentclass\s*%s\s*\{([^}]+)\}" % OPTIONAL_BRACE_PATTERN,
-        ),
         ("subjclass", r"\\subjclass\s*%s\s*\{[^}]+\}" % OPTIONAL_BRACE_PATTERN),
         # Formatting commands
         ("setup", r"\\(?:hypersetup|captionsetup)%s\s*{" % OPTIONAL_BRACE_PATTERN),

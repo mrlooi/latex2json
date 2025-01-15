@@ -23,6 +23,12 @@ from latex2json.utils.tex_utils import (
 )
 from latex2json.parser.sty_parser import LatexStyParser
 
+OPTIONAL_BRACE_PATTERN = r"(?:\[[^\]]*\])?"
+
+DOCUMENTCLASS_PATTERN = re.compile(
+    r"\\documentclass\s*%s\s*\{([^}]+)\}" % OPTIONAL_BRACE_PATTERN
+)
+
 
 class LatexPreprocessor:
     def __init__(self, logger=None):
@@ -48,10 +54,16 @@ class LatexPreprocessor:
         # 1. Strip comments
         content = strip_latex_comments(content)
 
-        # 2. Process all definitions and expand commands
-        content, tokens = self._process_definitions_and_expand(content, file_dir)
+        # 2. Check for documentclass (only once at the start)
+        end_pos, out_tokens = self._check_documentclass(content, file_dir)
+        if end_pos > 0:
+            content = content[end_pos:]
 
-        return content, tokens
+        # 3. Process all definitions and expand commands
+        content, tokens = self._process_definitions_and_expand(content, file_dir)
+        out_tokens.extend(tokens)
+
+        return content, out_tokens
 
     def _process_new_definition_token(self, token: Dict) -> None:
         if token and "name" in token:
@@ -109,6 +121,21 @@ class LatexPreprocessor:
             return token, end_pos
         return None, 0
 
+    def _check_documentclass(
+        self, content: str, file_dir: str = None
+    ) -> tuple[int, list[Dict]]:
+        """Check for documentclass command
+
+        Returns:
+            int: end position of the match
+        """
+        match = DOCUMENTCLASS_PATTERN.search(content)
+        if match:
+            cls_name = match.group(1).strip()
+            tokens = self._parse_packages([cls_name], file_dir, ".cls")
+            return match.end(), tokens
+        return 0, []
+
     def _check_usepackage(
         self, content: str, file_dir: str = None
     ) -> tuple[int, list[Dict]]:
@@ -119,24 +146,29 @@ class LatexPreprocessor:
         """
         # check for STY file
         match = USEPACKAGE_PATTERN.match(content)
-        sty_tokens = []
+        tokens = []
         if match:
             package_names = match.group(1).strip()
-            for package_name in package_names.split(","):
-                package_path = package_name.strip()
-                if file_dir:
-                    package_path = os.path.join(file_dir, package_path)
-                if not package_path.endswith(".sty"):
-                    package_path += ".sty"
-                if os.path.exists(package_path):
-                    tokens = self.sty_parser.parse_file(package_path)
-                    sty_tokens.extend(tokens)
-                    for token in tokens:
-                        self._process_new_definition_token(token)
-            # else:
-            #     self.logger.warning(f"Package file not found: {package_path}")
-            return match.end(), sty_tokens
+            tokens = self._parse_packages(package_names.split(","), file_dir, ".sty")
+            return match.end(), tokens
         return 0, []
+
+    def _parse_packages(
+        self, package_names: list[str], file_dir: str = None, extension=".sty"
+    ) -> list[Dict]:
+        tokens = []
+        for package_name in package_names:
+            package_path = package_name.strip()
+            if file_dir:
+                package_path = os.path.join(file_dir, package_path)
+            if not package_path.endswith(extension):
+                package_path += extension
+            if os.path.exists(package_path):
+                _tokens = self.sty_parser.parse_file(package_path)
+                tokens.extend(_tokens)
+                for token in _tokens:
+                    self._process_new_definition_token(token)
+        return tokens
 
     def _process_definitions_and_expand(
         self, content: str, file_dir: str = None

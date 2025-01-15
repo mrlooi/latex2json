@@ -1,0 +1,1 @@
+\newcommand{\somecmd}{Some command}
