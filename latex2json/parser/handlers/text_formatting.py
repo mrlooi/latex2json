@@ -79,7 +79,7 @@ PATTERNS = {
     "fontsize": re.compile(r"\\fontsize" + (r"\s*" + BRACE_CONTENT_PATTERN) * 2),
     "selectfont": re.compile(r"\\selectfont\b"),
     "usefont": re.compile(r"\\usefont" + (r"\s*" + BRACE_CONTENT_PATTERN) * 4),
-    "color": re.compile(r"\\textcolor\s*{"),
+    "color": re.compile(r"\\textcolor\s*(\[\w+\])?\s*{"),
     "columns": re.compile(r"\\(?:onecolumn\b|twocolumn\s*\[?)"),
     "subfloat": re.compile(r"\\subfloat\s*\["),
 }
@@ -252,7 +252,12 @@ class TextFormattingHandler(TokenHandler):
         total_pos = start_pos + end_pos
         styles = []
         if len(blocks) == 2:
-            color = "color=" + blocks[0].strip()
+            block0 = blocks[0].strip()
+            color = "color="
+            if match.group(1):
+                color += "{%s:%s}" % (match.group(1).strip("[").strip("]"), block0)
+            else:
+                color += block0
             styles = [color]
             text = blocks[1]
 
@@ -351,14 +356,7 @@ if __name__ == "__main__":
     #     check(text)
 
     text = r"""
-    \nicefrac{
-        FIRST    
-        BLOCK
-    } {
-        SECOND
-        BLOCK
-    }
-    after frac
+\textcolor[HTML]{FF0000}{Haha}
 """.strip()
     print(handler.handle(text))
 

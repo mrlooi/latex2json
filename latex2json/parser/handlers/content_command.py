@@ -69,11 +69,11 @@ RAW_PATTERNS = OrderedDict(
         # Title
         ("title", r"\\title\s*{"),
         # appendix
-        ("appendix", r"\\appendix\b"),
+        ("appendix", r"\\(?:appendix|appendices)\b"),
         # keywords
         ("keywords", r"\\keywords\s*{"),
         # bibliography
-        ("bibliography_file", r"\\bibliography\s*{"),
+        ("bibliography_file", r"\\(?:bibliography|addbibresource)\s*{"),
     ]
 )
 

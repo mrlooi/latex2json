@@ -168,6 +168,11 @@ def test_color_formatting(handler):
     assert out == r"\textcolor{red}{ Haha }"
     assert text[end_pos:] == r"\color{blue} aaa"
 
+    text = r"\color[HTML]{FF0000} Haha \color{blue} aaa"
+    out, end_pos = handler.handle(text)
+    assert out == r"\textcolor[HTML]{FF0000}{ Haha }"
+    assert text[end_pos:] == r"\color{blue} aaa"
+
     text = r"\normalcolor Haha"
     out, end_pos = handler.handle(text)
     assert out == ""

@@ -98,6 +98,7 @@ def test_handle_color_commands(handler):
 \rowcolor{gray}               % Table row color
 \columncolor{blue}            % Table column color
 \cellcolor{red}               % Single cell color
+\cellcolor[HTML]{656565}{Hi}
 """
 
     lines = color_text.strip().split("\n")
@@ -271,6 +272,7 @@ def test_misc_formatting_commands(handler):
     \parindent = 0 pt
     \parskip = 5 pt
     \kern.4ex
+    \pdfinfo{/Author (OK-Robot)}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

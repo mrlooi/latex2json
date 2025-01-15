@@ -76,7 +76,7 @@ SIZE_PATTERN = re.compile(
     r"\\(" + "|".join(LEGACY_SIZE_MAPPING.keys()) + r")(?![a-zA-Z])\s*\{?"
 )
 
-COLOR_PATTERN = re.compile(r"\\(color\s*\{|normalcolor\b)")
+COLOR_PATTERN = re.compile(r"\\(?:color\s*(\[\w+\])?\s*\{|normalcolor\b)")
 
 PATTERNS = {
     "font": FONT_PATTERN,
@@ -115,7 +115,11 @@ class LegacyFormattingHandler(TokenHandler):
                 if matched_str.startswith("\\color"):
                     # our regex is \color{
                     text, end_pos = extract_nested_content("{" + content[next_pos:])
-                    modern_command = "textcolor{%s}" % text
+                    modern_command = "textcolor"
+
+                    if match.group(1):
+                        modern_command += match.group(1).strip()  # e.g. [HTML]
+                    modern_command += "{%s}" % text
                     end_pos -= 1  # remove the opening brace
                     if end_pos > 0:
                         matched_str += content[next_pos : next_pos + end_pos]

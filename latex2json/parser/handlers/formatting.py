@@ -10,13 +10,15 @@ from latex2json.utils.tex_utils import (
 )
 import decimal
 
+OPTIONAL_BRACE_PATTERN = r"(?:\[([^\]]*)\])?"
 
 COLOR_CELLS_PATTERN = re.compile(
     r"""
     \\(?:
-        (?:row|column|cell)color\*?{[^}]*}   # \rowcolor, \columncolor, \cellcolor
+        (?:row|column|cell)color\*?\s*%s\s*{[^}]*}   # \rowcolor, \columncolor, \cellcolor
     )
-    """,
+    """
+    % OPTIONAL_BRACE_PATTERN,
     re.VERBOSE,
 )
 
@@ -34,6 +36,7 @@ number_points_suffix = (
     number_regex + r"\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)(?=[^a-zA-Z]|$)"
 )
 
+
 RAW_PATTERNS = OrderedDict(
     [
         # Comments
@@ -48,14 +51,18 @@ RAW_PATTERNS = OrderedDict(
         ),
         # pdf options
         ("pdf", r"\\(?:pdfoutput|pdfsuppresswarningpagegroup)\s*=\s*\d+"),
+        ("pdfinfo", r"\\pdfinfo\s*{"),
         # date
         ("date", r"\\date\s*\{"),
         ("today", r"\\today\b"),
         # top level commands
-        ("documentclass", r"\\documentclass(?:\s*\[([^\]]*)\])?\s*\{([^}]+)\}"),
-        ("subjclass", r"\\subjclass\s*(?:\[[^\]]*\])?\s*\{[^}]+\}"),
+        (
+            "documentclass",
+            r"\\documentclass\s*%s\s*\{([^}]+)\}" % OPTIONAL_BRACE_PATTERN,
+        ),
+        ("subjclass", r"\\subjclass\s*%s\s*\{[^}]+\}" % OPTIONAL_BRACE_PATTERN),
         # Formatting commands
-        ("setup", r"\\(?:hypersetup|captionsetup)(?:\[([^\]]*)\])?\s*{"),
+        ("setup", r"\\(?:hypersetup|captionsetup)%s\s*{" % OPTIONAL_BRACE_PATTERN),
         (
             "make_or_contents",
             r"\\(?:maketitle|makeatletter|makeatother|tableofcontents)\b",
@@ -84,11 +91,15 @@ RAW_PATTERNS = OrderedDict(
             "style",
             r"\\(?:pagestyle|urlstyle|thispagestyle|theoremstyle|bibliographystyle|documentstyle|setcitestyle)\s*\{[^}]*\}",
         ),
+        ("print", r"\\printbibliography\b"),
         ("newstyle", r"\\(?:newpagestyle|renewpagestyle)\s*\{[^}]*\}\s*{"),
         # ("font", r"\\(?:mdseries|bfseries|itshape|slshape|normalfont|ttfamily)\b"),
         # setters
         ("lstset", r"\\lstset\s*{"),
-        ("setlist", r"\\setlist(?:\s*\[([^\]]*)\])?\s*{"),  # Added setlist pattern
+        (
+            "setlist",
+            r"\\setlist\s*%s\s*{" % OPTIONAL_BRACE_PATTERN,
+        ),  # Added setlist pattern
         (
             "value",
             r"\\value\s*\{([^}]+)\}",
@@ -319,6 +330,7 @@ class FormattingHandler(TokenHandler):
                     "addtocontents",
                     "hyphenation",
                     "typeout",
+                    "pdfinfo",
                 ]:
                     # extracted nested
                     start_pos = match.end() - 1
