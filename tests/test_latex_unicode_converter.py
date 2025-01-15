@@ -18,6 +18,9 @@ def test_basic_conversion(converter):
     assert converter.convert(r"\L{}") == "Ł"
     assert converter.convert(r"\textbackslash{}") == "\\"
 
+    assert converter.convert(r"{[}") == "["
+    assert converter.convert(r"{]}") == "]"
+
 
 def test_accented_characters(converter):
     assert converter.convert(r"\H{o}") == "ő"

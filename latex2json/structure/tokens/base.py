@@ -7,6 +7,7 @@ class BaseToken(BaseModel):
     """Base class for all LaTeX tokens"""
 
     type: TokenType
+    # e.g. ["color={HTML:FF0000}", "color=red", "bold", "italic", ...]
     styles: Optional[List[str]] = None
     content: Union[str, List["BaseToken"]]
 
