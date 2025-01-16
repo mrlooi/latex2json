@@ -29,6 +29,7 @@ from latex2json.parser.patterns import (
     USEPACKAGE_PATTERN,
     WHITELISTED_COMMANDS,
     DELIM_PATTERN,
+    LOADCLASS_PATTERN,
 )
 
 INCLUDE_PATTERN = re.compile(r"\\input\s*\{([^}]+)\}", re.DOTALL)
@@ -42,7 +43,6 @@ class LatexStyParser:
         self.logger = logger or logging.getLogger(__name__)
 
         self.current_file_dir = None
-        self.current_file_path = None
         self.parsed_files = set()
 
         self.if_else_block_handler = IfElseBlockHandler()
@@ -51,7 +51,6 @@ class LatexStyParser:
 
     def clear(self):
         self.current_file_dir = None
-        self.current_file_path = None
         self.parsed_files.clear()
         self.if_else_block_handler.clear()
         self.new_definition_handler.clear()
@@ -98,24 +97,43 @@ class LatexStyParser:
                 return token, end_pos
         return None, 0
 
-    def _check_usepackage(self, content: str) -> None:
-        match = USEPACKAGE_PATTERN.match(content) or INCLUDE_PATTERN.match(content)
+    def _parse_packages(self, package_names: list[str], extension=".sty") -> list[Dict]:
         tokens = []
+        for package_name in package_names:
+            package_path = package_name.strip()
+            if self.current_file_dir:
+                package_path = os.path.join(self.current_file_dir, package_path)
+            if not package_path.endswith(extension):
+                package_path += extension
+            if os.path.exists(package_path):
+                tokens.extend(self.parse_file(package_path))
+        return tokens
+
+    def _check_usepackage(self, content: str) -> Tuple[List[Dict], int]:
+        """Check for usepackage commands and parse any found .sty files
+
+        Returns:
+            tuple: (list of tokens from sty files, end_position)
+        """
+        match = USEPACKAGE_PATTERN.match(content) or INCLUDE_PATTERN.match(content)
         if match:
             package_names = match.group(1).strip()
-            for package_name in package_names.split(","):
-                package_name = package_name.strip()
-                if not package_name.endswith(".sty"):
-                    package_name += ".sty"
-                package_path = package_name
-                if self.current_file_dir:
-                    package_path = os.path.join(self.current_file_dir, package_name)
-                if os.path.exists(package_path):
-                    tokens.extend(self.parse_file(package_path))
-                # else:
-                #     self.logger.warning(f"Package file not found: {package_path}")
+            tokens = self._parse_packages(package_names.split(","))
             return tokens, match.end()
-        return tokens, 0
+        return [], 0
+
+    def _check_loadclass(self, content: str) -> Tuple[List[Dict], int]:
+        """Check for \loadclass commands and parse any found .cls files
+
+        Returns:
+            tuple: (list of tokens from cls files, end_position)
+        """
+        match = LOADCLASS_PATTERN.match(content)
+        if match:
+            class_names = match.group(1).strip()
+            tokens = self._parse_packages(class_names.split(","), extension=".cls")
+            return tokens, match.end()
+        return [], 0
 
     def parse(
         self,
@@ -137,7 +155,6 @@ class LatexStyParser:
         """
         if file_path:
             self.current_file_dir = os.path.dirname(os.path.abspath(file_path))
-            self.current_file_path = file_path
 
         if isinstance(content, str):
             content = strip_latex_comments(content)
@@ -211,6 +228,13 @@ class LatexStyParser:
                 tokens.extend(new_tokens)
                 continue
 
+            # Add check for loadclass
+            new_tokens, end_pos = self._check_loadclass(content[current_pos:])
+            if end_pos > 0:
+                current_pos += end_pos
+                tokens.extend(new_tokens)
+                continue
+
             # check for new definition commands
             token, end_pos = self._check_for_new_definitions(content[current_pos:])
             if end_pos > 0:
@@ -249,7 +273,6 @@ class LatexStyParser:
 
             self.logger.info(f"Parsing file: {file_path}, ext: {extension}")
             current_file_dir = self.current_file_dir
-            current_file_path = self.current_file_path
 
             content = read_tex_file_content(file_path, extension=extension)
             self.logger.info(f"Finished parsing file: {file_path}")
@@ -257,7 +280,6 @@ class LatexStyParser:
 
             out = self.parse(content, file_path=file_path)
             self.current_file_dir = current_file_dir
-            self.current_file_path = current_file_path
             return out
         except Exception as e:
             self.logger.error(

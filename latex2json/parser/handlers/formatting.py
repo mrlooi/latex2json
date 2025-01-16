@@ -45,7 +45,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "class_setup",
             re.compile(
-                r"\\(?:NeedsTeXFormat\s*\{([^}]+)\}|LoadClass\s*\[([^\]]*)\]\s*\{([^}]+)\}|(?:ProvidesClass|ProvidesPackage)\s*\{([^}]+)\}\s*\[)",
+                r"\\(?:NeedsTeXFormat\s*\{([^}]+)\}|(?:ProvidesClass|ProvidesPackage)\s*\{([^}]+)\}\s*\[)",
                 re.DOTALL,
             ),
         ),
@@ -64,7 +64,7 @@ RAW_PATTERNS = OrderedDict(
         ),
         (
             "page",
-            r"\\enlargethispage\s*\{[^}]*\}|\\pagecolor\*?{[^}]*}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|break|scriptsize|scriptstyle|sloppy|flushbottom|flushleft|flushright|flushtop)\b",
+            r"\\enlargethispage\s*\{[^}]*\}|\\pagecolor\*?{[^}]*}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|vfil|break|scriptsize|scriptstyle|sloppy|flushbottom|flushleft|flushright|flushtop)\b",
         ),
         (
             "pagebreak",
@@ -104,7 +104,11 @@ RAW_PATTERNS = OrderedDict(
             "margins",
             r"\\(?:rightmargin|leftmargin)\b|"
             + r"\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|skip|footskip|headheight|headsep|footnotesep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz)"
-            + r"\s*(\=?\s*(?:%s))?" % (number_points_suffix)
+            + r"\s*(\=?\s*(?:%s))?" % (number_points_suffix),
+        ),
+        (
+            "lineskip",
+            r"\\lineskip\s*%s" % (number_points_suffix)
             + r"|(%s)?\\baselineskip" % (number_regex),
         ),
         # width

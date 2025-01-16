@@ -12,10 +12,15 @@ DELIM_PATTERN = re.compile(
     r"(?<!\\)(?:\\\\|\$|%|(?:^|[ \t])\{|\s{|\\\^|\\(?![$%&_#{}^~\\]))"
 )
 
+OPTIONAL_BRACE_PATTERN = r"(?:\[[^\]]*\])?"
+
 USEPACKAGE_PATTERN = re.compile(
-    r"\\(?:usepackage|RequirePackage)(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}",
+    r"\\(?:usepackage|RequirePackage)\s*%s\s*\{([^}]+)\}" % OPTIONAL_BRACE_PATTERN,
     re.DOTALL,
-)  # capture group 1
+)
+LOADCLASS_PATTERN = re.compile(
+    r"\\LoadClass\s*%s\s*\{([^}]+)\}" % OPTIONAL_BRACE_PATTERN, re.DOTALL
+)
 
 # ASSUMES ORDERD DICT (PYTHON 3.7+)
 RAW_PATTERNS = OrderedDict(

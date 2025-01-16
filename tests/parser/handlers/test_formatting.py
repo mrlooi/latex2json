@@ -215,7 +215,6 @@ def test_misc_formatting_commands(handler):
 
     \NeedsTeXFormat{LaTeX2e}
     \ProvidesClass{sigma}[2012/01/18]
-    \LoadClass[fleqn,11pt,twoside]{article}
     \vskip -\parskip
 
     \parindent 4mm
@@ -236,6 +235,7 @@ def test_misc_formatting_commands(handler):
     \enlargethispage{2\baselineskip}
     \baselineskip
     2\baselineskip
+    \lineskip .75em
     \advance\@tempskipa-\@tempdimb
     \advance\section@level-\subsection@level
     \advance\leftmargin by -\rightmargin
