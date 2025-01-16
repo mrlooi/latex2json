@@ -61,11 +61,12 @@ class CommandProcessor:
         if num_args == 0:
 
             def handler(match, text):
-                # check if there is trailing {}
+                # Old: check if there is trailing {}
+                # Update: REMOVED trailing {} check since nested/post-expanded commands may need this {} as a delimiter too
                 start_pos = match.end()
                 end_pos = start_pos
-                if text[start_pos : start_pos + 2] == "{}":
-                    end_pos += 2
+                # if text[start_pos : start_pos + 2] == "{}":
+                #     end_pos += 2
                 return definition, end_pos
 
         else:

@@ -39,7 +39,7 @@ def test_handle_newcommand(processor, newdef_handler):
     text = r"\cmd{} haha"
     out_text, pos = processor.handle(text)
     assert out_text == "some definition"
-    assert text[pos:] == " haha"
+    assert text[pos:] == "{} haha"
 
     # test with args
     content = r"\newcommand{\cmdWithArgs}[2]{arg1=#1, arg2=#2}"

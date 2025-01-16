@@ -867,6 +867,18 @@ def test_nested_newcommands(parser):
     parsed_tokens = parser.parse(text)
     assert parsed_tokens[0]["content"] == "1^{5}"
 
+    parser.clear()
+
+    text = r"""
+    \newcommand{\imageat}{\tocat}
+    \newcommand{\tocat}{~[at]~}
+
+    \imageat{}math.ucla.edu
+"""
+    tokens = parser.parse(text)
+    assert len(tokens) == 1
+    assert tokens[0]["content"].strip() == "~[at]~math.ucla.edu"
+
 
 def test_newcommand_and_grouping(parser):
     text = r"""
