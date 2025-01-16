@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import logging
 from typing import Dict, List, Optional, Tuple
 import re
 
@@ -183,8 +184,9 @@ def try_handle_ifthenelse(
 
 
 class IfElseBlockHandler(TokenHandler):
-    def __init__(self, **kwargs):
+    def __init__(self, logger=None, **kwargs):
         super().__init__(**kwargs)
+        self.logger = logger or logging.getLogger(__name__)
         self.all_ifs: List[Tuple[str, re.Pattern]] = []
         self.all_ifs_compiled: re.Pattern | None = None
         self._reset()
@@ -299,7 +301,9 @@ class IfElseBlockHandler(TokenHandler):
                             if_content, else_content = else_content, if_content
 
                     except ValueError as e:
-                        print(ValueError(f"Unclosed conditional block: {e}"))
+                        self.logger.warning(
+                            ValueError(f"Unclosed conditional block: {e}")
+                        )
                         return None, 0
                     return {
                         "type": "conditional-" + name,

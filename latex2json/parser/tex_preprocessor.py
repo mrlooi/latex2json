@@ -36,8 +36,8 @@ class LatexPreprocessor:
 
         self.command_processor = CommandProcessor()
         self.new_definition_handler = NewDefinitionHandler()
-        self.if_else_block_handler = IfElseBlockHandler()
-        self.sty_parser = LatexStyParser(logger=logger)
+        self.if_else_block_handler = IfElseBlockHandler(logger=self.logger)
+        self.sty_parser = LatexStyParser(logger=self.logger)
 
     def clear(self):
         self.if_else_block_handler.clear()

@@ -45,7 +45,7 @@ class LatexStyParser:
         self.current_file_dir = None
         self.parsed_files = set()
 
-        self.if_else_block_handler = IfElseBlockHandler()
+        self.if_else_block_handler = IfElseBlockHandler(logger=self.logger)
         self.new_definition_handler = NewDefinitionHandler()
         self.command_processor = CommandProcessor()
 

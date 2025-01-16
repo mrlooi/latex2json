@@ -70,7 +70,7 @@ class LatexParser:
         self.env_handler = EnvironmentHandler(logger=self.logger)
 
         self.legacy_formatting_handler = LegacyFormattingHandler()
-        self.if_else_block_handler = IfElseBlockHandler()
+        self.if_else_block_handler = IfElseBlockHandler(logger=self.logger)
         # handlers
         self.handlers: List[TokenHandler] = [
             AuthorHandler(self.parse),

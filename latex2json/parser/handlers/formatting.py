@@ -214,6 +214,7 @@ RAW_PATTERNS = OrderedDict(
         ("newmdenv", re.compile(r"\\newmdenv\s*(?:\[(.*?)\])?\s*\{(.*?)\}", re.DOTALL)),
         ("pz@", r"(?:%s)?\\[pz]@(?![a-zA-Z@])" % number_regex),
         ("slash", r"\\/"),  # \/ (in latex, this is like an empty space)
+        ("@empty", r"\\@empty(?![a-zA-Z@])"),
         ("advance", r"\\advance\\[a-zA-Z@*\d]+(?:\s+by)?(?:\s*-)?\\[a-zA-Z@*\d]+"),
         ("typeout", r"\\typeout\s*{"),
         # other...
