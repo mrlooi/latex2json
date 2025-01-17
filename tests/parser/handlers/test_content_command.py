@@ -141,6 +141,14 @@ def test_handle_citations(handler):
     token, pos = handler.handle(r"\cite[p. 42]{smith2023}")
     assert token == {"type": "citation", "content": "smith2023", "title": "p. 42"}
 
+    # test double []
+    token, pos = handler.handle(r"\cite[p. 42][p. 43]{smith2023}")
+    assert token == {
+        "type": "citation",
+        "content": "smith2023",
+        "title": "p. 42, p. 43",
+    }
+
 
 def test_handle_graphics(handler):
     token, pos = handler.handle(r"\includegraphics{image.png}")

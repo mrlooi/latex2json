@@ -54,8 +54,8 @@ RAW_PATTERNS = OrderedDict(
         # Citations
         (
             "citation",
-            r"\\(?:c(?:ite|itep|itet|itealt|itealp|iteauthor))%s\s*{"
-            % OPTIONAL_BRACE_PATTERN,
+            r"\\(?:c(?:ite|itep|itet|itealt|itealp|iteauthor))\s*%s?%s\s*{"
+            % (OPTIONAL_BRACE_PATTERN, OPTIONAL_BRACE_PATTERN),
         ),
         # Citations with just braces
         ("citetext", r"\\(?:citetext|citenum)\s*{"),
@@ -182,9 +182,12 @@ class ContentCommandHandler(TokenHandler):
         # Citations
         elif matched_type == "citation":
             token = {"type": "citation", "content": content}
-            optional_text = match.group(1) if match.group(1) else None
-            if optional_text:
-                token["title"] = optional_text.strip()
+            # Combine prenote and postnote into title if either exists
+            prenote = match.group(1).strip() if match.group(1) else ""
+            postnote = match.group(2).strip() if match.group(2) else ""
+            if prenote or postnote:
+                combined_note = ", ".join(filter(None, [prenote, postnote]))
+                token["title"] = combined_note
             return token
 
         elif matched_type == "citetext":

@@ -69,6 +69,7 @@ def setup_logger(
     )
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
+    logger.propagate = False
 
     # Create file handler with non-colored formatter (optional)
     if log_file:
