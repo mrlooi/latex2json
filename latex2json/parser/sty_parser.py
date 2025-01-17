@@ -135,6 +135,31 @@ class LatexStyParser:
             return tokens, match.end()
         return [], 0
 
+    def _handle_if_else_block(self, content: str, current_pos: int) -> Tuple[str, int]:
+        """Handle if-else blocks and return the processed content and new position"""
+        if self.if_else_block_handler.can_handle(content[current_pos:]):
+            token, end_pos = self.if_else_block_handler.handle(content[current_pos:])
+            if end_pos > 0:
+                block = ""
+                if token:
+                    typing = token.get("type", "")
+                    if "@" not in typing:
+                        block = token.get("if_content", "")
+                    # Handle iffileexists condition
+                    elif typing == "conditional-iffileexists":
+                        block = token.get("else_content", "")
+
+                        file_path = token.get("condition", "").strip()
+                        if file_path:
+                            if self.current_file_dir:
+                                file_path = os.path.join(
+                                    self.current_file_dir, file_path
+                                )
+                            if os.path.exists(file_path):
+                                block = token.get("if_content", "")
+                return block, current_pos + end_pos
+        return None, current_pos
+
     def parse(
         self,
         content: str,
@@ -244,19 +269,10 @@ class LatexStyParser:
                 continue
 
             # check for if else blocks
-            if self.if_else_block_handler.can_handle(content[current_pos:]):
-                token, end_pos = self.if_else_block_handler.handle(
-                    content[current_pos:]
-                )
-                if end_pos > 0:
-                    block = ""
-                    if token:
-                        if "@" not in token.get("type", ""):
-                            block = token.get("if_content", "")
-                    content = (
-                        content[:current_pos] + block + content[current_pos + end_pos :]
-                    )
-                    continue
+            result, new_pos = self._handle_if_else_block(content, current_pos)
+            if result is not None:
+                content = content[:current_pos] + result + content[new_pos:]
+                continue
 
             current_pos += 1
 

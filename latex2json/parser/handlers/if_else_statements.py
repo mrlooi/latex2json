@@ -72,6 +72,7 @@ IF_PATTERNS_DEFAULT_LIST = OrderedDict(
         "ifdim": re.compile(ifdim_pattern),
         "ifcat": re.compile(ifcat_pattern),
         "ifcase": re.compile(r"\\ifcase" + default_if_pattern),
+        "iffileexists": re.compile(r"\\IfFileExists\s*\{"),
         "@ifclassloaded": re.compile(r"\\@ifclassloaded\s*\{"),
         "@ifpackageloaded": re.compile(r"\\@ifpackageloaded\s*\{"),
         "@ifundefined": re.compile(r"\\@ifundefined\s*\{"),
@@ -242,6 +243,23 @@ class IfElseBlockHandler(TokenHandler):
             "condition": blocks[0],
             "if_content": if_content,
             "else_content": else_content,
+        }, start_pos + end_pos
+
+    def _handle_iffileexists(
+        self, content: str, match: re.Match
+    ) -> Tuple[Optional[Dict], int]:
+        start_pos = match.end() - 1
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "{", "}", max_blocks=3
+        )
+        condition = blocks[0] if len(blocks) > 0 else ""
+        if_true = blocks[1] if len(blocks) > 1 else ""
+        if_false = blocks[2] if len(blocks) > 2 else ""
+        return {
+            "type": "conditional-iffileexists",
+            "condition": condition,
+            "if_content": if_true,
+            "else_content": if_false,
         }, start_pos + end_pos
 
     def handle(
