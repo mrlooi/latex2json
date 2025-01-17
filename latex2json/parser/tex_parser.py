@@ -182,6 +182,7 @@ class LatexParser:
             # Merge consecutive text tokens
             if isinstance(token_dict, list):
                 tokens.extend(token_dict)
+                return
             elif isinstance(token_dict, dict):
                 typing = token_dict.get("type")
                 if typing == "text":
