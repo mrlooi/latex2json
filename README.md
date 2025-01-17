@@ -1,6 +1,6 @@
 # LaTeX2JSON Parser
 
-A python package for parsing LaTeX files into structured token representations and JSON output.
+A python package for parsing LaTeX (.tex) files into structured JSON output.
 
 Currently supports a wide variety of latex papers on arxiv.
 
@@ -132,6 +132,37 @@ The parser generates a structured JSON output that preserves the document hierar
 ```
 
 For more detailed examples of the output structure, see the expected test output in `tests/structure/test_builder.py`.
+
+## Contributions
+
+Contributions to improve LaTeX2JSON are welcome! Here are some areas where help is needed:
+
+1. **Drawing Package Support**
+
+   - Implementing support for TikZ, PGF, and other drawing packages
+
+2. **cls/sty Processing**
+
+   - Improving handling of `.cls` and `.sty` files
+   - Better support for complex `@if` conditionals and LaTeX internals
+   - Expanding macro resolution capabilities (e.g. currently \noexpand or \expandafter are ignored)
+
+3. **Additional commands from various packages**
+
+   - If you find a command that is not supported, please feel free to add them!
+
+### How to Contribute
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/some-feature`)
+3. Commit your changes (`git commit -m 'Add some feature'`)
+4. Push to the branch (`git push origin feature/some-feature`)
+5. Open a Pull Request
+
+Please ensure your PR includes:
+
+- A clear description of the changes
+- Updated tests where applicable
 
 ## License
 
