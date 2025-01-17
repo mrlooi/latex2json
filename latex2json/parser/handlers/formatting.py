@@ -172,8 +172,9 @@ RAW_PATTERNS = OrderedDict(
             r"cline\s*{([^}]+)}|"  # {n-m}
             r"topsep\b|parsep\b|partopsep\b|"
             r"labelsep\s*\{?([^\}]*)\}?|"
-            r"(?:midrule|toprule|bottomrule)(?:\[\d*[\w-]*\])?|"  # optional [trim]
-            r"cmidrule\s*(?:\((.+)\)\s*)?(?:\[([^\]]*)\]\s*)?{([^}]+)}|"  # optional (xxpt)[trim] and {n-m}
+            + r"(?:midrule|toprule|bottomrule)%s|"
+            % (OPTIONAL_BRACE_PATTERN)  # optional [trim]
+            + r"cmidrule\s*(?:\((.+)\)\s*)?(?:\[([^\]]*)\]\s*)?{([^}]+)}|"  # optional (xxpt)[trim] and {n-m}
             r"hdashline(?:\[[\d,\s]*\])?|"  # optional [length,space]
             r"cdashline\s*{([^}]+)}|"  # {n-m}
             r"specialrule\s*{([^}]*)}\s*{([^}]*)}\s*{([^}]*)}|"  # {height}{above}{below}
@@ -182,10 +183,12 @@ RAW_PATTERNS = OrderedDict(
             r"hrule\b|"
             r"morecmidrules\b|"  # no args
             r"fboxsep\s*{([^}]+)}|"  # {length}
+            r"Xhline\s*{([^}]+)}|"  # {length}
             r"tabcolsep\b|"
             r"colrule\b|"
             r"noalign\b|"
-            r"arrayrulewidth\b"
+            r"arrayrulewidth\b|"
+            r"heavyrulewidth\b"
             r")",
         ),
         ("paper", r"\\(?:paperwidth|paperheight)\s*=\s*%s(?:\w+)?" % number_regex),
@@ -197,7 +200,7 @@ RAW_PATTERNS = OrderedDict(
         ("hyphenation", r"\\hyphenation\s*{"),
         # Handle vspace separately
         ("vspace", r"\\vspace\*?\s*{[^}]+}"),
-        ("phantom", r"\\(?:hphantom|vphantom)\s*{"),
+        ("phantom", r"\\(?:hphantom|vphantom|phantom)\s*{"),
         (
             "raise",
             r"\\(?:raise|lower|raisebox)\s*(?:"

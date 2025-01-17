@@ -271,6 +271,9 @@ def test_misc_formatting_commands(handler):
     \parskip = 5 pt
     \kern.4ex
     \pdfinfo{/Author (OK-Robot)}
+    \phantom{0}
+    \Xhline{1.5pt}
+    \midrule[\heavyrulewidth]
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

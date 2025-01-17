@@ -4,7 +4,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 import re
 
 from latex2json.parser.handlers.base import TokenHandler
-from latex2json.parser.patterns import BRACE_CONTENT_PATTERN
+from latex2json.parser.patterns import BRACE_CONTENT_PATTERN, OPTIONAL_BRACE_PATTERN
 from latex2json.utils.tex_utils import (
     extract_nested_content,
     extract_nested_content_sequence_blocks,
@@ -82,6 +82,10 @@ PATTERNS = {
     "color": re.compile(r"\\textcolor\s*(\[\w+\])?\s*{"),
     "columns": re.compile(r"\\(?:onecolumn\b|twocolumn\s*\[?)"),
     "subfloat": re.compile(r"\\subfloat\s*\["),
+    "fancyhead": re.compile(
+        r"\\(?:fancyhead|rhead|chead|lhead)\s*%s\s*{" % OPTIONAL_BRACE_PATTERN,
+        re.DOTALL,
+    ),
 }
 
 
@@ -334,6 +338,9 @@ class TextFormattingHandler(TokenHandler):
                 return self._handle_columns(content, match)
             elif name == "subfloat":
                 return self._handle_subfloat(content, match)
+            elif name == "fancyhead":
+                # same handling as box
+                return self._handle_box(content, match)
             else:
                 return None, match.end()
 
