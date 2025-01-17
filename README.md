@@ -5,10 +5,10 @@ A python package for parsing LaTeX files into structured token representations a
 Currently supports a wide variety of latex papers on arxiv.
 
 This parser focuses on extracting document content rather than preserving LaTeX's visual format:
+
 - While the semantic structure (sections, equations, etc.) is maintained, layout-specific elements like page formatting, column arrangements, and table styling are not represented in the JSON output.
 - Section, figure, table and equation counters etc may deviate from the original latex implementation.
 - Text formatting is preserved as much as possible.
-
 
 ## Features
 
@@ -77,6 +77,7 @@ This parser has been successfully tested on the following arxiv papers, includin
 - [hep-th/0603057] Dynamics of dark energy (Physics/High Energy Physics, 2006)
 - [1706.03762v7] Attention is all you need (AI/ML, 2017)
 - [2303.08774v6] GPT-4 Technical Report (AI/ML, 2023)
+- [2307.09288v2] Llama 2: Open Foundation and Fine-Tuned Chat Models (AI/ML, 2023)
 - [1703.06870] Mask R-CNN (Computer Vision, 2017)
 - [2301.10945v1] A Fully First-Order Method for Stochastic Bilevel Optimization (Computer Science/Optimization, 2023)
 - [1907.11692v1] RoBERTa: A Robustly Optimized BERT Pretraining Approach (AI/ML, 2019)
