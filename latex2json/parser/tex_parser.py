@@ -182,16 +182,22 @@ class LatexParser:
             # Merge consecutive text tokens
             if isinstance(token_dict, list):
                 tokens.extend(token_dict)
-            elif (
-                token_dict.get("type") == "text"
-                and tokens
-                and tokens[-1].get("type") == "text"
-                and "styles" not in token_dict
-                and "styles" not in tokens[-1]
-            ):
-                tokens[-1]["content"] += token_dict["content"]
-            else:
-                tokens.append(token_dict)
+            elif isinstance(token_dict, dict):
+                typing = token_dict.get("type")
+                if typing == "text":
+                    if (
+                        tokens
+                        and tokens[-1].get("type") == "text"
+                        and "styles" not in token_dict
+                        and "styles" not in tokens[-1]
+                    ):
+                        tokens[-1]["content"] += token_dict["content"]
+                        return
+                elif typing == "group":
+                    if len(token_dict["content"]) < 1:
+                        return
+
+            tokens.append(token_dict)
 
     def _check_unknown_command(self, content: str) -> Tuple[bool, int]:
         """Convert unknown LaTeX command into a text token with original syntax"""

@@ -185,6 +185,19 @@ def test_box_commands(handler):
     assert text[pos:] == " STUFF AFTER"
 
 
+def test_fancyhead(handler):
+    test_cases = [
+        (r"\fancyhead[R]{Simple text}", "Simple text"),
+        (r"\rhead{Simple text}", "Simple text"),
+        (r"\lhead{Raised text}", "Raised text"),
+    ]
+
+    for command, expected_text in test_cases:
+        token, pos = handler.handle(command)
+        assert token and token["content"].strip() == expected_text
+        assert pos > 0  # Should advance past the command
+
+
 def test_ignore_custom_fonts(handler):
     text = r"\usefont{T1}{phv}{b}{n} This text s"
     token, pos = handler.handle(text)
