@@ -128,6 +128,7 @@ def test_handle_newlength(handler):
         r"\renewlength{\len} after",
         r"\setlength{\len}{10pt} after",
         r"\setlength\len{1.5pt} after",
+        r"\settoheight{\len}{text} after",
     ]
     for content in contents:
         token, pos = handler.handle(content)

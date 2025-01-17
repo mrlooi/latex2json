@@ -236,6 +236,10 @@ def test_misc_formatting_commands(handler):
     \baselineskip
     2\baselineskip
     \lineskip .75em
+
+    \advance by
+    \divide by
+    \multiply by
     \advance\@tempskipa-\@tempdimb
     \advance\section@level-\subsection@level
     \advance\leftmargin by -\rightmargin
@@ -274,6 +278,11 @@ def test_misc_formatting_commands(handler):
     \phantom{0}
     \Xhline{1.5pt}
     \midrule[\heavyrulewidth]
+
+    \vspace{}
+    \vspace{10pt}
+
+    \refstepcounter{section}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

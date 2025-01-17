@@ -19,7 +19,7 @@ POST_NEW_COMMAND_PATTERN_STR = (
     % (command_pattern, command_pattern)
 )
 
-DEF_COMMAND_PREFIX = r"(?:\\long)?\\(?:e|g)?def\s*\\"
+DEF_COMMAND_PREFIX = r"(?:\\long)?\\(?:e|g|x)?def\s*\\"
 LET_COMMAND_PREFIX = r"\\(?:future)?let\s*\\"
 
 DEF_COMMAND_PATTERN = re.compile(
@@ -65,10 +65,10 @@ PATTERNS = {
         r"\\(?:re)?newboolean\s*" + BRACE_CONTENT_PATTERN, re.DOTALL
     ),
     "newlength": re.compile(
-        r"\\(?:re)?newlength\s*" + command_with_opt_brace_pattern, re.DOTALL
+        r"\\((?:re)?newlength)\s*" + command_with_opt_brace_pattern, re.DOTALL
     ),
     "setlength": re.compile(
-        r"\\(?:setlength|addtolength)\s*%s\s*%s"
+        r"\\(setlength|addtolength|settoheight|settodepth|settowidth)\s*%s\s*%s"
         % (command_with_opt_brace_pattern, command_with_opt_brace_pattern),
         re.DOTALL,
     ),
@@ -232,10 +232,7 @@ class NewDefinitionHandler(TokenHandler):
     def _handle_newlength(self, match: re.Match) -> Tuple[Optional[Dict], int]:
         r"""Handle \newlength definitions"""
         s = match.group(0)
-        # remove everything from length
-        first_length = s.find("length")
-        if first_length != -1:
-            s = s[first_length + 6 :].strip()
+        s = s[match.end(1) :]
         var_name = s
         if var_name.startswith("{"):
             var_name, _ = extract_nested_content(var_name)
@@ -244,6 +241,8 @@ class NewDefinitionHandler(TokenHandler):
             var_name = var_name[1:]
         if "{" in var_name:
             var_name = var_name[: var_name.find("{")].strip()
+        if not var_name:
+            return None, match.end()
         token = {"type": "newlength", "name": var_name}
         return token, match.end()
 

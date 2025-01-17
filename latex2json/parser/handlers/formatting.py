@@ -194,12 +194,12 @@ RAW_PATTERNS = OrderedDict(
         ("paper", r"\\(?:paperwidth|paperheight)\s*=\s*%s(?:\w+)?" % number_regex),
         ("protect", r"\\protect\\[a-zA-Z]+(?:\s*(?:\[[^\]]*\]|\{[^}]*\})*)?"),
         ("addtocontents", r"\\(?:addtocontents|addtocounter)\s*\{[^}]*\s*\}\s*{"),
-        ("counters", r"\\counterwithin\s*\{[^}]*}\s*\{[^}]*\}"),
+        ("counters", r"\\counterwithin\s*\{[^}]*}\s*\{[^}]*\}|\\refstepcounter{[^}]+}"),
         ("backslash", r"\\(?:backslash|textbackslash|arraybackslash)\b"),
         ("ensuremath", r"\\ensuremath\s*{"),
         ("hyphenation", r"\\hyphenation\s*{"),
         # Handle vspace separately
-        ("vspace", r"\\vspace\*?\s*{[^}]+}"),
+        ("vspace", r"\\vspace\*?\s*{[^}]*}"),
         ("phantom", r"\\(?:hphantom|vphantom|phantom)\s*{"),
         (
             "raise",
@@ -218,7 +218,10 @@ RAW_PATTERNS = OrderedDict(
         ("pz@", r"(?:%s)?\\[pz]@(?![a-zA-Z@])" % number_regex),
         ("slash", r"\\/"),  # \/ (in latex, this is like an empty space)
         ("@empty", r"\\@empty(?![a-zA-Z@])"),
-        ("advance", r"\\advance\\[a-zA-Z@*\d]+(?:\s+by)?(?:\s*-)?\\[a-zA-Z@*\d]+"),
+        (
+            "advance",
+            r"\\(?:advance|divide|multiply)(?:\\[a-zA-Z@*\d]+)?(?:\s+by)?(?:\s*-)?(?:\s*\\[a-zA-Z@*\d]+)?",
+        ),
         ("typeout", r"\\typeout\s*{"),
         # other...
         ("physics", r"\\pacs\s*\{(.*?)\}"),
