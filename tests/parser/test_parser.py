@@ -188,6 +188,13 @@ def test_command_definitions(parser):
     assert split_content[1].strip() == "arg1=3, arg2="
     assert split_content[2].strip() == "arg1=3, arg2=4"
 
+    text = r"""
+    \newcommand{\successrate}{58.5\%}
+    \successrate{} success rate
+    """
+    parsed_tokens = parser.parse(text)
+    assert parsed_tokens[0]["content"].strip() == r"58.5% success rate"
+
 
 def test_recommand_definitions(parser):
     text = r"""

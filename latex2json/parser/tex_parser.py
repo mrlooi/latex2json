@@ -160,7 +160,12 @@ class LatexParser:
             else:
                 self.add_token({"type": "label", "content": content}, tokens)
 
-    def add_token(self, token: str | Dict | List[Dict], tokens: List[Dict]):
+    def add_token(
+        self,
+        token: str | Dict | List[Dict],
+        tokens: List[Dict],
+        add_space: bool = False,
+    ):
         # uncomment this if we want to merge self.current_str whitespaces
         # if self.current_str:
         #     if tokens and tokens[-1].get('type') == 'text':
@@ -192,6 +197,8 @@ class LatexParser:
                         and "styles" not in token_dict
                         and "styles" not in tokens[-1]
                     ):
+                        if add_space and not tokens[-1]["content"].endswith(" "):
+                            tokens[-1]["content"] += " "
                         tokens[-1]["content"] += token_dict["content"]
                         return
                 elif typing == "group":
@@ -503,7 +510,11 @@ class LatexParser:
                         next_pos -= 1
                     if handle_unknown_commands:
                         text = self._expand_command(text)
-                    self.add_token(text, tokens)
+                    # check if preceding text is a space
+                    add_space = False
+                    if current_pos > 0 and content[current_pos - 1].isspace():
+                        add_space = True
+                    self.add_token(text, tokens, add_space)
                 current_pos += next_pos
                 if not next_delimiter:
                     break

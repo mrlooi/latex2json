@@ -9,7 +9,7 @@ NUMBER_PATTERN = r"[-+]?\d*\.?\d+"
 # match $ or % or { or } only if not preceded by \
 # Update DELIM_PATTERN to also match double backslashes and opening braces {
 DELIM_PATTERN = re.compile(
-    r"(?<!\\)(?:\\\\|\$|%|(?:^|[ \t])\{|\s{|\\\^|\\(?![$%&_#{}^~\\]))"
+    r"(?<!\\)(?:\\\\|\$|%|(?:^|[ \t])\{|\s{|{}|\\\^|\\(?![$%&_#{}^~\\]))"
 )
 
 OPTIONAL_BRACE_PATTERN = r"(?:\[[^\]]*\])?"
