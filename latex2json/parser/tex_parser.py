@@ -191,17 +191,20 @@ class LatexParser:
             elif isinstance(token_dict, dict):
                 typing = token_dict.get("type")
                 if typing == "text":
+                    # concat text if prev text is also plain text
                     if (
                         tokens
                         and tokens[-1].get("type") == "text"
                         and "styles" not in token_dict
                         and "styles" not in tokens[-1]
                     ):
+                        # check consistent spacing
                         if add_space and not tokens[-1]["content"].endswith(" "):
                             tokens[-1]["content"] += " "
                         tokens[-1]["content"] += token_dict["content"]
                         return
-                elif typing == "group":
+                elif typing in ["group", "environment", "list"]:
+                    # ignore empty
                     if len(token_dict["content"]) < 1:
                         return
 
