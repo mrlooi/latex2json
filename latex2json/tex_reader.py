@@ -20,8 +20,10 @@ class ProcessingResult:
     """Represents the result of processing a TeX file."""
 
     tokens: List[BaseToken]
-    temp_dir: Optional[Path] = None
     color_map: Optional[Dict[str, Dict[str, str]]] = None
+
+    main_tex_path: Optional[Path] = None
+    temp_dir: Optional[Path] = None
 
     def cleanup(self):
         """Clean up temporary resources."""
