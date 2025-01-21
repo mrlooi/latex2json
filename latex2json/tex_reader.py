@@ -5,6 +5,7 @@ from typing import Dict, List, TypeVar, Callable, Any, Tuple, Optional
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
+import shutil
 
 from latex2json.structure.tokens.base import BaseToken
 from latex2json.tex_file_extractor import TexFileExtractor
@@ -21,6 +22,12 @@ class ProcessingResult:
     tokens: List[BaseToken]
     temp_dir: Optional[Path] = None
     color_map: Optional[Dict[str, Dict[str, str]]] = None
+
+    def cleanup(self):
+        """Clean up temporary resources."""
+        if self.temp_dir and self.temp_dir.exists():
+            shutil.rmtree(self.temp_dir)
+            self.temp_dir = None
 
 
 class TexProcessingError(Exception):
@@ -222,7 +229,9 @@ class TexReader:
             _process, f"Failed to process TeX folder {folder_path}"
         )
 
-    def process(self, input_path: str | Path, cleanup: bool = True) -> ProcessingResult:
+    def process(
+        self, input_path: str | Path, cleanup: bool = False
+    ) -> ProcessingResult:
         """
         Process input which can be a single file, folder, or compressed archive.
 
@@ -243,9 +252,13 @@ class TexReader:
         def _process() -> ProcessingResult:
             if input_path.is_dir():
                 return self.process_folder(input_path)
-            elif input_path.suffix in [".gz", ".tar.gz", ".tgz"]:
-                result, temp_dir = self.process_compressed(str(input_path), cleanup)
+            elif input_path.suffix in [".gz", ".tar.gz", ".tgz", ".zip"]:
+                result, temp_dir = self.process_compressed(
+                    str(input_path), cleanup=False
+                )
                 result.temp_dir = temp_dir
+                if cleanup:
+                    result.cleanup()
                 return result
             else:
                 return self.process_file(input_path)
@@ -292,5 +305,8 @@ if __name__ == "__main__":
     for folder in folders:
         save_path = target_folder + "/" + folder.split("/")[-1] + ".json"
         output = tex_reader.process(folder)
-        tex_reader.save_to_json(output, save_path)
-        print("SAVED TO", save_path)
+        try:
+            tex_reader.save_to_json(output, save_path)
+            print("SAVED TO", save_path)
+        finally:
+            output.cleanup()  # Ensure cleanup happens even if save_to_json fails
