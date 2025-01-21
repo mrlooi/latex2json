@@ -82,3 +82,9 @@ def test_font_commands(converter):
     input_text = r"{{\fontencoding{LELA}\selectfont\char40}}"
     expected = "{Ħ}"
     assert converter.convert(input_text) == expected
+
+
+def test_unicode_conversion(converter):
+    input_text = r"\u0041 \u00a7"
+    expected = "A §"
+    assert converter.convert(input_text) == expected
