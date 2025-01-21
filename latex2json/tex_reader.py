@@ -25,7 +25,7 @@ class ProcessingResult:
 
     def cleanup(self):
         """Clean up temporary resources."""
-        if self.temp_dir and self.temp_dir.exists():
+        if self.temp_dir:
             shutil.rmtree(self.temp_dir)
             self.temp_dir = None
 
