@@ -116,7 +116,11 @@ class TexReader:
             output = self.token_builder.build(tokens)
             color_map = self.parser.get_colors()
             self.clear()
-            return ProcessingResult(tokens=output, color_map=color_map)
+            return ProcessingResult(
+                tokens=output,
+                color_map=color_map,
+                main_tex_path=file_path,
+            )
 
         return self._handle_file_operation(
             _process, f"Failed to process TeX file {file_path}"
@@ -181,26 +185,27 @@ class TexReader:
         self.parser.clear()
         self.token_builder.clear()
 
-    def process_compressed(self, gz_path: str, cleanup: bool = True):
+    def process_compressed(self, compressed_path: str, cleanup: bool = True):
         """Process a compressed TeX file and save results to JSON."""
-        if not os.path.exists(gz_path):
-            error_msg = f"Compressed file not found: {gz_path}"
+        if not os.path.exists(compressed_path):
+            error_msg = f"Compressed file not found: {compressed_path}"
             self.logger.error(error_msg, exc_info=True)
             raise FileNotFoundError(error_msg)
 
         try:
-            with TexFileExtractor.from_compressed(gz_path, cleanup) as (
+            with TexFileExtractor.from_compressed(compressed_path, cleanup) as (
                 main_tex,
                 temp_dir,
             ):
                 self.logger.info(
-                    f"Found main TeX file in archive: {main_tex}, {gz_path}"
+                    f"Found main TeX file in archive: {main_tex}, {compressed_path}"
                 )
                 file_path = os.path.join(temp_dir, main_tex)
                 output = self.process_file(file_path)
-                return output, temp_dir
+                output.temp_dir = temp_dir
+                return output
         except Exception as e:
-            error_msg = f"Failed to process compressed file {gz_path}: {str(e)}"
+            error_msg = f"Failed to process compressed file {compressed_path}: {str(e)}"
             self.logger.error(error_msg, exc_info=True)
             raise RuntimeError(error_msg) from e
 
@@ -253,10 +258,7 @@ class TexReader:
             if input_path.is_dir():
                 return self.process_folder(input_path)
             elif input_path.suffix in [".gz", ".tar.gz", ".tgz", ".zip"]:
-                result, temp_dir = self.process_compressed(
-                    str(input_path), cleanup=False
-                )
-                result.temp_dir = temp_dir
+                result = self.process_compressed(str(input_path), cleanup=False)
                 if cleanup:
                     result.cleanup()
                 return result
