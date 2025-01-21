@@ -88,6 +88,7 @@ ENV_ARGS = {
     # "tabular": {"mandatory": 1},          # Expects 1 mandatory argument for column spec
     "table": {"optional": 1},  # Expects 1 optional argument for placement
     "figure": {"optional": 1},  # Expects 1 optional argument for placement
+    "subfigure": {"optional": 1, "mandatory": 1},
     # ... other environments with known argument patterns
 }
 

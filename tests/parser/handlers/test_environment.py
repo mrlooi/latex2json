@@ -224,5 +224,24 @@ def test_newenvironment(handler, newdef_handler):
     assert content[pos:] == " post"
 
 
+def test_subfigure(handler):
+    content = r"""
+    \begin{subfigure}{.5\textwidth}
+    \caption{During training.}
+    \centering
+        \includegraphics[width=\linewidth]{conv}
+    \end{subfigure}
+
+    POST
+    """.strip()
+
+    token, pos = handler.handle(content)
+    assert token["name"] == "subfigure"
+    assert token["type"] == "figure"
+    out_c = token["content"].strip()
+    assert out_c.startswith("\caption") and out_c.endswith("{conv}")
+    assert content[pos:].strip() == "POST"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

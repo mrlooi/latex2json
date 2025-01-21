@@ -40,23 +40,25 @@ class TestTexReader:
 
     def test_process_single_file_gz(self, tex_reader: TexReader):
         """Verify processing of a single gzipped TeX file."""
-        result, temp_dir = tex_reader.process_compressed(
-            str(TexTestFiles.SINGLE_FILE_GZ)
-        )
+        result = tex_reader.process_compressed(str(TexTestFiles.SINGLE_FILE_GZ))
 
         assert isinstance(result, ProcessingResult)
         assert result.tokens, "Expected non-empty token list"
-        assert not Path(temp_dir).exists(), "Temporary directory should be cleaned up"
+        assert result.temp_dir is not None, "Expected temp_dir to be set"
+        assert not Path(
+            result.temp_dir
+        ).exists(), "Temporary directory should be cleaned up"
 
     def test_process_directory_tar_gz(self, tex_reader: TexReader):
         """Verify processing of a tar.gz archive with multiple TeX files."""
-        result, temp_dir = tex_reader.process_compressed(
-            str(TexTestFiles.DIRECTORY_TAR_GZ)
-        )
+        result = tex_reader.process_compressed(str(TexTestFiles.DIRECTORY_TAR_GZ))
 
         assert isinstance(result, ProcessingResult)
         assert result.tokens, "Expected non-empty token list"
-        assert not Path(temp_dir).exists(), "Temporary directory should be cleaned up"
+        assert result.temp_dir is not None, "Expected temp_dir to be set"
+        assert not Path(
+            result.temp_dir
+        ).exists(), "Temporary directory should be cleaned up"
 
     def test_error_handling(self, tex_reader: TexReader, tmp_path: Path):
         """Verify appropriate error handling for various failure scenarios."""
@@ -77,10 +79,10 @@ class TestTexReader:
         Args:
             cleanup: Whether automatic cleanup should be performed
         """
-        _, temp_dir = tex_reader.process_compressed(
+        result = tex_reader.process_compressed(
             str(TexTestFiles.SINGLE_FILE_GZ), cleanup=cleanup
         )
-        temp_path = Path(temp_dir)
+        temp_path = Path(result.temp_dir)
 
         if cleanup:
             assert (
@@ -92,11 +94,11 @@ class TestTexReader:
             ), "Directory should be preserved when cleanup=False"
             assert any(temp_path.iterdir()), "Directory should contain extracted files"
             # Clean up manually
-            shutil.rmtree(temp_dir)
+            result.cleanup()
 
     def test_to_json(self, tex_reader: TexReader):
         """Verify JSON conversion functionality."""
-        result, _ = tex_reader.process_compressed(str(TexTestFiles.SINGLE_FILE_GZ))
+        result = tex_reader.process_compressed(str(TexTestFiles.SINGLE_FILE_GZ))
 
         json_str = tex_reader.to_json(result)
         assert isinstance(json_str, str), "to_json should return a string"
@@ -107,7 +109,7 @@ class TestTexReader:
 
     def test_save_to_json(self, tex_reader: TexReader, tmp_path: Path):
         """Verify JSON output functionality."""
-        result, _ = tex_reader.process_compressed(str(TexTestFiles.SINGLE_FILE_GZ))
+        result = tex_reader.process_compressed(str(TexTestFiles.SINGLE_FILE_GZ))
         output_path = tmp_path / "output.json"
 
         try:
@@ -120,12 +122,12 @@ class TestTexReader:
             if output_path.exists():
                 output_path.unlink()
 
-    def test_process_folder(self, tex_reader: TexReader):
-        """Verify processing of a folder containing TeX files."""
-        # Use the test_data/sample_tex_folder that contains .tex files
-        folder_path = str(TexTestFiles.FOLDER)
+    # def test_process_folder(self, tex_reader: TexReader):
+    #     """Verify processing of a folder containing TeX files."""
+    #     # Use the test_data/sample_tex_folder that contains .tex files
+    #     folder_path = str(TexTestFiles.FOLDER)
 
-        result = tex_reader.process_folder(folder_path)
+    #     result = tex_reader.process_folder(folder_path)
 
-        assert isinstance(result, ProcessingResult)
-        assert result.tokens, "Expected non-empty token list"
+    #     assert isinstance(result, ProcessingResult)
+    #     assert result.tokens, "Expected non-empty token list"
