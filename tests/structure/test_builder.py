@@ -129,7 +129,10 @@ def expected_organizer_output():
                     "numbered": True,
                     "labels": ["sec:intro"],
                     "content": [
-                        {"type": "text", "content": "Some text here, $1+1=2$:"},
+                        {
+                            "type": "text",
+                            "content": "Some text here, <math>1+1=2</math>:",
+                        },
                         {
                             "type": "equation",
                             "content": "E = mc^2 \\\\ x = 1",

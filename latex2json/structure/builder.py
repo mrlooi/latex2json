@@ -8,6 +8,10 @@ from latex2json.structure.tokens.types import TokenType
 import copy
 
 
+MATH_OPEN_DELIMITER = "<math>"
+MATH_CLOSE_DELIMITER = "</math>"
+
+
 class TokenBuilder:
     """Handles the building and organization of document tokens including numbering and hierarchy.
 
@@ -106,7 +110,7 @@ class TokenBuilder:
                 # Convert inline equation to text token
                 token_copy = {
                     "type": "text",
-                    "content": f"${token['content']}$",
+                    "content": f"{MATH_OPEN_DELIMITER}{token['content']}{MATH_CLOSE_DELIMITER}",
                 }
                 if token.get("styles"):
                     token_copy["styles"] = token.get("styles")
@@ -320,9 +324,7 @@ if __name__ == "__main__":
     # tokens = parser.parse_file(file)
 
     text = r"""
-    \section{Section}
-        \subsection{Sub section 1}
-        \subsection{Sub section 2}
+    Hello there $1+1=2$, I have \$3 mr krabs
     """
     tokens = parser.parse(text)
 

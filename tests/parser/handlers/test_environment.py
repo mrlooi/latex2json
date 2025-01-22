@@ -226,7 +226,7 @@ def test_newenvironment(handler, newdef_handler):
 
 def test_subfigure(handler):
     content = r"""
-    \begin{subfigure}{.5\textwidth}
+    \begin{subfigure}[b]{.5\textwidth}
     \caption{During training.}
     \centering
         \includegraphics[width=\linewidth]{conv}
