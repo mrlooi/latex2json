@@ -127,3 +127,22 @@ def test_nested_commands(preprocessor):
     processed, tokens = preprocessor.preprocess(text)
     assert "INNER TEST" in processed
     assert len(tokens) == 2
+    assert tokens[0]["type"] == "newcommand"
+    assert tokens[0]["name"] == "inner"
+    assert tokens[1]["type"] == "newcommand"
+    assert tokens[1]["name"] == "outer"
+
+
+def test_addto_processing(preprocessor):
+    text = r"""
+    \addto\cmd{
+        \newcommand{\foo}{FOO}
+    }
+    \foo
+    """
+    processed, tokens = preprocessor.preprocess(text)
+    assert processed.strip().endswith("FOO")
+    assert len(tokens) == 1
+
+    assert tokens[0]["type"] == "newcommand"
+    assert tokens[0]["name"] == "foo"

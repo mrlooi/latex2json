@@ -28,6 +28,7 @@ OPTIONAL_BRACE_PATTERN = r"(?:\[[^\]]*\])?"
 DOCUMENTCLASS_PATTERN = re.compile(
     r"\\documentclass\s*%s\s*\{([^}]+)\}" % OPTIONAL_BRACE_PATTERN
 )
+ADD_TO_PATTERN = re.compile(r"\\addto\s*(?:{?\\[^}\s]+}?)\s*\{")  # e.g. \addto\cmd{...}
 
 
 class LatexPreprocessor:
@@ -195,6 +196,14 @@ class LatexPreprocessor:
                 current_pos += next_pos
                 if not next_delimiter:
                     break
+                continue
+
+            # Process addto by simply treating the content inside as {...}
+            match = ADD_TO_PATTERN.match(content[current_pos:])
+            if match:
+                content = (
+                    content[:current_pos] + content[current_pos + match.end() - 1 :]
+                )
                 continue
 
             # Process definitions
