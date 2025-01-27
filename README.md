@@ -72,15 +72,16 @@ json_output = tex_reader.to_json(result)
 
 This parser has been successfully tested on the following arxiv papers, including:
 
-- [math/0503066] Stable signal recovery from incomplete and inaccurate measurements (Math/Numerical Analysis, 2006)
-- [1509.05363] The Erdos discrepancy problem (Math/combinatorics, 2015)
-- [hep-th/0603057] Dynamics of dark energy (Physics/High Energy Physics, 2006)
 - [1706.03762v7] Attention is all you need (AI/ML, 2017)
 - [2303.08774v6] GPT-4 Technical Report (AI/ML, 2023)
+- [1509.05363] The Erdos discrepancy problem (Math/combinatorics, 2015)
+- [2501.12948] DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning (AI/ML, 2025)
+- [hep-th/0603057] Dynamics of dark energy (Physics/High Energy Physics, 2006)
 - [2307.09288v2] Llama 2: Open Foundation and Fine-Tuned Chat Models (AI/ML, 2023)
 - [1703.06870] Mask R-CNN (Computer Vision, 2017)
 - [2301.10945v1] A Fully First-Order Method for Stochastic Bilevel Optimization (Computer Science/Optimization, 2023)
 - [1907.11692v1] RoBERTa: A Robustly Optimized BERT Pretraining Approach (AI/ML, 2019)
+- [math/0503066] Stable signal recovery from incomplete and inaccurate measurements (Math/Numerical Analysis, 2006)
 - [1712.01815v1] Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm (AI/ML, 2017) # limitations on /chess related commands
 - [2304.02643] Segment Anything (Computer Vision, 2023) # limitations on /pgf... and /draw commands
 
