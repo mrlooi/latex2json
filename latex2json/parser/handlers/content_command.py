@@ -47,6 +47,7 @@ RAW_PATTERNS = OrderedDict(
         ("footnotetext", r"\\footnotetext%s\s*{" % OPTIONAL_BRACE_PATTERN),
         # URLs
         ("url", r"\\(?:url|path)\s*{"),
+        ("doi", r"\\doi\s*{"),
         # Graphics
         ("includegraphics", r"\\includegraphics\s*%s\s*{" % OPTIONAL_BRACE_PATTERN),
         ("includepdf", r"\\includepdf\s*%s\s*{" % OPTIONAL_BRACE_PATTERN),
@@ -169,6 +170,9 @@ class ContentCommandHandler(TokenHandler):
 
         elif matched_type == "hyperref":
             return {"type": "ref", "title": match.group(1).strip(), "content": content}
+
+        elif matched_type == "doi":
+            return {"type": "ref", "content": "https://doi.org/" + content}
 
         elif matched_type == "href":
             return {"type": "url", "title": content, "content": match.group(1).strip()}

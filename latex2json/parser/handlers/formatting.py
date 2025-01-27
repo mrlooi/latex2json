@@ -76,7 +76,7 @@ RAW_PATTERNS = OrderedDict(
         ),
         (
             "penalty",
-            r"\\penalty\s*" + number_regex + r"\b",
+            r"\\(?:penalty\s*|interfootnotelinepenalty\s*=?\s*)" + number_regex + r"\b",
         ),
         (
             "skip",

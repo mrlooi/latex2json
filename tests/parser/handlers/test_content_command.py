@@ -178,6 +178,14 @@ def test_handle_urls(handler):
     assert token == {"type": "url", "content": "http://example.com"}
 
 
+def test_handle_doi(handler):
+    token, pos = handler.handle(r"\doi{10.1038/s41586-021-03849-w}")
+    assert token == {
+        "type": "ref",
+        "content": "https://doi.org/10.1038/s41586-021-03849-w",
+    }
+
+
 def test_handle_with_expand_fn():
     def mock_expand(content: str) -> str:
         return content.replace("old", "new")

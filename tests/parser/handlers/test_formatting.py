@@ -254,6 +254,7 @@ def test_misc_formatting_commands(handler):
     \SetMathAlphabet{\mathscr}{OT1}{rsfs}{n}{it}{xxx}
 
     \penalty1000
+    \interfootnotelinepenalty=1000
     \subjclass{Primary 01A80}
     \subjclass[xx]{Secondary 01A80}
 

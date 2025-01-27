@@ -62,7 +62,8 @@ BOX_PATTERN = re.compile(
         hbox\s+to\s*[^{]+\s*{| # \hbox to \hsize{text}
         sbox\b\s*[^{]+\s*{| # \sbox\@tempboxa{text}
         pbox\b\s*{[^}]*}\s*{| # \pbox{x}{text}
-        resizebox\s*{[^}]*}\s*{[^}]*}\s*{  # \resizebox{width}{height}{text}
+        resizebox\s*{[^}]*}\s*{[^}]*}\s*{|  # \resizebox{width}{height}{text}
+        adjustbox\s*{   # \adjustbox{max width=\textwidth}{...}
     )
     """,
     re.VERBOSE | re.DOTALL,
@@ -227,11 +228,18 @@ class TextFormattingHandler(TokenHandler):
         return token, end_pos
 
     def _handle_box(self, content: str, match: re.Match) -> Tuple[str, int]:
+        s = match.group(0)
         start_pos = match.end() - 1
+
+        if s.startswith("\\adjustbox"):
+            # strip out one brace
+            _, end_pos = extract_nested_content(content[start_pos:], "{", "}")
+            start_pos += end_pos
+
         extracted_content, end_pos = extract_nested_content(content[start_pos:])
         extracted_content = extracted_content + "\n"  # add newline to end of box?
 
-        one_liner = match.group(0).startswith("\\mbox")
+        one_liner = s.startswith("\\mbox")
 
         if self.process_content_fn:
             extracted_content = self.process_content_fn(extracted_content)

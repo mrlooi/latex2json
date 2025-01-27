@@ -11,6 +11,7 @@ compile_as = re.DOTALL | re.IGNORECASE
 
 PATTERNS = {
     "author": re.compile(r"\\author(?:\s*\[(.*?)\])?\s*{", compile_as),
+    # "correspondingauthor": re.compile(r"\\correspondingauthor\s*{", compile_as),
     "email": re.compile(r"\\email\s*{", compile_as),
     "affiliation": re.compile(
         r"\\(?:affil|affiliation)(?:\s*\[(.*?)\])?\s*{", compile_as
@@ -49,44 +50,44 @@ class AuthorHandler(TokenHandler):
 
         return authors
 
+    def _parse_author_tokens(self, content: str) -> Tuple[Optional[Dict], int]:
+        # short_author = match.group(1)  # Will be None if no [] present
+        tokens = self._parse_author_content(content)
+        if self.process_content_fn:
+            parsed_tokens = []
+            for token in tokens:
+                processed = self.process_content_fn(token)
+                if processed:
+                    parsed_tokens.append(processed)
+            tokens = parsed_tokens
+        return tokens
+
     def handle(
         self, content: str, prev_token: Optional[Dict] = None
     ) -> Tuple[Optional[Dict], int]:
         for name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if match:
+                start_pos = match.end() - 1
+                content, end_pos = extract_nested_content(content[start_pos:])
+                total_pos = start_pos + end_pos
+
                 if name == "thanks":
-                    start_pos = match.end() - 1
-                    content, end_pos = extract_nested_content(content[start_pos:])
                     token = {
                         "type": "footnote",
                         "content": content,
                     }
                     self.last_thanks_token = token
-                    return token, start_pos + end_pos
+                    return token, total_pos
                 elif name == "author":
                     # short_author = match.group(1)  # Will be None if no [] present
-                    start_pos = match.end() - 1
-                    author_content, end_pos = extract_nested_content(
-                        content[start_pos:]
-                    )
-
-                    tokens = self._parse_author_content(author_content)
-                    if self.process_content_fn:
-                        parsed_tokens = []
-                        for token in tokens:
-                            processed = self.process_content_fn(token)
-                            if processed:
-                                parsed_tokens.append(processed)
-                        tokens = parsed_tokens
+                    tokens = self._parse_author_tokens(content)
 
                     return {
                         "type": "author",
                         "content": tokens,
-                    }, start_pos + end_pos
+                    }, total_pos
                 else:
-                    start_pos = match.end() - 1
-                    content, end_pos = extract_nested_content(content[start_pos:])
                     if self.process_content_fn:
                         content = self.process_content_fn(content)
 
@@ -94,7 +95,7 @@ class AuthorHandler(TokenHandler):
                         "type": name,
                         "content": content,
                     }
-                    return token, start_pos + end_pos
+                    return token, total_pos
 
         return None, 0
 
