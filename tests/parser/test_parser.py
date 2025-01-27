@@ -239,7 +239,7 @@ def test_complex_command_definitions(parser):
     equations = [token for token in parsed_tokens if token["type"] == "equation"]
 
     # Check command storage
-    commands = parser.command_processor.commands
+    commands = parser.commands
     assert "tensor" in commands
     assert "norm" in commands
     assert "integral" in commands
@@ -257,6 +257,22 @@ def test_complex_command_definitions(parser):
 
     for eq, expected in zip(equations, expected_results):
         assert eq["content"] == expected
+
+    parser.clear()
+
+
+def test_newtoks(parser):
+    text = r"""
+    \newtoks\foo
+    \foo{hello}
+
+    After toks
+    """
+    parsed_tokens = parser.parse(text)
+    assert parsed_tokens[0]["content"].strip() == "After toks"
+
+    assert "newtoks:foo" in parser.commands
+    parser.clear()
 
 
 def test_command_with_environments(parser):

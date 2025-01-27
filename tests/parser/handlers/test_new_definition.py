@@ -572,5 +572,17 @@ def test_definecolor(handler):
     assert content[pos:] == " POST"
 
 
+def test_newtoks(handler):
+    content = r"\newtoks\foo"
+    token, pos = handler.handle(content)
+    assert token["type"] == "newtoks"
+    assert token["name"] == "foo"
+
+    content = r"\newtoks{\bar}"
+    token, pos = handler.handle(content)
+    assert token["type"] == "newtoks"
+    assert token["name"] == "bar"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

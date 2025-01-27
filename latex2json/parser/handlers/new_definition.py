@@ -60,6 +60,7 @@ PATTERNS = {
         r"\\newtheorem{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?", re.DOTALL
     ),
     "crefname": re.compile(r"\\crefname{([^}]*)}{([^}]*)}{([^}]*)}", re.DOTALL),
+    "newtoks": re.compile(r"\\newtoks\s*(%s)" % (command_with_opt_brace_pattern), re.DOTALL),
     "newif": re.compile(r"\\(?:re)?newif\s*\\if([^\s{\\]+)", re.DOTALL),
     "newboolean": re.compile(
         r"\\(?:re)?newboolean\s*" + BRACE_CONTENT_PATTERN, re.DOTALL
@@ -151,6 +152,8 @@ class NewDefinitionHandler(TokenHandler):
                     return self._handle_namedef(content, match)
                 elif pattern_name == "definecolor":
                     return self._handle_definecolor(content, match)
+                elif pattern_name == "newtoks":
+                    return self._handle_newtoks(match)
                 elif pattern_name == "newtheorem":
                     return self._handle_newtheorem(match)
                 elif pattern_name == "crefname":
@@ -229,11 +232,9 @@ class NewDefinitionHandler(TokenHandler):
         token = {"type": "newif", "name": var_name}
         return token, match.end()
 
-    def _handle_newlength(self, match: re.Match) -> Tuple[Optional[Dict], int]:
-        r"""Handle \newlength definitions"""
-        s = match.group(0)
-        s = s[match.end(1) :]
-        var_name = s
+    def _parse_varname_from_brace_or_backslash(
+        self, var_name: str
+    ) -> Tuple[Optional[str], int]:
         if var_name.startswith("{"):
             var_name, _ = extract_nested_content(var_name)
             var_name = var_name.strip()
@@ -241,9 +242,24 @@ class NewDefinitionHandler(TokenHandler):
             var_name = var_name[1:]
         if "{" in var_name:
             var_name = var_name[: var_name.find("{")].strip()
+        return var_name
+
+    def _handle_newlength(self, match: re.Match) -> Tuple[Optional[Dict], int]:
+        r"""Handle \newlength definitions"""
+        s = match.group(0)
+        s = s[match.end(1) :]
+        var_name = self._parse_varname_from_brace_or_backslash(s)
         if not var_name:
             return None, match.end()
         token = {"type": "newlength", "name": var_name}
+        return token, match.end()
+
+    def _handle_newtoks(self, match) -> Tuple[Optional[Dict], int]:
+        r"""Handle \newtoks definitions"""
+        var_name = self._parse_varname_from_brace_or_backslash(match.group(1).strip())
+        if not var_name:
+            return None, match.end()
+        token = {"type": "newtoks", "name": var_name}
         return token, match.end()
 
     def _handle_newcounter(self, match) -> Tuple[Optional[Dict], int]:

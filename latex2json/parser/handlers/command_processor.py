@@ -162,7 +162,6 @@ class CommandProcessor:
             raise e
 
     def process_newif(self, var_name: str):
-
         command = {
             "pattern": re.compile(r"\\" + var_name + r"(?:true|false)"),
             "handler": default_ignore_handler,
@@ -171,6 +170,22 @@ class CommandProcessor:
 
     def process_newlength(self, var_name: str):
         self.process_newX(var_name, "newlength")
+
+    def process_newtoks(self, var_name: str):
+        def handler(match, text):
+            # check if there is traling { ... } # we strip this out if exists
+            start_pos = match.end()
+            content, end_pos = extract_nested_content(text[start_pos:], "{", "}")
+            if content is None:
+                return "", start_pos
+            # ignore the trailing {...} anyway
+            return "", start_pos + end_pos
+
+        command = {
+            "pattern": re.compile(r"\\" + var_name + r"\b"),
+            "handler": handler,
+        }
+        self.commands["newtoks:" + var_name] = command
 
     def process_newX(self, var_name: str, type: str = "newX"):
         command = {

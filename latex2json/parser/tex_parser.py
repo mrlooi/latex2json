@@ -307,6 +307,8 @@ class LatexParser:
                 self.command_processor.process_newcounter(cmd_name)
             elif token["type"] == "newlength":
                 self.command_processor.process_newlength(cmd_name)
+            elif token["type"] == "newtoks":
+                self.command_processor.process_newtoks(cmd_name)
             elif token["type"] == "newother":
                 self.command_processor.process_newX(cmd_name)
             elif token["type"] == "paired_delimiter":
