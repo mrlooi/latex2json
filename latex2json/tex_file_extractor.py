@@ -141,7 +141,7 @@ class TexFileExtractor:
             tuple: (main_tex_file, folder_path)
         """
         main_tex = cls.find_main_tex_file(folder_path)
-        return main_tex, folder_path
+        return main_tex
 
     @classmethod
     @contextmanager
