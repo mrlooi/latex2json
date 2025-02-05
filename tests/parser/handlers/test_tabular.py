@@ -222,3 +222,14 @@ def test_makecell(handler):
     assert token["type"] == "tabular"
     assert token["content"] == [[r"a & b \\ c & d", "22"]]
     assert text[end_pos:].strip() == "POST"
+
+
+def test_tabular_with_escaped_delimiters(handler):
+    text = r"""
+    \begin{tabular}{cc}
+        ssss \& 23333
+    \end{tabular}
+    """.strip()
+    token, end_pos = handler.handle(text)
+    assert token["type"] == "tabular"
+    assert token["content"] == [[r"ssss \& 23333"]]

@@ -70,9 +70,10 @@ def latex_text():
 
         \begin{tabular}{|c|c|}
             \hline
-            Cell 1 & \textbf{Cell 2} \\
+            Cell 1 & \textbf{Cell 2} & 3 \\
             \hline
             \multicolumn{2}{|c|}{Spanning Cell} &  \\
+            & H1 \& H2 & 
             \hline
         \end{tabular}
 
@@ -295,6 +296,7 @@ def expected_organizer_output():
                                                     ],
                                                 }
                                             ],
+                                            "3",
                                         ],
                                         [
                                             {
@@ -302,6 +304,11 @@ def expected_organizer_output():
                                                 "colspan": 2,
                                                 "rowspan": 1,
                                             },
+                                            None,
+                                        ],
+                                        [
+                                            None,
+                                            "H1 & H2",
                                             None,
                                         ],
                                     ],

@@ -880,6 +880,17 @@ def test_complex_table(parser):
     assert caption["content"][0]["content"] == "Regional Sales Distribution"
 
 
+def test_tabular_with_escaped_delimiters(parser):
+    text = r"""
+    \begin{tabular}{cc}
+        ssss \& 23333
+    \end{tabular}
+    """
+    parsed_tokens = parser.parse(text)
+    assert parsed_tokens[0]["type"] == "tabular"
+    assert parsed_tokens[0]["content"] == [[r"ssss & 23333"]]
+
+
 def test_nested_newcommands(parser):
     text = r"""
     \newcommand{\pow}[2][2]{#2^{#1}}

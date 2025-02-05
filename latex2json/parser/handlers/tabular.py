@@ -19,10 +19,8 @@ TABULAR_PATTERN = re.compile(
     re.DOTALL,
 )
 
-ROW_SPLIT_PATTERN = re.compile(r"\\\\(?:\s*\[[^\]]*\])?")
 MULTICOLUMN_PATTERN = re.compile(r"\\multicolumn\s*{(\d+)}\s*{", re.DOTALL)
 MULTIROW_PATTERN = re.compile(r"\\multirow\s*{(\d+)}\s*{", re.DOTALL)
-CELL_SPLIT_PATTERN = re.compile(r"(?<!\\)&")
 
 
 MAKECELL_SHORTSTACK_PATTERN = re.compile(
@@ -57,14 +55,30 @@ def split_latex_content(
     i = 0
 
     while i < len(content):
+        # Check for escaped delimiter
+        is_escaped = False
+        if content[i : i + len(delimiter)] == delimiter:
+            # Count backslashes before delimiter
+            backslash_count = 0
+            pos = i - 1
+            while pos >= 0 and content[pos] == "\\":
+                backslash_count += 1
+                pos -= 1
+            # If odd number of backslashes, the delimiter is escaped
+            is_escaped = (backslash_count % 2) == 1
+
         if content[i] == "{":
             nesting_level += 1
             current_part.append(content[i])
         elif content[i] == "}":
             nesting_level -= 1
             current_part.append(content[i])
-        elif content[i : i + len(delimiter)] == delimiter and nesting_level == 0:
-            # Only split when we're not inside brackets
+        elif (
+            content[i : i + len(delimiter)] == delimiter
+            and nesting_level == 0
+            and not is_escaped
+        ):
+            # Only split when we're not inside brackets and delimiter is not escaped
             current_part = "".join(current_part).strip()
             if is_row_split:
                 # For rows, only add non-empty parts
@@ -444,8 +458,8 @@ if __name__ == "__main__":
 
     text = r"""
     \begin{tabular}{cc}
-        w {\color{darkgreen}20}/{\color{darkgray}30}
-    \end{tabular} 
+            ssss \& 23333
+        \end{tabular}
     """.strip()
     token, end_pos = handler.handle(text)
     print(token)
