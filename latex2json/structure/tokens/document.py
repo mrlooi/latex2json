@@ -18,7 +18,6 @@ class SectionToken(BaseToken):
     title: List[BaseToken]
     level: int
     numbering: Optional[str] = None  # e.g. 3.1.2
-    labels: Optional[List[str]] = None
     content: Optional[List[BaseToken]] = []
 
 

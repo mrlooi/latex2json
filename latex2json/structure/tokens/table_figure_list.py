@@ -53,7 +53,6 @@ class ItemToken(BaseToken):
 
     type: TokenType = TokenType.ITEM
     title: Optional[str] = None
-    labels: Optional[List[str]] = None
 
 
 class ListToken(EnvironmentToken):

@@ -10,6 +10,7 @@ class BaseToken(BaseModel):
     # e.g. ["color={HTML:FF0000}", "color=red", "bold", "italic", ...]
     styles: Optional[List[str]] = None
     content: Union[str, List["BaseToken"]]
+    labels: Optional[List[str]] = None
 
     def model_dump(self, **kwargs) -> Dict[str, Any]:
         """Override model_dump to handle recursive content dumping and ensure JSON serializability"""
@@ -52,7 +53,6 @@ class EnvironmentToken(BaseToken):
     type: TokenType = TokenType.ENVIRONMENT
     name: Optional[str] = None
     title: Optional[str] = None
-    labels: Optional[List[str]] = None
 
 
 class MathEnvToken(EnvironmentToken):

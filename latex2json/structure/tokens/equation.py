@@ -18,7 +18,6 @@ class EquationToken(BaseToken):
     type: TokenType = TokenType.EQUATION
     align: Optional[bool] = None
     display: DisplayType = DisplayType.INLINE
-    labels: Optional[List[str]] = None
     numbering: Optional[str] = None
 
     @classmethod
