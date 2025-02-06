@@ -34,6 +34,9 @@ class TabularToken(BaseToken):
         kwargs["exclude_none"] = False  # we need to keep None values in content
         result = super().model_dump(**kwargs)
 
+        if "labels" in result and result["labels"] is None:
+            del result["labels"]
+
         kwargs_base = kwargs.copy()
         kwargs_base["exclude_none"] = True
 
