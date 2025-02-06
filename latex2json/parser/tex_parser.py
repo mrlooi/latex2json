@@ -410,6 +410,14 @@ class LatexParser:
                             token["content"] = self.parse(token["content"])
                             self.current_env = prev_env
 
+                        # make math env title a list of tokens
+                        if (
+                            token["type"] == "math_env"
+                            and "title" in token
+                            and isinstance(token["title"], str)
+                        ):
+                            token["title"] = self.parse(token["title"])
+
                     self.add_token(token, tokens)
                 return True, end_pos
         return False, 0

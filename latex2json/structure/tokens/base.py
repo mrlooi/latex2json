@@ -55,10 +55,11 @@ class EnvironmentToken(BaseToken):
     title: Optional[str] = None
 
 
-class MathEnvToken(EnvironmentToken):
+class MathEnvToken(BaseToken):
     type: TokenType = TokenType.MATH_ENV
     name: str
     numbering: Optional[str] = None
+    title: Optional[List[BaseToken]] = None
 
 
 class TextToken(BaseToken):
