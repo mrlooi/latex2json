@@ -1,5 +1,5 @@
 import re
-import sys, os, traceback
+import sys, os
 import logging
 from typing import Dict
 
@@ -9,7 +9,6 @@ from latex2json.parser.patterns import (
     WHITELISTED_COMMANDS,
     DELIM_PATTERN,
 )
-from latex2json.utils.logger import setup_logger
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -20,6 +19,7 @@ from latex2json.parser.handlers import (
 )
 from latex2json.utils.tex_utils import (
     strip_latex_comments,
+    normalize_whitespace_and_lines,
 )
 from latex2json.parser.sty_parser import LatexStyParser
 
@@ -29,6 +29,7 @@ DOCUMENTCLASS_PATTERN = re.compile(
     r"\\documentclass\s*%s\s*\{([^}]+)\}" % OPTIONAL_BRACE_PATTERN
 )
 ADD_TO_PATTERN = re.compile(r"\\addto\s*(?:{?\\[^}\s]+}?)\s*\{")  # e.g. \addto\cmd{...}
+NEWLINE_PATTERN = re.compile(r"\\(?:newline|linebreak)(?![a-zA-Z])")
 
 
 class LatexPreprocessor:
@@ -63,6 +64,9 @@ class LatexPreprocessor:
         # 3. Process all definitions and expand commands
         content, tokens = self._process_definitions_and_expand(content, file_dir)
         out_tokens.extend(tokens)
+
+        # 4. After all expansions, normalize whitespace and lines
+        content = normalize_whitespace_and_lines(content)
 
         return content, out_tokens
 
@@ -268,6 +272,12 @@ if __name__ == "__main__":
 
     \bea
     \eea    
+
+    HAHAHA 
+
+    AAAA \newline
+    BBB
+    CCC
     """
 
     processor = LatexPreprocessor()

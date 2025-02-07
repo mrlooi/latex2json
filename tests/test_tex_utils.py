@@ -5,6 +5,7 @@ from latex2json.utils.tex_utils import (
     find_matching_env_block,
     has_comment_on_sameline,
     find_matching_delimiter,
+    normalize_whitespace_and_lines,
     strip_latex_comments,
 )
 import re
@@ -267,3 +268,29 @@ def test_strip_latex_comments():
       % Indented comment
         Text with space   % Comment
     """.strip()
+
+
+def test_normalize_whitespace_and_lines():
+    input_text = "Hello\nworld"
+    expected = "Hello world"
+    assert normalize_whitespace_and_lines(input_text) == expected
+
+    input_text = "Hello\n\nworld"
+    expected = "Hello\nworld"
+    assert normalize_whitespace_and_lines(input_text) == expected
+
+    input_text = "Line one.\nLine two.\n\nLine three.\n  \n  Line four."
+    expected = "Line one. Line two.\nLine three.\nLine four."
+    assert normalize_whitespace_and_lines(input_text) == expected
+
+    input_text = "Hello    world"
+    expected = "Hello world"
+    assert normalize_whitespace_and_lines(input_text) == expected
+
+    input_text = "A  \n   B"
+    expected = "A B"
+    assert normalize_whitespace_and_lines(input_text) == expected
+
+    input_text = "   Hello world   "
+    expected = "Hello world"
+    assert normalize_whitespace_and_lines(input_text) == expected

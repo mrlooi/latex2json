@@ -216,6 +216,25 @@ def strip_latex_newlines(latex_str: str) -> str:
     return latex_str.strip()
 
 
+def normalize_whitespace_and_lines(text: str) -> str:
+    # Step 1: Replace two or more newlines (with optional surrounding spaces) with a unique marker.
+    # This marker should be something unlikely to appear in your text.
+    marker = "<PARA_BREAK>"
+    text = re.sub(r"(?:[ \t]*\n[ \t]*){2,}", marker, text)
+
+    # Step 2: Replace any remaining single newline (with optional surrounding spaces) with a single space.
+    text = re.sub(r"[ \t]*\n[ \t]*", " ", text)
+
+    # Step 3: Collapse multiple spaces into a single space.
+    text = re.sub(r"[ \t]+", " ", text)
+
+    # Step 4: Replace the marker with an actual newline (or any delimiter you prefer).
+    text = text.replace(marker, "\n")
+
+    # Optionally, trim leading and trailing whitespace.
+    return text.strip()
+
+
 def flatten(lst):
     """Recursively flatten nested lists/tuples, preserving dictionaries as single elements."""
     result = []
