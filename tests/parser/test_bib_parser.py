@@ -212,3 +212,32 @@ def test_parse_file_bbl():
     assert entries[1].entry_type == "bibitem"
     assert entries[1].citation_key == "ssss"
     assert "SSSS" in entries[1].content
+
+
+def test_bibtex_with_bysame():
+    parser = BibParser()
+
+    test_bib = r"""
+    \begin{thebibliography}{1}
+		\bibitem{Melrosenotes}
+		Richard~B. Melrose, \emph{Differential analysis on manifolds with corners},
+		Book in preparation.
+		
+		\bibitem{calculus}
+		\bysame, \emph{Calculus of conormal distributions on manifolds with corners},
+		Internat. Math. Res. Notices (1992), no.~3, 51--61. % \MR{1154213}
+		
+		\bibitem{tapsit}
+		\bysame, \emph{The {A}tiyah-{P}atodi-{S}inger index theorem}, Research Notes in
+		Mathematics, vol.~4, A K Peters, Ltd., Wellesley, MA, 1993.  %\MR{1348401}
+		
+    \end{thebibliography}
+""".strip()
+    entries = parser.parse(test_bib)
+    assert len(entries) == 3
+    assert entries[0].citation_key == "Melrosenotes"
+    assert entries[1].citation_key == "calculus"
+    assert entries[2].citation_key == "tapsit"
+
+    assert entries[1].content.startswith("Richard~B. Melrose")
+    assert entries[2].content.startswith("Richard~B. Melrose")

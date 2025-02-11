@@ -184,11 +184,21 @@ class BibParser:
     def _parse_bibitems(self, content: str) -> List[BibEntry]:
         """Parse bibitem entries from content"""
         entries = []
+        previous_content = None
+        bysame_pattern = re.compile(r"\\bysame\b")
+
         for match in BibItemPattern.finditer(content):
             item = match.group(3).strip()
             if item:
                 # remove newblock
                 item = NewblockPattern.sub("", item)
+
+                # Handle \bysame by replacing it with content from previous entry
+                if previous_content and bysame_pattern.search(item):
+                    # Extract author part from previous entry (up to first comma)
+                    author_part = previous_content.split(",")[0]
+                    if author_part:
+                        item = bysame_pattern.sub(author_part, item)
 
                 entry = BibEntry(
                     citation_key=match.group(2).strip(),
@@ -198,6 +208,7 @@ class BibParser:
                     fields={},
                 )
                 entries.append(entry)
+                previous_content = item
         return entries
 
     def parse_file(self, file_path: str) -> List[BibEntry]:
@@ -256,22 +267,32 @@ class BibParser:
 if __name__ == "__main__":
     parser = BibParser()
 
-    # For BibTeX content
-    bibtex_content = """
-    @article{key1,
-    title={Some Title},
-    author={Author Name},
-    year={2023}
-    }
-    """
-    entries = parser.parse(bibtex_content)
-    print(entries)
+    # # For BibTeX content
+    # bibtex_content = """
+    # @article{key1,
+    # title={Some Title},
+    # author={Author Name},
+    # year={2023}
+    # }
+    # """
+    # entries = parser.parse(bibtex_content)
+    # print(entries)
 
     # For bibitem content
     bibitem_content = r"""
     \begin{thebibliography}{1}
-    \bibitem[Title 1]{key1} Some content here
-    \bibitem{key2} More content here
+		\bibitem{Melrosenotes}
+		Richard~B. Melrose, \emph{Differential analysis on manifolds with corners},
+		Book in preparation.
+		
+		\bibitem{calculus}
+		\bysame, \emph{Calculus of conormal distributions on manifolds with corners},
+		Internat. Math. Res. Notices (1992), no.~3, 51--61. % \MR{1154213}
+		
+		\bibitem{tapsit}
+		\bysame, \emph{The {A}tiyah-{P}atodi-{S}inger index theorem}, Research Notes in
+		Mathematics, vol.~4, A K Peters, Ltd., Wellesley, MA, 1993.  %\MR{1348401}
+		
     \end{thebibliography}
     """
     entries = parser.parse(bibitem_content)
