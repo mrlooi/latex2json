@@ -41,20 +41,30 @@ LAYOUT_ENVIRONMENTS = [
     "subequations",
 ]
 
-# Mathematical/Proof environments
-MATH_ENVIRONMENTS = [
+# Mathematical/Proof environments - numbered ones
+NUMBERED_MATH_ENVIRONMENTS = [
     "theorem",
     "lemma",
     "proposition",
     "corollary",
     "definition",
-    "proof",
-    "example",
-    "remark",
-    "note",
-    "claim",
     "conjecture",
     "axiom",
+    "example",
+    "exercise",
+]
+
+# All math environments (numbered + unnumbered)
+MATH_ENVIRONMENTS = NUMBERED_MATH_ENVIRONMENTS + [
+    # unnumbered environments
+    "proof",
+    "notation",
+    "solution",
+    "note",
+    "claim",
+    # could be variable
+    "remark",
+    "observation",
 ]
 
 # Map environment names to their types
@@ -204,8 +214,11 @@ class BaseEnvironmentHandler(TokenHandler):
 
         # ignore numbering of subfigures/tables?
         if env_type == "math_env" and not contains_asterisk:
-            token["numbered"] = True
-        elif env_type in ["table", "figure"] and not env_name.startswith("sub"):
+            if env_name.lower() in NUMBERED_MATH_ENVIRONMENTS:
+                token["numbered"] = True
+        elif env_type in ["table", "figure", "algorithm"] and not env_name.startswith(
+            "sub"
+        ):
             token["numbered"] = True
 
         # Extract title if present (text within square brackets after environment name)
