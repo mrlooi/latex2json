@@ -155,6 +155,9 @@ class TokenBuilder:
             processed_tokens = []
             for token in tokens:
                 if isinstance(token, dict):
+                    if isinstance(token.get("title"), list):
+                        token["title"] = recursive_process(token["title"])
+
                     if token.get("type") == "tabular":
                         # Process table rows but don't concatenate their cells
                         token["content"] = [
@@ -324,7 +327,7 @@ if __name__ == "__main__":
     # tokens = parser.parse_file(file)
 
     text = r"""
-    Hello there $1+1=2$, I have \$3 mr krabs
+    \subsubsection{Contribution from the $F$ term}
     """
     tokens = parser.parse(text)
 
