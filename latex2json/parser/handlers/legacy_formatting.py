@@ -206,6 +206,11 @@ class LegacyFormattingHandler(TokenHandler):
                                 " ".join(reversed(trailing_patterns)),
                             )
 
+                    # if exact match detected, we remove it because it acts like a off switch
+                    # e.g. \em some italic text ... \em no longer italic
+                    if command and re.match(r"\\" + command, content[total_pos:]):
+                        total_pos += len(command) + 1
+
                     return formatted_text, total_pos
 
         return None, 0

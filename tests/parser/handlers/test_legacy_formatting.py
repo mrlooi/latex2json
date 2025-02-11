@@ -177,3 +177,10 @@ def test_color_formatting(handler):
     out, end_pos = handler.handle(text)
     assert out == ""
     assert text[end_pos:] == " Haha"
+
+
+def test_exact_match_off_switch(handler):
+    text = r"\em some italic text ... \em no longer italic"
+    out, end_pos = handler.handle(text)
+    assert out == r"\emph{some italic text ... }"
+    assert text[end_pos:] == r" no longer italic"

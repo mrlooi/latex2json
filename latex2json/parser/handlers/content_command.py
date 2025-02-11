@@ -68,7 +68,7 @@ RAW_PATTERNS = OrderedDict(
             r"\\(?:citeyear|citeyearpar|citefullauthor)%s\s*{" % OPTIONAL_BRACE_PATTERN,
         ),
         # Title
-        ("title", r"\\title\s*{"),
+        ("title", r"\\title%s\s*{" % OPTIONAL_BRACE_PATTERN),
         # appendix
         ("appendix", r"\\(?:appendix|appendices)\b"),
         # keywords
