@@ -3,7 +3,11 @@ from logging import Logger
 import logging
 from typing import Dict, List, Optional
 import re
-from latex2json.utils.tex_utils import extract_nested_content, strip_latex_comments
+from latex2json.utils.tex_utils import (
+    extract_nested_content,
+    strip_latex_comments,
+    normalize_whitespace_and_lines,
+)
 import os
 
 
@@ -51,6 +55,13 @@ BibTexPattern = re.compile(r"@(\w+)\s*\{")
 BibTexFieldPattern = re.compile(r"(\w+)\s*=\s*")
 
 
+def preprocess(content: str) -> str:
+    """Preprocess content to remove comments and normalize whitespace"""
+    content = strip_latex_comments(content)
+    content = normalize_whitespace_and_lines(content)
+    return content.strip()
+
+
 class BibTexParser:
     def __init__(self, logger: Logger = None):
         self.logger = logger or logging.getLogger(__name__)
@@ -60,6 +71,8 @@ class BibTexParser:
         self.logger.info("Starting BibTeX parsing")
         entries = []
         pos = 0
+
+        content = preprocess(content)
 
         # Find each entry starting with @
         for match in re.finditer(BibTexPattern, content):
@@ -146,7 +159,7 @@ class BibParser:
     def parse(self, content: str) -> List[BibEntry]:
         """Parse both BibTeX and bibitem entries from the content"""
 
-        content = strip_latex_comments(content).strip()
+        content = preprocess(content)
 
         entries = []
 
