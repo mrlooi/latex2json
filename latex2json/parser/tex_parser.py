@@ -439,7 +439,9 @@ class LatexParser:
                 if label:
                     self._handle_label(label, tokens)
                 return True, start_pos + end_pos
-            elif matched_type == "newline" or matched_type == "break_spacing":
+            elif matched_type == "newline":
+                self.add_token("\n", tokens)
+            elif matched_type == "break_spacing":
                 self.add_token(line_break_delimiter, tokens)
             elif matched_type == "line_continuation":
                 return True, match.end()

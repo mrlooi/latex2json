@@ -800,7 +800,8 @@ def test_complex_table(parser):
         & & 130 & 160 \\
         Thing with \cite{elon_musk} & SpaceX & Tesla & Neuralink \\
         \H{o} & \HELLO{WORLD} & \textyen\textdollar & \unknown \\
-        \hline
+        \hline 
+        AA \& BB\newline CC & DD & EE & 
     \end{tabular}
     \caption{Regional Sales Distribution}
     \label{tab:sales}
@@ -873,6 +874,8 @@ def test_complex_table(parser):
         "¥$",
         [{"type": "command", "command": "\\unknown"}],
     ]
+
+    assert cells[8] == ["AA & BB\n CC", "DD", "EE", None]
 
     # Check caption
     caption = table["content"][1]

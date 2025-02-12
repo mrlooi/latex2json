@@ -43,11 +43,6 @@ def split_latex_content(
         List of split content, with separators and empty lines filtered out for rows,
         but preserving empty cells for cell splitting
     """
-    # For cell splitting, handle newlines first
-    if not is_row_split:
-        lines = [line.strip() for line in content.split("\n")]
-        lines = [line for line in lines if line]
-        content = " ".join(lines)
 
     parts = []
     current_part = []
@@ -458,8 +453,8 @@ if __name__ == "__main__":
 
     text = r"""
     \begin{tabular}{cc}
-            ssss \& 23333
-        \end{tabular}
+        A \newline & b \newline C        
+    \end{tabular}
     """.strip()
     token, end_pos = handler.handle(text)
     print(token)
