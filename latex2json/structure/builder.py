@@ -39,6 +39,7 @@ class TokenBuilder:
         self.equation_number = 0
         self.table_env_number = 0
         self.figure_env_number = 0
+        self.algorithm_number = 0
 
     def clear(self):
         self.reset_numbering()
@@ -84,6 +85,10 @@ class TokenBuilder:
     def _update_equation_numbering(self, token):
         self.equation_number += 1
         token["numbering"] = str(self.equation_number)
+
+    def _update_algorithm_numbering(self, token):
+        self.algorithm_number += 1
+        token["numbering"] = str(self.algorithm_number)
 
     def _update_table_env_numbering(self, token):
         self.table_env_number += 1
@@ -204,6 +209,8 @@ class TokenBuilder:
         if token.get("numbered"):
             if token["type"] == "equation":
                 self._update_equation_numbering(token)
+            elif token["type"] == "algorithm":
+                self._update_algorithm_numbering(token)
             elif token["type"] == "math_env":
                 self._update_math_env_numbering(token)
             elif token["type"] == "table":
@@ -327,7 +334,10 @@ if __name__ == "__main__":
     # tokens = parser.parse_file(file)
 
     text = r"""
-    \subsubsection{Contribution from the $F$ term}
+    \begin{lemma}
+    \end{lemma}
+    \begin{proof}
+    \end{proof}
     """
     tokens = parser.parse(text)
 

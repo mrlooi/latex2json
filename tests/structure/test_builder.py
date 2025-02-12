@@ -68,6 +68,10 @@ def latex_text():
             Theorem 3
         \end{theorem}
 
+        \begin{algorithm}
+            \caption{Binary Search}
+        \end{algorithm}        
+
         \begin{tabular}{|c|c|}
             \hline
             Cell 1 & \textbf{Cell 2} & 3 \\
@@ -278,6 +282,23 @@ def expected_organizer_output():
                                         {"type": "text", "content": "Theorem 3"}
                                     ],
                                     "numbering": "2.1",
+                                    "numbered": True,
+                                },
+                                {
+                                    "type": "algorithm",
+                                    "name": "algorithm",
+                                    "content": [
+                                        {
+                                            "type": "caption",
+                                            "content": [
+                                                {
+                                                    "type": "text",
+                                                    "content": "Binary Search",
+                                                }
+                                            ],
+                                        },
+                                    ],
+                                    "numbering": "1",
                                     "numbered": True,
                                 },
                                 {

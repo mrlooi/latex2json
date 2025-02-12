@@ -12,6 +12,7 @@ from latex2json.parser.patterns import (
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from latex2json.parser.handlers.code_block import PATTERNS as VERBATIM_PATTERNS
 
 from latex2json.parser.handlers import (
     NewDefinitionHandler,
@@ -30,6 +31,14 @@ DOCUMENTCLASS_PATTERN = re.compile(
 )
 ADD_TO_PATTERN = re.compile(r"\\addto\s*(?:{?\\[^}\s]+}?)\s*\{")  # e.g. \addto\cmd{...}
 NEWLINE_PATTERN = re.compile(r"\\(?:newline|linebreak)(?![a-zA-Z])")
+
+ALL_VERBATIM_PATTERNS = list(VERBATIM_PATTERNS.values())
+ALL_VERBATIM_PATTERNS.append(
+    re.compile(r"\\begin\s*\{algorithm\}(.*?)\\end\s*\{algorithm\}", re.DOTALL)
+)
+ALL_VERBATIM_PATTERNS.append(
+    re.compile(r"\\begin\s*\{algorithmic\}(.*?)\\end\s*\{algorithmic\}", re.DOTALL)
+)
 
 
 class LatexPreprocessor:
@@ -66,7 +75,11 @@ class LatexPreprocessor:
         out_tokens.extend(tokens)
 
         # 4. After all expansions, normalize whitespace and lines
+        # But make sure to not normalize verbatim environments (VERBATIM_PATTERNS)
+        # so we first need to find all verbatim environments, extract them out, normalize the rest, then put the verbatim environments back in
+        content, verbatim_blocks = self._extract_verbatim_blocks(content)
         content = normalize_whitespace_and_lines(content)
+        content = self._restore_verbatim_blocks(content, verbatim_blocks)
 
         return content, out_tokens
 
@@ -259,6 +272,50 @@ class LatexPreprocessor:
 
         return content, tokens
 
+    def _extract_verbatim_blocks(self, content: str) -> tuple[str, dict]:
+        """
+        Extracts verbatim environments from the content and replaces them with placeholders.
+        Returns the modified content and a dictionary mapping placeholders to the original verbatim blocks.
+        """
+        blocks = {}
+        placeholder_prefix = "__VERBATIM_BLOCK__"
+        output = []
+        pos = 0
+        placeholder_index = 0
+
+        while pos < len(content):
+            earliest_match = None
+            earliest_start = len(content)
+            # Look for the earliest occurrence from any of the verbatim patterns
+            for pattern in ALL_VERBATIM_PATTERNS:
+                m = pattern.search(content, pos)
+                if m and m.start() < earliest_start:
+                    earliest_match = m
+                    earliest_start = m.start()
+
+            if earliest_match:
+                # Append the text before the match
+                output.append(content[pos : earliest_match.start()])
+                # Create a unique placeholder
+                placeholder = f"{placeholder_prefix}{placeholder_index}__"
+                output.append(placeholder)
+                blocks[placeholder] = earliest_match.group(0)
+                placeholder_index += 1
+                pos = earliest_match.end()
+            else:
+                output.append(content[pos:])
+                break
+
+        return "".join(output), blocks
+
+    def _restore_verbatim_blocks(self, content: str, blocks: dict) -> str:
+        """
+        Restores the verbatim blocks in the content by replacing placeholders with the original blocks.
+        """
+        for placeholder, block in blocks.items():
+            content = content.replace(placeholder, block)
+        return content
+
 
 if __name__ == "__main__":
     text = r"""
@@ -278,6 +335,22 @@ if __name__ == "__main__":
     AAAA \newline
     BBB
     CCC
+
+    \begin{lstlisting}
+def binary_search(arr, target):
+    left, right = 0, len(arr) - 1
+    
+    while left <= right:  # Main search loop
+        mid = (left + right) // 2
+        if arr[mid] == target:
+            return mid    # Found the target
+        elif arr[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+            
+    return -1  # Target not found
+\end{lstlisting}
     """
 
     processor = LatexPreprocessor()

@@ -21,6 +21,7 @@ class AlgorithmToken(EnvironmentToken):
 
     type: TokenType = TokenType.ALGORITHM
     content: List[BaseToken] = Field(default_factory=list)
+    numbering: Optional[str] = None
 
 
 class AlgorithmicToken(BaseToken):

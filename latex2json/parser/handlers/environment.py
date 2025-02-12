@@ -52,6 +52,9 @@ NUMBERED_MATH_ENVIRONMENTS = [
     "axiom",
     "example",
     "exercise",
+    # could be variable
+    "remark",
+    "observation",
 ]
 
 # All math environments (numbered + unnumbered)
@@ -62,9 +65,6 @@ MATH_ENVIRONMENTS = NUMBERED_MATH_ENVIRONMENTS + [
     "solution",
     "note",
     "claim",
-    # could be variable
-    "remark",
-    "observation",
 ]
 
 # Map environment names to their types
