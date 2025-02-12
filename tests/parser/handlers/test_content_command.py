@@ -119,8 +119,8 @@ def test_handle_references(handler):
     token, pos = handler.handle(r"\hyperref[sec:methods]{Methods section}")
     assert token == {
         "type": "ref",
-        "title": "sec:methods",
-        "content": "Methods section",
+        "title": "Methods section",
+        "content": "sec:methods",
     }
 
     # Test href

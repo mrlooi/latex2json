@@ -549,8 +549,8 @@ def test_parse_refs_and_urls(parser):
     assert refs[0]["content"] == "https://www.tesla.com"
     assert refs[1]["content"] == "https://www.google.com"
     assert refs[1]["title"][0]["content"] == "Google"
-    assert refs[2]["title"] == "fig:modalnet"
-    assert refs[2]["content"] == "ModalNet"
+    assert refs[2]["title"] == "ModalNet"
+    assert refs[2]["content"] == "fig:modalnet"
     assert "title" not in refs[3]
     assert refs[3]["content"] == "fig:modalnet"
 

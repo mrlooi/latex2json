@@ -169,10 +169,7 @@ class ContentCommandHandler(TokenHandler):
             }
 
         elif matched_type == "hyperref":
-            return {"type": "ref", "title": match.group(1).strip(), "content": content}
-
-        elif matched_type == "doi":
-            return {"type": "ref", "content": "https://doi.org/" + content}
+            return {"type": "ref", "title": content, "content": match.group(1).strip()}
 
         elif matched_type == "href":
             return {"type": "url", "title": content, "content": match.group(1).strip()}
@@ -182,6 +179,9 @@ class ContentCommandHandler(TokenHandler):
 
         elif matched_type in ["ref", "bookmark"]:
             return {"type": "ref", "content": content}
+
+        elif matched_type == "doi":
+            return {"type": "ref", "content": "https://doi.org/" + content}
 
         # Citations
         elif matched_type == "citation":
