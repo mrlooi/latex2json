@@ -487,8 +487,10 @@ class LatexParser:
         Returns:
             List[Dict[str, str]]: List of parsed tokens
         """
-        if isinstance(content, str):
-            content = strip_latex_comments(content)
+        if not isinstance(content, str):
+            return content
+
+        content = strip_latex_comments(content)
 
         if preprocess:
             content = self.preprocess(content)
@@ -693,18 +695,13 @@ if __name__ == "__main__":
 
     parser = LatexParser(logger=logger)
 
-    file = "papers/new/arXiv-2005.14165v4/main.tex"
-    # file = "papers/tested/arXiv-2301.10303v4.tex"
+    file = "papers/tested/arXiv-2402.03300v3/main.tex"
+    # file = "papers/tested/arXiv-1706.03762v7/model_architecture.tex"
     tokens = parser.parse_file(file)
 
 #     text = r"""
-#         \newcommand{\@notice}{%
-#         % give a bit of extra room back to authors on first page
-#         \enlargethispage{2\baselineskip}%
-#         \@float{noticebox}[b]%
-#             \footnotesize\@noticestring%
-#         \end@float%
-#         }
+# \textit{Data Source $\mathcal{D}$}, which determines the training data;
+
 # """
-#     tokens = parser.parse(text)
+#     tokens = parser.parse(text, preprocess=True)
 #     print(tokens)
