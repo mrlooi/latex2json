@@ -1438,19 +1438,18 @@ def test_complex_frac(parser):
 def test_legacy_formatting(parser):
     text = r"""
     \tt hello there peopleeee
-    \large LARGE BOY
+    \large LARGE
     """
-    parsed_tokens = parser.parse(text)
-    assert len(parsed_tokens) == 1
-
-    # note that the top \tt command monospace is the first root
-    assert parsed_tokens[0]["styles"] == [FRONTEND_STYLE_MAPPING["texttt"]]
-    content = parsed_tokens[0]["content"]
+    content = parser.parse(text)
 
     assert len(content) == 2
     assert content[0]["content"].strip() == "hello there peopleeee"
-    assert content[1]["content"].strip() == "LARGE BOY"
-    assert content[1]["styles"] == [FRONTEND_STYLE_MAPPING["textlarge"]]
+    assert content[0]["styles"] == [FRONTEND_STYLE_MAPPING["texttt"]]
+    assert content[1]["content"].strip() == "LARGE"
+    assert content[1]["styles"] == [
+        FRONTEND_STYLE_MAPPING["texttt"],
+        FRONTEND_STYLE_MAPPING["textlarge"],
+    ]
 
     # test legacy formatting inside tabular
     text = r"""

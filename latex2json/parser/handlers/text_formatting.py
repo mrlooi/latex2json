@@ -9,6 +9,7 @@ from latex2json.utils.tex_utils import (
     extract_nested_content,
     extract_nested_content_sequence_blocks,
     flatten_all_to_string,
+    flatten_group_token,
     strip_latex_newlines,
 )
 
@@ -195,6 +196,7 @@ class TextFormattingHandler(TokenHandler):
             if not inner_content:
                 return None, total_pos
 
+        token = flatten_group_token(token)
         return token, total_pos
 
     def _handle_frac(self, content: str, match: re.Match) -> Tuple[str, int]:
@@ -325,9 +327,8 @@ class TextFormattingHandler(TokenHandler):
             "content": out_tokens,
         }, total_pos
 
-    def handle(
-        self, content: str, prev_token: Optional[Dict] = None
-    ) -> Tuple[str, int]:
+    def handle(self, content: str, prev_token: Optional[Dict] = None):
+
         for name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if not match:

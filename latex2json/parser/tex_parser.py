@@ -354,6 +354,66 @@ class LatexParser:
         tokens = [self._convert_bibitem_to_token(entry) for entry in entries]
         return {"type": "bibliography", "content": tokens}
 
+    def _process_token(
+        self, token: str | Dict | List[Dict], tokens: List[Dict], is_env_type=False
+    ) -> None:
+        if isinstance(token, str):
+            token = {"type": "text", "content": token}
+        elif isinstance(token, list):
+            for t in token:
+                self._process_token(t, tokens)
+            return
+        else:
+            if token["type"] == "bibliography":
+                if isinstance(token["content"], str):
+                    entries = self.bib_parser.parse(token["content"])
+                    token["content"] = [
+                        self._convert_bibitem_to_token(entry) for entry in entries
+                    ]
+            elif token["type"] == "bibliography_file":
+                if token["content"]:
+                    token = self._parse_bib_file(token["content"])
+            elif token["type"] == "input_file":
+                # open input file
+                if token["content"]:
+                    file_path = token["content"]
+                    if self.current_file_dir:
+                        file_path = os.path.join(self.current_file_dir, file_path)
+                    input_tokens = self.parse_file(file_path, extension=".tex")
+                    if input_tokens:
+                        tokens.extend(input_tokens)
+                return
+            elif token["type"] in ["footnote", "caption"]:
+                prev_env = self.current_env
+                self.current_env = token
+                token["content"] = self.parse(token["content"])
+                self.current_env = prev_env
+            elif token["type"] == "url":
+                if "title" in token:
+                    token["title"] = self.parse(token["title"])
+            elif token["type"] in ["section", "paragraph", "title"]:
+                self.current_env = token
+                token["title"] = self.parse(token["title"])
+            elif token["type"] == "abstract":
+                token["content"] = self.parse(token["content"])
+            elif is_env_type:
+                # algorithmic keep as literal?
+                if token["type"] not in ["algorithmic", "tabular"]:
+                    prev_env = self.current_env
+                    self.current_env = token
+                    token["content"] = self.parse(token["content"])
+                    self.current_env = prev_env
+
+                # make math env title a list of tokens
+                if (
+                    token["type"] == "math_env"
+                    and "title" in token
+                    and isinstance(token["title"], str)
+                ):
+                    token["title"] = self.parse(token["title"])
+
+        self.add_token(token, tokens)
+
     def _check_handlers(self, content: str, tokens: List[Dict]) -> Tuple[bool, int]:
         """Process content through available handlers.
 
@@ -365,60 +425,11 @@ class LatexParser:
                 prev_token = tokens[-1] if tokens else None
                 token, end_pos = handler.handle(content, prev_token)
                 if token:
-                    if isinstance(token, str):
-                        token = {"type": "text", "content": token}
-                    elif token["type"] == "bibliography":
-                        if isinstance(token["content"], str):
-                            entries = self.bib_parser.parse(token["content"])
-                            token["content"] = [
-                                self._convert_bibitem_to_token(entry)
-                                for entry in entries
-                            ]
-                    elif token["type"] == "bibliography_file":
-                        if token["content"]:
-                            token = self._parse_bib_file(token["content"])
-                    elif token["type"] == "input_file":
-                        # open input file
-                        if token["content"]:
-                            file_path = token["content"]
-                            if self.current_file_dir:
-                                file_path = os.path.join(
-                                    self.current_file_dir, file_path
-                                )
-                            input_tokens = self.parse_file(file_path, extension=".tex")
-                            if input_tokens:
-                                tokens.extend(input_tokens)
-                        return True, end_pos
-                    elif token["type"] in ["footnote", "caption"]:
-                        prev_env = self.current_env
-                        self.current_env = token
-                        token["content"] = self.parse(token["content"])
-                        self.current_env = prev_env
-                    elif token["type"] == "url":
-                        if "title" in token:
-                            token["title"] = self.parse(token["title"])
-                    elif token["type"] in ["section", "paragraph", "title"]:
-                        self.current_env = token
-                        token["title"] = self.parse(token["title"])
-                    elif token["type"] == "abstract":
-                        token["content"] = self.parse(token["content"])
-                    elif isinstance(handler, BaseEnvironmentHandler):
-                        # algorithmic keep as literal?
-                        if token["type"] not in ["algorithmic", "tabular"]:
-                            prev_env = self.current_env
-                            self.current_env = token
-                            token["content"] = self.parse(token["content"])
-                            self.current_env = prev_env
-
-                        # make math env title a list of tokens
-                        if (
-                            token["type"] == "math_env"
-                            and "title" in token
-                            and isinstance(token["title"], str)
-                        ):
-                            token["title"] = self.parse(token["title"])
-
-                    self.add_token(token, tokens)
+                    self._process_token(
+                        token,
+                        tokens,
+                        is_env_type=isinstance(handler, BaseEnvironmentHandler),
+                    )
                 return True, end_pos
         return False, 0
 

@@ -374,6 +374,17 @@ def flatten_all_to_string(tokens: List[Dict | str | List] | str) -> str:
     return " ".join(flatten_token(token) for token in tokens)
 
 
+def flatten_group_token(token: Dict) -> Dict | List[Dict]:
+    if token.get("type") == "group" and isinstance(token["content"], list):
+        flat_content = token["content"]
+        if token.get("styles"):
+            for content in flat_content:
+                content_styles = content.get("styles", [])
+                content["styles"] = token["styles"] + content_styles
+        return flat_content
+    return token
+
+
 if __name__ == "__main__":
     text = r"% comment\n\begin{test}"
     pos = text.find(r"\begin")
