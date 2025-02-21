@@ -31,3 +31,4 @@ class UrlToken(BaseToken):
 
 class FootnoteToken(BaseToken):
     type: TokenType = TokenType.FOOTNOTE
+    content: List[BaseToken]

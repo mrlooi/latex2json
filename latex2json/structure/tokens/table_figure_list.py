@@ -28,6 +28,7 @@ class CaptionToken(BaseToken):
 
     type: TokenType = TokenType.CAPTION
     title: Optional[str] = None
+    content: List[BaseToken]
 
 
 # GRAPHICS
