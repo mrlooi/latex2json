@@ -2035,5 +2035,15 @@ def test_preprocess_and_def_beginend(parser):
     assert "eea" in parser.commands
 
 
+def test_simple_quotes(parser):
+    text = r"""
+    ``aaa''
+    """
+    parsed_tokens = parser.parse(text, preprocess=True)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"] == '"aaa"'
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

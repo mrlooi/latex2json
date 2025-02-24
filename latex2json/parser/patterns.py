@@ -9,7 +9,7 @@ NUMBER_PATTERN = r"[-+]?\d*\.?\d+"
 # match $ or % or { or } only if not preceded by \
 # Update DELIM_PATTERN to also match double backslashes and opening braces {
 DELIM_PATTERN = re.compile(
-    r"(?<!\\)(?:\\\\|\$|%|(?:^|[ \t])\{|\s{|{}|\\\^|\\(?![$%&_#{}^~\\]))"
+    r"(?<!\\)(?:\\\\|\$|%|``|(?:^|[ \t])\{|\s{|{}|\\\^|\\(?![$%&_#{}^~\\]))"
 )
 
 OPTIONAL_BRACE_PATTERN = r"(?:\[[^\]]*\])?"
@@ -37,6 +37,7 @@ RAW_PATTERNS = OrderedDict(
             "line_continuation",
             r"\\(?:\s|$)",
         ),  # Single backslash followed by whitespace or end of string
+        ("quotes", r"``(.*?)''"),  # latex quotes e.g. ``aaa'' -> "aaa"
     ]
 )
 

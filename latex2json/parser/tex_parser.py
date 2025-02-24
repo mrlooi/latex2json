@@ -454,6 +454,8 @@ class LatexParser:
                 self.add_token("\n", tokens)
             elif matched_type == "break_spacing":
                 self.add_token(line_break_delimiter, tokens)
+            elif matched_type == "quotes":
+                self.add_token('"' + match.group(1) + '"', tokens)
             elif matched_type == "line_continuation":
                 return True, match.end()
             else:
