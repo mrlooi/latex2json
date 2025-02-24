@@ -40,6 +40,17 @@ ALL_VERBATIM_PATTERNS.append(
     re.compile(r"\\begin\s*\{algorithmic\}(.*?)\\end\s*\{algorithmic\}", re.DOTALL)
 )
 
+DELIM_PATTERN_WITH_QUOTES = re.compile(DELIM_PATTERN.pattern + r"|`")
+
+QUOTE_PATTERNS = {
+    "double_quotes": re.compile(
+        r"``(.*?)''", re.DOTALL
+    ),  # latex quotes e.g. ``aaa'' -> "aaa"
+    "single_quotes": re.compile(
+        r"`(.*?)'", re.DOTALL
+    ),  # latex quotes e.g. `aaa' -> 'aaa'
+}
+
 
 class LatexPreprocessor:
     def __init__(self, logger=None):
@@ -203,7 +214,7 @@ class LatexPreprocessor:
             # find the next delimiter (this block allows us to quickly identify and process chunks of text between special LaTeX delimiters
             # without it, we would have to parse the entire content string character by character. which would be slower.)
             # if next delimiter exists, we need to store the text before the next delimiter (or all remaining text if no delimiter)
-            next_delimiter = DELIM_PATTERN.search(content[current_pos:])
+            next_delimiter = DELIM_PATTERN_WITH_QUOTES.search(content[current_pos:])
             next_pos = (
                 len(content[current_pos:])
                 if not next_delimiter
@@ -222,6 +233,22 @@ class LatexPreprocessor:
                     content[:current_pos] + content[current_pos + match.end() - 1 :]
                 )
                 continue
+
+            # check quotes
+            for quote_type, pattern in QUOTE_PATTERNS.items():
+                match = pattern.match(content[current_pos:])
+                if match:
+                    quote_content = match.group(1)
+                    if quote_type == "double_quotes":
+                        quote_content = '"' + quote_content + '"'
+                    elif quote_type == "single_quotes":
+                        quote_content = "'" + quote_content + "'"
+                    content = (
+                        content[:current_pos]
+                        + quote_content
+                        + content[current_pos + match.end() :]
+                    )
+                    continue
 
             # Process definitions
             token, end_pos = self._check_for_new_definitions(content[current_pos:])
