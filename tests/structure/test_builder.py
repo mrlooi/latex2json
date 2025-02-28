@@ -136,7 +136,16 @@ def expected_organizer_output():
                     "content": [
                         {
                             "type": "text",
-                            "content": "Some text here, <math>1+1=2</math>:",
+                            "content": "Some text here, ",
+                        },
+                        {
+                            "type": "equation",
+                            "content": "1+1=2",
+                            "display": "inline",
+                        },
+                        {
+                            "type": "text",
+                            "content": ":",
                         },
                         {
                             "type": "equation",

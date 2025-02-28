@@ -99,12 +99,6 @@ class EquationHandler(TokenHandler):
                 # Create token
                 inline = pattern_name.startswith("equation_inline")
                 display = "inline" if inline else "block"
-                # if inline:
-                #     token = {
-                #         "type": "text",
-                #         "content": "$" + equation + "$ "
-                #     }
-                # else:
                 token = {"type": "equation", "content": equation, "display": display}
 
                 if "align" in pattern_name:

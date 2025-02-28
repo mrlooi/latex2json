@@ -181,7 +181,8 @@ class TokenBuilder:
                 else:
                     processed_tokens.append(token)
 
-            processed_tokens = self._convert_inline_equations_to_text(processed_tokens)
+            # Note: v0.3.0. Commented this out to preserve separation of text vs equation inline tokens
+            # processed_tokens = self._convert_inline_equations_to_text(processed_tokens)
             if should_concat:
                 processed_tokens = self._concat_text_with_same_styles(processed_tokens)
             return processed_tokens
