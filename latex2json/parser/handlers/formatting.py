@@ -174,7 +174,7 @@ RAW_PATTERNS = OrderedDict(
             r"labelsep\s*\{?([^\}]*)\}?|"
             + r"(?:midrule|toprule|bottomrule)%s|"
             % (OPTIONAL_BRACE_PATTERN)  # optional [trim]
-            + r"cmidrule\s*(?:\((.+)\)\s*)?(?:\[([^\]]*)\]\s*)?{([^}]+)}|"  # optional (xxpt)[trim] and {n-m}
+            + r"cmidrule\s*(?:\(([^)]+)\)\s*)?(?:\[([^\]]*)\]\s*)?{([^}]+)}|"  # optional (lr)[trim] and {n-m}
             r"hdashline(?:\[[\d,\s]*\])?|"  # optional [length,space]
             r"cdashline\s*{([^}]+)}|"  # {n-m}
             r"specialrule\s*{([^}]*)}\s*{([^}]*)}\s*{([^}]*)}|"  # {height}{above}{below}

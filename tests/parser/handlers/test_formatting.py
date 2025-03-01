@@ -260,6 +260,7 @@ def test_misc_formatting_commands(handler):
 
     \typeout{** WARNING: IEEEtran.bst: No hyphenation pattern has been}
     \cmidrule(r{4pt}){2-6}
+    \cmidrule(lr){3-11}
 
     \FloatBarrier
 
