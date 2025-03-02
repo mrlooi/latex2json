@@ -64,7 +64,7 @@ RAW_PATTERNS = OrderedDict(
         ),
         (
             "page",
-            r"\\enlargethispage\s*\{[^}]*\}|\\pagecolor\*?{[^}]*}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|vfil|break|scriptsize|scriptstyle|sloppy|flushbottom|flushleft|flushright|flushtop)\b",
+            r"\\enlargethispage\s*\{[^}]*\}|\\pagecolor\*?{[^}]*}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|vfil|break|scriptstyle|sloppy|flushbottom|flushleft|flushright|flushtop)\b",
         ),
         (
             "pagebreak",
