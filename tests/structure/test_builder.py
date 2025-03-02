@@ -443,6 +443,8 @@ def test_organize_content(latex_parser, latex_text, expected_organizer_output):
 
 def test_organize_appendix(latex_parser):
     latex_text = r"""
+    \section{Intro}
+
     \begin{appendices}
     \section{Appendix}
         Here goes my appendix...
@@ -454,6 +456,14 @@ def test_organize_appendix(latex_parser):
     """
 
     expected = [
+        {
+            "type": "section",
+            "title": [{"type": "text", "content": "Intro"}],
+            "level": 1,
+            "numbering": "1",
+            "numbered": True,
+            "content": [],
+        },
         {
             "type": "appendix",
             "content": [
@@ -510,7 +520,7 @@ def test_organize_appendix(latex_parser):
                     ],
                 }
             ],
-        }
+        },
     ]
 
     tokens = latex_parser.parse(latex_text)

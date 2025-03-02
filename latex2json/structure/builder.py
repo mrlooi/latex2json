@@ -241,16 +241,17 @@ class TokenBuilder:
             # if \begin{appendices}, then content is the content inside the appendices env
             if token["type"] == "appendix":
                 in_appendix = True
+                # reset section numbers since appendix
+                self.section_numbers = {1: 0, 2: 0, 3: 0}
+                section_stack.clear()
+                paragraph_stack.clear()
+
                 if not token.get("content"):
                     token["content"] = []
                 else:
                     token["content"] = self._recursive_organize(token["content"], True)
                 root = token["content"]  # Switch root to appendix content
-                section_stack.clear()
-                paragraph_stack.clear()
                 organized.append(token)
-                # reset section numbers since appendix
-                self.section_numbers = {1: 0, 2: 0, 3: 0}
                 continue
 
             # Handle token numbering
