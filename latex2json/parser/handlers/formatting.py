@@ -68,7 +68,7 @@ RAW_PATTERNS = OrderedDict(
         ),
         (
             "pagebreak",
-            r"\\(?:pagebreak|filbreak|newpage|allowbreak|break)\b|\\linebreak(?:\[\d+\])?",
+            r"\\(?:pagebreak|filbreak|newpage|allowbreak|goodbreak|medbreak|break)\b|\\linebreak(?:\[\d+\])?",
         ),
         (
             "vskip",
