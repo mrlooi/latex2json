@@ -109,7 +109,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "lineskip",
             r"\\lineskip\s*%s" % (number_points_suffix)
-            + r"|(%s)?\\baselineskip" % (number_regex),
+            + r"|(%s)?\\baselineskip(?:\s*%s)?" % (number_regex, number_points_suffix),
         ),
         # width
         ("width", r"\\(?:linewidth|columnwidth|textwidth|hsize|labelwidth|wd)\b"),
@@ -194,7 +194,10 @@ RAW_PATTERNS = OrderedDict(
         ("paper", r"\\(?:paperwidth|paperheight)\s*=\s*%s(?:\w+)?" % number_regex),
         ("protect", r"\\protect\\[a-zA-Z]+(?:\s*(?:\[[^\]]*\]|\{[^}]*\})*)?"),
         ("addtocontents", r"\\(?:addtocontents|addtocounter)\s*\{[^}]*\s*\}\s*{"),
-        ("counters", r"\\counterwithin\s*\{[^}]*}\s*\{[^}]*\}|\\refstepcounter{[^}]+}"),
+        (
+            "counters",
+            r"\\counterwithin\s*\{[^}]*}\s*\{[^}]*\}|\\refstepcounter{[^}]+}|\\@addtoreset\s*\{[^}]*\}\s*\{[^}]*\}",
+        ),
         ("backslash", r"\\(?:backslash|textbackslash|arraybackslash)\b"),
         ("ensuremath", r"\\ensuremath\s*{"),
         ("hyphenation", r"\\hyphenation\s*{"),

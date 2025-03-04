@@ -7,6 +7,7 @@ import zipfile
 from contextlib import contextmanager
 
 from latex2json.utils.tex_utils import strip_latex_comments
+from latex2json.utils.encoding import read_file
 
 
 class TexFileExtractor:
@@ -49,8 +50,7 @@ class TexFileExtractor:
                 if file.endswith(".tex"):
                     full_path = os.path.join(root, file)
                     try:
-                        with open(full_path, "r", encoding="utf-8") as f:
-                            content = f.read()
+                        content = read_file(full_path)
                         if TexFileExtractor.is_main_tex_file(content):
                             # Return both the relative path and the containing folder
                             return os.path.relpath(full_path, folder_path), root
@@ -114,14 +114,14 @@ class TexFileExtractor:
                         with open(temp_file, "wb") as f_out:
                             f_out.write(content)
 
-                        with open(temp_file, "r", encoding="utf-8") as f:
-                            if TexFileExtractor.is_main_tex_file(f.read()):
-                                main_tex = "temp_file"
-                                main_folder = temp_dir
-                            else:
-                                raise FileNotFoundError(
-                                    "Extracted file is not a TeX file"
-                                )
+                        content = read_file(temp_file)
+                        if TexFileExtractor.is_main_tex_file(content):
+                            main_tex = "temp_file"
+                        #     main_folder = temp_dir
+                        # else:
+                        #     raise FileNotFoundError(
+                        #         "Extracted file is not a TeX file"
+                        #     )
 
             yield main_tex, temp_dir
 

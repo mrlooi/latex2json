@@ -234,6 +234,7 @@ def test_misc_formatting_commands(handler):
     10\z@
     \enlargethispage{2\baselineskip}
     \baselineskip
+    \baselineskip 18pt
     2\baselineskip
     \lineskip .75em
 
@@ -252,6 +253,8 @@ def test_misc_formatting_commands(handler):
     \DeclareFontShape{OT1}{rsfs}{n}{it}{<-> rsfs10}{}
     \DeclareMathAlphabet{\mathscr}{OT1}{rsfs}{n}{it}
     \SetMathAlphabet{\mathscr}{OT1}{rsfs}{n}{it}{xxx}
+
+    \@addtoreset{equation}{section}
 
     \penalty1000
     \interfootnotelinepenalty=1000
