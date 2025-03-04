@@ -98,30 +98,56 @@ class TexFileExtractor:
                         with open(temp_tar, "wb") as f_out:
                             f_out.write(content)
 
-                        with tarfile.open(temp_tar) as tar:
-                            # Check for path traversal attempts before extraction
-                            for member in tar.getmembers():
-                                if os.path.isabs(member.name) or ".." in member.name:
-                                    continue
-                                tar.extract(member, temp_dir)
+                        try:
+                            # Try to open as a tar file with error handling
+                            with tarfile.open(temp_tar) as tar:
+                                # Check for path traversal attempts before extraction
+                                for member in tar.getmembers():
+                                    if (
+                                        os.path.isabs(member.name)
+                                        or ".." in member.name
+                                    ):
+                                        continue
+                                    tar.extract(member, temp_dir)
 
-                        main_tex, main_folder = TexFileExtractor.find_main_tex_file(
-                            temp_dir
-                        )
+                            main_tex, main_folder = TexFileExtractor.find_main_tex_file(
+                                temp_dir
+                            )
+                        except (
+                            tarfile.ReadError,
+                            tarfile.CompressionError,
+                            EOFError,
+                        ) as e:
+                            # Handle tar file errors by treating it as a single file
+                            print(
+                                f"Error processing tar file: {str(e)}. Treating as a single file."
+                            )
+                            temp_file = os.path.join(temp_dir, "temp_file.tex")
+                            with open(temp_file, "wb") as f_out:
+                                f_out.write(content)
+
+                            content_str = read_file(temp_file)
+                            if TexFileExtractor.is_main_tex_file(content_str):
+                                main_tex = "temp_file.tex"
+                                main_folder = temp_dir
+                            else:
+                                raise FileNotFoundError(
+                                    f"Could not process as tar file and extracted content is not a valid TeX file: {str(e)}"
+                                )
                     else:
                         # Single file case
-                        temp_file = os.path.join(temp_dir, "temp_file")
+                        temp_file = os.path.join(temp_dir, "temp_file.tex")
                         with open(temp_file, "wb") as f_out:
                             f_out.write(content)
 
-                        content = read_file(temp_file)
-                        if TexFileExtractor.is_main_tex_file(content):
-                            main_tex = "temp_file"
-                        #     main_folder = temp_dir
-                        # else:
-                        #     raise FileNotFoundError(
-                        #         "Extracted file is not a TeX file"
-                        #     )
+                        content_str = read_file(temp_file)
+                        if TexFileExtractor.is_main_tex_file(content_str):
+                            main_tex = "temp_file.tex"
+                            main_folder = temp_dir
+                        else:
+                            raise FileNotFoundError(
+                                "Extracted file is not a valid TeX file"
+                            )
 
             yield main_tex, temp_dir
 
@@ -161,9 +187,8 @@ class TexFileExtractor:
 
 
 if __name__ == "__main__":
-    with TexFileExtractor.from_compressed(
-        "papers/tested/arXiv-hep-th0603057v3.zip", cleanup=False
-    ) as (
+    path = "./source.tar.gz"
+    with TexFileExtractor.from_compressed(path, cleanup=False) as (
         main_tex,
         temp_dir,
     ):
