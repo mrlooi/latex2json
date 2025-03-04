@@ -101,7 +101,7 @@ class EquationHandler(TokenHandler):
                 display = "inline" if inline else "block"
                 token = {"type": "equation", "content": equation, "display": display}
 
-                if "align" in pattern_name:
+                if "align" in pattern_name or "eqnarray" in pattern_name:
                     token["align"] = True
 
                 if pattern_name in equation_env_dict:

@@ -151,19 +151,20 @@ def test_env_equations(handler):
 
 def test_equation_with_env_pairs(handler):
     content = r"""
-\begin{align}
+\begin{eqnarray*}
 \array{ccc}
 a & b & c \\\\
 d & e & f \\\\
 g & h & i
 \endarray
-\end{align}
+\end{eqnarray*}
 
 Post align
     """.strip()
     assert handler.can_handle(content)
     token, pos = handler.handle(content)
     assert token
+    assert token["align"] is True
     assert r"\array" not in token["content"]
     assert r"\begin{array" in token["content"]
     assert content[pos:].strip() == "Post align"
