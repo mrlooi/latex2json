@@ -2,6 +2,8 @@ from typing import Callable, Dict, List, Tuple
 import re
 import os
 
+from latex2json.utils.encoding import detect_encoding, read_file
+
 
 def find_matching_delimiter(
     text: str, open_delim: str = "{", close_delim: str = "}", start: int = 0
@@ -298,8 +300,7 @@ def read_tex_file_content(file_path: str, extension: str = ".tex") -> str:
         if os.path.exists(path):
             if os.path.isdir(path):
                 continue
-            with open(path, "r") as f:
-                return f.read()
+            return read_file(path)
 
     raise FileNotFoundError(f"Failed to read input file '{file_path}'")
 
