@@ -13,6 +13,7 @@ class CodeToken(BaseToken):
     type: TokenType = TokenType.CODE
     title: Optional[str] = None
     content: str
+    display: Optional[str] = None
 
 
 # Algorithms

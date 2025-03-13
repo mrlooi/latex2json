@@ -39,6 +39,7 @@ class CodeBlockHandler(TokenHandler):
                     return {
                         "type": "code",
                         "content": match.group(2).strip(),
+                        "display": "inline",
                     }, match.end()
 
                 elif pattern_name == "lstlisting":

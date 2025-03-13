@@ -34,7 +34,7 @@ def latex_text():
         \end{figure}
 
         \subsection{SubIntro}
-        My name is \textbf{John Doe} \textbf{Sss} ahama
+        My name is \textbf{John Doe} \textbf{Sss} ahama \verb|my code|
 
         \begin{theorem}
             Theorem 1
@@ -191,7 +191,12 @@ def expected_organizer_output():
                                     "content": "John Doe Sss",
                                     "styles": [FRONTEND_STYLE_MAPPING["textbf"]],
                                 },
-                                {"type": "text", "content": "ahama"},
+                                {"type": "text", "content": "ahama "},
+                                {
+                                    "type": "code",
+                                    "content": "my code",
+                                    "display": "inline",
+                                },
                                 {
                                     "type": "math_env",
                                     "name": "theorem",

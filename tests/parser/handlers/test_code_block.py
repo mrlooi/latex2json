@@ -52,15 +52,15 @@ def example():
 def test_handle_verb(handler):
     # Test basic verb
     token, pos = handler.handle(r"\verb|code|")
-    assert token == {"type": "code", "content": "code"}
+    assert token == {"type": "code", "content": "code", "display": "inline"}
 
     # Test verb with different delimiter
     token, pos = handler.handle(r"\verb#more code#")
-    assert token == {"type": "code", "content": "more code"}
+    assert token == {"type": "code", "content": "more code", "display": "inline"}
 
     # Test verb*
     token, pos = handler.handle(r"\verb*|code with spaces|")
-    assert token == {"type": "code", "content": "code with spaces"}
+    assert token == {"type": "code", "content": "code with spaces", "display": "inline"}
 
 
 def test_handle_multiline_code(handler):
