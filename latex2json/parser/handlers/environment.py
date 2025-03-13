@@ -96,6 +96,7 @@ ENV_ARGS = {
     "thebibliography": {"mandatory": 1},  # Expects 1 mandatory argument
     "minipage": {"mandatory": 1},  # Expects 1 mandatory argument
     "list": {"mandatory": 2},  # usually used as \list{label}{spacing}
+    "adjustwidth": {"mandatory": 2},  # usually used as \adjustwidth{left}{right}
     "spacing": {"mandatory": 1},  # usually used as \spacing{1em}
     "multicols": {"mandatory": 1},  # usually used as \multicols{2}
     # "tabular": {"mandatory": 1},          # Expects 1 mandatory argument for column spec
