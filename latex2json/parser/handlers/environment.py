@@ -80,6 +80,7 @@ ENV_TYPES = {
     "tabular": "tabular",  # should be handled in tabular handler
     "figure": "figure",
     "subfigure": "figure",
+    "wrapfigure": "figure",
     "subfloat": "figure",  # another common figure subdivision
     "algorithm": "algorithm",
     "algorithmic": "algorithmic",
@@ -101,6 +102,7 @@ ENV_ARGS = {
     "table": {"optional": 1},  # Expects 1 optional argument for placement
     "figure": {"optional": 1},  # Expects 1 optional argument for placement
     "subfigure": {"optional": 1, "mandatory": 1},
+    "wrapfigure": {"optional": 1, "mandatory": 2},
     # ... other environments with known argument patterns
     "CJK": {"mandatory": 2},
 }
