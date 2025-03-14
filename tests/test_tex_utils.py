@@ -7,48 +7,10 @@ from latex2json.utils.tex_utils import (
     find_matching_delimiter,
     normalize_whitespace_and_lines,
     strip_latex_comments,
+    find_delimiter_end,
+    extract_equation_content,
 )
 import re
-
-
-def test_find_matching_delimiter_with_comments():
-    # Basic comment case
-    text = "{test} % {invalid}"
-    start, end = find_matching_delimiter(text)
-    assert text[start:end] == "{test}"
-
-    # Comment in the middle of nested delimiters
-    text = "{outer{inn % {ignored}\ner}end}"  # removed r-prefix to allow real newline
-    start, end = find_matching_delimiter(text)
-    assert text[start:end] == "{outer{inn % {ignored}\ner}end}"
-
-    # Multiple comments
-    text = "{test} % comment 1 {invalid}\n{next} % comment 2"  # removed r-prefix
-    start, end = find_matching_delimiter(text)
-    assert text[start:end] == "{test}"
-
-    # Escaped comment character
-    text = r"{test \% not a comment {nested}}"
-    start, end = find_matching_delimiter(text)
-    assert text[start:end] == r"{test \% not a comment {nested}}"
-
-    # Mixed escaped and unescaped comments
-    text = (
-        "{test \\% not a comment % but this is\nstill in {nested}}"  # removed r-prefix
-    )
-    start, end = find_matching_delimiter(text)
-    assert (
-        text[start:end] == "{test \\% not a comment % but this is\nstill in {nested}}"
-    )
-
-    text = r"""
-    {
-        test % }
-        POST
-    }
-""".strip()
-    start, end = find_matching_delimiter(text)
-    assert text[start + 1 : end - 1].replace("\n", "").replace(" ", "") == "test%}POST"
 
 
 def test_find_matching_delimiter_with_double_backslash():
@@ -162,28 +124,6 @@ def test_extract_nested_content_pattern():
     assert text[end:] == " POST"
     assert content.strip() == "test"
 
-    # test with commented inner begin/end patterns
-    text = r"""
-    \begin{table}
-    %\end{table}
-    MID TABLE
-    %\begin{table}
-    \end{table}
-    POST TABLE
-"""
-    start, end, content = extract_nested_content_pattern(
-        text, r"\\begin{table}", r"\\end{table}"
-    )
-    assert start == text.index(r"\begin{table}")
-    assert text[end:].strip() == "POST TABLE"
-
-    expected = r"""
-    %\end{table}
-    MID TABLE
-    %\begin{table}
-""".strip()
-    assert content.strip() == expected
-
 
 def test_extract_nested_content_blocks():
     text = r"{test}{test2} {test3} sssss"
@@ -294,3 +234,74 @@ def test_normalize_whitespace_and_lines():
     input_text = "   Hello world   "
     expected = "Hello world"
     assert normalize_whitespace_and_lines(input_text) == expected
+
+
+def test_find_delimiter_end():
+    # Basic test with single character delimiter
+    text = "Hello $equation$ end"
+    end_pos = find_delimiter_end(text, 8, "$")
+    assert end_pos == len("Hello $equation$")
+
+    # Test with multi-character delimiter
+    text = "Start $$display math$$ end"
+    end_pos = find_delimiter_end(text, 8, "$$")
+    assert end_pos == len("Start $$display math$$")
+
+    # Test with escaped delimiters
+    text = r"$\$ not end $ real end$"
+    end_pos = find_delimiter_end(text, 2, "$")
+    assert end_pos == len(r"$\$ not end $")
+
+    # Test with no matching delimiter
+    text = "$unclosed equation"
+    end_pos = find_delimiter_end(text, 1, "$")
+    assert end_pos == -1
+
+
+def test_strip_latex_comments_advanced():
+    # Test with multiple escaped percents
+    text = r"Line with \% and \% and % real comment"
+    assert strip_latex_comments(text) == r"Line with \% and \% and"
+
+    # Test with multiple consecutive comments
+    text = "First % comment 1\n% comment 2\n% comment 3\nValid line"
+    assert strip_latex_comments(text) == "First\n\n\nValid line"
+
+    # Test with mixed spaces and tabs
+    text = "Text\t% comment\n  % indented comment  \n\tCode"
+    assert strip_latex_comments(text) == "Text\n\n\tCode"
+
+    # Test with empty lines between comments
+    text = "% comment 1\n\n% comment 2\n\nValid line"
+    assert strip_latex_comments(text) == "\n\n\n\nValid line"
+
+    # Test with escaped backslashes before percent
+    text = r"Text with \\% not a comment and % real comment"
+    assert strip_latex_comments(text) == r"Text with \\% not a comment and"
+
+
+def test_find_matching_delimiter_edge_cases():
+    # Test with empty input
+    assert find_matching_delimiter("") == (-1, -1)
+
+    # Test with only whitespace
+    assert find_matching_delimiter("   \n\t  ") == (-1, -1)
+
+    # Test with escaped delimiters at string boundaries
+    text = r"\{content\}"
+    assert find_matching_delimiter(text) == (-1, -1)
+
+    # Test with nested comments
+    text = "{outer % {comment} \n inner}"
+    start, end = find_matching_delimiter(text)
+    assert text[start:end] == "{outer % {comment} \n inner}"
+
+    # Test with multiple escaped delimiters
+    text = r"{\{ \} \{ \}}"
+    start, end = find_matching_delimiter(text)
+    assert text[start:end] == r"{\{ \} \{ \}}"
+
+    # Test with mixed escaping
+    text = r"{not \} escaped but \{ is}"
+    start, end = find_matching_delimiter(text)
+    assert text[start:end] == r"{not \} escaped but \{ is}"

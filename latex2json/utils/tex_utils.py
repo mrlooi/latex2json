@@ -5,6 +5,21 @@ import os
 from latex2json.utils.encoding import detect_encoding, read_file
 
 
+def count_preceding_backslashes(text: str, pos: int) -> int:
+    """Count number of backslashes immediately preceding the position."""
+    count = 0
+    pos -= 1
+    while pos >= 0 and text[pos] == "\\":
+        count += 1
+        pos -= 1
+    return count
+
+
+def is_escaped(pos: int, text: str) -> bool:
+    """Check if character at position is escaped by backslashes."""
+    return count_preceding_backslashes(text, pos) % 2 == 1
+
+
 def find_matching_delimiter(
     text: str, open_delim: str = "{", close_delim: str = "}", start: int = 0
 ) -> Tuple[int, int]:
@@ -12,27 +27,12 @@ def find_matching_delimiter(
     Find the position of the matching closing delimiter, handling nested delimiters.
     Returns a tuple of (start_pos, end_pos) where:
         - start_pos is the position of the opening delimiter
-        - end_pos is the position of the matching closing delimiter
+        - end_pos is the position after the matching closing delimiter
     Returns (-1, -1) if no valid delimiters found.
     Handles:
         - Nested delimiters
         - Escaped characters (odd number of backslashes)
-        - LaTeX comments (unescaped % to end of line)
     """
-
-    def count_preceding_backslashes(pos: int) -> int:
-        """Count number of backslashes immediately preceding the position."""
-        count = 0
-        pos -= 1
-        while pos >= 0 and text[pos] == "\\":
-            count += 1
-            pos -= 1
-        return count
-
-    def is_escaped(pos: int) -> bool:
-        """Check if character at position is escaped by backslashes."""
-        return count_preceding_backslashes(pos) % 2 == 1
-
     # Skip leading whitespace
     while start < len(text) and text[start].isspace():
         start += 1
@@ -43,27 +43,14 @@ def find_matching_delimiter(
     stack = []
     i = start
     while i < len(text):
-        char = text[i]
-
-        # Handle comments: unescaped % skips to next line
-        if char == "%" and not is_escaped(i):
-            i = text.find("\n", i)
-            if i == -1:  # No more newlines found
-                break
-            i += 1  # Move past the newline
-            continue
-
-        # Handle delimiters
-        if char in (open_delim, close_delim) and not is_escaped(i):
-            if char == open_delim:
-                stack.append(i)
-            else:  # close_delim
-                if not stack:
-                    return -1, -1  # Unmatched closing delimiter
-                stack.pop()
-                if not stack:  # Found the matching delimiter
-                    return start, i + 1
-
+        if text[i] == open_delim and not is_escaped(i, text):
+            stack.append(i)
+        elif text[i] == close_delim and not is_escaped(i, text):
+            if not stack:
+                return -1, -1  # Unmatched closing delimiter
+            stack.pop()
+            if not stack:  # Found the matching delimiter
+                return start, i + 1
         i += 1
 
     return -1, -1  # No matching delimiter found
@@ -141,10 +128,8 @@ def extract_nested_content_pattern(
     if isinstance(end_pattern, str):
         end_pattern = re.compile(end_pattern)
 
-    # Find the first beginning pattern that isn't commented
+    # Find the first beginning pattern
     begin_match = begin_pattern.search(text)
-    while begin_match and has_comment_on_sameline(text, begin_match.start()):
-        begin_match = begin_pattern.search(text, begin_match.end())
     if not begin_match:
         return -1, -1, ""
 
@@ -154,14 +139,9 @@ def extract_nested_content_pattern(
     start_pos = begin_match.start()
 
     while nesting_level > 0 and current_pos < len(text):
-        # Find next begin/end patterns, skipping commented ones
+        # Find next begin/end patterns
         begin_match = begin_pattern.search(text, current_pos)
-        while begin_match and has_comment_on_sameline(text, begin_match.start()):
-            begin_match = begin_pattern.search(text, begin_match.end())
-
         end_match = end_pattern.search(text, current_pos)
-        while end_match and has_comment_on_sameline(text, end_match.start()):
-            end_match = end_pattern.search(text, end_match.end())
 
         if not end_match:
             return -1, -1, ""
@@ -386,16 +366,69 @@ def flatten_group_token(token: Dict) -> Dict | List[Dict]:
     return token
 
 
+def check_delimiter_balance(
+    text: str, open_delim: str = "{", close_delim: str = "}"
+) -> bool:
+    """Check if delimiters are properly balanced in the text, handling escapes."""
+    stack = []
+    i = 0
+    while i < len(text):
+        if text[i] == open_delim and not is_escaped(i, text):
+            stack.append(text[i])
+        elif text[i] == close_delim and not is_escaped(i, text):
+            if not stack:
+                return False
+            stack.pop()
+        i += 1
+    return len(stack) == 0
+
+
+def find_delimiter_end(content: str, start_pos: int, delimiter: str) -> int:
+    """
+    Find the end position of a delimiter (like $ or $$), respecting nested braces.
+    Returns the position after the closing delimiter, or -1 if not found.
+    """
+    stack = []
+    i = start_pos
+    while i < len(content):
+        if content[i] == "{" and not is_escaped(i, content):
+            stack.append("{")
+        elif content[i] == "}" and not is_escaped(i, content):
+            if stack:
+                stack.pop()
+        elif (
+            content[i:].startswith(delimiter)
+            and not is_escaped(i, content)
+            and not stack  # Only match delimiter when not inside braces
+        ):
+            return i + len(delimiter)
+        i += 1
+    return -1
+
+
+def extract_equation_content(content: str, delimiter: str) -> Tuple[str, int]:
+    """Extract equation content and find proper end position.
+
+    Args:
+        content: Input text containing equation
+        delimiter: Equation delimiter ($ or $$)
+
+    Returns:
+        Tuple[str, int]: (equation content, end position)
+    """
+    if not content.startswith(delimiter):
+        return "", 0
+
+    start = len(delimiter)
+    end_pos = find_delimiter_end(content, start, delimiter)
+
+    if end_pos < 0:
+        return "", 0
+
+    equation = content[start : end_pos - len(delimiter)].strip()
+    return equation, end_pos
+
+
 if __name__ == "__main__":
-    text = r"% comment\n\begin{test}"
-    pos = text.find(r"\begin")
-
-    # Debug prints
-    print(f"Full text: {repr(text)}")
-    print(f"Position of \\begin: {pos}")
-    line_start = text.rfind("\n", 0, pos) + 1
-    print(f"Line start: {line_start}")
-    line_before = text[line_start:pos]
-    print(f"Line before: {repr(line_before)}")
-
-    print(has_comment_on_sameline(text, text.find(r"\begin")))
+    text = r"{ssss"
+    print(find_matching_delimiter(text, "{", "}"))

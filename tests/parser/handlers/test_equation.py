@@ -170,5 +170,29 @@ Post align
     assert content[pos:].strip() == "Post align"
 
 
+def test_equation_with_nested_delimiters(handler):
+    content = r"""
+    $\hbox{$\scriptstyle\sim$}$ POST
+    """.strip()
+    assert handler.can_handle(content)
+    token, pos = handler.handle(content)
+    assert token
+    assert token["content"] == r"\hbox{$\scriptstyle\sim$}"
+    assert content[pos:] == " POST"
+
+    content = r"""
+    $$
+    {
+    $$1+1$$
+    }
+    $$
+    """.strip()
+    assert handler.can_handle(content)
+    token, pos = handler.handle(content)
+    assert token
+    assert token["content"].replace(" ", "").replace("\n", "") == r"{$$1+1$$}"
+    # assert content[pos:] == " POST"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

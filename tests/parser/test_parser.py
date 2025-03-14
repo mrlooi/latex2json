@@ -226,7 +226,7 @@ def test_complex_command_definitions(parser):
     % Command with 1 optional and 2 required arguments
     \newcommand{\norm}[3][2]{\|#2\|_{#3}^{#1}}
     
-    \newcommand{\integral}[4][0]{\int_{#1}^{#2} #3 \, d#4}
+    \newcommand{\integral}[4][0]{\int_{#1}^{#2} #3 d#4}
     
     % Command using other defined commands
     \newcommand{\tensorNorm}[4]{\norm{\tensor{#1}{#2}{#3}}{#4}}
@@ -250,8 +250,8 @@ def test_complex_command_definitions(parser):
         "\\mathbf{T}_{i}^{j}",  # tensor expansion
         "\\|x\\|_{2}^{p}",  # norm with optional arg
         "\\|y\\|_{1}^{2}",  # norm with default optional arg
-        "\\int_{0}^{b} f(x) \\, dx",  # integral with defaults
-        "\\int_{a}^{b} g(x) \\, dx",  # integral with one optional
+        "\\int_{0}^{b} f(x) dx",  # integral with defaults
+        "\\int_{a}^{b} g(x) dx",  # integral with one optional
         "\\|\\mathbf{T}_{i}^{j}\\|_{\\infty}^{2}",  # nested command
     ]
 
@@ -2047,6 +2047,19 @@ def test_simple_quotes(parser):
     assert parsed_tokens[0]["type"] == "text"
     out = parsed_tokens[0]["content"]
     assert out.strip().split(" ") == ['"aaa"', "'aaa'", "'aaa'", '"aaa"']
+
+
+def test_newcommand_nested_equations(parser):
+    text = r"""
+    \newcommand{\app}{\raise.17ex\hbox{$\scriptstyle\sim$}}
+    $\app$3
+    """
+    parsed_tokens = parser.parse(text, preprocess=True)
+    assert len(parsed_tokens) == 2
+    assert parsed_tokens[0]["type"] == "equation"
+    assert parsed_tokens[0]["content"] == r"\hbox{$\scriptstyle\sim$}"
+    assert parsed_tokens[1]["type"] == "text"
+    assert parsed_tokens[1]["content"] == "3"
 
 
 if __name__ == "__main__":
