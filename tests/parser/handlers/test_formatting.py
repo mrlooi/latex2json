@@ -284,6 +284,8 @@ def test_misc_formatting_commands(handler):
     \Xhline{1.5pt}
     \midrule[\heavyrulewidth]
 
+    \arrayrulewidth 1pt
+
     \vspace{}
     \vspace{10pt}
 

@@ -117,6 +117,18 @@ def is_text_token(token: Dict) -> bool:
     return isinstance(token, dict) and token.get("type") == "text"
 
 
+def normalize_text_token(token: str | Dict | List) -> Dict:
+    if isinstance(token, str):
+        return {"type": "text", "content": token}
+    elif is_text_token(token):
+        return token
+    elif isinstance(token, list):
+        if len(token) == 1 and is_text_token(token[0]):
+            return token[0]
+        return {"type": "group", "content": token}
+    return token
+
+
 class TextFormattingHandler(TokenHandler):
     def can_handle(self, content: str) -> bool:
         return any(pattern.match(content) for pattern in PATTERNS.values())
@@ -124,18 +136,8 @@ class TextFormattingHandler(TokenHandler):
     def _process_content(self, content: str):
         if self.process_content_fn:
             out = self.process_content_fn(content)
-            if is_text_token(out):
-                return out
-            elif isinstance(out, list) and len(out) == 1 and is_text_token(out[0]):
-                return out[0]
-            return {
-                "type": "group",
-                "content": out,
-            }
-        return {
-            "type": "text",
-            "content": content,
-        }
+            return normalize_text_token(out)
+        return normalize_text_token(content)
 
     def _handle_styled(self, content: str, match: re.Match) -> Tuple[str, int]:
         command = match.group(1)
@@ -239,7 +241,7 @@ class TextFormattingHandler(TokenHandler):
             start_pos += end_pos
 
         extracted_content, end_pos = extract_nested_content(content[start_pos:])
-        extracted_content = extracted_content + "\n"  # add newline to end of box?
+        # extracted_content = extracted_content + "\n"  # add newline to end of box?
 
         one_liner = s.startswith("\\mbox")
 
@@ -252,10 +254,11 @@ class TextFormattingHandler(TokenHandler):
                 flatten_all_to_string(extracted_content)
             )
 
-        return {
-            "type": "group" if isinstance(extracted_content, list) else "text",
-            "content": extracted_content,
-        }, start_pos + end_pos
+        out = normalize_text_token(extracted_content)
+        # return as a list if group?
+        if isinstance(out, dict) and out.get("type") == "group":
+            return out["content"], start_pos + end_pos
+        return out, start_pos + end_pos
 
     def _handle_color(self, content: str, match: re.Match) -> Tuple[str, int]:
         start_pos = match.end() - 1

@@ -186,10 +186,12 @@ RAW_PATTERNS = OrderedDict(
             r"Xhline\s*{([^}]+)}|"  # {length}
             r"tabcolsep\b|"
             r"colrule\b|"
-            r"noalign\b|"
-            r"arrayrulewidth\b|"
-            r"heavyrulewidth\b"
+            r"noalign\b"
             r")",
+        ),
+        (
+            "rulewidth",
+            r"\\(?:array|heavy)rulewidth(\s*=?\s*%s(?:\w+)?)?" % number_regex,
         ),
         ("paper", r"\\(?:paperwidth|paperheight)\s*=\s*%s(?:\w+)?" % number_regex),
         ("protect", r"\\protect\\[a-zA-Z]+(?:\s*(?:\[[^\]]*\]|\{[^}]*\})*)?"),
