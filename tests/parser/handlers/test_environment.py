@@ -99,6 +99,8 @@ def test_nested_identical_environments(handler):
 
 
 def test_env_pairs_without_begin(handler):
+    assert not handler.can_handle(r"\hline \endhead")
+
     content = r"\list{}{} \item[] \endlist post"
     token, pos = handler.handle(content)
     assert token is not None

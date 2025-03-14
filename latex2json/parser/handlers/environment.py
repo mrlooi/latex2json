@@ -16,7 +16,7 @@ ENV_NAME_BRACE_PATTERN = r"\{([^}]*?)\}"
 
 # e.g. \list \endlist, \xxx \endxxx etc
 # make sure to tweak the '1' in end\1 to match the relevant regex group if combining with other patterns
-ENV_PAIR_PATTERN = r"\\((?:\w|@)+)(\s*(?:\{[^}]*\}|\[[^]]*\])*\s*.*)\\end\1"
+ENV_PAIR_PATTERN = r"\\((?:\w|@)+\b)(\s*(?:\{[^}]*\}|\[[^]]*\])*\s*.*)\\end\1"
 
 # Check for both \begin{xxx} and \xxx \endxxx e.g. \list \endlist, etc
 ENVIRONMENT_PATTERN = re.compile(

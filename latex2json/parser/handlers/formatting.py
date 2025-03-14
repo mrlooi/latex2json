@@ -60,7 +60,7 @@ RAW_PATTERNS = OrderedDict(
         ("setup", r"\\(?:hypersetup|captionsetup)%s\s*{" % OPTIONAL_BRACE_PATTERN),
         (
             "make_or_contents",
-            r"\\(?:maketitle|makeatletter|makeatother|tableofcontents)\b",
+            r"\\(?:maketitle|makeatletter|makeatother|tableofcontents|@title)\b",
         ),
         (
             "page",
@@ -164,7 +164,7 @@ RAW_PATTERNS = OrderedDict(
         # separators
         ("itemsep", r"\\itemsep\s*(=\s*)?-?\d*\.?\d+\w+?\b"),
         (
-            "separators",
+            "table_separators",
             r"\\(?:"
             r"hline\b|"  # no args
             r"center\b|"  # no args
@@ -186,7 +186,8 @@ RAW_PATTERNS = OrderedDict(
             r"Xhline\s*{([^}]+)}|"  # {length}
             r"tabcolsep\b|"
             r"colrule\b|"
-            r"noalign\b"
+            r"noalign\b|"
+            r"endfirsthead\b"
             r")",
         ),
         (
