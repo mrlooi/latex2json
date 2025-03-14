@@ -429,6 +429,30 @@ def extract_equation_content(content: str, delimiter: str) -> Tuple[str, int]:
     return equation, end_pos
 
 
+def extract_args(content: str, req_args=0, opt_args=0):
+    """
+    Opt args come first, then req args.
+    """
+    end_pos = 0
+    opt = []
+    if opt_args > 0:
+        opt, end_pos = extract_nested_content_sequence_blocks(
+            content, "[", "]", max_blocks=opt_args
+        )
+        if end_pos > 0:
+            content = content[end_pos:]
+
+    req = []
+    if req_args > 0:
+        req, end_pos = extract_nested_content_sequence_blocks(
+            content, "{", "}", max_blocks=req_args
+        )
+        if end_pos > 0:
+            content = content[end_pos:]
+
+    return {"req": req, "opt": opt}, end_pos
+
+
 if __name__ == "__main__":
     text = r"{ssss"
     print(find_matching_delimiter(text, "{", "}"))

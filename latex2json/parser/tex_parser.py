@@ -37,10 +37,10 @@ from latex2json.utils.tex_utils import (
 from latex2json.parser.tex_preprocessor import LatexPreprocessor
 from latex2json.parser.patterns import (
     PATTERNS,
-    USEPACKAGE_PATTERN,
     WHITELISTED_COMMANDS,
     DELIM_PATTERN,
 )
+from latex2json.parser.packages import get_all_custom_handlers
 
 UNKNOWN_COMMAND_PATTERN = re.compile(r"(\\[@a-zA-Z\*]+(?:\s*{)?)")
 
@@ -73,6 +73,9 @@ class LatexParser:
         self.if_else_block_handler = IfElseBlockHandler(logger=self.logger)
         # handlers
         self.handlers: List[TokenHandler] = [
+            # Add custom package handlers in their priority order
+            *get_all_custom_handlers(),
+            # Standard/common packages
             AuthorHandler(self.parse),
             # ignore unicode conversion for equations
             EquationHandler(lambda x: self._expand_command(x, ignore_unicode=True)),

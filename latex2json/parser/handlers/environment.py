@@ -2,6 +2,7 @@ import re
 from typing import Callable, Dict, List, Optional, Tuple
 from latex2json.parser.handlers.base import TokenHandler
 from latex2json.utils.tex_utils import (
+    extract_args,
     extract_nested_content,
     extract_nested_content_pattern,
     extract_nested_content_sequence_blocks,
@@ -242,20 +243,12 @@ class BaseEnvironmentHandler(TokenHandler):
             if opt_args > 0:
                 if opt_found:
                     opt_args -= 1
-                args, end_pos = extract_nested_content_sequence_blocks(
-                    inner_content, "[", "]", max_blocks=opt_args
-                )
-                if end_pos > 0:
-                    inner_content = inner_content[end_pos:]
 
             req_args = d.get("mandatory", 0)
-            if req_args > 0:
-                args, end_pos = extract_nested_content_sequence_blocks(
-                    inner_content, "{", "}", max_blocks=req_args
-                )
-                if end_pos > 0:
-                    inner_content = inner_content[end_pos:]
-                token["args"] = args
+            args, end_pos = extract_args(inner_content, req_args, opt_args)
+            if args["req"]:
+                token["args"] = args["req"]
+            inner_content = inner_content[end_pos:]
 
         token["content"] = inner_content
 
