@@ -241,3 +241,15 @@ def test_bibtex_with_bysame():
 
     assert entries[1].content.startswith("Richard~B. Melrose")
     assert entries[2].content.startswith("Richard~B. Melrose")
+
+
+def test_compiled_bibtex():
+    parser = BibParser()
+    entries = parser.parse_file(os.path.join(dir_path, "samples/compiled_bibtex.bbl"))
+    assert len(entries) == 2
+    # assert entries[0].entry_type == "misc"
+    assert entries[0].citation_key == "pinto2016supersizing"
+    assert entries[0].fields["year"] == "2015"
+
+    assert entries[1].citation_key == "levine2018learning"
+    assert entries[1].fields["year"] == "2018"

@@ -8,6 +8,11 @@ from latex2json.utils.tex_utils import (
     strip_latex_comments,
     normalize_whitespace_and_lines,
 )
+from latex2json.parser.bib.compiled_bibtex import (
+    is_compiled_bibtex,
+    process_compiled_bibtex_to_bibtex,
+)
+
 import os
 
 
@@ -171,6 +176,11 @@ class BibParser:
             self.logger.debug("Parsing bibliography environment content")
             bib_content = bib_env_match.group(2)
             entries.extend(self._parse_bibitems(bib_content))
+        elif is_compiled_bibtex(content):
+            self.logger.debug("Parsing compiled BibTeX content")
+            # first convert to bibtex format
+            bibtex_content = process_compiled_bibtex_to_bibtex(content)
+            entries.extend(self.bibtex_parser.parse("\n".join(bibtex_content)))
         elif re.search(BibTexPattern, content):
             self.logger.debug("Parsing BibTeX content")
             entries.extend(self.bibtex_parser.parse(content))
@@ -280,20 +290,35 @@ if __name__ == "__main__":
 
     # For bibitem content
     bibitem_content = r"""
-    \begin{thebibliography}{1}
-		\bibitem{Melrosenotes}
-		Richard~B. Melrose, \emph{Differential analysis on manifolds with corners},
-		Book in preparation.
-		
-		\bibitem{calculus}
-		\bysame, \emph{Calculus of conormal distributions on manifolds with corners},
-		Internat. Math. Res. Notices (1992), no.~3, 51--61. % \MR{1154213}
-		
-		\bibitem{tapsit}
-		\bysame, \emph{The {A}tiyah-{P}atodi-{S}inger index theorem}, Research Notes in
-		Mathematics, vol.~4, A K Peters, Ltd., Wellesley, MA, 1993.  %\MR{1348401}
-		
-    \end{thebibliography}
+		\datalist[entry]{none/global//global/global}
+  \entry{pinto2016supersizing}{misc}{}
+    \name{author}{2}{}{%
+      {{hash=PL}{%
+         family={Pinto},
+         familyi={P\bibinitperiod},
+         given={Lerrel},
+         giveni={L\bibinitperiod},
+      }}%
+      {{hash=GA}{%
+         family={Gupta},
+         familyi={G\bibinitperiod},
+         given={Abhinav},
+         giveni={A\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{PLGA1}
+    \strng{fullhash}{PLGA1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \verb{eprint}
+    \verb 1509.06825
+    \endverb
+    \field{title}{Supersizing Self-supervision: Learning to Grasp from 50K Tries and 700 Robot Hours}
+    \field{eprinttype}{arXiv}
+    \field{eprintclass}{cs.LG}
+    \field{year}{2015}
+  \endentry
+  \enddatalist
     """
     entries = parser.parse(bibitem_content)
     print(entries)
