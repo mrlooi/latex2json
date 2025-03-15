@@ -76,6 +76,8 @@ WHITELISTED_COMMANDS = [
     "bibitem",
     "url",
     "ref",
+    "appendix",
+    "appendices",
     "\\",
     "\\\\",
     # text font
