@@ -285,6 +285,7 @@ def test_misc_formatting_commands(handler):
     \midrule[\heavyrulewidth]
 
     \arrayrulewidth 1pt
+    \overfullrule = 1pt
 
     \vspace{}
     \vspace{10pt}

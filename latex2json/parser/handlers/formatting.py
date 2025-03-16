@@ -192,7 +192,8 @@ RAW_PATTERNS = OrderedDict(
         ),
         (
             "rulewidth",
-            r"\\(?:array|heavy)rulewidth(\s*=?\s*%s(?:\w+)?)?" % number_regex,
+            r"\\(?:arrayrulewidth|heavyrulewidth|overfullrule)(?:\s*=?\s*%s(?:\w+)?)?"
+            % number_regex,
         ),
         ("paper", r"\\(?:paperwidth|paperheight)\s*=\s*%s(?:\w+)?" % number_regex),
         ("protect", r"\\protect\\[a-zA-Z]+(?:\s*(?:\[[^\]]*\]|\{[^}]*\})*)?"),

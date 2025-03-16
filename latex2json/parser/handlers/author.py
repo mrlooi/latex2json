@@ -17,6 +17,7 @@ PATTERNS = {
         r"\\(?:affil|affiliation)(?:\s*\[(.*?)\])?\s*{", compile_as
     ),
     "address": re.compile(r"\\address\s*{", compile_as),
+    "curraddr": re.compile(r"\\curraddr(?:\{\}|\b)"),
     # \thanks usually found inside author block
     "thanks": re.compile(r"\\thanks\s*{", compile_as),
 }
@@ -87,6 +88,8 @@ class AuthorHandler(TokenHandler):
                         "type": "author",
                         "content": tokens,
                     }, total_pos
+                elif name == "curraddr":
+                    return None, match.end()
                 else:
                     if self.process_content_fn:
                         content = self.process_content_fn(content)

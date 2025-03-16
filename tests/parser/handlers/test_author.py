@@ -31,3 +31,15 @@ after authors
     assert "noam@google.com" in authors_list[1]
 
     assert text[end_pos:].strip() == "after authors"
+
+
+def test_curraddr():
+    item = AuthorHandler()
+
+    texts = [r"""\curraddr POST""", r"""\curraddr{} POST"""]
+    for text in texts:
+        token, end_pos = item.handle(text)
+        assert token is None
+        assert text[end_pos:] == " POST"
+
+    assert not item.can_handle(r"\curraddrs")
