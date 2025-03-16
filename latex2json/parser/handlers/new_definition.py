@@ -60,7 +60,9 @@ PATTERNS = {
         r"\\newtheorem{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?", re.DOTALL
     ),
     "crefname": re.compile(r"\\crefname{([^}]*)}{([^}]*)}{([^}]*)}", re.DOTALL),
-    "newtoks": re.compile(r"\\newtoks\s*(%s)" % (command_with_opt_brace_pattern), re.DOTALL),
+    "newtoks": re.compile(
+        r"\\newtoks\s*(%s)" % (command_with_opt_brace_pattern), re.DOTALL
+    ),
     "newif": re.compile(r"\\(?:re)?newif\s*\\if([^\s{\\]+)", re.DOTALL),
     "newboolean": re.compile(
         r"\\(?:re)?newboolean\s*" + BRACE_CONTENT_PATTERN, re.DOTALL
@@ -466,9 +468,7 @@ class NewDefinitionHandler(TokenHandler):
         parts, param_count = self._extract_def_pattern_parts(
             rf"{cmd_name}{param_pattern}"
         )
-        parts = "".join(parts)
-        # Add check at the very end to prevent partial matches (e.g., \foo matching \foobar)
-        usage_pattern = r"\\" + parts + r"(?![a-zA-Z@])"
+        usage_pattern = r"\\" + "".join(parts)
 
         token = {
             "type": "def",
@@ -484,25 +484,45 @@ class NewDefinitionHandler(TokenHandler):
     def _extract_def_pattern_parts(self, pattern: str) -> Tuple[List[str], int]:
         # Don't escape the entire pattern, instead handle delimiters and parameters separately
         parts = []
-        current_pos = 0
         param_count = 0
-        for param in re.finditer(r"#(\d+)", pattern):
-            # Add everything before the parameter as escaped text
-            before_param = pattern[current_pos : param.start()]
-            if before_param:
-                parts.append(re.escape(before_param))
 
-            # Add the parameter pattern to capture delimiters and parameters e.g. {xxx} or x
+        arg_start = re.search(r"#(\d+)", pattern)
+        if arg_start:
+            start_pos = arg_start.start()
+            # first, we split the pattern into pre_arg and args
+            pre_arg = pattern[:start_pos]
+
+            parts.append(re.escape(pre_arg))
+            # if last char is alpha or @, add negative lookahead
+            # this is to avoid matching e.g. \def\foo#1{bar #1} with \fooa \foob \fooxyz etc
+            if pre_arg[-1].isalpha() or pre_arg[-1] == "@":
+                parts.append(r"(?![a-zA-Z@])")
+
+            # then we handle the args #1 ... #2 etc
+            args = pattern[start_pos:]
+
+            # Add the args pattern to capture delimiters and args e.g. {xxx} or x
             # e.g. \def\foo#1{bar #1} \foo{xxx} will match 'xxx' arg, \foo xaaa will match 'x' arg
             # Update regex to handle escaped braces and normal braces
-            parts.append(r"\s*(?:\{((?:[^{}]|\\\{|\\\}|{[^{}]*})*)\}|([^\}]+?))")
+            args_part_pattern = r"\s*(?:\{((?:[^{}]|\\\{|\\\}|{[^{}]*})*)\}|([^\}]+?))"
 
-            current_pos = param.end()
-            param_count += 1
+            current_pos = 0
+            for param in re.finditer(r"#(\d+)", args):
+                # Add everything before the parameter as escaped text
+                before_param = args[current_pos : param.start()]
+                if before_param:
+                    parts.append(re.escape(before_param))
 
-        # Add any remaining text after the last parameter
-        if current_pos < len(pattern):
-            parts.append(re.escape(pattern[current_pos:]))
+                parts.append(args_part_pattern)
+
+                current_pos = param.end()
+                param_count += 1
+
+            # Add any remaining text after the last parameter
+            if current_pos < len(args):
+                parts.append(re.escape(args[current_pos:]))
+        else:
+            parts.append(re.escape(pattern) + r"(?![a-zA-Z@])")
 
         return parts, param_count
 

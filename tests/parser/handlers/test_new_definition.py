@@ -215,6 +215,7 @@ def test_def_command_usage_patterns(handler):
     assert re.match(pattern, r"\fullname{John}{Doe}")
     assert re.match(pattern, r"\fullname John Doe")
     assert re.match(pattern, r"\fullname{John} Doe")
+    assert not re.match(pattern, r"\fullnameJohn Doe")
     assert not re.match(pattern, r"\fullname")
 
     # Delimiter pattern with colon
