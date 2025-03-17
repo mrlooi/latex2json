@@ -78,7 +78,9 @@ class LatexParser:
             # Standard/common packages
             AuthorHandler(self.parse),
             # ignore unicode conversion for equations
-            EquationHandler(lambda x: self._expand_command(x, ignore_unicode=True)),
+            EquationHandler(
+                lambda x: self._expand_command(x, ignore_unicode=True, math_mode=True)
+            ),
             CodeBlockHandler(),
             ItemHandler(),
             ContentCommandHandler(),
@@ -138,10 +140,12 @@ class LatexParser:
     def get_colors(self) -> Dict[str, Dict[str, str]]:
         return self.colors.copy()
 
-    def _expand_command(self, content: str, ignore_unicode: bool = False) -> str:
+    def _expand_command(
+        self, content: str, ignore_unicode: bool = False, math_mode: bool = False
+    ) -> str:
         """Expand LaTeX commands in the content"""
         out, match_count = self.command_processor.expand_commands(
-            content, ignore_unicode
+            content, ignore_unicode, math_mode
         )
         return out
 

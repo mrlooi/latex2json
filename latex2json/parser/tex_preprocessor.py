@@ -17,6 +17,7 @@ from latex2json.parser.handlers.code_block import PATTERNS as VERBATIM_PATTERNS
 from latex2json.parser.handlers import (
     NewDefinitionHandler,
     CommandProcessor,
+    EquationHandler,
 )
 from latex2json.utils.tex_utils import (
     strip_latex_comments,
@@ -52,6 +53,15 @@ QUOTE_PATTERNS = {
 }
 
 
+def restore_placeholder_blocks(content: str, blocks: dict) -> str:
+    """
+    Restores the blocks in the content by replacing placeholders with the original blocks.
+    """
+    for placeholder, block in blocks.items():
+        content = content.replace(placeholder, block)
+    return content
+
+
 class LatexPreprocessor:
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
@@ -60,6 +70,9 @@ class LatexPreprocessor:
         self.new_definition_handler = NewDefinitionHandler()
         self.if_else_block_handler = IfElseBlockHandler(logger=self.logger)
         self.sty_parser = LatexStyParser(logger=self.logger)
+
+        # added equation handler to parse out math mode
+        self.equation_handler = EquationHandler()
 
     def clear(self):
         self.if_else_block_handler.clear()
@@ -90,7 +103,7 @@ class LatexPreprocessor:
         # so we first need to find all verbatim environments, extract them out, normalize the rest, then put the verbatim environments back in
         content, verbatim_blocks = self._extract_verbatim_blocks(content)
         content = normalize_whitespace_and_lines(content)
-        content = self._restore_verbatim_blocks(content, verbatim_blocks)
+        content = restore_placeholder_blocks(content, verbatim_blocks)
 
         return content, out_tokens
 
@@ -210,6 +223,8 @@ class LatexPreprocessor:
         current_pos = 0
         tokens = []  # Store all definition tokens
 
+        math_blocks = {}
+
         while current_pos < len(content):
             # find the next delimiter (this block allows us to quickly identify and process chunks of text between special LaTeX delimiters
             # without it, we would have to parse the entire content string character by character. which would be slower.)
@@ -233,6 +248,22 @@ class LatexPreprocessor:
                     content[:current_pos] + content[current_pos + match.end() - 1 :]
                 )
                 continue
+
+            # check math mode to ignore expansion of math mode commands
+            if self.equation_handler.can_handle(content[current_pos:]):
+                token, end_pos = self.equation_handler.handle(content[current_pos:])
+                if end_pos > 0:
+                    # store the math block as placeholder to restore later
+                    placeholder = f"__MATH_BLOCK_{len(math_blocks)}__"
+                    math_blocks[placeholder] = content[
+                        current_pos : current_pos + end_pos
+                    ]
+                    content = (
+                        content[:current_pos]
+                        + placeholder
+                        + content[current_pos + end_pos :]
+                    )
+                    continue
 
             # check quotes
             for quote_type, pattern in QUOTE_PATTERNS.items():
@@ -297,6 +328,9 @@ class LatexPreprocessor:
 
             current_pos += 1
 
+        # restore math blocks
+        content = restore_placeholder_blocks(content, math_blocks)
+
         return content, tokens
 
     def _extract_verbatim_blocks(self, content: str) -> tuple[str, dict]:
@@ -334,14 +368,6 @@ class LatexPreprocessor:
                 break
 
         return "".join(output), blocks
-
-    def _restore_verbatim_blocks(self, content: str, blocks: dict) -> str:
-        """
-        Restores the verbatim blocks in the content by replacing placeholders with the original blocks.
-        """
-        for placeholder, block in blocks.items():
-            content = content.replace(placeholder, block)
-        return content
 
 
 if __name__ == "__main__":

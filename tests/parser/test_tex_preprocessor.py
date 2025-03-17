@@ -146,3 +146,32 @@ def test_addto_processing(preprocessor):
 
     assert tokens[0]["type"] == "newcommand"
     assert tokens[0]["name"] == "foo"
+
+
+# def test_verbatim_processing(preprocessor):
+#     text = r"""
+#     \begin{lstlisting}
+
+#     This spacing should not be processed
+
+#     haha
+
+#     \end{lstlisting}
+#     """
+#     processed, tokens = preprocessor.preprocess(text)
+#     assert len(tokens) == 0
+#     assert processed.strip() == text.strip()
+
+
+def test_math_processing(preprocessor):
+    # dont handle math mode processing in preprocessor
+    text = r"""
+    \newcommand{\abs}[1]{\left\vert#1\right\vert}
+    $\abs{x}$
+    """
+    processed, tokens = preprocessor.preprocess(text)
+    assert len(tokens) == 1
+
+    assert tokens[0]["type"] == "newcommand"
+    assert tokens[0]["name"] == "abs"
+    assert processed.strip() == r"$\abs{x}$"

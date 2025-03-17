@@ -1,7 +1,7 @@
 # src/commands.py
 
 import re
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, TypedDict, Callable, Pattern, Tuple
 from latex2json.latex_maps.latex_unicode_converter import LatexUnicodeConverter
 
 from latex2json.utils.tex_utils import (
@@ -30,14 +30,21 @@ CSNAME_PATTERN = re.compile(
 )
 
 
-def default_ignore_handler(match, text):
+class CommandEntry(TypedDict):
+    pattern: Pattern[str]
+    handler: Callable[[re.Match[str], str, Optional[bool]], Tuple[str, int]]
+
+
+def default_ignore_handler(
+    match: re.Match[str], text: str, math_mode: bool = False
+) -> Tuple[str, int]:
     # return empty str to ignore?
     return "", match.end()
 
 
 class CommandProcessor:
     def __init__(self):
-        self.commands: Dict[str, Dict[str, any]] = {}
+        self.commands: Dict[str, CommandEntry] = {}
 
         # Replace the unicode conversion initialization with LatexUnicodeConverter
         self.unicode_converter = LatexUnicodeConverter()
@@ -60,7 +67,9 @@ class CommandProcessor:
 
         if num_args == 0:
 
-            def handler(match, text):
+            def handler(
+                match: re.Match[str], text: str, math_mode: bool = False
+            ) -> Tuple[str, int]:
                 # Old: check if there is trailing {}
                 # Update: REMOVED trailing {} check since nested/post-expanded commands may need this {} as a delimiter too
                 start_pos = match.end()
@@ -71,7 +80,9 @@ class CommandProcessor:
 
         else:
 
-            def handler(match, text):
+            def handler(
+                match: re.Match[str], text: str, math_mode: bool = False
+            ) -> Tuple[str, int]:
                 start_pos = match.end()
                 end_pos = start_pos
                 args = defaults.copy()
@@ -95,13 +106,17 @@ class CommandProcessor:
                     for block in blocks:
                         args.append(block)
 
+                if math_mode:
+                    # pad args with spaces
+                    args = [" " + arg + " " if arg is not None else arg for arg in args]
+
                 # fill remaining args with empty strings
                 args.extend([""] * (num_args - len(args)))
 
                 return substitute_args(definition, args), end_pos
 
         try:
-            command = {
+            command: CommandEntry = {
                 "pattern": re.compile(usage_pattern, re.DOTALL),
                 "handler": handler,
             }
@@ -116,17 +131,22 @@ class CommandProcessor:
         """Process a paired delimiter command like \br{content}"""
         usage_pattern = r"\\" + command_name + r"\s*{"
 
-        def handler(match, text):
+        def handler(
+            match: re.Match[str], text: str, math_mode: bool = False
+        ) -> Tuple[str, int]:
             start_pos = match.end() - 1
             content, end_pos = extract_nested_content(text[start_pos:], "{", "}")
             if content is None:
                 return "", start_pos
 
+            if math_mode:
+                content = " " + content + " "
+
             end_pos += start_pos
             return f"{left_delim}{content}{right_delim}", end_pos
 
         try:
-            command = {
+            command: CommandEntry = {
                 "pattern": re.compile(usage_pattern, re.DOTALL),
                 "handler": handler,
             }
@@ -143,8 +163,13 @@ class CommandProcessor:
         usage_pattern: str,
         expand_definition=False,
     ):
-        def handler(match, text):
-            args = [g for g in match.groups() if g is not None]
+        def handler(
+            match: re.Match[str], text: str, math_mode: bool = False
+        ) -> Tuple[str, int]:
+            args = []
+            for g in match.groups():
+                if g is not None:
+                    args.append(g if not math_mode else " " + g + " ")
 
             return substitute_args(definition, args), match.end()
 
@@ -152,7 +177,7 @@ class CommandProcessor:
             definition = self.expand_commands(definition, True)[0]
 
         try:
-            command = {
+            command: CommandEntry = {
                 "pattern": re.compile(usage_pattern, re.DOTALL),
                 "handler": handler,
             }
@@ -162,7 +187,7 @@ class CommandProcessor:
             raise e
 
     def process_newif(self, var_name: str):
-        command = {
+        command: CommandEntry = {
             "pattern": re.compile(r"\\" + var_name + r"(?:true|false)"),
             "handler": default_ignore_handler,
         }
@@ -172,7 +197,9 @@ class CommandProcessor:
         self.process_newX(var_name, "newlength")
 
     def process_newtoks(self, var_name: str):
-        def handler(match, text):
+        def handler(
+            match: re.Match[str], text: str, math_mode: bool = False
+        ) -> Tuple[str, int]:
             # check if there is traling { ... } # we strip this out if exists
             start_pos = match.end()
             content, end_pos = extract_nested_content(text[start_pos:], "{", "}")
@@ -181,14 +208,14 @@ class CommandProcessor:
             # ignore the trailing {...} anyway
             return "", start_pos + end_pos
 
-        command = {
+        command: CommandEntry = {
             "pattern": re.compile(r"\\" + var_name + r"\b"),
             "handler": handler,
         }
         self.commands["newtoks:" + var_name] = command
 
     def process_newX(self, var_name: str, type: str = "newX"):
-        command = {
+        command: CommandEntry = {
             "pattern": re.compile(r"\\" + var_name + r"\b"),
             "handler": default_ignore_handler,
         }
@@ -196,17 +223,17 @@ class CommandProcessor:
 
     def process_newcounter(self, var_name: str):
 
-        command = {
+        command: CommandEntry = {
             "pattern": re.compile(r"\\the" + var_name + r"\b"),
             "handler": default_ignore_handler,
         }
         self.commands["newcounter:" + var_name] = command
 
     def expand_commands(
-        self, text: str, ignore_unicode: bool = False
+        self, text: str, ignore_unicode: bool = False, math_mode: bool = False
     ) -> tuple[str, int]:
         """Recursively expand defined commands in the text until no further expansions are possible."""
-        text, match_count = self._expand(text)
+        text, match_count = self._expand(text, math_mode=math_mode)
 
         # Handle unicode conversions using the converter
         if not ignore_unicode:
@@ -214,7 +241,9 @@ class CommandProcessor:
 
         return text, match_count
 
-    def _expand(self, text: str, max_depth: int = 1000) -> tuple[str, int]:
+    def _expand(
+        self, text: str, math_mode: bool = False, max_depth: int = 1000
+    ) -> tuple[str, int]:
         """Recursively expand defined commands in the text until no further expansions are possible."""
         match_count = 0
         depth = 0
@@ -228,7 +257,7 @@ class CommandProcessor:
             if cmd_name not in commands:
                 return match.group(0), match.end()
             handler = commands[cmd_name]["handler"]
-            return handler(match, text)
+            return handler(match, text, math_mode=math_mode)
 
         prev_text = None
         while prev_text != text:

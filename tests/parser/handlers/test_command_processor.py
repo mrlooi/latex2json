@@ -84,5 +84,27 @@ def test_paired_delimiter(processor, newdef_handler):
     assert content[pos:] == " POST"
 
 
+def test_expand_commands(processor, newdef_handler):
+    processor.clear()
+
+    content = r"\DeclarePairedDelimiter{\br}{(}{)}"
+    token, pos = newdef_handler.handle(content)
+    assert token is not None
+
+    processor.process_paired_delimiter(
+        token["name"], token["left_delim"], token["right_delim"]
+    )
+
+    content = r"$\br{x}$"
+    out_text, _ = processor.expand_commands(content, math_mode=False)
+    assert out_text == r"$(x)$"
+
+    # math mode = True pads the output with spaces
+    out_text, _ = processor.expand_commands(
+        content, ignore_unicode=True, math_mode=True
+    )
+    assert out_text == r"$( x )$"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
