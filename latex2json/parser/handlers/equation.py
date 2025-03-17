@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import re
 from typing import Callable, Dict, Optional, Tuple
+from latex2json.parser.handlers.content_command import ContentCommandHandler
 from latex2json.utils.tex_utils import (
     extract_nested_content,
     check_delimiter_balance,
@@ -48,11 +49,15 @@ PATTERNS.update(RAW_PATTERNS)
 
 
 class EquationHandler(TokenHandler):
+    should_extract_content_placeholders = True
+
     """Handler for LaTeX equations and math environments."""
 
     def __init__(self, process_content_fn: Optional[Callable] = None):
         self.process_content_fn = process_content_fn
         self.formatter = FormattingHandler()
+        # content command handler to parse out e.g. includegraphics/eqref etc inside equation/math itself
+        self.content_command = ContentCommandHandler()
 
     def can_handle(self, content: str) -> bool:
         """Check if content contains an equation pattern."""
@@ -105,6 +110,44 @@ class EquationHandler(TokenHandler):
             "equation_inline_brackets": "\\)",
         }
         return delimiters.get(pattern_name)
+
+    def _extract_contentcommands_as_placeholders(self, eq_token: Dict):
+        math = eq_token["content"]
+
+        blocks: Dict[str, Dict] = {}  # key: placeholder_str, value: token
+        out_math = ""
+        current_pos = 0
+
+        while current_pos < len(math):
+            if (
+                match_start := self.content_command.search(math[current_pos:])
+            ) is not None:
+                # Copy text before the command
+                if match_start > 0:
+                    out_math += math[current_pos : current_pos + match_start]
+
+                token, end_pos = self.content_command.handle(
+                    math[current_pos + match_start :]
+                )
+                if token:
+                    # store the token as placeholder
+                    placeholder = f"___PLACEHOLDER_{len(blocks)}___"
+                    blocks[placeholder] = token
+                    out_math += placeholder
+
+                if end_pos > 0:
+                    current_pos += match_start + end_pos
+                else:
+                    current_pos += match_start + 1
+            else:
+                # Copy remaining text
+                out_math += math[current_pos:]
+                break
+
+        eq_token["content"] = out_math
+        if blocks:
+            eq_token["placeholders"] = blocks
+        return eq_token
 
     def handle(
         self, content: str, prev_token: Optional[Dict] = None
@@ -165,6 +208,8 @@ class EquationHandler(TokenHandler):
             if labels:
                 token["labels"] = labels
 
+            if self.should_extract_content_placeholders:
+                token = self._extract_contentcommands_as_placeholders(token)
             return token, end_pos
 
         return None, 0
@@ -174,7 +219,12 @@ if __name__ == "__main__":
     handler = EquationHandler()
     # print(handler.can_handle("$x^2$"))
     content = r"""
-    $\raise.17ex\hbox{$\scriptstyle\sim$}$
+    $
+    \begin{array}{c}
+    \includegraphics[width=0.5\textwidth]{example-image}
+    1+1=2, \mbox{as shown in \eqref{eq:sum}}
+    \end{array}
+    $
     """.strip()
     token, pos = handler.handle(content)
     print(token)

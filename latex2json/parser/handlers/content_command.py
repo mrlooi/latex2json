@@ -84,6 +84,8 @@ PATTERNS = OrderedDict(
     for key, pattern in RAW_PATTERNS.items()
 )
 
+GENERIC_COMMAND_PATTERN = re.compile(r"\\[a-zA-Z]+\b")
+
 
 class ContentCommandHandler(TokenHandler):
     def can_handle(self, content: str) -> bool:
@@ -259,6 +261,20 @@ class ContentCommandHandler(TokenHandler):
             return None
 
         return {"type": matched_type, "content": content}
+
+    def search(self, content: str):
+        pos = 0
+        while pos < len(content):
+            search = re.search(GENERIC_COMMAND_PATTERN, content[pos:])
+            if not search:
+                return None
+
+            current_pos = pos + search.start()
+            for pattern_name, pattern in PATTERNS.items():
+                if pattern.match(content[current_pos:]):
+                    return current_pos
+
+            pos += search.end()
 
 
 if __name__ == "__main__":

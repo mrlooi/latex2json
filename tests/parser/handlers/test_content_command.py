@@ -292,5 +292,11 @@ def test_other(handler):
     assert text[pos:] == " POST BIBLIOGRAPHY"
 
 
+def test_search(handler):
+    assert handler.search(r"aaaa \ref{xx}") == 5
+    assert handler.search(r"\scacac assd \asd \ref{xx}") == len(r"\scacac assd \asd ")
+    assert handler.search(r"\scacac assd \asd \re") is None
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

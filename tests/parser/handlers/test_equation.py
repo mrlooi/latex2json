@@ -194,5 +194,33 @@ def test_equation_with_nested_delimiters(handler):
     # assert content[pos:] == " POST"
 
 
+def test_equation_with_includegraphics(handler):
+    handler.should_extract_content_placeholders = True
+    content = r"""
+    \begin{equation*}
+    \includegraphics[width=0.5\textwidth]{example-image}
+    1+1=2
+    \eqref{eq:sum}
+    \end{equation*}
+    AFTER
+    """.strip()
+    assert handler.can_handle(content)
+    token, pos = handler.handle(content)
+    assert token
+    assert r"\includegraphics" not in token["content"]
+    assert r"\eqref" not in token["content"]
+    placeholders = token.get("placeholders", {})
+    assert len(placeholders) == 2
+    for key, value in placeholders.items():
+        assert key in token["content"]
+
+    placeholder_values = list(placeholders.values())
+    assert placeholder_values[0]["type"] == "includegraphics"
+    assert placeholder_values[0]["content"] == r"example-image"
+    assert placeholder_values[1]["type"] == "ref"
+    assert placeholder_values[1]["content"] == r"eq:sum"
+    assert content[pos:].strip() == "AFTER"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

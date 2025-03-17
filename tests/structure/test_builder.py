@@ -446,6 +446,45 @@ def test_organize_content(latex_parser, latex_text, expected_organizer_output):
     assert normalized_organized == normalized_expected
 
 
+def test_equation_placeholders(latex_parser):
+    latex_text = r"""
+    \begin{equation*}
+    \eqref{eq:sum}
+    \sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+    \includegraphics[width=0.5\textwidth]{example-image}
+    \end{equation*}
+    """
+
+    expected_eq_output = r"""
+    ___PLACEHOLDER_0___
+    \sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+    ___PLACEHOLDER_1___
+    """
+
+    expected = [
+        {
+            "type": "equation",
+            "content": expected_eq_output,
+            "display": "block",
+            "placeholders": {
+                "___PLACEHOLDER_0___": {"type": "ref", "content": "eq:sum"},
+                "___PLACEHOLDER_1___": {
+                    "type": "includegraphics",
+                    "content": "example-image",
+                },
+            },
+        }
+    ]
+    tokens = latex_parser.parse(latex_text)
+    token_builder = TokenBuilder()
+    organized_tokens = token_builder.organize_content(tokens)
+
+    normalized_organized = strip_content_str(organized_tokens)
+    normalized_expected = strip_content_str(expected)
+
+    assert normalized_organized == normalized_expected
+
+
 def test_organize_appendix(latex_parser):
     latex_text = r"""
     \section{Intro}

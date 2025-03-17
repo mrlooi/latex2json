@@ -19,6 +19,7 @@ class EquationToken(BaseToken):
     align: Optional[bool] = None
     display: DisplayType = DisplayType.INLINE
     numbering: Optional[str] = None
+    placeholders: Optional[Dict[str, BaseToken]] = None
 
     @classmethod
     def preprocess_data(cls, data: Dict[str, Any]) -> Dict[str, Any]:
