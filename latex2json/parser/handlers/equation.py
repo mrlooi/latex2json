@@ -67,7 +67,9 @@ class EquationHandler(TokenHandler):
         """Remove LaTeX formatting commands from equation."""
         backslash_pos = equation.find("\\")
         while backslash_pos >= 0:
-            x, end_pos = self.formatter.handle(equation[backslash_pos:])
+            x, end_pos = self.formatter.handle(
+                equation[backslash_pos:], exclude_patterns=["spacing"]
+            )
             if end_pos > 0:
                 content = ""
                 if x and isinstance(x.get("content", ""), str):

@@ -194,6 +194,29 @@ def test_equation_with_nested_delimiters(handler):
     # assert content[pos:] == " POST"
 
 
+def test_equation_strip_formatting(handler):
+    # test that \raise.17ex is stripped
+    content = r"""
+    \begin{equation*}
+    \raise.17ex 1+1
+    \end{equation*}
+    """.strip()
+    token, pos = handler.handle(content)
+    assert token
+    assert token["content"].strip() == "1+1"
+    assert content[pos:].strip() == ""
+
+    # but not spacing related e.g. \;
+    content = r"""
+    \begin{equation*}
+    1+1\;222 \hline
+    \end{equation*}
+    """.strip()
+    token, pos = handler.handle(content)
+    assert token
+    assert token["content"].strip() == "1+1\;222"
+
+
 def test_equation_with_includegraphics(handler):
     handler.should_extract_content_placeholders = True
     content = r"""

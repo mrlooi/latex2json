@@ -1,7 +1,7 @@
 import datetime
 import re
 from collections import OrderedDict
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 from latex2json.parser.handlers.base import TokenHandler
 from latex2json.parser.patterns import NUMBER_PATTERN
 from latex2json.utils.tex_utils import (
@@ -305,10 +305,15 @@ class FormattingHandler(TokenHandler):
         return any(pattern.match(content) for pattern in PATTERNS.values())
 
     def handle(
-        self, content: str, prev_token: Optional[Dict] = None
+        self,
+        content: str,
+        prev_token: Optional[Dict] = None,
+        exclude_patterns: Optional[List[str]] = None,
     ) -> Tuple[Optional[Dict], int]:
         # Try each pattern until we find a match
         for pattern_name, pattern in PATTERNS.items():
+            if exclude_patterns and pattern_name in exclude_patterns:
+                continue
             match = pattern.match(content)
             if match:
                 if pattern_name == "comment":
