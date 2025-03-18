@@ -291,6 +291,8 @@ def test_misc_formatting_commands(handler):
     \vspace{10pt}
 
     \refstepcounter{section}
+
+    \pagenumbering{arabic}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

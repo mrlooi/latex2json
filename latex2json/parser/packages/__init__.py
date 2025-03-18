@@ -1,3 +1,4 @@
+from .tikz import TikzHandler
 from .overpic import OverpicHandler
 
 # Define handler groups by priority (lower numbers run first)
@@ -5,6 +6,7 @@ PACKAGE_HANDLERS = {
     # Priority 10: Image/graphics handlers
     10: [
         OverpicHandler,
+        TikzHandler,
         # Add other image-related handlers here
     ],
     # Priority 20: Table/data handlers

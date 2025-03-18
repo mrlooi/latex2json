@@ -81,6 +81,7 @@ PATTERNS = {
     "newother": re.compile(
         r"\\(?:re)?new(?:count|box|dimen|skip|muskip)\s*\\([^\s{[]+)"
     ),
+    "newfam": re.compile(r"\\newfam\s*\\([^\s{[]+)"),
     "setcounter": re.compile(
         r"\\setcounter\s*%s\s*%s" % (BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN),
         re.DOTALL,
@@ -164,6 +165,8 @@ class NewDefinitionHandler(TokenHandler):
                     return self._handle_newif(match)
                 elif pattern_name == "newlength" or pattern_name == "setlength":
                     return self._handle_newlength(match)
+                elif pattern_name == "newfam":
+                    return self._handle_newfam(match)
                 elif pattern_name == "newcounter" or pattern_name == "setcounter":
                     return self._handle_newcounter(match)
                 elif pattern_name == "newother":
@@ -570,6 +573,12 @@ class NewDefinitionHandler(TokenHandler):
         }
 
         return token, start_pos + end_pos
+
+    def _handle_newfam(self, match) -> Tuple[Optional[Dict], int]:
+        r"""Handle \newfam definitions"""
+        var_name = match.group(1).strip()
+        token = {"type": "newfam", "name": var_name}
+        return token, match.end()
 
 
 if __name__ == "__main__":

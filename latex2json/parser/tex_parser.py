@@ -316,12 +316,12 @@ class LatexParser:
                 self.command_processor.process_newlength(cmd_name)
             elif token["type"] == "newtoks":
                 self.command_processor.process_newtoks(cmd_name)
-            elif token["type"] == "newother":
-                self.command_processor.process_newX(cmd_name)
             elif token["type"] == "paired_delimiter":
                 self.command_processor.process_paired_delimiter(
                     cmd_name, token["left_delim"], token["right_delim"]
                 )
+            elif token["type"] == "newother" or token["type"] == "newfam":
+                self.command_processor.process_newX(cmd_name)
 
     def _check_for_new_definitions(self, content: str) -> None:
         """Check for new definitions in the content and process them"""

@@ -591,5 +591,12 @@ def test_newtoks(handler):
     assert token["name"] == "bar"
 
 
+def test_newfam(handler):
+    content = r"\newfam\bboardfam"
+    token, pos = handler.handle(content)
+    assert token["type"] == "newfam"
+    assert token["name"] == "bboardfam"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
