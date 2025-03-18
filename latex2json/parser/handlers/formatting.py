@@ -152,7 +152,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "numbering_style",
             re.compile(
-                r"\\(?:arabic|roman|alph|fnsymbol)(?:\s*\{[^}]*\}|\b)",
+                r"(?:\\(?:arabic|roman|alph|fnsymbol)(?:\s*\{[^}]*\}|\b))|\\pagenumbering\s*\{[^}]*\}",
                 re.DOTALL | re.IGNORECASE,
             ),
         ),

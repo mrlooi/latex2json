@@ -70,17 +70,21 @@ BOX_PATTERN = re.compile(
     re.VERBOSE | re.DOTALL,
 )
 
+FONT_PATTERN = {
+    "fontsize": (r"\\fontsize" + (r"\s*" + BRACE_CONTENT_PATTERN) * 2),
+    "selectfont": (r"\\selectfont\b"),
+    "usefont": (r"\\usefont" + (r"\s*" + BRACE_CONTENT_PATTERN) * 4),
+}
+
 PATTERNS = {
     "styled": TEXT_PATTERN,
+    "box": BOX_PATTERN,
+    # custom fonts (that we want to ignore)
+    "fonts": re.compile("|".join(FONT_PATTERN.values())),
     "frac": re.compile(r"\\(?:frac|nicefrac|textfrac)\s*\{", re.DOTALL),  # \frac{}{}
     "texorpdfstring": re.compile(
         r"\\texorpdfstring\s*\{", re.DOTALL
     ),  # \texorpdfstring{pdf version}{text version}
-    "box": BOX_PATTERN,
-    # custom fonts (that we want to ignore)
-    "fontsize": re.compile(r"\\fontsize" + (r"\s*" + BRACE_CONTENT_PATTERN) * 2),
-    "selectfont": re.compile(r"\\selectfont\b"),
-    "usefont": re.compile(r"\\usefont" + (r"\s*" + BRACE_CONTENT_PATTERN) * 4),
     "color": re.compile(r"\\textcolor\s*(\[\w+\])?\s*{"),
     "columns": re.compile(r"\\(?:onecolumn\b|twocolumn\s*\[?)"),
     "subfloat": re.compile(r"\\subfloat\s*\["),
