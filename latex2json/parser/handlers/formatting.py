@@ -227,7 +227,7 @@ RAW_PATTERNS = OrderedDict(
         ("@empty", r"\\@empty(?![a-zA-Z@])"),
         (
             "advance",
-            r"\\(?:advance|divide|multiply)(?:\\[a-zA-Z@*\d]+)?(?:\s+by)?(?:\s*-)?(?:\s*\\[a-zA-Z@*\d]+)?",
+            r"\\(?:advance|divide|multiply)(?:\\[a-zA-Z@*\d]+)?(?:\s+by)?(?:\s*-)?(?:\s*(?:\\)?[a-zA-Z@*\d]+)?",
         ),
         ("typeout", r"\\typeout\s*{"),
         # other...
