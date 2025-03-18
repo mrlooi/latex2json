@@ -58,19 +58,22 @@ def test_nested_environments(handler):
     \item Nested item 1
     \item Nested item 2
     \end{itemize}
-    \item Second item
+    LAST item
     """.strip()
 
     token, pos = handler.handle(content)
     assert token["type"] == "item"
-    assert "begin{itemize}" in token["content"]
-    assert "Nested item 1" in token["content"]
-    assert "Nested item 2" in token["content"]
-    assert "end{itemize}" in token["content"]
+    c = token["content"]
+    assert c.startswith("First item with nested list")
+    assert c.endswith("LAST item")
+    assert "begin{itemize}" in c
+    assert "Nested item 1" in c
+    assert "Nested item 2" in c
+    assert "end{itemize}" in c
 
     # Check that we can handle the next item
     remaining = content[pos:].strip()
-    assert remaining.startswith(r"\item Second item")
+    assert remaining == ""
 
 
 def test_deeply_nested_environments(handler):

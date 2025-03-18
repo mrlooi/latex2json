@@ -155,29 +155,27 @@ def find_pattern_while_skipping_nested_envs(
         # check for nested inner envs
         env_match = BaseEnvironmentHandler.search(content[start_pos:])
         if not env_match:
-            end_pos = start_pos + next_match.start()
-            break
+            return start_pos + next_match.start()
 
         start_env = env_match.start()
         # If we find a nested environment after the next match,
         # we can safely exit
         if start_env > next_match.start():
-            end_pos = start_pos + next_match.start()
-            break
+            return start_pos + next_match.start()
 
         # Handle and skip the inner environment
         inner_token, inner_length = BaseEnvironmentHandler.try_handle(
             content[start_pos + start_env :]
         )
         if not inner_token:
-            break
+            return end_pos
 
         start_pos += start_env + inner_length
         end_pos = start_pos
 
         next_match = pattern.search(content[start_pos:])
 
-    return end_pos
+    return len(content) if end_pos >= 0 else -1
 
 
 class BaseEnvironmentHandler(TokenHandler):
