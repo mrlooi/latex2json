@@ -63,6 +63,12 @@ def test_handle_newcommand_special_characters(handler):
     match = re.match(token["usage_pattern"], text)
     assert match and text[match.end() :] == "a"
 
+    # single digit
+    content = r"\newcommand{\0}{\emptyset}"
+    token, pos = handler.handle(content)
+    assert token["name"] == "0"
+    assert token["content"] == r"\emptyset"
+
 
 def test_handle_renewcommand(handler):
     content = r"\renewcommand{\cmd}{new definition}"

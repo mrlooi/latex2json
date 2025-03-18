@@ -12,7 +12,7 @@ from latex2json.utils.tex_utils import (
 # 1. Standard commands: letters and @ (e.g., \foo, \@foo)
 # 2. Non-letter commands (e.g., \<, \>, \=, \,, \., \;, \!, \|, \$, \%, \&, \#, \_, \{, \}, \<<, \>>)
 # 3. Active character ~ which can behave like a command
-command_pattern = r"\\([a-zA-Z@]+|[<>=,\.;!|$%&#_{}()\[\]~]+)"
+command_pattern = r"\\([a-zA-Z@]+|[<>=,\.;!|$%&#_{}()\[\]~]+|\d)"
 
 POST_NEW_COMMAND_PATTERN_STR = (
     r"\*?\s*(?:{%s}|%s)(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{"
