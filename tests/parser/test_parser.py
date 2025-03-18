@@ -1835,7 +1835,7 @@ def test_inputs_with_files(parser):
     assert input_tokens[1]["content"].strip() == "1+1=2"
 
 
-def test_bibliography_file(parser):
+def test_bibliography_files(parser):
 
     # bibliography file
     text = r"""
@@ -1858,6 +1858,18 @@ def test_bibliography_file(parser):
     bib_token = parsed_tokens[1]
     assert bib_token["type"] == "bibliography"
     assert len(bib_token["content"]) == 2
+
+    # test multiple bibliography files
+    text = r"""
+    \bibliography{%s/bibtex, %s/bibtex2.bib}
+    """ % (
+        samples_dir_path,
+        samples_dir_path,
+    )
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "bibliography"
+    assert len(parsed_tokens[0]["content"]) == 4
 
 
 def test_cvpr_sty_lastlines(parser):

@@ -182,13 +182,11 @@ class BibParser:
             bibtex_content = process_compiled_bibtex_to_bibtex(content)
             entries.extend(self.bibtex_parser.parse("\n".join(bibtex_content)))
         elif re.search(BibTexPattern, content):
-            self.logger.debug("Parsing BibTeX content")
             entries.extend(self.bibtex_parser.parse(content))
         else:
             self.logger.debug("Parsing standalone bibitem content")
             entries.extend(self._parse_bibitems(content))
 
-        self.logger.info(f"BibParser: Found {len(entries)} entries")
         return entries
 
     def _parse_bibitems(self, content: str) -> List[BibEntry]:
@@ -268,7 +266,12 @@ class BibParser:
                         bib_content = f.read()
 
         if bib_content:
-            return self.parse(bib_content)
+            self.logger.info(f"BibParser: Parsing {file_path}")
+            entries = self.parse(bib_content)
+            self.logger.info(
+                f"Finished BibParser: {file_path} -> Found {len(entries)} entries"
+            )
+            return entries
         else:
             self.logger.warning(f"Bibliography file not found: {file_path}")
             return []

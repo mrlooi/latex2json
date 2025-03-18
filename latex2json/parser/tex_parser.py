@@ -350,16 +350,35 @@ class LatexParser:
 
         Args:
             file_path: Path to the bibliography file (with or without extension)
+                Can be a comma-separated list of files like "references, another_references, ..."
 
         Returns:
             Dict with bibliography token containing parsed contents
         """
-        if self.current_file_dir:
-            file_path = os.path.join(self.current_file_dir, file_path)
+        all_tokens = []
 
-        entries = self.bib_parser.parse_file(file_path)
-        tokens = [self._convert_bibitem_to_token(entry) for entry in entries]
-        return {"type": "bibliography", "content": tokens}
+        # Handle comma-separated list of files or single file
+        file_paths = [p.strip() for p in file_path.split(",") if p.strip()]
+
+        for path in file_paths:
+            # Apply current_file_dir to each path
+            full_path = (
+                os.path.join(self.current_file_dir, path)
+                if self.current_file_dir
+                else path
+            )
+
+            try:
+                entries = self.bib_parser.parse_file(full_path)
+                all_tokens.extend(
+                    [self._convert_bibitem_to_token(entry) for entry in entries]
+                )
+            except Exception as e:
+                self.logger.warning(
+                    f"Failed to parse bibliography file: {full_path}, error: {str(e)}"
+                )
+
+        return {"type": "bibliography", "content": all_tokens}
 
     def _process_token(
         self, token: str | Dict | List[Dict], tokens: List[Dict], is_env_type=False
