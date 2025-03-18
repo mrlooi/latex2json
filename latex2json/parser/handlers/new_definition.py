@@ -94,6 +94,9 @@ PATTERNS = {
         re.DOTALL,
     ),
     "definecolor": re.compile(r"\\definecolor\s*{"),
+    "font": re.compile(
+        r"\\font\s*\\([^\s=]+)\s*=\s*([^\s]+)(?:\s+at\s+(\d+(?:\.\d+)?)(pt|cm|mm|in|ex|em|bp|dd|pc|sp))?"
+    ),
 }
 
 
@@ -155,6 +158,8 @@ class NewDefinitionHandler(TokenHandler):
                     return self._handle_namedef(content, match)
                 elif pattern_name == "definecolor":
                     return self._handle_definecolor(content, match)
+                elif pattern_name == "font":
+                    return self._handle_font(match)
                 elif pattern_name == "newtoks":
                     return self._handle_newtoks(match)
                 elif pattern_name == "newtheorem":
@@ -578,6 +583,24 @@ class NewDefinitionHandler(TokenHandler):
         r"""Handle \newfam definitions"""
         var_name = match.group(1).strip()
         token = {"type": "newfam", "name": var_name}
+        return token, match.end()
+
+    def _handle_font(self, match) -> Tuple[Optional[Dict], int]:
+        """Handle \font definitions"""
+        font_name = match.group(1)
+        font_source = match.group(2)
+
+        token = {
+            "type": "font",
+            "name": font_name,
+            "source": font_source,
+        }
+
+        # Add size information if present
+        if match.group(3) and match.group(4):
+            token["size"] = match.group(3)
+            token["unit"] = match.group(4)
+
         return token, match.end()
 
 

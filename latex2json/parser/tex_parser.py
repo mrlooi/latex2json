@@ -258,7 +258,9 @@ class LatexParser:
             if not cmd_name:
                 return
 
-            if token["type"] == "definecolor":
+            typing = token["type"]
+
+            if typing == "definecolor":
                 self.colors[cmd_name] = {
                     "format": token["format"],
                     "value": token["value"],
@@ -267,10 +269,10 @@ class LatexParser:
 
             # handle envs first
             # floatname for self defined envs
-            if token["type"] == "floatname":
+            if typing == "floatname":
                 self.env_handler.process_floatname(cmd_name, token["title"])
                 return
-            elif token["type"] == "newenvironment":
+            elif typing == "newenvironment":
                 self.env_handler.process_newenvironment(
                     cmd_name,
                     token["begin_def"],
@@ -278,14 +280,14 @@ class LatexParser:
                     token["num_args"],
                     token["optional_args"],
                 )
-            elif token["type"] == "newtheorem":
+            elif typing == "newtheorem":
                 self.env_handler.process_newtheorem(cmd_name, token["title"])
 
             # then check commands
             if cmd_name in WHITELISTED_COMMANDS:
                 return
 
-            if token["type"] == "newcommand":
+            if typing == "newcommand":
                 # check if there is potential recursion.
                 if re.search(token["usage_pattern"], token["content"]):
                     self.logger.warning(
@@ -299,7 +301,7 @@ class LatexParser:
                     token["defaults"],
                     token["usage_pattern"],
                 )
-            elif token["type"] == "def":
+            elif typing == "def":
                 self.command_processor.process_newdef(
                     cmd_name,
                     token["content"],
@@ -307,20 +309,20 @@ class LatexParser:
                     token["usage_pattern"],
                     token["is_edef"],
                 )
-            elif token["type"] == "newif":
+            elif typing == "newif":
                 self.command_processor.process_newif(cmd_name)
                 self.if_else_block_handler.process_newif(cmd_name)
-            elif token["type"] == "newcounter":
+            elif typing == "newcounter":
                 self.command_processor.process_newcounter(cmd_name)
-            elif token["type"] == "newlength":
+            elif typing == "newlength":
                 self.command_processor.process_newlength(cmd_name)
-            elif token["type"] == "newtoks":
+            elif typing == "newtoks":
                 self.command_processor.process_newtoks(cmd_name)
-            elif token["type"] == "paired_delimiter":
+            elif typing == "paired_delimiter":
                 self.command_processor.process_paired_delimiter(
                     cmd_name, token["left_delim"], token["right_delim"]
                 )
-            elif token["type"] == "newother" or token["type"] == "newfam":
+            elif typing in ["newother", "newfam", "font"]:
                 self.command_processor.process_newX(cmd_name)
 
     def _check_for_new_definitions(self, content: str) -> None:

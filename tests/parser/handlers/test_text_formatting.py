@@ -215,6 +215,16 @@ def test_ignore_custom_fonts(handler):
     assert token is None
     assert text[pos:] == " This text s"
 
+    text = r"\textfont\bboardfam=\tenbboard POST"
+    token, pos = handler.handle(text)
+    assert token is None
+    assert text[pos:] == " POST"
+
+    text = r"\scriptfont\bboardfam=\sevenbboard POST"
+    token, pos = handler.handle(text)
+    assert token is None
+    assert text[pos:] == " POST"
+
 
 def test_color(handler):
     text = r"\textcolor{red}{This text s} POST"

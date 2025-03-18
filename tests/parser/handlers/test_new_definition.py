@@ -598,5 +598,21 @@ def test_newfam(handler):
     assert token["name"] == "bboardfam"
 
 
+def test_font(handler):
+    content = r"\font\myfont=cmr12 at 20pt POST"
+    token, pos = handler.handle(content)
+    assert token["type"] == "font"
+    assert token["name"] == "myfont"
+    assert content[pos:] == " POST"
+
+    content = r"\font\myfont=mbbb POST"
+    token, pos = handler.handle(content)
+    assert token["type"] == "font"
+    assert token["name"] == "myfont"
+    assert token["source"] == "mbbb"
+    assert content[pos:] == " POST"
+    # assert token["unit"] == "pt"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
