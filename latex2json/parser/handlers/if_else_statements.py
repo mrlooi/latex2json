@@ -228,11 +228,8 @@ class IfElseBlockHandler(TokenHandler):
         self, content: str, match: re.Match, name: str
     ) -> Tuple[Optional[Dict], int]:
         start_pos = match.end() - 1
-        max_blocks = 3
-        if name == "@ifstar":
-            max_blocks = 2
         blocks, end_pos = extract_nested_content_sequence_blocks(
-            content[start_pos:], "{", "}", max_blocks=max_blocks
+            content[start_pos:], "{", "}", max_blocks=3
         )
         if len(blocks) == 0:
             return None, 0
@@ -241,6 +238,24 @@ class IfElseBlockHandler(TokenHandler):
         return {
             "type": "conditional-" + name,
             "condition": blocks[0],
+            "if_content": if_content,
+            "else_content": else_content,
+        }, start_pos + end_pos
+
+    def _handle_ifstar(
+        self, content: str, match: re.Match
+    ) -> Tuple[Optional[Dict], int]:
+        start_pos = match.end() - 1
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "{", "}", max_blocks=2
+        )
+        if len(blocks) == 0:
+            return None, 0
+        if_content = blocks[0] if len(blocks) > 0 else ""
+        else_content = blocks[1] if len(blocks) > 1 else ""
+        return {
+            "type": "conditional-ifstar",
+            "condition": "@ifstar",
             "if_content": if_content,
             "else_content": else_content,
         }, start_pos + end_pos
@@ -275,9 +290,10 @@ class IfElseBlockHandler(TokenHandler):
                     "@ifclassloaded",
                     "@ifpackageloaded",
                     "@ifundefined",
-                    "@ifstar",
                 ]:
                     return self._handle_atif(content, match, name)
+                elif name == "@ifstar":
+                    return self._handle_ifstar(content, match)
                 # elif name == "equal":
                 #     start_pos = match.end() - 1
                 #     blocks, end_pos = extract_nested_content_sequence_blocks(

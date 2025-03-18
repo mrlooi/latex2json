@@ -4,6 +4,7 @@ import re
 from typing import List, Dict, Optional, TypedDict, Callable, Pattern, Tuple
 from latex2json.latex_maps.latex_unicode_converter import LatexUnicodeConverter
 
+from latex2json.parser.handlers.if_else_statements import IfElseBlockHandler
 from latex2json.utils.tex_utils import (
     extract_nested_content_sequence_blocks,
     substitute_patterns,
@@ -48,12 +49,35 @@ class CommandProcessor:
 
         # Replace the unicode conversion initialization with LatexUnicodeConverter
         self.unicode_converter = LatexUnicodeConverter()
+        self.if_else_handler = IfElseBlockHandler()
 
     def clear(self):
         self.commands = {}
 
     def has_command(self, command_name: str) -> bool:
         return command_name in self.commands
+
+    def _parse_definition_conditionals(self, definition: str, usage_pattern: str):
+        definition = definition.strip()
+        true_block = definition
+        false_block = ""
+
+        has_ifstar = definition.startswith(r"\@ifstar")
+        if has_ifstar:
+            usage_pattern += r"\*?"
+            out, pos = self.if_else_handler.handle(definition)
+            if out and "ifstar" in out["type"]:
+                true_block = out["if_content"] + definition[pos:]
+                false_block = out["else_content"] + definition[pos:]
+
+                def get_definition(match: re.Match[str]) -> str:
+                    return true_block if match.group(0).endswith("*") else false_block
+
+                return {
+                    "get_definition": get_definition,
+                    "usage_pattern": usage_pattern,
+                }
+        return None
 
     def process_newcommand(
         self,
@@ -63,20 +87,22 @@ class CommandProcessor:
         defaults: List[str],
         usage_pattern: str,
     ):
-        num_optional = len(defaults)
+
+        get_definition = lambda match: definition
+        # hacky??
+        check_definition = self._parse_definition_conditionals(
+            definition, usage_pattern
+        )
+        if check_definition:
+            get_definition = check_definition["get_definition"]
+            usage_pattern = check_definition["usage_pattern"]
 
         if num_args == 0:
 
             def handler(
                 match: re.Match[str], text: str, math_mode: bool = False
             ) -> Tuple[str, int]:
-                # Old: check if there is trailing {}
-                # Update: REMOVED trailing {} check since nested/post-expanded commands may need this {} as a delimiter too
-                start_pos = match.end()
-                end_pos = start_pos
-                # if text[start_pos : start_pos + 2] == "{}":
-                #     end_pos += 2
-                return definition, end_pos
+                return get_definition(match), match.end()
 
         else:
 
@@ -88,6 +114,7 @@ class CommandProcessor:
                 args = defaults.copy()
 
                 # Handle optional args
+                num_optional = len(defaults)
                 if num_optional:
                     blocks, end_pos = extract_nested_content_sequence_blocks(
                         text[start_pos:], "[", "]", num_optional
@@ -113,7 +140,7 @@ class CommandProcessor:
                 # fill remaining args with empty strings
                 args.extend([""] * (num_args - len(args)))
 
-                return substitute_args(definition, args), end_pos
+                return substitute_args(get_definition(match), args), end_pos
 
         try:
             command: CommandEntry = {
@@ -163,6 +190,16 @@ class CommandProcessor:
         usage_pattern: str,
         expand_definition=False,
     ):
+        get_definition = lambda match: definition
+        if num_args == 0:
+            # hacky??
+            check_definition = self._parse_definition_conditionals(
+                definition, usage_pattern
+            )
+            if check_definition:
+                get_definition = check_definition["get_definition"]
+                usage_pattern = check_definition["usage_pattern"]
+
         def handler(
             match: re.Match[str], text: str, math_mode: bool = False
         ) -> Tuple[str, int]:
@@ -171,7 +208,7 @@ class CommandProcessor:
                 if g is not None:
                     args.append(g if not math_mode else " " + g + " ")
 
-            return substitute_args(definition, args), match.end()
+            return substitute_args(get_definition(match), args), match.end()
 
         if expand_definition:
             definition = self.expand_commands(definition, True)[0]
@@ -300,3 +337,24 @@ class CommandProcessor:
                 return out, end_pos
 
         return self._handle_csname(text)
+
+
+if __name__ == "__main__":
+    from latex2json.parser.handlers.new_definition import NewDefinitionHandler
+
+    handler = NewDefinitionHandler()
+
+    content = r"\newcommand{\cmd}{\@ifstar{star}{nostar}}"
+    token, pos = handler.handle(content)
+
+    processor = CommandProcessor()
+    processor.process_newcommand(
+        token["name"],
+        token["content"],
+        token["num_args"],
+        token["defaults"],
+        token["usage_pattern"],
+    )
+
+    out, pos = processor.handle(r"\cmd*")
+    print(out, pos)

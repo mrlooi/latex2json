@@ -2088,5 +2088,17 @@ def test_math_mode_padding(parser):
     assert parsed_tokens[0]["content"] == r"\left\vert x \right\vert"
 
 
+def test_ifstar_definitions(parser):
+    text = r"""
+    \def\cmd{\@ifstar{star}{nostar}}
+    \newcommand{\cmdxx}{\cmd}
+    \cmd,\cmd*\cmdxx,\cmdxx***
+    """
+    parsed_tokens = parser.parse(text, preprocess=True)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"] == "nostar,starnostar,star**"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

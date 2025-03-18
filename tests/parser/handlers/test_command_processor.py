@@ -106,5 +106,56 @@ def test_expand_commands(processor, newdef_handler):
     assert out_text == r"$( x )$"
 
 
+def test_ifstar_definitions(processor, newdef_handler):
+    processor.clear()
+
+    content = r"\newcommand{\cmd}{\@ifstar{star}{nostar}}"
+    token, pos = newdef_handler.handle(content)
+    assert token is not None
+
+    processor.process_newcommand(
+        token["name"],
+        token["content"],
+        token["num_args"],
+        token["defaults"],
+        token["usage_pattern"],
+    )
+
+    assert not processor.can_handle(r"\cmda")
+
+    text = r"\cmd* haha"
+    out_text, pos = processor.handle(text)
+    assert out_text == "star"
+    assert text[pos:] == " haha"
+
+    text = r"\cmd haha"
+    out_text, pos = processor.handle(text)
+    assert out_text == "nostar"
+    assert text[pos:] == " haha"
+
+    # now test with \def
+    content = r"\def\cmdxx{\@ifstar{defstar}{nodefstar}}"
+    token, pos = newdef_handler.handle(content)
+    assert token is not None
+
+    processor.process_newdef(
+        token["name"],
+        token["content"],
+        token["num_args"],
+        token["usage_pattern"],
+        token["is_edef"],
+    )
+
+    text = r"\cmdxx* haha"
+    out_text, pos = processor.handle(text)
+    assert out_text == "defstar"
+    assert text[pos:] == " haha"
+
+    text = r"\cmdxx haha"
+    out_text, pos = processor.handle(text)
+    assert out_text == "nodefstar"
+    assert text[pos:] == " haha"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

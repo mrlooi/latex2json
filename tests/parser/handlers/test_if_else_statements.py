@@ -308,3 +308,12 @@ def test_with_csname():
     result, pos = handler.handle(text)
     assert result["else_content"] == ""
     assert text[pos:] == " POST"
+
+
+def test_ifstar():
+    text = r"\@ifstar{true}{false} POST"
+    handler = IfElseBlockHandler()
+    result, pos = handler.handle(text)
+    assert result["if_content"] == "true"
+    assert result["else_content"] == "false"
+    assert text[pos:] == " POST"
