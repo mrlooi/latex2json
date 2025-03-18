@@ -1859,7 +1859,7 @@ def test_bibliography_files(parser):
     assert bib_token["type"] == "bibliography"
     assert len(bib_token["content"]) == 2
 
-    # test multiple bibliography files
+    # test multiple bibliography files (and ensure no duplicates)
     text = r"""
     \bibliography{%s/bibtex, %s/bibtex2.bib}
     """ % (

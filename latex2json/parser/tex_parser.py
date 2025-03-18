@@ -380,7 +380,16 @@ class LatexParser:
                     f"Failed to parse bibliography file: {full_path}, error: {str(e)}"
                 )
 
-        return {"type": "bibliography", "content": all_tokens}
+        # check and remove duplicate cite_keys
+        cite_keys = set()
+        non_duplicate_tokens = []
+        for token in all_tokens:
+            if token["cite_key"] in cite_keys:
+                continue
+            cite_keys.add(token["cite_key"])
+            non_duplicate_tokens.append(token)
+
+        return {"type": "bibliography", "content": non_duplicate_tokens}
 
     def _process_token(
         self, token: str | Dict | List[Dict], tokens: List[Dict], is_env_type=False
@@ -723,13 +732,27 @@ if __name__ == "__main__":
 
     parser = LatexParser(logger=logger)
 
-    file = "papers/tested/arXiv-2402.03300v3/main.tex"
+    file = "papers/new/arXiv-2205.00334v4/NMI_revision.tex"
     # file = "papers/tested/arXiv-1706.03762v7/model_architecture.tex"
     tokens = parser.parse_file(file)
 
 #     text = r"""
-# \textit{Data Source $\mathcal{D}$}, which determines the training data;
-
+#     \newfam\bboardfam
+#     \bboardfam
 # """
-#     tokens = parser.parse(text, preprocess=True)
-#     print(tokens)
+
+#     text = r"""
+# \makeatletter
+# \newcommand{\mbrk}{\@ifstar{\mbrkb}{\mbrki}}
+# \newcommand{\mbrki}[1]{[ {#1} ]}
+# \newcommand{\mbrkb}[1]{\left[ {#1} \right]}
+# \makeatother
+
+# $\mbrk{x}$
+#     """
+# tokens = parser.parse(text, preprocess=True)
+# print(tokens)
+# import json
+
+# with open("test.json", "w") as f:
+#     json.dump(tokens, f, indent=2)
