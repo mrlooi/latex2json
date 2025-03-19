@@ -57,7 +57,7 @@ PATTERNS = {
     "@namedef": re.compile(r"\\@namedef\s*{([^}]*)}"),
     # Matches newtheorem with all its optional arguments
     "newtheorem": re.compile(
-        r"\\newtheorem{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?", re.DOTALL
+        r"\\newtheorem\*?{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?", re.DOTALL
     ),
     "crefname": re.compile(r"\\crefname{([^}]*)}{([^}]*)}{([^}]*)}", re.DOTALL),
     "newtoks": re.compile(

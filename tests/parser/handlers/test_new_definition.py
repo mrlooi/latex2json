@@ -94,7 +94,7 @@ def test_handle_newtheorem(handler):
     assert token == {"type": "newtheorem", "name": "theorem", "title": "Theorem"}
 
     # Test with counter specification
-    content = r"\newtheorem{lemma}[theorem]{Lemma}"
+    content = r"\newtheorem*{lemma}[theorem]{Lemma}"
     token, pos = handler.handle(content)
     assert token == {
         "type": "newtheorem",

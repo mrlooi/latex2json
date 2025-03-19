@@ -294,6 +294,9 @@ def test_misc_formatting_commands(handler):
     \refstepcounter{section}
 
     \pagenumbering{arabic}
+
+    \hoffset=-1.1cm 
+    \voffset=-0.5cm
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
