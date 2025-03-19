@@ -136,7 +136,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "declare",
             re.compile(
-                r"\\(DeclareFontShape|DeclareFontFamily|DeclareMathAlphabet|DeclareOption|SetMathAlphabet)\*?\s*\{",
+                r"\\(DeclareFontShape|DeclareFontFamily|DeclareMathAlphabet|DeclareOption|SetMathAlphabet|DeclareGraphicsExtensions)\*?\s*\{",
                 re.DOTALL,
             ),
         ),
@@ -201,6 +201,7 @@ RAW_PATTERNS = OrderedDict(
             "counters",
             r"\\counterwithin\s*\{[^}]*}\s*\{[^}]*\}|\\refstepcounter{[^}]+}|\\@addtoreset\s*\{[^}]*\}\s*\{[^}]*\}",
         ),
+        ("add_enumerate_counter", r"\\AddEnumerateCounter\s*\{"),
         ("backslash", r"\\(?:backslash|textbackslash|arraybackslash)\b"),
         ("ensuremath", r"\\ensuremath\s*{"),
         ("hyphenation", r"\\hyphenation\s*{"),
@@ -230,6 +231,7 @@ RAW_PATTERNS = OrderedDict(
         ("typeout", r"\\typeout\s*{"),
         # other...
         ("physics", r"\\pacs\s*\{(.*?)\}"),
+        ("Hy@", r"\\Hy@[a-zA-Z]+\s*{"),
     ]
 )
 
@@ -336,6 +338,12 @@ class FormattingHandler(TokenHandler):
                     if match.group(0) == r"\!":
                         return None, match.end()
                     return {"type": "text", "content": " "}, match.end()
+                elif pattern_name == "add_enumerate_counter":
+                    start_pos = match.end() - 1
+                    extracted_content, end_pos = extract_nested_content_sequence_blocks(
+                        content[start_pos:], max_blocks=3
+                    )
+                    return None, start_pos + end_pos
                 elif pattern_name in [
                     "newcolumntype",
                     "newstyle",
@@ -346,6 +354,7 @@ class FormattingHandler(TokenHandler):
                     "hyphenation",
                     "typeout",
                     "pdfinfo",
+                    "Hy@",
                 ]:
                     # extracted nested
                     start_pos = match.end() - 1

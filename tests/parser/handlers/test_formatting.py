@@ -208,6 +208,7 @@ def test_misc_formatting_commands(handler):
 
     \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
     \DeclareOption{tocmacros}{\AtEndOfClass{\toc@setup@predefines}}
+    \DeclareGraphicsExtensions{.mps}
 
     \ProcessOptions
     \PassOptionsToPackage{fleqn}{amsmath}
@@ -297,6 +298,12 @@ def test_misc_formatting_commands(handler):
 
     \hoffset=-1.1cm 
     \voffset=-0.5cm
+
+    \Hy@MakeCurrentHref{\@currenvir.\the\Hy@linkcounter}
+    \Hy@raisedlink{\hyper@anchorstart{\@currentHref}\hyper@anchorend}
+
+    \AddEnumerateCounter{\fwbw}{\@fwbw}
+    \AddEnumerateCounter{customenum}{\arabic}{enum}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
