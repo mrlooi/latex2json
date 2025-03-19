@@ -203,6 +203,7 @@ RAW_PATTERNS = OrderedDict(
         ),
         ("add_enumerate_counter", r"\\AddEnumerateCounter\s*\{"),
         ("backslash", r"\\(?:backslash|textbackslash|arraybackslash)\b"),
+        ("geometry", r"\\geometry\s*\{"),
         ("ensuremath", r"\\ensuremath\s*{"),
         ("hyphenation", r"\\hyphenation\s*{"),
         # Handle vspace separately
@@ -351,6 +352,7 @@ class FormattingHandler(TokenHandler):
                     "lstset",
                     "setlist",
                     "addtocontents",
+                    "geometry",
                     "hyphenation",
                     "typeout",
                     "pdfinfo",

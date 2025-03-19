@@ -304,6 +304,8 @@ def test_misc_formatting_commands(handler):
 
     \AddEnumerateCounter{\fwbw}{\@fwbw}
     \AddEnumerateCounter{customenum}{\arabic}{enum}
+
+    \geometry{a4paper}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
