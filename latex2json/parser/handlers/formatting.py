@@ -146,14 +146,13 @@ RAW_PATTERNS = OrderedDict(
             "linenumbers",
             re.compile(
                 r"\\(?:linenumbers\b|linesnumbered\b|numberwithin\s*\{[^}]*\}\s*\{[^}]*\})",
-                re.IGNORECASE,
             ),
         ),
         (
             "numbering_style",
             re.compile(
                 r"(?:\\(?:arabic|roman|alph|fnsymbol)(?:\s*\{[^}]*\}|\b))|\\pagenumbering\s*\{[^}]*\}",
-                re.DOTALL | re.IGNORECASE,
+                re.DOTALL,
             ),
         ),
         # table
@@ -217,8 +216,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "other",
             re.compile(
-                r"\\(?:ignorespaces|relax|repeat|\@tempboxa|box|global|@plus|@minus|null|floatbarrier|footins|phantomsection)\b",
-                re.IGNORECASE,
+                r"\\(?:ignorespaces|relax|repeat|\@tempboxa|box|global|@plus|@minus|null|FloatBarrier|footins|phantomsection)\b",
             ),
         ),
         ("newmdenv", re.compile(r"\\newmdenv\s*(?:\[(.*?)\])?\s*\{(.*?)\}", re.DOTALL)),
@@ -241,7 +239,6 @@ PATTERNS = OrderedDict(
     for key, pattern in RAW_PATTERNS.items()
 )
 PATTERNS["color_cells"] = COLOR_CELLS_PATTERN
-# PATTERNS['and'] = re.compile(r'\\and\b', re.IGNORECASE)
 
 number_regex_compiled = re.compile(number_regex)
 
