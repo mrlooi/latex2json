@@ -21,7 +21,7 @@ def latex_text():
     \paragraph{This is my paragraph}
     YEAAA baby
 
-    \section{Intro} \label{sec:intro}
+    \section{Intro $1+1$} \label{sec:intro}
 
         Some text here, $1+1=2$:
         \begin{equation}
@@ -36,7 +36,7 @@ def latex_text():
         \subsection{SubIntro}
         My name is \textbf{John Doe} \textbf{Sss} ahama \verb|my code|
 
-        \begin{theorem}
+        \begin{theorem}[$T=1$]
             Theorem 1
         \end{theorem}
 
@@ -104,7 +104,12 @@ def latex_text():
 @pytest.fixture
 def expected_organizer_output():
     return [
-        {"type": "title", "title": [{"type": "text", "content": "My Title"}]},
+        {
+            "type": "title",
+            "title": [
+                {"type": "text", "content": "My Title"},
+            ],
+        },
         {
             "type": "document",
             "name": "document",
@@ -128,7 +133,10 @@ def expected_organizer_output():
                 },
                 {
                     "type": "section",
-                    "title": [{"type": "text", "content": "Intro"}],
+                    "title": [
+                        {"type": "text", "content": "Intro"},
+                        {"type": "equation", "content": "1+1", "display": "inline"},
+                    ],
                     "level": 1,
                     "numbering": "1",
                     "numbered": True,
@@ -202,6 +210,13 @@ def expected_organizer_output():
                                     "name": "theorem",
                                     "content": [
                                         {"type": "text", "content": "Theorem 1"}
+                                    ],
+                                    "title": [
+                                        {
+                                            "type": "equation",
+                                            "content": "T=1",
+                                            "display": "inline",
+                                        }
                                     ],
                                     "numbering": "1.1",
                                     "numbered": True,
@@ -487,7 +502,7 @@ def test_equation_placeholders(latex_parser):
 
 def test_organize_appendix(latex_parser):
     latex_text = r"""
-    \section{Intro}
+    \section{Intro $1+1$}
 
     \begin{appendices}
     \section{Appendix}
@@ -502,7 +517,10 @@ def test_organize_appendix(latex_parser):
     expected = [
         {
             "type": "section",
-            "title": [{"type": "text", "content": "Intro"}],
+            "title": [
+                {"type": "text", "content": "Intro"},
+                {"type": "equation", "content": "1+1", "display": "inline"},
+            ],
             "level": 1,
             "numbering": "1",
             "numbered": True,

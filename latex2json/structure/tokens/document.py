@@ -20,6 +20,16 @@ class SectionToken(BaseToken):
     numbering: Optional[str] = None  # e.g. 3.1.2
     content: Optional[List[BaseToken]] = []
 
+    def model_dump(self, **kwargs):
+        result = super().model_dump(**kwargs)
+
+        if self.title:
+            result["title"] = [
+                self.serialize_value(token, **kwargs) for token in self.title
+            ]
+
+        return result
+
 
 class ParagraphToken(SectionToken):
     type: TokenType = TokenType.PARAGRAPH

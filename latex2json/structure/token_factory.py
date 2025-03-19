@@ -86,6 +86,8 @@ class TokenFactory:
         # Handle standard tokens
         if "content" in data:
             data = {**data, "content": self._process_content(data["content"])}
+        if "title" in data:
+            data = {**data, "title": self._process_content(data["title"])}
 
         token_class = self._token_map.get(token_type, BaseToken)
         return token_class.model_validate(data)

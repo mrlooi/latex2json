@@ -12,6 +12,21 @@ class BaseToken(BaseModel):
     content: Union[str, List["BaseToken"]]
     labels: Optional[List[str]] = None
 
+    @staticmethod
+    def serialize_value(val, **kwargs):
+        """Helper method to serialize values for JSON dumping"""
+        if isinstance(val, BaseToken):
+            return val.model_dump(**kwargs)
+        elif isinstance(val, (str, int, float, bool, type(None))):
+            return val
+        elif isinstance(val, (list, tuple)):
+            return [BaseToken.serialize_value(v, **kwargs) for v in val]
+        elif isinstance(val, dict):
+            return {k: BaseToken.serialize_value(v, **kwargs) for k, v in val.items()}
+        else:
+            # Convert any other types to string representation
+            return str(val)
+
     def model_dump(self, **kwargs) -> Dict[str, Any]:
         """Override model_dump to handle recursive content dumping and ensure JSON serializability"""
         # Get exclude_none from kwargs or default to False
@@ -20,25 +35,13 @@ class BaseToken(BaseModel):
         # Get the basic model dump but exclude content as we'll handle it specially
         result = super().model_dump(**kwargs)
 
-        # Helper function to ensure value is JSON serializable
-        def serialize_value(val):
-            if isinstance(val, BaseToken):
-                return val.model_dump(**kwargs)
-            elif isinstance(val, (str, int, float, bool, type(None))):
-                return val
-            elif isinstance(val, (list, tuple)):
-                return [serialize_value(v) for v in val]
-            elif isinstance(val, dict):
-                return {k: serialize_value(v) for k, v in val.items()}
-            else:
-                # Convert any other types to string representation
-                return str(val)
-
         # Handle content field recursively
         if isinstance(self.content, list):
-            result["content"] = [serialize_value(token) for token in self.content]
+            result["content"] = [
+                self.serialize_value(token, **kwargs) for token in self.content
+            ]
         else:
-            result["content"] = serialize_value(self.content)
+            result["content"] = self.serialize_value(self.content, **kwargs)
 
         # Remove None values if exclude_none is True
         if exclude_none:
@@ -60,6 +63,16 @@ class MathEnvToken(BaseToken):
     name: str
     numbering: Optional[str] = None
     title: Optional[List[BaseToken]] = None
+
+    def model_dump(self, **kwargs):
+        result = super().model_dump(**kwargs)
+
+        if self.title:
+            result["title"] = [
+                self.serialize_value(token, **kwargs) for token in self.title
+            ]
+
+        return result
 
 
 class TextToken(BaseToken):
