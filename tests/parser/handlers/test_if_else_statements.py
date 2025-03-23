@@ -11,7 +11,9 @@ def handler():
 
 
 def test_simple_if_else():
-    text = r"""
+    handler = IfElseBlockHandler()
+
+    multi_line_text = r"""
 \ifsomecondition1
     content1
 \else
@@ -20,15 +22,18 @@ def test_simple_if_else():
 
 Post IF
 """.strip()
-    handler = IfElseBlockHandler()
-    result, pos = handler.handle(text)
+    single_line_text = r"\ifsomecondition1 content1 \else content2 \fi Post IF"
 
-    assert result["condition"] == "somecondition1"
-    assert result["if_content"] == "content1"
-    assert result["else_content"] == "content2"
-    assert result["elsif_branches"] == []
+    texts = [multi_line_text, single_line_text]
+    for text in texts:
+        result, pos = handler.handle(text)
 
-    assert text[pos:].strip() == "Post IF"
+        assert result["condition"] == "somecondition1"
+        assert result["if_content"] == "content1"
+        assert result["else_content"] == "content2"
+        assert result["elsif_branches"] == []
+
+        assert text[pos:].strip() == "Post IF"
 
     text = r"""
     \@ifsss
@@ -37,7 +42,6 @@ Post IF
     content2
     \fi
 """.strip()
-    handler = IfElseBlockHandler()
     result, pos = handler.handle(text)
     assert result["if_content"] == "content"
     assert result["else_content"] == "content2"
@@ -316,4 +320,21 @@ def test_ifstar():
     result, pos = handler.handle(text)
     assert result["if_content"] == "true"
     assert result["else_content"] == "false"
+    assert text[pos:] == " POST"
+
+
+def test_real_case():
+    text = r"""
+\if@twoside\ifodd\c@page\else\aaa\fi XXX \fi POST
+""".strip()
+    handler = IfElseBlockHandler()
+    result, pos = handler.handle(text)
+    assert result["if_content"].strip() == r"\ifodd\c@page\else\aaa\fi XXX"
+    assert result["else_content"] == ""
+    assert text[pos:] == " POST"
+
+    text = r"\ifodd\c@page\else\aaa\fi POST"
+    result, pos = handler.handle(text)
+    assert result["if_content"] == r"\c@page"
+    assert result["else_content"] == r"\aaa"
     assert text[pos:] == " POST"

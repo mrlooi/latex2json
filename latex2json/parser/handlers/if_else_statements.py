@@ -11,7 +11,7 @@ from latex2json.parser.patterns import NUMBER_PATTERN
 # Could be character, command, or more complex token
 char_or_command_pattern = r"(?:{\s*)?(?:\\[a-zA-Z@]+|\S)(?:\s*})?"
 
-default_if_pattern = r"\s*(%s\s*%s|.+)(?=\\else\b|\\fi\b|$|\n)" % (
+default_if_pattern = r"\s*(%s\s*%s|.+?)(?=\\|\s|$|\n)" % (
     char_or_command_pattern,
     char_or_command_pattern,
 )
