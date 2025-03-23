@@ -229,6 +229,7 @@ RAW_PATTERNS = OrderedDict(
         # other...
         ("physics", r"\\pacs\s*\{(.*?)\}"),
         ("Hy@", r"\\Hy@[a-zA-Z]+\s*{"),
+        ("unvbox", r"\\unvbox\s*(?:%s|\\[a-zA-Z@]+\b)" % (number_regex)),
     ]
 )
 
