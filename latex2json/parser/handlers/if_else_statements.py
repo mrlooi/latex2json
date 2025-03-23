@@ -6,7 +6,7 @@ import re
 from latex2json.parser.handlers.base import TokenHandler
 from latex2json.parser.handlers.new_definition import extract_and_concat_nested_csname
 from latex2json.utils.tex_utils import extract_nested_content_sequence_blocks
-from latex2json.parser.patterns import NUMBER_PATTERN
+from latex2json.parser.patterns import command_with_opt_brace_pattern, command_or_dim
 
 # Could be character, command, or more complex token
 char_or_command_pattern = r"(?:{\s*)?(?:\\[a-zA-Z@]+|\S)(?:\s*})?"
@@ -43,7 +43,6 @@ ELSIF_PATTERN = re.compile(
 )  # Matches both \elsif and \elseif
 FI_PATTERN = re.compile(r"\\fi\b")
 
-command_with_opt_brace_pattern = r"(?:{\s*)?\\([a-zA-Z@]+)(?:\s*})?"
 value_pattern = r"\\value\s*{\s*([a-zA-Z@]+)\s*}"
 numbered_command_pattern = r"\\([a-zA-Z@]+)(\d+)"
 
@@ -52,7 +51,6 @@ counter_or_num = rf"(?:{value_pattern}|{numbered_command_pattern}|{command_with_
 # Allow either order around operator
 ifnum_pattern = rf"\\ifnum\s*{counter_or_num}\s*([=<>])\s*{counter_or_num}"
 
-command_or_dim = rf"(?:{command_with_opt_brace_pattern}|{NUMBER_PATTERN}\w+)"
 ifdim_pattern = rf"\\ifdim\s*{command_or_dim}\s*([=<>])\s*{command_or_dim}"
 
 # \ifcat takes two items to compare

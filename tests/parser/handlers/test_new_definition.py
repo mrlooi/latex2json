@@ -126,7 +126,7 @@ def test_handle_newif(handler):
     assert content[pos:] == " x"
 
 
-def test_handle_newlength(handler):
+def test_handle_newlength_setlength(handler):
 
     contents = [
         r"\newlength{\len} after",
@@ -135,6 +135,7 @@ def test_handle_newlength(handler):
         r"\setlength{\len}{10pt} after",
         r"\setlength\len{1.5pt} after",
         r"\settoheight{\len}{text} after",
+        r"\settoheight\len{\hbox{ssss}} after",
     ]
     for content in contents:
         token, pos = handler.handle(content)

@@ -71,8 +71,8 @@ PATTERNS = {
         r"\\((?:re)?newlength)\s*" + command_with_opt_brace_pattern, re.DOTALL
     ),
     "setlength": re.compile(
-        r"\\(setlength|addtolength|settoheight|settodepth|settowidth)\s*%s\s*%s"
-        % (command_with_opt_brace_pattern, command_with_opt_brace_pattern),
+        r"\\(setlength|addtolength|settoheight|settodepth|settowidth)\s*%s\s*{"
+        % (command_with_opt_brace_pattern),
         re.DOTALL,
     ),
     "newcounter": re.compile(
@@ -168,8 +168,10 @@ class NewDefinitionHandler(TokenHandler):
                     return self._handle_crefname(match)
                 elif pattern_name == "newif":
                     return self._handle_newif(match)
-                elif pattern_name == "newlength" or pattern_name == "setlength":
+                elif pattern_name == "newlength":
                     return self._handle_newlength(match)
+                elif pattern_name == "setlength":
+                    return self._handle_setlength(content, match)
                 elif pattern_name == "newfam":
                     return self._handle_newfam(match)
                 elif pattern_name == "newcounter" or pattern_name == "setcounter":
@@ -246,8 +248,9 @@ class NewDefinitionHandler(TokenHandler):
         self, var_name: str
     ) -> Tuple[Optional[str], int]:
         if var_name.startswith("{"):
-            var_name, _ = extract_nested_content(var_name)
-            var_name = var_name.strip()
+            _var_name, _ = extract_nested_content(var_name)
+            if _var_name:
+                var_name = _var_name.strip()
         if var_name.startswith("\\"):
             var_name = var_name[1:]
         if "{" in var_name:
@@ -263,6 +266,21 @@ class NewDefinitionHandler(TokenHandler):
             return None, match.end()
         token = {"type": "newlength", "name": var_name}
         return token, match.end()
+
+    def _handle_setlength(
+        self, content: str, match: re.Match
+    ) -> Tuple[Optional[Dict], int]:
+        r"""Handle \newlength definitions"""
+        s = match.group(0)
+        s = s[match.end(1) : -1]
+        var_name = self._parse_varname_from_brace_or_backslash(s)
+        start_pos = match.end(0) - 1
+        len_def, end_pos = extract_nested_content(content[start_pos:])
+        end_pos += start_pos
+        if not var_name:
+            return None, end_pos
+        token = {"type": "newlength", "name": var_name}
+        return token, end_pos
 
     def _handle_newtoks(self, match) -> Tuple[Optional[Dict], int]:
         r"""Handle \newtoks definitions"""
