@@ -555,6 +555,15 @@ def test_parse_refs_and_urls(parser):
     assert "title" not in refs[3]
     assert refs[3]["content"] == "fig:modalnet"
 
+    text = r"""
+    \newcommand{\cmd}{MY URL}
+    \href{\cmd}{MY LINK}
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "url"
+    assert parsed_tokens[0]["content"] == "MY URL"
+
 
 def test_nested_items(parser):
     text = r"""

@@ -272,14 +272,6 @@ class LatexParser:
             if typing == "floatname":
                 self.env_handler.process_floatname(cmd_name, token["title"])
                 return
-            elif typing == "newenvironment":
-                self.env_handler.process_newenvironment(
-                    cmd_name,
-                    token["begin_def"],
-                    token["end_def"],
-                    token["num_args"],
-                    token["optional_args"],
-                )
             elif typing == "newtheorem":
                 self.env_handler.process_newtheorem(cmd_name, token["title"])
 
@@ -287,7 +279,15 @@ class LatexParser:
             if cmd_name in WHITELISTED_COMMANDS:
                 return
 
-            if typing == "newcommand":
+            if typing == "newenvironment":
+                self.env_handler.process_newenvironment(
+                    cmd_name,
+                    token["begin_def"],
+                    token["end_def"],
+                    token["num_args"],
+                    token["optional_args"],
+                )
+            elif typing == "newcommand":
                 # check if there is potential recursion.
                 if re.search(token["usage_pattern"], token["content"]):
                     self.logger.warning(
@@ -428,6 +428,9 @@ class LatexParser:
             elif token["type"] == "url":
                 if "title" in token:
                     token["title"] = self.parse(token["title"])
+                token["content"] = self._expand_command(token["content"])
+            elif token["type"] == "ref":
+                token["content"] = self._expand_command(token["content"])
             elif token["type"] in ["section", "paragraph", "title"]:
                 self.current_env = token
                 token["title"] = self.parse(token["title"])

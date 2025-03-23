@@ -56,7 +56,7 @@ RAW_PATTERNS = OrderedDict(
         ("setup", r"\\(?:hypersetup|captionsetup)%s\s*{" % OPTIONAL_BRACE_PATTERN),
         (
             "make_or_contents",
-            r"\\(?:maketitle|makeatletter|makeatother|tableofcontents|@title)\b",
+            r"\\(?:(?:[a-zA-Z@]+)?maketitle|makeatletter|makeatother|tableofcontents|@title)\b",
         ),
         (
             "page",
