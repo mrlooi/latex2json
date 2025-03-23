@@ -6,9 +6,10 @@ BRACE_CONTENT_PATTERN = r"\{([^}]+)\}"
 NUMBER_PATTERN = r"[-+]?\d*\.?\d+"
 
 command_with_opt_brace_pattern = r"(?:{\s*)?\\([a-zA-Z@]+)(?:\s*})?"
-command_or_dim = rf"(?:[-+]?\s*{command_with_opt_brace_pattern}|{NUMBER_PATTERN}\s*[-+]?\s*{command_with_opt_brace_pattern}|{NUMBER_PATTERN}\w+)"
-
-
+number_points_suffix = (
+    NUMBER_PATTERN + r"\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)(?=[^a-zA-Z]|$)"
+)
+command_or_dim = rf"(?:[-+]?\s*{command_with_opt_brace_pattern}|{number_points_suffix}|{NUMBER_PATTERN}\s*[-+]?\s*{command_with_opt_brace_pattern}|{NUMBER_PATTERN})"
 # Add these compiled patterns at module level
 # match $ or % or { or } only if not preceded by \
 # Update DELIM_PATTERN to also match double backslashes and opening braces {

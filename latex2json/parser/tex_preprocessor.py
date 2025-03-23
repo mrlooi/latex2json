@@ -3,6 +3,7 @@ import sys, os
 import logging
 from typing import Dict
 
+from latex2json.parser.handlers.formatting import FormattingHandler
 from latex2json.parser.handlers.if_else_statements import IfElseBlockHandler
 from latex2json.parser.patterns import (
     USEPACKAGE_PATTERN,
@@ -68,6 +69,7 @@ class LatexPreprocessor:
 
         self.command_processor = CommandProcessor()
         self.new_definition_handler = NewDefinitionHandler()
+        self.formatting_handler = FormattingHandler()
         self.if_else_block_handler = IfElseBlockHandler(logger=self.logger)
         self.sty_parser = LatexStyParser(logger=self.logger)
 
@@ -309,6 +311,7 @@ class LatexPreprocessor:
                         + expanded_text
                         + content[current_pos + end_pos :]
                     )
+                    # self.logger.info(f"Expanded: {content}\n\n\n")
                     continue
 
             # check for if else blocks
@@ -321,6 +324,18 @@ class LatexPreprocessor:
                     if token:
                         if "@" not in token.get("type", ""):
                             block = token.get("if_content", "")
+                    content = (
+                        content[:current_pos] + block + content[current_pos + end_pos :]
+                    )
+                    continue
+
+            # check for formatting
+            if self.formatting_handler.can_handle(content[current_pos:]):
+                token, end_pos = self.formatting_handler.handle(content[current_pos:])
+                if end_pos > 0:
+                    block = ""
+                    if token:
+                        block = token.get("content", "")
                     content = (
                         content[:current_pos] + block + content[current_pos + end_pos :]
                     )

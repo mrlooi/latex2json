@@ -157,5 +157,37 @@ def test_ifstar_definitions(processor, newdef_handler):
     assert text[pos:] == " haha"
 
 
+def test_comparison_operators(processor, newdef_handler):
+    processor.clear()
+
+    content = r"\newcommand{\foo}{1}"
+    token, pos = newdef_handler.handle(content)
+    assert token is not None
+
+    processor.process_newcommand(
+        token["name"],
+        token["content"],
+        token["num_args"],
+        token["defaults"],
+        token["usage_pattern"],
+    )
+
+    # check operator and ignore
+    text = r"\foo = 2 POST"
+    out_text, pos = processor.handle(text)
+    assert out_text == ""
+    assert text[pos:] == " POST"
+
+    text = r"\foo = 2.5pt POST"
+    out_text, pos = processor.handle(text)
+    assert out_text == ""
+    assert text[pos:] == " POST"
+
+    text = r"\foo=\somecmd POST"
+    out_text, pos = processor.handle(text)
+    assert out_text == ""
+    assert text[pos:] == " POST"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

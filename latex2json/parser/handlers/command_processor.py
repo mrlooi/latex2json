@@ -4,6 +4,7 @@ import re
 from typing import List, Dict, Optional, TypedDict, Callable, Pattern, Tuple
 from latex2json.latex_maps.latex_unicode_converter import LatexUnicodeConverter
 
+from latex2json.parser.patterns import command_or_dim
 from latex2json.parser.handlers.if_else_statements import IfElseBlockHandler
 from latex2json.utils.tex_utils import (
     extract_nested_content_sequence_blocks,
@@ -29,6 +30,8 @@ def substitute_args(definition: str, args: List[str]) -> str:
 CSNAME_PATTERN = re.compile(
     START_CSNAME_PATTERN.pattern + r"(.*)" + END_CSNAME_PATTERN.pattern
 )
+
+COMPARISON_OP_PATTERN = re.compile(r"\s*=\s*%s" % command_or_dim)
 
 
 class CommandEntry(TypedDict):
@@ -327,7 +330,7 @@ class CommandProcessor:
                 return "", end_pos
         return text, 0
 
-    def handle(self, text: str) -> str:
+    def _handle(self, text: str) -> str:
         for cmd in self.commands.values():
             match = cmd["pattern"].match(text)
             if match:
@@ -337,6 +340,14 @@ class CommandProcessor:
                 return out, end_pos
 
         return self._handle_csname(text)
+
+    def handle(self, text: str) -> str:
+        out, end_pos = self._handle(text)
+        # check if next token is =<>
+        comp_op_match = COMPARISON_OP_PATTERN.match(text[end_pos:])
+        if comp_op_match:
+            return "", end_pos + comp_op_match.end()
+        return out, end_pos
 
 
 if __name__ == "__main__":
@@ -356,5 +367,5 @@ if __name__ == "__main__":
         token["usage_pattern"],
     )
 
-    out, pos = processor.handle(r"\cmd*")
+    out, pos = processor.handle(r"\cmd=2")
     print(out, pos)

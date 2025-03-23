@@ -3,7 +3,7 @@ import re
 from collections import OrderedDict
 from typing import Callable, Dict, List, Optional, Tuple
 from latex2json.parser.handlers.base import TokenHandler
-from latex2json.parser.patterns import NUMBER_PATTERN
+from latex2json.parser.patterns import NUMBER_PATTERN, number_points_suffix
 from latex2json.utils.tex_utils import (
     extract_nested_content,
     extract_nested_content_sequence_blocks,
@@ -31,10 +31,6 @@ declare_pattern_N_blocks = {
     "DeclareOption": 2,
     "SetMathAlphabet": 6,
 }
-
-number_points_suffix = (
-    number_regex + r"\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)(?=[^a-zA-Z]|$)"
-)
 
 
 RAW_PATTERNS = OrderedDict(
@@ -199,7 +195,7 @@ RAW_PATTERNS = OrderedDict(
         ("addtocontents", r"\\(?:addtocontents|addtocounter)\s*\{[^}]*\s*\}\s*{"),
         (
             "counters",
-            r"\\counterwithin\s*\{[^}]*}\s*\{[^}]*\}|\\refstepcounter{[^}]+}|\\@addtoreset\s*\{[^}]*\}\s*\{[^}]*\}",
+            r"\\c@page\b|\\counterwithin\s*\{[^}]*}\s*\{[^}]*\}|\\refstepcounter{[^}]+}|\\@addtoreset\s*\{[^}]*\}\s*\{[^}]*\}",
         ),
         ("add_enumerate_counter", r"\\AddEnumerateCounter\s*\{"),
         ("backslash", r"\\(?:backslash|textbackslash|arraybackslash)\b"),

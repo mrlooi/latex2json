@@ -338,3 +338,28 @@ def test_real_case():
     assert result["if_content"] == r"\c@page"
     assert result["else_content"] == r"\aaa"
     assert text[pos:] == " POST"
+
+    text = r"""
+\ifCLASSOPTIONtwocolumn
+\twocolumn[\@IEEEpeerreviewmaketitle\@IEEEdynamictitlevspace]
+\else
+\newpage\@IEEEpeerreviewmaketitle\@IEEEstatictitlevskip
+\fi
+""".strip()
+    result, pos = handler.handle(text)
+    # assert result["condition"] == r"\CLASSOPTIONtwocolumn"
+    assert (
+        result["if_content"].strip()
+        == r"\twocolumn[\@IEEEpeerreviewmaketitle\@IEEEdynamictitlevspace]"
+    )
+    assert (
+        result["else_content"].strip()
+        == r"\newpage\@IEEEpeerreviewmaketitle\@IEEEstatictitlevskip"
+    )
+
+    text = r"\if@twocolumn\hbox{}\thispagestyle{empty}\newpage\fi"
+    result, pos = handler.handle(text)
+    # assert result["condition"] == r"\@twocolumn"
+    assert result["if_content"].strip() == r"\hbox{}\thispagestyle{empty}\newpage"
+    assert result["else_content"] == ""
+    assert text[pos:] == ""
