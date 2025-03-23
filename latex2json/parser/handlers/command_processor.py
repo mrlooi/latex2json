@@ -343,10 +343,11 @@ class CommandProcessor:
 
     def handle(self, text: str) -> str:
         out, end_pos = self._handle(text)
-        # check if next token is =<>
-        comp_op_match = COMPARISON_OP_PATTERN.match(text[end_pos:])
-        if comp_op_match:
-            return "", end_pos + comp_op_match.end()
+        if end_pos > 0:
+            # check if next token is =<>
+            comp_op_match = COMPARISON_OP_PATTERN.match(text[end_pos:])
+            if comp_op_match:
+                return "", end_pos + comp_op_match.end()
         return out, end_pos
 
 
