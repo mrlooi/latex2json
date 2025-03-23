@@ -61,6 +61,7 @@ WHITELISTED_COMMANDS = [
     "maketitle",
     "title",
     "author",
+    "and",
     "thanks",
     "date",
     "part",
