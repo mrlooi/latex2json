@@ -58,6 +58,7 @@ RAW_PATTERNS = OrderedDict(
             "make_or_contents",
             r"\\(?:(?:[a-zA-Z@]+)?maketitle|makeatletter|makeatother|tableofcontents|@title)\b",
         ),
+        ("addcontentsline", r"\\addcontentsline\s*\{[^}]*\}\s*\{[^}]*\}\s*\{[^}]*\}"),
         (
             "page",
             r"\\enlargethispage\s*\{[^}]*\}|\\pagecolor\*?{[^}]*}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|vfil|break|sloppy|flushbottom|flushleft|flushright|flushtop)\b",
