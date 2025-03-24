@@ -59,8 +59,8 @@ def test_complex_fields():
 def test_bibitem_parsing():
     test_bib = r"""
 \begin{thebibliography}{1}
-\bibitem[Smith et al.]{smith2020}
-Smith, John and Jones, Bob.
+\bibitem[Smith et al.]
+{smith2020} Smith, John and Jones, Bob.
 \newblock Some interesting paper.
 \newblock Journal of Testing, 2020.
 

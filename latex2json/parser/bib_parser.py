@@ -145,7 +145,7 @@ class BibTexParser:
 
 
 BibItemPattern = re.compile(
-    r"\\bibitem\s*(?:\[(.*?)\])?\{(.*?)\}\s*([\s\S]*?)(?=\\bibitem|$)",
+    r"\\bibitem\s*(?:\[(.*?)\])?\s*\{(.*?)\}\s*([\s\S]*?)(?=\\bibitem|$)",
     re.DOTALL,
 )
 NewblockPattern = re.compile(r"\\newblock\b")
