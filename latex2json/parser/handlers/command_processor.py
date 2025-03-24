@@ -21,35 +21,35 @@ from latex2json.parser.handlers.new_definition import (
 def substitute_args(definition: str, args: List[str]) -> str:
     """
     Substitute argument patterns in LaTeX command definitions.
-    Handles both direct (#1) and delayed (##1, ###1, etc.) argument substitutions.
-
-    Finds the largest sequence of #s followed by a number, then substitutes those ### sequences with args.
+    First finds the smallest sequence of #s in the definition (e.g. #1, ##1, or ###1),
+    then only substitutes patterns with exactly that number of #s.
     """
     if not args:
         return definition
 
     # Match any sequence of #s followed by a number
-    # Captures: Group 1 = #s, Group 2 = number
     hash_pattern = re.compile(r"(#+)(\d+)")
 
+    # Find the smallest number of consecutive hashes in a single pass
+    min_hashes = min(
+        (len(m.group(1)) for m in hash_pattern.finditer(definition)), default=0
+    )
+
+    if min_hashes < 1:
+        return definition
+
+    # Compile pattern specifically for min_hashes with negative lookahead for any additional #s
+    min_hash_pattern = re.compile(r"(?<!#)#{" + str(min_hashes) + r"}(?!#)(\d+)")
+
     def replace_fn(match):
-        num_hashes = len(match.group(1))
-        arg_num = int(match.group(2)) - 1  # convert to 0-based index
-
-        # Only process if argument number is valid
-        if arg_num >= len(args) or args[arg_num] is None:
+        arg_num = int(match.group(1)) - 1  # convert to 0-based index
+        if arg_num >= len(args):
             return match.group(0)
+        elif args[arg_num] is None:
+            return ""
+        return args[arg_num]
 
-        # Single # = substitute argument
-        if num_hashes == 1:
-            return args[arg_num]
-        # Double ## = reduce to single #
-        if num_hashes == 2:
-            return f"#{arg_num + 1}"
-        # More #s = leave unchanged
-        return match.group(0)
-
-    return hash_pattern.sub(replace_fn, definition)
+    return min_hash_pattern.sub(replace_fn, definition)
 
 
 CSNAME_PATTERN = re.compile(

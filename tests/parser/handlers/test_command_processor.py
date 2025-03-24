@@ -189,5 +189,61 @@ def test_comparison_operators(processor, newdef_handler):
     assert text[pos:] == " POST"
 
 
+def test_nested_command_arg_substitution(processor, newdef_handler):
+    processor.clear()
+
+    content = r"""
+    \newcommand{\outermacro}[2]{
+        Outer parameters: #1 and #2
+
+        \newcommand{\innermacro}[2]{
+            Outer-inner parameters: #1 and #2
+            Inner parameters: ##1 and ##2
+        }
+    }
+    """.strip()
+    token, pos = newdef_handler.handle(content)
+    assert token is not None
+
+    processor.process_newcommand(
+        token["name"],
+        token["content"],
+        token["num_args"],
+        token["defaults"],
+        token["usage_pattern"],
+    )
+
+    text = r"\outermacro{outer-first}{outer-second}"
+    out_text, pos = processor.handle(text)
+    out_text = out_text.strip()
+    assert out_text.startswith("Outer parameters: outer-first and outer-second")
+
+    expected_inner = r"""
+        \newcommand{\innermacro}[2]{
+            Outer-inner parameters: outer-first and outer-second
+            Inner parameters: ##1 and ##2
+        }
+    """.strip()
+    assert out_text.endswith(expected_inner)
+
+    # now add the inner macro
+    token, pos = newdef_handler.handle(expected_inner)
+    assert token is not None
+
+    processor.process_newcommand(
+        token["name"],
+        token["content"],
+        token["num_args"],
+        token["defaults"],
+        token["usage_pattern"],
+    )
+
+    text = r"\innermacro{inner-first}{inner-second}"
+    out_text, pos = processor.handle(text)
+    out_text = out_text.strip()
+    assert out_text.startswith("Outer-inner parameters: outer-first and outer-second")
+    assert out_text.endswith("Inner parameters: inner-first and inner-second")
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
