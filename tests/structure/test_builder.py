@@ -14,6 +14,11 @@ def latex_text():
     text = r"""
     \title{My Title}
 
+    \author{
+        Mr X \somecmd \\
+        University of XYZ \\
+    }
+
     \begin{document}
 
     \abstract{This is my abstract, \texttiny{cool yes?}}
@@ -108,6 +113,16 @@ def expected_organizer_output():
             "type": "title",
             "title": [
                 {"type": "text", "content": "My Title"},
+            ],
+        },
+        {
+            "type": "author",
+            "content": [
+                [
+                    {"type": "text", "content": "Mr X "},
+                    {"type": "command", "command": "\\somecmd"},
+                    {"type": "text", "content": "University of XYZ"},
+                ]
             ],
         },
         {

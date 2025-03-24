@@ -93,17 +93,22 @@ class TokenFactory:
         return token_class.model_validate(data)
 
     def _process_content(self, content: Union[Dict, List, str]) -> Any:
-        """Helper method to process nested content"""
+        """Helper method to process nested content recursively"""
         if isinstance(content, dict) and "type" in content:
             return self.create(content)
         elif isinstance(content, list):
             output = []
             for item in content:
-                if isinstance(item, dict) and "type" in item:
-                    item = self.create(item)
-                    if item is None:
-                        continue
-                output.append(item)
+                if isinstance(item, list):
+                    # Recursively process nested lists
+                    processed_item = self._process_content(item)
+                    output.append(processed_item)
+                elif isinstance(item, dict) and "type" in item:
+                    processed_item = self.create(item)
+                    if processed_item is not None:
+                        output.append(processed_item)
+                else:
+                    output.append(item)
             return output
         return content
 
