@@ -128,6 +128,9 @@ class KeyValHandler(TokenHandler):
         # ignore?
         return None, pos
 
+    def clear(self):
+        self.key_definitions = {}
+
 
 if __name__ == "__main__":
     # Test the implementation

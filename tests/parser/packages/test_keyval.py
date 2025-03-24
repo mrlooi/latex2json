@@ -24,6 +24,13 @@ def test_keyval_handler_handle_define_key():
     assert token is None  # Since handle() is set to ignore tokens
     assert text[end_pos:] == " POST"
 
+    # without [default]
+    text = r"\define@key{family}{key}{handler} POST"
+    token, end_pos = handler.handle(text)
+
+    assert token is None  # Since handle() is set to ignore tokens
+    assert text[end_pos:] == " POST"
+
 
 def test_keyval_handler_handle_setkeys():
     handler = KeyValHandler()

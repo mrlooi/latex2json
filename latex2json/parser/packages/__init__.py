@@ -1,3 +1,4 @@
+from latex2json.parser.packages.etoolbox import EtoolboxHandler
 from latex2json.parser.packages.keyval import KeyValHandler
 from .tikz import TikzHandler
 from .overpic import OverpicHandler
@@ -9,6 +10,7 @@ PACKAGE_HANDLERS = {
         OverpicHandler,
         TikzHandler,
         KeyValHandler,
+        EtoolboxHandler,
         # Add other image-related handlers here
     ],
     # Priority 20: Table/data handlers
