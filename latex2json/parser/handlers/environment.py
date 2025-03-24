@@ -433,16 +433,17 @@ class EnvironmentProcessor:
             content = text
 
             # Handle optional arguments [arg]
-            for _ in env_info["optional_args"]:
+            num_req_args = env_info["num_args"] - len(env_info["optional_args"])
+            for opt_arg in env_info["optional_args"]:
                 if content.startswith("["):
                     arg, end_pos = extract_nested_content(content, "[", "]")
                     content = content[end_pos:]
                     args.append(arg)
                 else:
-                    args.append(None)
+                    args.append(opt_arg)
 
             # Handle required arguments {arg}
-            for _ in range(env_info["num_args"]):
+            for _ in range(num_req_args):
                 if content.startswith("{"):
                     arg, end_pos = extract_nested_content(content, "{", "}")
                     content = content[end_pos:]

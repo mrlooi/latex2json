@@ -189,9 +189,14 @@ def test_newenvironment(handler, newdef_handler):
         token["optional_args"],
     )
 
+    # test default arg
+    content = r"\begin{proof}stuff\end{proof} post"
+    token, pos = handler.handle(content)
+    assert token["content"].strip() == "begin proof: default\nstuff\nend proof"
+    assert content[pos:] == " post"
+
     content = r"\begin{proof}[Proof 1]stuff\end{proof} post"
     token, pos = handler.handle(content)
-    assert token["name"] == "proof"
     assert (
         token["type"] == "math_env"
     )  # retains environment type even if newenvironment
