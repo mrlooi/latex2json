@@ -19,12 +19,37 @@ from latex2json.parser.handlers.new_definition import (
 
 
 def substitute_args(definition: str, args: List[str]) -> str:
-    """Substitute #1, #2, etc. with the provided arguments in order"""
-    result = definition
-    for i, arg in enumerate(args, 1):
-        if arg is not None:
-            result = result.replace(f"#{i}", arg)
-    return result
+    """
+    Substitute argument patterns in LaTeX command definitions.
+    Handles both direct (#1) and delayed (##1, ###1, etc.) argument substitutions.
+
+    Finds the largest sequence of #s followed by a number, then substitutes those ### sequences with args.
+    """
+    if not args:
+        return definition
+
+    # Match any sequence of #s followed by a number
+    # Captures: Group 1 = #s, Group 2 = number
+    hash_pattern = re.compile(r"(#+)(\d+)")
+
+    def replace_fn(match):
+        num_hashes = len(match.group(1))
+        arg_num = int(match.group(2)) - 1  # convert to 0-based index
+
+        # Only process if argument number is valid
+        if arg_num >= len(args) or args[arg_num] is None:
+            return match.group(0)
+
+        # Single # = substitute argument
+        if num_hashes == 1:
+            return args[arg_num]
+        # Double ## = reduce to single #
+        if num_hashes == 2:
+            return f"#{arg_num + 1}"
+        # More #s = leave unchanged
+        return match.group(0)
+
+    return hash_pattern.sub(replace_fn, definition)
 
 
 CSNAME_PATTERN = re.compile(
@@ -37,6 +62,7 @@ COMPARISON_OP_PATTERN = re.compile(r"\s*=\s*%s" % command_or_dim)
 class CommandEntry(TypedDict):
     pattern: Pattern[str]
     handler: Callable[[re.Match[str], str, Optional[bool]], Tuple[str, int]]
+    definition: Optional[str]
 
 
 def default_ignore_handler(
@@ -149,6 +175,7 @@ class CommandProcessor:
             command: CommandEntry = {
                 "pattern": re.compile(usage_pattern, re.DOTALL),
                 "handler": handler,
+                "definition": definition,
             }
             self.commands[command_name] = command
         except Exception as e:
@@ -220,6 +247,7 @@ class CommandProcessor:
             command: CommandEntry = {
                 "pattern": re.compile(usage_pattern, re.DOTALL),
                 "handler": handler,
+                "definition": definition,
             }
             self.commands[command_name] = command
         except Exception as e:

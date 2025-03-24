@@ -2109,5 +2109,48 @@ def test_ifstar_definitions(parser):
     assert parsed_tokens[0]["content"] == "nostar,starnostar,star**"
 
 
+def test_nested_macro_inner_args_substitution(parser):
+    parser.clear()
+
+    text = r"""
+    \newcommand{\outermacro}[2]{
+        Outer parameters: #1 and #2
+
+        \newcommand{\innermacro}[2]{
+            Outer-inner parameters: #1 and #2
+            Inner parameters: ##1 and ##2
+        }
+        \innermacro{inner-first}{inner-second}
+    }
+
+    \outermacro{outer-first}{outer-second}
+    """
+
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "text"
+    out = parsed_tokens[0]["content"].strip()
+    assert out.startswith("Outer parameters: outer-first and outer-second")
+    assert "Outer-inner parameters: outer-first and outer-second" in out
+    assert out.endswith("Inner parameters: inner-first and inner-second")
+
+    # now outermacro runs again and changes the definition
+    parsed_tokens = parser.parse(r"\outermacro{111}{222}")
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "text"
+    out = parsed_tokens[0]["content"].strip()
+    assert out.startswith("Outer parameters: 111 and 222")
+    assert "Outer-inner parameters: 111 and 222" in out
+    assert out.endswith("Inner parameters: inner-first and inner-second")
+
+    # check that the inner macro is updated and can run standalone
+    parsed_tokens = parser.parse(r"\innermacro{3}{4}")
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "text"
+    out = parsed_tokens[0]["content"].strip()
+    assert out.startswith("Outer-inner parameters: 111 and 222")
+    assert out.endswith("Inner parameters: 3 and 4")
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

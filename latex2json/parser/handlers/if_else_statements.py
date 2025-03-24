@@ -19,7 +19,7 @@ default_if_pattern = r"\s*(%s\s*%s|.+?)(?=\\|\s|$|\n)" % (
 # Pattern to match any TeX token (command, character, or group)
 tex_token_pattern = r"""
     (?:
-        \\[a-zA-Z@]+     # Command token
+        (?:\\)?[a-zA-Z@]+     # Command or words token
         |
         \{[^}]*\}        # Group token
         |
