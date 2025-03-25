@@ -2152,5 +2152,21 @@ def test_nested_macro_inner_args_substitution(parser):
     assert out.endswith("Inner parameters: 3 and 4")
 
 
+def test_keyval_definitions(parser):
+    text = r"""
+        \define@key{pubdet}{title}{%
+            \renewcommand{\toc@title}{#1}
+        }
+
+        \setkeys{pubdet}{title=Hello TITLE}
+
+        \toc@title
+    """
+    parsed_tokens = parser.parse(text, preprocess=True)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "Hello TITLE"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

@@ -3,7 +3,10 @@ from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
 from latex2json.parser.handlers.base import TokenHandler
-from latex2json.utils.tex_utils import extract_nested_content_sequence_blocks
+from latex2json.utils.tex_utils import (
+    extract_nested_content_sequence_blocks,
+    substitute_args,
+)
 
 
 @dataclass
@@ -11,7 +14,7 @@ class KeyDefinition:
     family: str
     key: str
     default: Optional[str] = None
-    handler: Optional[str] = None
+    codeblock: Optional[str] = None
 
 
 # Compile all patterns at module level
@@ -63,7 +66,7 @@ class KeyValHandler(TokenHandler):
         )
         if not handler_blocks:
             return None, 0
-        handler = handler_blocks[0]
+        codeblock = handler_blocks[0]
         total_pos = pos + end_pos
 
         # Store the key definition
@@ -71,7 +74,7 @@ class KeyValHandler(TokenHandler):
             self.key_definitions[family] = {}
 
         self.key_definitions[family][key] = KeyDefinition(
-            family=family, key=key, default=default, handler=handler
+            family=family, key=key, default=default, codeblock=codeblock
         )
 
         return {
@@ -79,7 +82,7 @@ class KeyValHandler(TokenHandler):
             "family": family,
             "key": key,
             "default": default,
-            "handler": handler,
+            "codeblock": codeblock,
         }, total_pos
 
     def _handle_setkeys_match(
@@ -109,6 +112,20 @@ class KeyValHandler(TokenHandler):
             "key_values": key_values,
         }, total_pos
 
+    def _process_setkeys_token(self, token: Dict):
+        if self.process_content_fn:
+            family = token.get("family", "")
+            if family in self.key_definitions:
+                key_values = token["key_values"]
+                for key_value in key_values:
+                    key = key_value["key"]
+                    value = key_value["value"]
+                    if key in self.key_definitions[family]:
+                        codeblock = self.key_definitions[family][key].codeblock
+                        if codeblock:
+                            codeblock = substitute_args(codeblock, [value])
+                            self.process_content_fn(codeblock)
+
     def _handle(self, content: str) -> Tuple[Optional[Dict], int]:
         """Handle keyval commands and return appropriate token"""
         for pattern_name, pattern in PATTERNS.items():
@@ -117,7 +134,10 @@ class KeyValHandler(TokenHandler):
                 if pattern_name == "define_key":
                     return self._handle_define_key_match(match, content)
                 elif pattern_name == "setkeys":
-                    return self._handle_setkeys_match(match, content)
+                    out, pos = self._handle_setkeys_match(match, content)
+                    if out:
+                        self._process_setkeys_token(out)
+                    return out, pos
 
         return None, 0
 

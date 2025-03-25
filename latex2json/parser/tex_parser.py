@@ -74,7 +74,7 @@ class LatexParser:
         # handlers
         self.handlers: List[TokenHandler] = [
             # Add custom package handlers in their priority order
-            *get_all_custom_handlers(),
+            *get_all_custom_handlers(process_content_fn=self.parse),
             # Standard/common packages
             AuthorHandler(self.parse),
             # ignore unicode conversion for equations

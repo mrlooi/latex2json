@@ -95,16 +95,6 @@ def test_multiple_commands(preprocessor):
     assert len(tokens) == 2
 
 
-def test_command_with_arguments(preprocessor):
-    text = r"""
-    \newcommand{\greet}[1]{Hello #1}
-    \greet{World}
-    """
-    processed, tokens = preprocessor.preprocess(text)
-    assert "Hello World" in processed
-    assert len(tokens) == 1
-
-
 def test_clear_preprocessor(preprocessor):
     text = r"\newcommand{\test}{TEST}"
     preprocessor.preprocess(text)
@@ -163,15 +153,22 @@ def test_addto_processing(preprocessor):
 #     assert processed.strip() == text.strip()
 
 
+def test_skip_command_with_arguments(preprocessor):
+    text = r"""\newcommand{\greet}[1]{Hello #1} \greet{World}""".strip()
+    processed, tokens = preprocessor.preprocess(text)
+    assert len(tokens) == 0
+    assert processed == text
+
+
 def test_math_processing(preprocessor):
     # dont handle math mode processing in preprocessor
     text = r"""
-    \newcommand{\abs}[1]{\left\vert#1\right\vert}
-    $\abs{x}$
+    \newcommand{\abs}{\left\vert x \right\vert}
+    $\abs$
     """
     processed, tokens = preprocessor.preprocess(text)
     assert len(tokens) == 1
 
     assert tokens[0]["type"] == "newcommand"
     assert tokens[0]["name"] == "abs"
-    assert processed.strip() == r"$\abs{x}$"
+    assert processed.strip() == r"$\abs$"

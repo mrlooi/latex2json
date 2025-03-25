@@ -453,6 +453,15 @@ def extract_args(content: str, req_args=0, opt_args=0):
     return {"req": req, "opt": opt}, end_pos
 
 
+NO_ESC_HASH_NUMBER_PATTERN = re.compile(r"(?<!\\)(#+)(\d+)")
+
+HASH_NUMBER_PATTERN = re.compile(r"(\\#)|(#+)(\d+)")
+
+
+def check_string_has_hash_number(text: str) -> bool:
+    return bool(NO_ESC_HASH_NUMBER_PATTERN.search(text))
+
+
 def substitute_args(definition: str, args: List[str]) -> str:
     r"""
     Substitute argument patterns in LaTeX command definitions.
@@ -464,8 +473,7 @@ def substitute_args(definition: str, args: List[str]) -> str:
         return definition
 
     # Use a regex that only finds unescaped '#' sequences.
-    hash_pattern = re.compile(r"(?<!\\)(#+)(\d+)")
-    matches = list(hash_pattern.finditer(definition))
+    matches = list(NO_ESC_HASH_NUMBER_PATTERN.finditer(definition))
     if not matches:
         return definition
     min_hashes = min((len(m.group(1)) for m in matches), default=0)
@@ -494,7 +502,7 @@ def substitute_args(definition: str, args: List[str]) -> str:
         else:
             return match.group(0)
 
-    return pattern.sub(repl, definition)
+    return HASH_NUMBER_PATTERN.sub(repl, definition)
 
 
 if __name__ == "__main__":

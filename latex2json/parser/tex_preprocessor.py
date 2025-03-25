@@ -21,6 +21,7 @@ from latex2json.parser.handlers import (
     EquationHandler,
 )
 from latex2json.utils.tex_utils import (
+    check_string_has_hash_number,
     strip_latex_comments,
     normalize_whitespace_and_lines,
 )
@@ -284,12 +285,24 @@ class LatexPreprocessor:
                     continue
 
             # Process definitions
-            token, end_pos = self._check_for_new_definitions(content[current_pos:])
-            if token:
-                tokens.append(token)  # Store the token
-            if end_pos > 0:
-                content = content[:current_pos] + content[current_pos + end_pos :]
-                continue
+            """Check for new definitions in the content and process them"""
+            if self.new_definition_handler.can_handle(content[current_pos:]):
+                token, end_pos = self.new_definition_handler.handle(
+                    content[current_pos:]
+                )
+                if token:
+                    # Skip macro definitions that have parameters (#1, #2) or take arguments,
+                    # as these need to be expanded later when actual values are provided
+                    if token.get("num_args", 0) > 0 or check_string_has_hash_number(
+                        token.get("content", "")
+                    ):
+                        current_pos += end_pos
+                        continue
+                    self._process_new_definition_token(token)
+                    tokens.append(token)
+                if end_pos > 0:
+                    content = content[:current_pos] + content[current_pos + end_pos :]
+                    continue
 
             # Update usepackage check to handle returned tokens
             end_pos, sty_tokens = self._check_usepackage(
@@ -311,7 +324,6 @@ class LatexPreprocessor:
                         + expanded_text
                         + content[current_pos + end_pos :]
                     )
-                    # self.logger.info(f"Expanded: {content}\n\n\n")
                     continue
 
             # check for if else blocks
