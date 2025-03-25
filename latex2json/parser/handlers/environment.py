@@ -7,6 +7,7 @@ from latex2json.utils.tex_utils import (
     extract_nested_content_pattern,
     extract_nested_content_sequence_blocks,
     find_matching_env_block,
+    substitute_args,
 )
 import logging
 
@@ -452,14 +453,11 @@ class EnvironmentProcessor:
                     args.append("")  # Empty string for missing required args
 
             # Process begin definition with arguments
-            result = env_info["begin_def"] + "\n"  # add trailing space to pad
-            for i, arg in enumerate(args, 1):
-                if arg is not None:
-                    # Replace unescaped #i with arg, preserve \#
-                    result = re.sub(r"(?<!\\)#" + str(i), arg, result)
+            begin_def = substitute_args(env_info["begin_def"], args)
+            end_def = substitute_args(env_info["end_def"], args)
 
             # Add content and end definition
-            result += content + "\n" + env_info["end_def"]
+            result = begin_def + "\n" + content + "\n" + end_def
 
             return result
 

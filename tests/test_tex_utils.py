@@ -9,6 +9,7 @@ from latex2json.utils.tex_utils import (
     strip_latex_comments,
     find_delimiter_end,
     extract_equation_content,
+    substitute_args,
 )
 import re
 
@@ -305,3 +306,48 @@ def test_find_matching_delimiter_edge_cases():
     text = r"{not \} escaped but \{ is}"
     start, end = find_matching_delimiter(text)
     assert text[start:end] == r"{not \} escaped but \{ is}"
+
+
+def test_substitute_args():
+    # Basic single argument substitution
+    assert substitute_args("#1", ["arg1"]) == "arg1"
+
+    # Multiple arguments
+    assert substitute_args("#1 #2", ["first", "second"]) == "first second"
+
+    # Double hash notation
+    assert substitute_args("##1", ["arg1"]) == "arg1"
+
+    # Triple hash notation (should not substitute)
+    assert substitute_args("###1 #1", ["arg1"]) == "###1 arg1"
+
+    # Missing arguments (should keep original)
+    assert substitute_args("#1 #2", ["only_one"]) == "only_one #2"
+
+    # No arguments
+    assert substitute_args("no args here", []) == "no args here"
+
+    # None arguments should be removed
+    assert substitute_args("#1 middle #2", ["start", None]) == "start middle "
+
+    # Complex pattern with mixed hashes
+    assert substitute_args("##1 ###2 #1", ["arg"]) == "##1 ###2 arg"
+
+    # Numbers without hashes should be preserved
+    assert substitute_args("1 #1 1", ["arg"]) == "1 arg 1"
+
+    # Test with escaped hashes
+    assert substitute_args("\\#1 #1", ["arg"]) == "\\#1 arg"
+
+    # Test with escaped hashes in the middle
+    assert substitute_args("hi # #1 \\#1 ##1", ["arg"]) == "hi # arg \\#1 ##1"
+
+    # Test with escaped hashes in the middle
+    assert substitute_args("\\##1 ##1", ["arg"]) == "\\#arg ##1"
+
+    assert substitute_args("\\####1 \\##1 ##1", ["arg"]) == "\\####1 \\#arg ##1"
+
+    assert (
+        substitute_args("\\#\\####1 \\#1 ##1 \\###2", ["arg", "arg2"])
+        == "\\#\\####1 \\#1 arg \\#arg2"
+    )

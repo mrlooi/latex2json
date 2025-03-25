@@ -198,7 +198,7 @@ def test_nested_command_arg_substitution(processor, newdef_handler):
 
         \newcommand{\innermacro}[2]{
             Outer-inner parameters: #1 and #2
-            Inner parameters: ##1 and ##2
+            Inner parameters: ##1 and ##2 \##1
         }
     }
     """.strip()
@@ -221,7 +221,7 @@ def test_nested_command_arg_substitution(processor, newdef_handler):
     expected_inner = r"""
         \newcommand{\innermacro}[2]{
             Outer-inner parameters: outer-first and outer-second
-            Inner parameters: ##1 and ##2
+            Inner parameters: ##1 and ##2 \#outer-first
         }
     """.strip()
     assert out_text.endswith(expected_inner)
@@ -241,8 +241,10 @@ def test_nested_command_arg_substitution(processor, newdef_handler):
     text = r"\innermacro{inner-first}{inner-second}"
     out_text, pos = processor.handle(text)
     out_text = out_text.strip()
-    assert out_text.startswith("Outer-inner parameters: outer-first and outer-second")
-    assert out_text.endswith("Inner parameters: inner-first and inner-second")
+    assert out_text.startswith(r"Outer-inner parameters: outer-first and outer-second")
+    assert out_text.endswith(
+        r"Inner parameters: inner-first and inner-second \#outer-first"
+    )
 
 
 if __name__ == "__main__":

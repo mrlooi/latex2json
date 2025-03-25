@@ -453,6 +453,50 @@ def extract_args(content: str, req_args=0, opt_args=0):
     return {"req": req, "opt": opt}, end_pos
 
 
+def substitute_args(definition: str, args: List[str]) -> str:
+    r"""
+    Substitute argument patterns in LaTeX command definitions.
+    First finds the smallest sequence of unescaped #s in the definition (e.g. #1, ##1, or ###1),
+    then only substitutes patterns with exactly that number of #s.
+    Escaped \# characters are preserved and not counted in the sequence.
+    """
+    if not args:
+        return definition
+
+    # Use a regex that only finds unescaped '#' sequences.
+    hash_pattern = re.compile(r"(?<!\\)(#+)(\d+)")
+    matches = list(hash_pattern.finditer(definition))
+    if not matches:
+        return definition
+    min_hashes = min((len(m.group(1)) for m in matches), default=0)
+    if min_hashes < 1:
+        return definition
+
+    # New regex that matches either:
+    #   1. An escaped hash (\\#) – these we want to leave intact.
+    #   2. A sequence of one or more '#' followed by digits.
+    pattern = re.compile(r"(\\#)|(#+)(\d+)")
+
+    def repl(match):
+        # If group(1) matched, it's an escaped hash, so leave it as is.
+        if match.group(1) is not None:
+            return match.group(0)
+        # Otherwise, it's an unescaped substitution token.
+        hashes = match.group(2)
+        number = match.group(3)
+        if len(hashes) == min_hashes:
+            arg_index = int(number) - 1  # convert to 0-based index
+            if arg_index >= len(args):
+                return match.group(0)
+            elif args[arg_index] is None:
+                return ""
+            return args[arg_index]
+        else:
+            return match.group(0)
+
+    return pattern.sub(repl, definition)
+
+
 if __name__ == "__main__":
     text = r"{ssss"
     print(find_matching_delimiter(text, "{", "}"))

@@ -10,46 +10,13 @@ from latex2json.utils.tex_utils import (
     extract_nested_content_sequence_blocks,
     substitute_patterns,
     extract_nested_content,
+    substitute_args,
 )
 from latex2json.parser.handlers.new_definition import (
     END_CSNAME_PATTERN,
     START_CSNAME_PATTERN,
     extract_and_concat_nested_csname,
 )
-
-
-def substitute_args(definition: str, args: List[str]) -> str:
-    """
-    Substitute argument patterns in LaTeX command definitions.
-    First finds the smallest sequence of #s in the definition (e.g. #1, ##1, or ###1),
-    then only substitutes patterns with exactly that number of #s.
-    """
-    if not args:
-        return definition
-
-    # Match any sequence of #s followed by a number
-    hash_pattern = re.compile(r"(#+)(\d+)")
-
-    # Find the smallest number of consecutive hashes in a single pass
-    min_hashes = min(
-        (len(m.group(1)) for m in hash_pattern.finditer(definition)), default=0
-    )
-
-    if min_hashes < 1:
-        return definition
-
-    # Compile pattern specifically for min_hashes with negative lookahead for any additional #s
-    min_hash_pattern = re.compile(r"(?<!#)#{" + str(min_hashes) + r"}(?!#)(\d+)")
-
-    def replace_fn(match):
-        arg_num = int(match.group(1)) - 1  # convert to 0-based index
-        if arg_num >= len(args):
-            return match.group(0)
-        elif args[arg_num] is None:
-            return ""
-        return args[arg_num]
-
-    return min_hash_pattern.sub(replace_fn, definition)
 
 
 CSNAME_PATTERN = re.compile(
