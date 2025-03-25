@@ -31,6 +31,7 @@ from latex2json.parser.patterns import (
     DELIM_PATTERN,
     LOADCLASS_PATTERN,
 )
+from latex2json.parser.handlers.command_manager import CommandManager
 
 INCLUDE_PATTERN = re.compile(r"\\input\s*\{([^}]+)\}", re.DOTALL)
 
@@ -45,56 +46,33 @@ class LatexStyParser:
         self.current_file_dir = None
         self.parsed_files = set()
 
+        self.command_manager = CommandManager(
+            command_types={"newif"},
+            logger=self.logger,
+        )
+
         self.if_else_block_handler = IfElseBlockHandler(logger=self.logger)
-        self.new_definition_handler = NewDefinitionHandler()
-        self.command_processor = CommandProcessor()
 
     def clear(self):
         self.current_file_dir = None
         self.parsed_files.clear()
         self.if_else_block_handler.clear()
-        self.new_definition_handler.clear()
-        self.command_processor.clear()
+        self.command_manager.clear()
 
     def _check_for_new_definitions(self, content: str):
         """Check for new definitions in the content and process them"""
-        if self.new_definition_handler.can_handle(content):
-            token, end_pos = self.new_definition_handler.handle(content)
-            if token:
-                cmd_name = token.get("name", "")
-                if not cmd_name:
-                    return None, end_pos
-                if cmd_name in WHITELISTED_COMMANDS:
-                    return None, end_pos
+        token, end_pos = self.command_manager.process_definition(content)
+        if token:
+            cmd_name = token.get("name", "")
+            if not cmd_name:
+                return None, end_pos
+            if cmd_name in WHITELISTED_COMMANDS:
+                return None, end_pos
 
-                if token["type"] == "newif":
-                    self.if_else_block_handler.process_newif(cmd_name)
-                    self.command_processor.process_newif(cmd_name)
+            if token["type"] == "newif":
+                self.if_else_block_handler.process_newif(cmd_name)
 
-                # elif token["type"] == "newcommand":
-                #     # check if there is potential recursion.
-                #     if re.search(token["usage_pattern"], token["content"]):
-                #         self.logger.warning(
-                #             f"Potential recursion detected for newcommand: \\{cmd_name}, skipping..."
-                #         )
-                #         return None, end_pos
-                #     self.command_processor.process_newcommand(
-                #         cmd_name,
-                #         token["content"],
-                #         token["num_args"],
-                #         token["defaults"],
-                #         token["usage_pattern"],
-                #     )
-                # elif token["type"] == "def":
-                #     self.command_processor.process_newdef(
-                #         cmd_name,
-                #         token["content"],
-                #         token["num_args"],
-                #         token["usage_pattern"],
-                #         token["is_edef"],
-                #     )
-
-                return token, end_pos
+            return token, end_pos
         return None, 0
 
     def _parse_packages(self, package_names: list[str], extension=".sty") -> list[Dict]:
@@ -238,8 +216,8 @@ class LatexStyParser:
                     continue
 
             # check for user defined commands (important to check before new definitions in case of floating \csname)
-            if self.command_processor.can_handle(content[current_pos:]):
-                text, end_pos = self.command_processor.handle(content[current_pos:])
+            if self.command_manager.can_handle(content[current_pos:]):
+                text, end_pos = self.command_manager.handle(content[current_pos:])
                 if end_pos > 0:
                     # replace the matched user command with the expanded text
                     content = (

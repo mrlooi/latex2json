@@ -9,7 +9,6 @@ PACKAGE_HANDLERS = {
     10: [
         OverpicHandler,
         TikzHandler,
-        KeyValHandler,
         EtoolboxHandler,
         # Add other image-related handlers here
     ],

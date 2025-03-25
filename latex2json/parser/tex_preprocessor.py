@@ -26,6 +26,7 @@ from latex2json.utils.tex_utils import (
     normalize_whitespace_and_lines,
 )
 from latex2json.parser.sty_parser import LatexStyParser
+from latex2json.parser.handlers.command_manager import CommandManager
 
 OPTIONAL_BRACE_PATTERN = r"(?:\[[^\]]*\])?"
 
@@ -68,8 +69,7 @@ class LatexPreprocessor:
     def __init__(self, logger=None):
         self.logger = logger or logging.getLogger(__name__)
 
-        self.command_processor = CommandProcessor()
-        self.new_definition_handler = NewDefinitionHandler()
+        self.command_manager = CommandManager(logger=self.logger)
         self.formatting_handler = FormattingHandler()
         self.if_else_block_handler = IfElseBlockHandler(logger=self.logger)
         self.sty_parser = LatexStyParser(logger=self.logger)
@@ -79,8 +79,7 @@ class LatexPreprocessor:
 
     def clear(self):
         self.if_else_block_handler.clear()
-        self.new_definition_handler.clear()
-        self.command_processor.clear()
+        self.command_manager.clear()
         self.sty_parser.clear()
 
     def preprocess(self, content: str, file_dir=None) -> tuple[str, list[Dict]]:
@@ -121,50 +120,16 @@ class LatexPreprocessor:
             if cmd_name in WHITELISTED_COMMANDS:
                 return
 
-            if token["type"] == "newcommand":
-                # check if there is potential recursion.
-                if re.search(token["usage_pattern"], token["content"]):
-                    self.logger.warning(
-                        f"Potential recursion detected for newcommand: \\{cmd_name}, skipping..."
-                    )
-                    return
-                self.command_processor.process_newcommand(
-                    cmd_name,
-                    token["content"],
-                    token["num_args"],
-                    token["defaults"],
-                    token["usage_pattern"],
-                )
-            elif token["type"] == "def":
-                self.command_processor.process_newdef(
-                    cmd_name,
-                    token["content"],
-                    token["num_args"],
-                    token["usage_pattern"],
-                    token["is_edef"],
-                )
-            elif token["type"] == "newif":
-                self.command_processor.process_newif(cmd_name)
-                self.if_else_block_handler.process_newif(cmd_name)
-            elif token["type"] == "newcounter":
-                self.command_processor.process_newcounter(cmd_name)
-            elif token["type"] == "newlength":
-                self.command_processor.process_newlength(cmd_name)
-            elif token["type"] == "newother":
-                self.command_processor.process_newX(cmd_name)
-            elif token["type"] == "paired_delimiter":
-                self.command_processor.process_paired_delimiter(
-                    cmd_name, token["left_delim"], token["right_delim"]
-                )
+            # Process the token using command_manager instead of directly
+            token_type = token.get("type", "")
 
-    def _check_for_new_definitions(self, content: str) -> None:
-        """Check for new definitions in the content and process them"""
-        if self.new_definition_handler.can_handle(content):
-            token, end_pos = self.new_definition_handler.handle(content)
-            if token:
-                self._process_new_definition_token(token)
-            return token, end_pos
-        return None, 0
+            # Special handling for "newif" to maintain compatibility with if_else_block_handler
+            if token_type == "newif":
+                self.if_else_block_handler.process_newif(cmd_name)
+
+            # Using command_manager for proper registration of the command
+
+            self.command_manager.register_command(token)
 
     def _check_documentclass(
         self, content: str, file_dir: str = None
@@ -285,21 +250,22 @@ class LatexPreprocessor:
                     continue
 
             # Process definitions
-            """Check for new definitions in the content and process them"""
-            if self.new_definition_handler.can_handle(content[current_pos:]):
-                token, end_pos = self.new_definition_handler.handle(
-                    content[current_pos:]
-                )
-                if token:
-                    # Skip macro definitions that have parameters (#1, #2) or take arguments,
-                    # as these need to be expanded later when actual values are provided
-                    if token.get("num_args", 0) > 0 or check_string_has_hash_number(
-                        token.get("content", "")
-                    ):
-                        current_pos += end_pos
-                        continue
-                    self._process_new_definition_token(token)
-                    tokens.append(token)
+            token, end_pos = self.command_manager.process_definition(
+                content[current_pos:], register=False
+            )
+            if token:
+                if token.get("type", "").startswith("keyval"):
+                    current_pos += end_pos
+                    continue
+                # Skip macro definitions that have parameters (#1, #2) or take arguments,
+                # as these need to be expanded later when actual values are provided
+                if token.get("num_args", 0) > 0 or check_string_has_hash_number(
+                    token.get("content", "")
+                ):
+                    current_pos += end_pos
+                    continue
+                self._process_new_definition_token(token)
+                tokens.append(token)
                 if end_pos > 0:
                     content = content[:current_pos] + content[current_pos + end_pos :]
                     continue
@@ -313,9 +279,9 @@ class LatexPreprocessor:
                 content = content[:current_pos] + content[current_pos + end_pos :]
                 continue
 
-            # Expand commands
-            if self.command_processor.can_handle(content[current_pos:]):
-                expanded_text, end_pos = self.command_processor.handle(
+            # Expand commands using command_manager instead of command_processor
+            if self.command_manager.can_handle(content[current_pos:]):
+                expanded_text, end_pos = self.command_manager.handle(
                     content[current_pos:]
                 )
                 if end_pos > 0:

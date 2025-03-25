@@ -152,7 +152,7 @@ def test_command_definitions(parser):
     parsed_tokens = parser.parse(text)
     equations = [token for token in parsed_tokens if token["type"] == "equation"]
 
-    commands = parser.command_processor.commands
+    commands = parser.commands
     # Check if commands were stored correctly
     assert "HH" in commands
     assert "I" in commands
@@ -313,7 +313,7 @@ def test_alt_command_definitions(parser):
     equations = [token for token in parsed_tokens if token["type"] == "equation"]
 
     # Check command storage
-    commands = parser.command_processor.commands
+    commands = parser.commands
     assert "eps" in commands
 
     # Check expansion

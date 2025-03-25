@@ -29,6 +29,7 @@ from latex2json.parser.handlers import (
     CommandProcessor,
 )
 from latex2json.parser.handlers.environment import BaseEnvironmentHandler
+from latex2json.parser.handlers.command_manager import CommandManager
 from latex2json.utils.tex_utils import (
     extract_nested_content,
     read_tex_file_content,
@@ -65,8 +66,10 @@ class LatexParser:
         # Bib parser
         self.bib_parser = BibParser(logger=self.logger)
 
-        # Regex patterns for different LaTeX elements
-        self.command_processor = CommandProcessor()
+        # Replace separate handlers with CommandManager
+        self.command_manager = CommandManager(
+            logger=self.logger, process_content_fn=self.parse
+        )
         self.env_handler = EnvironmentHandler(logger=self.logger)
 
         self.legacy_formatting_handler = LegacyFormattingHandler()
@@ -103,7 +106,6 @@ class LatexParser:
             DiacriticsHandler(),
             # self.legacy_formatting_handler,
         ]
-        self.new_definition_handler = NewDefinitionHandler()
 
         # Add preprocessor
         self.preprocessor = LatexPreprocessor(logger=self.logger)
@@ -111,7 +113,7 @@ class LatexParser:
     # getter for commands
     @property
     def commands(self):
-        return self.command_processor.commands
+        return self.command_manager.commands
 
     @property
     def environments(self):
@@ -125,12 +127,11 @@ class LatexParser:
         self.current_file_dir = None
         self.current_env = None
 
-        self.command_processor.clear()
+        self.command_manager.clear()
         # handlers
         for handler in self.handlers:
             handler.clear()
         self.if_else_block_handler.clear()
-        self.new_definition_handler.clear()
 
         # preprocessor
         self.preprocessor.clear()
@@ -144,7 +145,7 @@ class LatexParser:
         self, content: str, ignore_unicode: bool = False, math_mode: bool = False
     ) -> str:
         """Expand LaTeX commands in the content"""
-        out, match_count = self.command_processor.expand_commands(
+        out, match_count = self.command_manager.expand_commands(
             content, ignore_unicode, math_mode
         )
         return out
@@ -275,64 +276,19 @@ class LatexParser:
             elif typing == "newtheorem":
                 self.env_handler.process_newtheorem(cmd_name, token["title"])
 
-            # then check commands
-            if cmd_name in WHITELISTED_COMMANDS:
-                return
-
-            if typing == "newenvironment":
-                self.env_handler.process_newenvironment(
-                    cmd_name,
-                    token["begin_def"],
-                    token["end_def"],
-                    token["num_args"],
-                    token["optional_args"],
-                )
-            elif typing == "newcommand":
-                # check if there is potential recursion.
-                if re.search(token["usage_pattern"], token["content"]):
-                    self.logger.warning(
-                        f"Potential recursion detected for newcommand: \\{cmd_name}, skipping..."
-                    )
-                    return
-                self.command_processor.process_newcommand(
-                    cmd_name,
-                    token["content"],
-                    token["num_args"],
-                    token["defaults"],
-                    token["usage_pattern"],
-                )
-            elif typing == "def":
-                self.command_processor.process_newdef(
-                    cmd_name,
-                    token["content"],
-                    token["num_args"],
-                    token["usage_pattern"],
-                    token["is_edef"],
-                )
-            elif typing == "newif":
-                self.command_processor.process_newif(cmd_name)
+            # Special handling for if blocks
+            if typing == "newif":
                 self.if_else_block_handler.process_newif(cmd_name)
-            elif typing == "newcounter":
-                self.command_processor.process_newcounter(cmd_name)
-            elif typing == "newlength":
-                self.command_processor.process_newlength(cmd_name)
-            elif typing == "newtoks":
-                self.command_processor.process_newtoks(cmd_name)
-            elif typing == "paired_delimiter":
-                self.command_processor.process_paired_delimiter(
-                    cmd_name, token["left_delim"], token["right_delim"]
-                )
-            elif typing in ["newother", "newfam", "font"]:
-                self.command_processor.process_newX(cmd_name)
+
+            # Register the command with CommandManager
+            self.command_manager.register_command(token)
 
     def _check_for_new_definitions(self, content: str) -> None:
         """Check for new definitions in the content and process them"""
-        if self.new_definition_handler.can_handle(content):
-            token, end_pos = self.new_definition_handler.handle(content)
-            if token:
-                self._process_new_definition_token(token)
-            return end_pos
-        return 0
+        token, end_pos = self.command_manager.process_definition(content)
+        if token:
+            self._process_new_definition_token(token)
+        return end_pos
 
     def _convert_bibitem_to_token(self, entry: BibEntry) -> Dict:
         content = entry.content
@@ -438,7 +394,10 @@ class LatexParser:
                 token["content"] = self.parse(token["content"])
             elif is_env_type:
                 # algorithmic keep as literal?
-                if token["type"] not in ["algorithmic", "tabular"]:
+                if token.get("content") and token["type"] not in [
+                    "algorithmic",
+                    "tabular",
+                ]:
                     prev_env = self.current_env
                     self.current_env = token
                     token["content"] = self.parse(token["content"])
@@ -589,8 +548,8 @@ class LatexParser:
                 continue
 
             # check for user defined commands (important to check before new definitions in case of floating \csname)
-            if self.command_processor.can_handle(content[current_pos:]):
-                text, end_pos = self.command_processor.handle(content[current_pos:])
+            if self.command_manager.can_handle(content[current_pos:]):
+                text, end_pos = self.command_manager.handle(content[current_pos:])
                 if end_pos > 0:
                     # replace the matched user command with the expanded text
                     content = (
@@ -735,26 +694,21 @@ if __name__ == "__main__":
 
     parser = LatexParser(logger=logger)
 
-    file = "papers/new/arXiv-2205.00334v4/NMI_revision.tex"
+    file = "papers/tested/arXiv-1509.05363v6/taodiscrepancy.tex"
     # file = "papers/tested/arXiv-1706.03762v7/model_architecture.tex"
     tokens = parser.parse_file(file)
 
-#     text = r"""
-#     \newfam\bboardfam
-#     \bboardfam
-# """
+    # text = r"""
+    #             \define@key{pubdet}{title}{%
+    #             \renewcommand{\toc@title}{#1}
+    #         }
 
-#     text = r"""
-# \makeatletter
-# \newcommand{\mbrk}{\@ifstar{\mbrkb}{\mbrki}}
-# \newcommand{\mbrki}[1]{[ {#1} ]}
-# \newcommand{\mbrkb}[1]{\left[ {#1} \right]}
-# \makeatother
+    #         \setkeys{pubdet}{title=Hello TITLE}
 
-# $\mbrk{x}$
-#     """
-# tokens = parser.parse(text, preprocess=True)
-# print(tokens)
+    #         \toc@title
+    # """
+    # tokens = parser.parse(text, preprocess=True)
+    # print(tokens)
 # import json
 
 # with open("test.json", "w") as f:

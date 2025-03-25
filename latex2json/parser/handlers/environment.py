@@ -26,7 +26,7 @@ ENVIRONMENT_PATTERN = re.compile(
 )
 
 NEW_ENVIRONMENT_PATTERN = re.compile(
-    r"\\(?:new|renew|provide)environment\*?\s*%s" % (ENV_NAME_BRACE_PATTERN),
+    r"\\(?:new|renew|provide)environment\*?\s*\{([^}]*?)\}",
 )
 
 LIST_ENVIRONMENTS = ["itemize", "enumerate", "description"]
@@ -339,6 +339,7 @@ class BaseEnvironmentHandler(TokenHandler):
     def handle(
         self, content: str, prev_token: Optional[Dict] = None
     ) -> Tuple[Optional[Dict], int]:
+        # If not a definition, proceed with regular environment handling
         matched, out = BaseEnvironmentHandler.try_match_env(content)
         if matched:
             env_name = out["name"]
@@ -467,7 +468,6 @@ class EnvironmentProcessor:
 class EnvironmentHandler(BaseEnvironmentHandler):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
         self.environment_processor = EnvironmentProcessor()
 
     @property
@@ -477,6 +477,13 @@ class EnvironmentHandler(BaseEnvironmentHandler):
     def clear(self):
         super().clear()
         self.environment_processor.clear()
+
+    def can_handle(self, content: str) -> bool:
+        return (
+            ENVIRONMENT_PATTERN.match(content) is not None
+            or BEGIN_GROUP_PATTERN.match(content) is not None
+            or NEW_ENVIRONMENT_PATTERN.match(content) is not None
+        )
 
     def process_newenvironment(
         self,
@@ -490,6 +497,60 @@ class EnvironmentHandler(BaseEnvironmentHandler):
             env_name, begin_def, end_def, num_args, optional_args
         )
 
+    def handle_newenvironment(
+        self, content: str, match: Optional[re.Match] = None
+    ) -> Tuple[Optional[Dict], int]:
+        """Handle \newenvironment definitions - copied from new_definition.py"""
+        if not match:
+            match = NEW_ENVIRONMENT_PATTERN.match(content)
+        if not match:
+            return None, 0
+        env_name = match.group(1)
+        current_pos = match.end()
+
+        # Store environment definition
+        token = {
+            "type": "newenvironment",
+            "begin_def": "",
+            "end_def": "",
+            "name": env_name,
+            "num_args": 0,
+            "optional_args": [],
+        }
+
+        # Look for optional arguments [n][default]...
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[current_pos:], "[", "]"
+        )
+        if blocks:
+            first_arg = blocks[0].strip()
+            if first_arg.isdigit():
+                token["num_args"] = int(first_arg)
+            for block in blocks[1:]:
+                token["optional_args"].append(block.strip())
+
+        current_pos += end_pos
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[current_pos:], "{", "}", max_blocks=2
+        )
+        if len(blocks) == 2:
+            token["begin_def"] = blocks[0]
+            token["end_def"] = blocks[1]
+
+            # Register this environment definition
+            self.process_newenvironment(
+                env_name,
+                blocks[0],
+                blocks[1],
+                token["num_args"],
+                token["optional_args"],
+            )
+        else:
+            return None, current_pos
+
+        current_pos += end_pos
+        return token, current_pos
+
     def _handle_environment(self, env_name: str, inner_content: str) -> None:
         if self.environment_processor.has_environment(env_name):
             # check if expanded and changed
@@ -502,6 +563,17 @@ class EnvironmentHandler(BaseEnvironmentHandler):
             return {"type": env_type, "name": env_name, "content": inner_content}
 
         return super()._handle_environment(env_name, inner_content)
+
+    def handle(
+        self, content: str, prev_token: Optional[Dict] = None
+    ) -> Tuple[Optional[Dict], int]:
+        # First check for newenvironment definitions
+        newenv_match = NEW_ENVIRONMENT_PATTERN.match(content)
+        if newenv_match:
+            out, end_pos = self.handle_newenvironment(content, newenv_match)
+            return None, end_pos
+
+        return super().handle(content, prev_token)
 
 
 if __name__ == "__main__":

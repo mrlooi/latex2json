@@ -79,6 +79,7 @@ class KeyValHandler(TokenHandler):
 
         return {
             "type": "keyval_definition",
+            "name": f"keyval-{family}-{key}",
             "family": family,
             "key": key,
             "default": default,
@@ -113,18 +114,20 @@ class KeyValHandler(TokenHandler):
         }, total_pos
 
     def _process_setkeys_token(self, token: Dict):
-        if self.process_content_fn:
-            family = token.get("family", "")
-            if family in self.key_definitions:
-                key_values = token["key_values"]
-                for key_value in key_values:
-                    key = key_value["key"]
-                    value = key_value["value"]
-                    if key in self.key_definitions[family]:
-                        codeblock = self.key_definitions[family][key].codeblock
-                        if codeblock:
-                            codeblock = substitute_args(codeblock, [value])
-                            self.process_content_fn(codeblock)
+        codeblocks = {}
+        family = token.get("family", "")
+        if family in self.key_definitions:
+            key_values = token["key_values"]
+            for key_value in key_values:
+                key = key_value["key"]
+                value = key_value["value"]
+                if key in self.key_definitions[family]:
+                    codeblock = self.key_definitions[family][key].codeblock
+                    if codeblock:
+                        codeblock = substitute_args(codeblock, [value])
+                        codeblocks[key] = codeblock
+
+        return codeblocks
 
     def _handle(self, content: str) -> Tuple[Optional[Dict], int]:
         """Handle keyval commands and return appropriate token"""
@@ -136,7 +139,8 @@ class KeyValHandler(TokenHandler):
                 elif pattern_name == "setkeys":
                     out, pos = self._handle_setkeys_match(match, content)
                     if out:
-                        self._process_setkeys_token(out)
+                        codeblocks = self._process_setkeys_token(out)
+                        out["codeblocks"] = codeblocks
                     return out, pos
 
         return None, 0
@@ -145,8 +149,18 @@ class KeyValHandler(TokenHandler):
         self, content: str, prev_token: Optional[Dict] = None
     ) -> Tuple[Optional[Dict], int]:
         token, pos = self._handle(content)
-        # ignore?
-        return None, pos
+        return token, pos
+
+    def process_keyval_definition(
+        self, family: str, key: str, default: Optional[str], codeblock: Optional[str]
+    ):
+        """Process a keyval definition by storing it in the key_definitions dictionary."""
+        if family not in self.key_definitions:
+            self.key_definitions[family] = {}
+
+        self.key_definitions[family][key] = KeyDefinition(
+            family=family, key=key, default=default, codeblock=codeblock
+        )
 
     def clear(self):
         self.key_definitions = {}

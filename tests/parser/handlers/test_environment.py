@@ -45,22 +45,6 @@ def test_handle_environment_with_asterisk(handler):
     assert content[pos:].strip() == "muhaha"
 
 
-def test_env_with_newenvironment(handler):
-    handler.process_newenvironment("test", r"\begin{center} #1 #2", r"\end{center}", 2)
-
-    content = r"""
-    \begin{test}{yolo}{swag}  MY TEXT\end{test}
-    """.strip()
-    token, pos = handler.handle(content)
-
-    assert token["type"] == "environment"
-    assert token["name"] == "test"
-    assert (
-        token["content"].replace(" ", "").replace("\n", "")
-        == r"\begin{center}yoloswagMYTEXT\end{center}"
-    )
-
-
 def test_begingroup(handler):
     content = r"\bgroup\begin{center}Center\end{center}\egroup hahaha"
     token, pos = handler.handle(content)
@@ -173,21 +157,68 @@ def test_comment_env(handler):
     assert content[pos:] == " post"
 
 
-def test_newenvironment(handler, newdef_handler):
-    content = r"\newenvironment{proof}[1][default]{begin proof: #1}{end proof}"
-    token, pos = newdef_handler.handle(content)
-    assert token["name"] == "proof"
-    assert token["type"] == "newenvironment"
-    assert token["num_args"] == 1
-    assert token["optional_args"] == ["default"]
+def test_handle_newenvironment(handler):
+    # Test basic newenvironment
+    content = r"\newenvironment{test}{begin def}{end def}"
+    token, pos = handler.handle_newenvironment(content)
 
-    handler.process_newenvironment(
-        token["name"],
-        token["begin_def"],
-        token["end_def"],
-        token["num_args"],
-        token["optional_args"],
-    )
+    assert token == {
+        "type": "newenvironment",
+        "name": "test",
+        "num_args": 0,
+        "optional_args": [],
+        "begin_def": "begin def",
+        "end_def": "end def",
+    }
+
+    # Test with arguments
+    content = r"\newenvironment{test2}[2]{begin #1 #2}{end #2}"
+    token, pos = handler.handle_newenvironment(content)
+    assert token == {
+        "type": "newenvironment",
+        "name": "test2",
+        "num_args": 2,
+        "optional_args": [],
+        "begin_def": "begin #1 #2",
+        "end_def": "end #2",
+    }
+
+    # Test with optional arguments
+    content = r"\newenvironment{test3}[2][default]{begin #1 #2}{end}"
+    token, pos = handler.handle_newenvironment(content)
+    assert token == {
+        "type": "newenvironment",
+        "name": "test3",
+        "num_args": 2,
+        "optional_args": ["default"],
+        "begin_def": "begin #1 #2",
+        "end_def": "end",
+    }
+
+    # Test newenvironment with complex begin/end definitions
+    content = r"\newenvironment{complex}{\begin{center}\begin{tabular}}{end{tabular}\end{center}}"
+    token, pos = handler.handle_newenvironment(content)
+    assert token == {
+        "type": "newenvironment",
+        "name": "complex",
+        "num_args": 0,
+        "optional_args": [],
+        "begin_def": r"\begin{center}\begin{tabular}",
+        "end_def": r"end{tabular}\end{center}",
+    }
+
+    handler.clear()
+
+
+def test_newenvironment(handler):
+    handler.clear()
+
+    content = r"\newenvironment{proof}[1][default]{begin proof: #1}{end proof} POST"
+
+    token, pos = handler.handle(content)
+    assert content[pos:] == " POST"
+
+    assert "proof" in handler.environments
 
     # test default arg
     content = r"\begin{proof}stuff\end{proof} post"
