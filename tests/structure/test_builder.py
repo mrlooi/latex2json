@@ -150,7 +150,7 @@ def expected_organizer_output():
                     "type": "section",
                     "title": [
                         {"type": "text", "content": "Intro"},
-                        {"type": "equation", "content": "1+1", "display": "inline"},
+                        {"type": "equation", "content": "1+1"},
                     ],
                     "level": 1,
                     "numbering": "1",
@@ -161,11 +161,7 @@ def expected_organizer_output():
                             "type": "text",
                             "content": "Some text here, ",
                         },
-                        {
-                            "type": "equation",
-                            "content": "1+1=2",
-                            "display": "inline",
-                        },
+                        {"type": "equation", "content": "1+1=2"},
                         {
                             "type": "text",
                             "content": ":",
@@ -226,13 +222,7 @@ def expected_organizer_output():
                                     "content": [
                                         {"type": "text", "content": "Theorem 1"}
                                     ],
-                                    "title": [
-                                        {
-                                            "type": "equation",
-                                            "content": "T=1",
-                                            "display": "inline",
-                                        }
-                                    ],
+                                    "title": [{"type": "equation", "content": "T=1"}],
                                     "numbering": "1.1",
                                     "numbered": True,
                                 },
@@ -534,7 +524,7 @@ def test_organize_appendix(latex_parser):
             "type": "section",
             "title": [
                 {"type": "text", "content": "Intro"},
-                {"type": "equation", "content": "1+1", "display": "inline"},
+                {"type": "equation", "content": "1+1"},
             ],
             "level": 1,
             "numbering": "1",

@@ -17,7 +17,7 @@ class EquationToken(BaseToken):
     content: str
     type: TokenType = TokenType.EQUATION
     align: Optional[bool] = None
-    display: DisplayType = DisplayType.INLINE
+    display: Optional[DisplayType] = None
     numbering: Optional[str] = None
     placeholders: Optional[Dict[str, BaseToken]] = None
 

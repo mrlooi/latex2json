@@ -25,12 +25,12 @@ def test_can_handle_display_equations(handler):
 def test_handle_inline_equations(handler):
     # Test basic inline equation
     token, pos = handler.handle("$x^2$")
-    assert token == {"type": "equation", "content": "x^2", "display": "inline"}
+    assert token == {"type": "equation", "content": "x^2"}
     assert pos == 5
 
     # Test inline equation with parentheses
     token, pos = handler.handle(r"\(y^2\)")
-    assert token == {"type": "equation", "content": "y^2", "display": "inline"}
+    assert token == {"type": "equation", "content": "y^2"}
     assert pos == 7
 
 
@@ -105,7 +105,7 @@ def test_equation_with_process_fn():
 
     handler = EquationHandler(process_content_fn=mock_process)
     token, pos = handler.handle("$x^2$")
-    assert token == {"type": "equation", "content": "y^2", "display": "inline"}
+    assert token == {"type": "equation", "content": "y^2"}
     assert pos == 5
 
 
@@ -214,7 +214,7 @@ def test_equation_strip_formatting(handler):
     """.strip()
     token, pos = handler.handle(content)
     assert token
-    assert token["content"].strip() == "1+1\;222"
+    assert token["content"].strip() == r"1+1\;222"
 
 
 def test_equation_with_includegraphics(handler):

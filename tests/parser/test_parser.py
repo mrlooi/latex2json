@@ -87,7 +87,7 @@ def test_parse_equations(parsed_training_tokens):
         token for token in parsed_training_tokens if token["type"] == "equation"
     ]
     # inline equations = 7
-    inline_equations = [token for token in equations if token["display"] == "inline"]
+    inline_equations = [token for token in equations if token.get("display") != "block"]
     assert len(inline_equations) == 7
     assert len(equations) == 8
 
@@ -318,7 +318,6 @@ def test_alt_command_definitions(parser):
 
     # Check expansion
     assert equations[0]["content"] == r"\varepsilon"
-    assert equations[0]["display"] == "inline"
 
 
 def test_newdef_definitions(parser):
@@ -462,7 +461,7 @@ def test_parse_equations_with_commands(parser):
     BRO
     \pow[5]{A}
     \]
-    \(INLINE, \pow[3]{B}\)
+    \(XX, \pow[3]{B}\)
     """
     parsed_tokens = parser.parse(text)
     equations = [token for token in parsed_tokens if token["type"] == "equation"]
@@ -476,8 +475,8 @@ def test_parse_equations_with_commands(parser):
     assert "777^{2}" in block1
     assert equations[0]["display"] == "block"
 
-    assert equations[1]["display"] == "inline"
     assert equations[1]["content"].replace(" ", "") == "x^{2}"
+    assert equations[1].get("display") != "block"
 
     block2 = equations[2]["content"]
     assert "BLOCK ME" in block2
@@ -485,9 +484,8 @@ def test_parse_equations_with_commands(parser):
     assert "A^{5}" in block2.replace(" ", "")
     assert equations[2]["display"] == "block"
 
-    inline2 = equations[3]["content"].replace(" ", "")
-    assert inline2 == "INLINE,B^{3}"
-    assert equations[3]["display"] == "inline"
+    last_eqn = equations[3]["content"].replace(" ", "")
+    assert last_eqn == "XX,B^{3}"
 
 
 def test_align_block(parser):
@@ -633,7 +631,6 @@ def test_nested_items(parser):
     ]
     assert len(equations) == 1
     assert equations[0]["content"] == "asdasdsads"
-    assert equations[0]["display"] == "inline"
 
 
 def test_item_with_label(parser):
@@ -848,11 +845,11 @@ def test_complex_table(parser):
     assert cells[2][0]["rowspan"] == 2
     assert cells[2][0]["colspan"] == 1
 
-    # Check inline equation cell
+    # Check equation cell
     equation_cell = cells[2][2][0]
     assert equation_cell["type"] == "equation"
     assert equation_cell["content"] == "x^2 + y^2 = z^2"
-    assert equation_cell["display"] == "inline"
+    assert equation_cell.get("display") != "block"
 
     assert cells[3] == [None, "Rural", "100", "120"]
 
@@ -954,7 +951,6 @@ def test_newcommand_and_grouping(parser):
     equation = figure["content"][1]
     assert equation["type"] == "equation"
     assert equation["content"].replace(" ", "") == "3^{2}"
-    assert equation["display"] == "inline"
 
 
 def test_comments(parser):
@@ -1001,7 +997,6 @@ def test_footnote_with_environments(parser):
     # Check equation component
     assert content[1]["type"] == "equation"
     assert content[1]["content"] == "F=ma"
-    assert content[1]["display"] == "inline"
 
     # Check list component
     list_content = content[2]
@@ -1391,7 +1386,6 @@ def test_nested_items_with_environments(parser):
     # Check math in first nested item
     math = [t for t in nested_items[0]["content"] if t["type"] == "equation"][0]
     assert math["content"] == "F=ma"
-    assert math["display"] == "inline"
 
     # Check deeply nested itemize
     deep_list = [t for t in nested_items[1]["content"] if t["type"] == "list"][0]

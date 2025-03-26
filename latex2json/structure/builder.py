@@ -110,7 +110,7 @@ class TokenBuilder:
             if (
                 isinstance(token, dict)
                 and token.get("type") == "equation"
-                and token.get("display") == "inline"
+                and token.get("display") != "block"
             ):
                 # Convert inline equation to text token
                 token_copy = {
