@@ -99,11 +99,11 @@ def test_expand_commands(processor, newdef_handler):
     out_text, _ = processor.expand_commands(content, math_mode=False)
     assert out_text == r"$(x)$"
 
-    # math mode = True pads the output with spaces
+    # math mode = True pads the output with braces
     out_text, _ = processor.expand_commands(
         content, ignore_unicode=True, math_mode=True
     )
-    assert out_text == r"$( x )$"
+    assert out_text == r"$({x})$"
 
 
 def test_ifstar_definitions(processor, newdef_handler):

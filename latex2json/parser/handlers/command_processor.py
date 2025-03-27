@@ -39,6 +39,15 @@ def default_ignore_handler(
     return "", match.end()
 
 
+def wrap_math_mode_arg(text: str) -> str:
+    # Strip whitespace first to properly check braces
+    text = text.strip()
+    # Only add braces if they're not already present
+    if not (text.startswith("{") and text.endswith("}")):
+        return "{" + text + "}"
+    return text
+
+
 class CommandProcessor:
     def __init__(self):
         self.commands: Dict[str, CommandEntry] = {}
@@ -131,7 +140,10 @@ class CommandProcessor:
 
                 if math_mode:
                     # pad args with spaces
-                    args = [" " + arg + " " if arg is not None else arg for arg in args]
+                    args = [
+                        wrap_math_mode_arg(arg) if arg is not None else arg
+                        for arg in args
+                    ]
 
                 # fill remaining args with empty strings
                 args.extend([""] * (num_args - len(args)))
@@ -164,7 +176,7 @@ class CommandProcessor:
                 return "", start_pos
 
             if math_mode:
-                content = " " + content + " "
+                content = wrap_math_mode_arg(content)
 
             end_pos += start_pos
             return f"{left_delim}{content}{right_delim}", end_pos
@@ -203,7 +215,7 @@ class CommandProcessor:
             args = []
             for g in match.groups():
                 if g is not None:
-                    args.append(g if not math_mode else " " + g + " ")
+                    args.append(wrap_math_mode_arg(g) if math_mode else g)
 
             return substitute_args(get_definition(match), args), match.end()
 

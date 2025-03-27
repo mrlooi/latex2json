@@ -161,7 +161,7 @@ def test_command_definitions(parser):
     assert "pow" in commands
 
     # Check command expansion in equations
-    assert equations[0]["content"].strip() == "3 ^{ 5 }"
+    assert equations[0]["content"].strip() == "{3}^{{5}}"
     assert equations[1]["content"] == r"\mathbb{H}"
     assert equations[2]["content"] == r"\mathbb{I}"
     assert equations[3]["content"] == r"d_{\text{model}}"
@@ -247,12 +247,12 @@ def test_complex_math_command_definitions(parser):
 
     # Check expansions
     expected_results = [
-        "\\mathbf{T}_{i}^{j}",  # tensor expansion
-        "\\|x\\|_{2}^{p}",  # norm with optional arg
-        "\\|y\\|_{1}^{2}",  # norm with default optional arg
-        "\\int_{0}^{b}f(x)dx",  # integral with defaults
-        "\\int_{a}^{b}g(x)dx",  # integral with one optional
-        "\\|\\mathbf{T}_{i}^{j}\\|_{\\infty}^{2}",  # nested command
+        r"\mathbf{{T}}_{{i}}^{{j}}",  # tensor expansion
+        r"\|{x}\|_{{2}}^{{p}}",  # norm with optional arg
+        r"\|{y}\|_{{1}}^{{2}}",  # norm with default optional arg
+        r"\int_{{0}}^{{b}}{f(x)}d{x}",  # integral with defaults
+        r"\int_{{a}}^{{b}}{g(x)}d{x}",  # integral with one optional
+        r"\|{\mathbf{{T}}_{{i}}^{{j}}}\|_{{\infty}}^{{2}}",  # nested command
     ]
 
     for eq, expected in zip(equations, expected_results):
@@ -347,7 +347,7 @@ def test_newdef_definitions(parser):
     \end{equation}
     """
     parsed_tokens = parser.parse(text)
-    assert parsed_tokens[0]["content"].strip() == "x + y"
+    assert parsed_tokens[0]["content"].strip() == "{x}+{y}"
 
 
 # TestParserEnvironments tests:
@@ -472,20 +472,20 @@ def test_parse_equations_with_commands(parser):
     # block1 contains F=ma, E=mc^2 and 777^{2}
     assert "F=ma" in block1
     assert "E=mc^2" in block1
-    assert "777^{2}" in block1
+    assert "{777}^{{2}}" in block1
     assert equations[0]["display"] == "block"
 
-    assert equations[1]["content"].replace(" ", "") == "x^{2}"
+    assert equations[1]["content"].replace(" ", "") == "{x}^{{2}}"
     assert equations[1].get("display") != "block"
 
     block2 = equations[2]["content"]
     assert "BLOCK ME" in block2
     assert "BRO" in block2
-    assert "A^{5}" in block2.replace(" ", "")
+    assert "{A}^{{5}}" in block2.replace(" ", "")
     assert equations[2]["display"] == "block"
 
     last_eqn = equations[3]["content"].replace(" ", "")
-    assert last_eqn == "XX,B^{3}"
+    assert last_eqn == "XX,{B}^{{3}}"
 
 
 def test_align_block(parser):
@@ -950,7 +950,7 @@ def test_newcommand_and_grouping(parser):
     # Check equation inside figure
     equation = figure["content"][1]
     assert equation["type"] == "equation"
-    assert equation["content"].replace(" ", "") == "3^{2}"
+    assert equation["content"].replace(" ", "") == "{3}^{{2}}"
 
 
 def test_comments(parser):
@@ -1920,7 +1920,7 @@ def test_paired_delimiter(parser):
     parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) == 2
     assert parsed_tokens[0]["type"] == "equation"
-    assert parsed_tokens[0]["content"] == r"1+1=\{ 2 \}"
+    assert parsed_tokens[0]["content"] == r"1+1=\{{2}\}"
     assert parsed_tokens[1]["type"] == "text"
     assert parsed_tokens[1]["content"].strip() == "This is {x} equation"
 
@@ -2080,7 +2080,7 @@ def test_newcommand_nested_equations(parser):
 
 def test_math_mode_padding(parser):
     # ensure that math mode padding is properly padded.
-    # this is to ensure e.g. \vert#1->\vert x instead of error-prone \vert#1 -> \vertx
+    # this is to ensure e.g. \vert#1->\vert{x}instead of error-prone \vert#1 -> \vertx
     text = r"""
     \newcommand{\abs}[1]{\left\vert#1\right\vert}
     $\abs{x}$
@@ -2088,7 +2088,7 @@ def test_math_mode_padding(parser):
     parsed_tokens = parser.parse(text, preprocess=True)
     assert len(parsed_tokens) == 1
     assert parsed_tokens[0]["type"] == "equation"
-    assert parsed_tokens[0]["content"] == r"\left\vert x \right\vert"
+    assert parsed_tokens[0]["content"] == r"\left\vert{x}\right\vert"
 
 
 def test_ifstar_definitions(parser):
