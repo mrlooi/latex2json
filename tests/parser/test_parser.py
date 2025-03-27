@@ -256,7 +256,10 @@ def test_complex_math_command_definitions(parser):
     ]
 
     for eq, expected in zip(equations, expected_results):
-        assert eq["content"].replace(" ", "") == expected
+        c = eq["content"].replace(" ", "")
+        if c.startswith("{") and c.endswith("}"):
+            c = c[1:-1]
+        assert c == expected
 
     parser.clear()
 

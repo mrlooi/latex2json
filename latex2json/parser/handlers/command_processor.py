@@ -304,7 +304,14 @@ class CommandProcessor:
             if cmd_name not in commands:
                 return match.group(0), match.end()
             handler = commands[cmd_name]["handler"]
-            return handler(match, text, math_mode=math_mode)
+            out, pos = handler(match, text, math_mode=math_mode)
+            # if math mode and out contains a space, wrap the out in braces for grouping
+            # Example: a b c  -> {a b c}, perhaps later \frac{a b c}, and NOT \frac a b c
+            # if no space, we assume the output is a single token/command that may be affected if wrapped in braces
+            # e.g. \tilde -> \tilde{...}, and NOT {\tilde}{...}
+            if math_mode and " " in out:
+                out = wrap_math_mode_arg(out)
+            return out, pos
 
         prev_text = None
         while prev_text != text:
