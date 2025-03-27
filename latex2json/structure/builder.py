@@ -1,7 +1,8 @@
 import logging
-from typing import Dict, List
+from typing import Dict, Final, List
 from latex2json.structure.token_factory import TokenFactory
 from latex2json.structure.tokens.base import BaseToken
+from latex2json.structure.tokens.equation import DisplayType
 from latex2json.structure.tokens.types import TokenType
 
 
@@ -10,6 +11,77 @@ import copy
 
 MATH_OPEN_DELIMITER = "<math>"
 MATH_CLOSE_DELIMITER = "</math>"
+
+# Define the constant set of inline token types
+INLINE_TOKEN_TYPES: Final = frozenset(
+    [
+        TokenType.TEXT,
+        TokenType.CITATION,
+        TokenType.REF,
+        TokenType.URL,
+        TokenType.FOOTNOTE,
+        TokenType.COMMAND,
+    ]
+)
+
+# Add these constants at the top of the file with other constants
+OPENING_PUNCTUATION = ("(", "[", "{", "'", '"')
+CLOSING_PUNCTUATION = (".", ",", "!", "?", ":", ";", ")", "]", "}")
+
+
+def is_inline_token(token: Dict):
+    if not isinstance(token, dict):
+        return False
+
+    if token.get("type") == TokenType.EQUATION:
+        return token.get("display") != DisplayType.BLOCK
+
+    return (
+        token.get("display") == DisplayType.INLINE
+        or token.get("type") in INLINE_TOKEN_TYPES
+    )
+
+
+def should_add_space(current_token: Dict, previous_token: Dict) -> bool:
+    """
+    Determine if a space should be added between two tokens.
+    Implementation based on the TypeScript version, adapted for dictionary tokens.
+    """
+    if not isinstance(current_token, dict) or not isinstance(previous_token, dict):
+        return False
+
+    if current_token.get("type") != TokenType.TEXT:
+        return False
+
+    if is_inline_token(previous_token):
+        content = current_token.get("content", "")
+
+        no_space = not content.startswith(" ") and not any(
+            content.startswith(mark) for mark in CLOSING_PUNCTUATION
+        )
+
+        if no_space and previous_token.get("type") == TokenType.TEXT:
+            prev_content = previous_token.get("content", "")
+            return not prev_content.endswith(" ") and not any(
+                prev_content.endswith(mark) for mark in OPENING_PUNCTUATION
+            )
+
+        return no_space
+
+    return False
+
+
+def add_token_spaces_if_needed(tokens: List[Dict]) -> None:
+    if not isinstance(tokens, list):
+        return
+
+    """Add spaces between tokens where necessary."""
+    for i in range(1, len(tokens)):
+        current_token = tokens[i]
+        previous_token = tokens[i - 1]
+
+        if should_add_space(current_token, previous_token):
+            current_token["content"] = " " + current_token["content"]
 
 
 class TokenBuilder:
@@ -20,10 +92,6 @@ class TokenBuilder:
     - Processing and organizing document structure
     - Converting and concatenating tokens
     """
-
-    # Constants
-    _PREV_ENDS_WITH = ("(", "[", "{", "'", '"')
-    _NEXT_STARTS_WITH = (":", ";", ")", "]", "}", ",", ".")
 
     def __init__(self, logger: logging.Logger = None):
         self.logger = logger or logging.getLogger(__name__)
@@ -43,15 +111,6 @@ class TokenBuilder:
 
     def clear(self):
         self.reset_numbering()
-
-    @staticmethod
-    def _should_add_space(prev_content: str, next_content: str) -> bool:
-        return not (
-            prev_content.endswith(TokenBuilder._PREV_ENDS_WITH)
-            or prev_content.endswith(" ")
-            or next_content.startswith(TokenBuilder._NEXT_STARTS_WITH)
-            or next_content.startswith(" ")
-        )
 
     def _update_section_numbering(
         self, token, reset_lower_levels=False, in_appendix=False
@@ -133,11 +192,10 @@ class TokenBuilder:
                 if current_text_token is None:
                     current_text_token = token
                 else:
-                    prev_content = current_text_token["content"]
                     next_content = token["content"]
                     # merge text tokens with same style
                     if current_text_token.get("styles") == token.get("styles"):
-                        add_space = self._should_add_space(prev_content, next_content)
+                        add_space = should_add_space(token, current_text_token)
                         current_text_token["content"] += (
                             " " + next_content if add_space else next_content
                         )
@@ -180,6 +238,10 @@ class TokenBuilder:
                     processed_tokens.append(token)
                 else:
                     processed_tokens.append(token)
+
+            # # Add spaces between tokens where necessary
+            # (Update: Disable and let frontend(s) handle)
+            # add_token_spaces_if_needed(processed_tokens)
 
             # Note: v0.3.0. Commented this out to preserve separation of text vs equation inline tokens
             # processed_tokens = self._convert_inline_equations_to_text(processed_tokens)
@@ -336,10 +398,8 @@ if __name__ == "__main__":
     # tokens = parser.parse_file(file)
 
     text = r"""
-    \begin{lemma}
-    \end{lemma}
-    \begin{proof}
-    \end{proof}
+    \textit{Hello} \textit{World}
+    Hello \ref{sdssd}3
     """
     tokens = parser.parse(text)
 
