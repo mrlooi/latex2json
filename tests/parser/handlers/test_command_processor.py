@@ -103,7 +103,50 @@ def test_expand_commands(processor, newdef_handler):
     out_text, _ = processor.expand_commands(
         content, ignore_unicode=True, math_mode=True
     )
-    assert out_text == r"$({x})$"
+    assert out_text == r"${({x})}$"
+
+
+def test_expand_commands_math_mode(processor, newdef_handler):
+    processor.clear()
+
+    commands = [
+        r"\newcommand{\ti}{\tilde}",
+        r"\newcommand{\calR}{\mathcal R}",
+        r"\newcommand{\gab}{g^{\alpha\beta}}",
+        r"\newcommand{\paa}{\partial_\alpha}",
+    ]
+
+    for cmd in commands:
+        token, pos = newdef_handler.handle(cmd)
+        assert token is not None
+        processor.process_newcommand(
+            token["name"],
+            token["content"],
+            token["num_args"],
+            token["defaults"],
+            token["usage_pattern"],
+        )
+
+    # test \tilde is not wrapped in braces
+    content = r"$\ti{3}$"
+    out_text, _ = processor.expand_commands(
+        content, ignore_unicode=True, math_mode=True
+    )
+    assert out_text == r"$\tilde{3}$"
+
+    # test \mathcal is wrapped in braces since it has a space
+    content = r"$\frac\calR 2$"
+    out_text, _ = processor.expand_commands(
+        content, ignore_unicode=True, math_mode=True
+    )
+    assert out_text == r"$\frac{\mathcal R} 2$"
+
+    # test \gab is wrapped in braces since it doesn't start with \
+    content = r"$\paa\gab$"
+    out_text, _ = processor.expand_commands(
+        content, ignore_unicode=True, math_mode=True
+    )
+    assert out_text == r"$\partial_\alpha{g^{\alpha\beta}}$"
 
 
 def test_ifstar_definitions(processor, newdef_handler):

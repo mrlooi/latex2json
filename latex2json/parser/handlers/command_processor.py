@@ -307,10 +307,11 @@ class CommandProcessor:
             out, pos = handler(match, text, math_mode=math_mode)
             # if math mode and out contains a space, wrap the out in braces for grouping
             # Example: a b c  -> {a b c}, perhaps later \frac{a b c}, and NOT \frac a b c
-            # if no space, we assume the output is a single token/command that may be affected if wrapped in braces
+            # if no space and/or starts with \\, we assume the output is a single command that may be affected if wrapped in braces
             # e.g. \tilde -> \tilde{...}, and NOT {\tilde}{...}
-            if math_mode and " " in out:
-                out = wrap_math_mode_arg(out)
+            if math_mode:
+                if " " in out or not out.strip().startswith("\\"):
+                    out = wrap_math_mode_arg(out)
             return out, pos
 
         prev_text = None

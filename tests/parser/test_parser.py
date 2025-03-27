@@ -164,7 +164,7 @@ def test_command_definitions(parser):
     assert equations[0]["content"].strip() == "{3}^{{5}}"
     assert equations[1]["content"] == r"\mathbb{H}"
     assert equations[2]["content"] == r"\mathbb{I}"
-    assert equations[3]["content"] == r"d_{\text{model}}"
+    assert equations[3]["content"] == r"{d_{\text{model}}}"
 
     last_token = parsed_tokens[-1]["content"]
     split_content = [line.strip() for line in last_token.split("\n") if line.strip()]
