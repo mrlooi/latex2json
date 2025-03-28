@@ -53,7 +53,7 @@ class ItemToken(BaseToken):
     """Represents list items"""
 
     type: TokenType = TokenType.ITEM
-    title: Optional[str] = None
+    title: Optional[List[BaseToken]] = None
 
 
 class ListToken(EnvironmentToken):
@@ -61,3 +61,4 @@ class ListToken(EnvironmentToken):
 
     type: TokenType = TokenType.LIST
     content: List[ItemToken] = Field(default_factory=list)
+    depth: int = 1

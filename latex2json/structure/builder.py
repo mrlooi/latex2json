@@ -281,7 +281,7 @@ class TokenBuilder:
             elif token["type"] == "figure":
                 self._update_figure_env_numbering(token)
 
-    def _recursive_organize(self, tokens, in_appendix=False):
+    def _recursive_organize(self, tokens, in_appendix=False, list_depth=0):
         organized = []
         section_stack = []
         paragraph_stack = []
@@ -300,7 +300,6 @@ class TokenBuilder:
                 continue
 
             # Handle appendix declaration
-            # if \begin{appendices}, then content is the content inside the appendices env
             if token["type"] == "appendix":
                 in_appendix = True
                 # reset section numbers since appendix
@@ -311,7 +310,9 @@ class TokenBuilder:
                 if not token.get("content"):
                     token["content"] = []
                 else:
-                    token["content"] = self._recursive_organize(token["content"], True)
+                    token["content"] = self._recursive_organize(
+                        token["content"], True, list_depth
+                    )
                 root = token["content"]  # Switch root to appendix content
                 organized.append(token)
                 continue
@@ -319,10 +320,20 @@ class TokenBuilder:
             # Handle token numbering
             self._check_update_numbering(token)
 
-            # Recursively process nested content
-            if isinstance(token.get("content"), list):
+            # Handle list depth
+            if token["type"] == "list":
+                token["depth"] = list_depth + 1
+                if isinstance(token.get("content"), list):
+                    # Recursively process nested lists with increased depth
+                    token["content"] = self._recursive_organize(
+                        token["content"],
+                        in_appendix=in_appendix,
+                        list_depth=list_depth + 1,
+                    )
+            # Handle other nested content
+            elif isinstance(token.get("content"), list):
                 token["content"] = self._recursive_organize(
-                    token["content"], in_appendix
+                    token["content"], in_appendix=in_appendix, list_depth=list_depth
                 )
 
             # Handle special token types
@@ -398,8 +409,15 @@ if __name__ == "__main__":
     # tokens = parser.parse_file(file)
 
     text = r"""
-    \textit{Hello} \textit{World}
-    Hello \ref{sdssd}3
+    \begin{description}
+    \item[\textbf{Hello}] World
+    \item[Hello] 
+    \begin{enumerate}
+    \item 1
+    \item 2
+    \end{enumerate}
+    World
+    \end{description}
     """
     tokens = parser.parse(text)
 

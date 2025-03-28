@@ -5,6 +5,7 @@ from latex2json.parser.handlers.environment import (
     find_pattern_while_skipping_nested_envs,
 )
 
+# pattern to match \item up to the next \item or end of string
 ITEM_PATTERN = re.compile(
     r"\\item\b\s*(?:\[(.*?)\])?\s*([\s\S]*?)(?=\\item\b|$)", re.DOTALL
 )
@@ -20,11 +21,11 @@ class ItemHandler(BaseEnvironmentHandler):
     ) -> Tuple[Optional[Dict], int]:
         match = ITEM_PATTERN.match(content)
         if match:
-            item = match.group(2)
+            end_of_item = match.group(2)
             end_pos = match.end()
-            if item:
+            if end_of_item:
+                # check to see and skip any nested environments that may contain inner \item
                 start = match.start(2)
-                # skip any nested environments that may contain inner \item
                 out_end_pos = find_pattern_while_skipping_nested_envs(
                     content, ITEM_PATTERN, start_pos=start
                 )
@@ -33,6 +34,7 @@ class ItemHandler(BaseEnvironmentHandler):
 
                 token = self._handle_environment("item", content[start:end_pos].strip())
                 token["type"] = "item"
+                del token["name"]
                 if match.group(1):
                     token["title"] = match.group(1).strip()
                 return token, end_pos

@@ -86,6 +86,17 @@ def latex_text():
             \hline
         \end{tabular}
 
+        \begin{description}
+        \item[\textbf{Hello}] World
+        \item[Hello] % nested env
+            \paragraph{This nested env inside}
+                \begin{enumerate}
+                \item 1
+                \item 2
+                \end{enumerate}
+            World
+        \end{description}
+
     \appendix
 
     \section{My Appendix Section}
@@ -178,7 +189,6 @@ def expected_organizer_output():
                             "name": "figure",
                             "numbered": True,
                             "numbering": "1",
-                            "title": "h",
                             "content": [
                                 {
                                     "type": "includegraphics",
@@ -366,6 +376,77 @@ def expected_organizer_output():
                                             "H1 & H2",
                                             None,
                                         ],
+                                    ],
+                                },
+                                {
+                                    "type": "list",
+                                    "name": "description",
+                                    "depth": 1,
+                                    "content": [
+                                        {
+                                            "type": "item",
+                                            "title": [
+                                                {
+                                                    "type": "text",
+                                                    "content": "Hello",
+                                                    "styles": [
+                                                        FRONTEND_STYLE_MAPPING["textbf"]
+                                                    ],
+                                                }
+                                            ],
+                                            "content": [
+                                                {"type": "text", "content": "World"}
+                                            ],
+                                        },
+                                        {
+                                            "type": "item",
+                                            "title": [
+                                                {"type": "text", "content": "Hello"}
+                                            ],
+                                            "content": [
+                                                {
+                                                    "type": "paragraph",
+                                                    "level": 1,
+                                                    "title": [
+                                                        {
+                                                            "type": "text",
+                                                            "content": "This nested env inside",
+                                                        }
+                                                    ],
+                                                    "content": [
+                                                        {
+                                                            "type": "list",
+                                                            "name": "enumerate",
+                                                            "depth": 2,
+                                                            "content": [
+                                                                {
+                                                                    "type": "item",
+                                                                    "content": [
+                                                                        {
+                                                                            "type": "text",
+                                                                            "content": "1",
+                                                                        }
+                                                                    ],
+                                                                },
+                                                                {
+                                                                    "type": "item",
+                                                                    "content": [
+                                                                        {
+                                                                            "type": "text",
+                                                                            "content": "2",
+                                                                        }
+                                                                    ],
+                                                                },
+                                                            ],
+                                                        },
+                                                        {
+                                                            "type": "text",
+                                                            "content": "World",
+                                                        },
+                                                    ],
+                                                },
+                                            ],
+                                        },
                                     ],
                                 },
                             ],

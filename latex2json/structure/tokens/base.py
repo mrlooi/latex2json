@@ -55,7 +55,6 @@ class EnvironmentToken(BaseToken):
 
     type: TokenType = TokenType.ENVIRONMENT
     name: Optional[str] = None
-    title: Optional[str] = None
 
 
 class MathEnvToken(BaseToken):

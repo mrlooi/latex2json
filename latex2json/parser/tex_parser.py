@@ -403,12 +403,7 @@ class LatexParser:
                     token["content"] = self.parse(token["content"])
                     self.current_env = prev_env
 
-                # make math env title a list of tokens
-                if (
-                    token["type"] == "math_env"
-                    and "title" in token
-                    and isinstance(token["title"], str)
-                ):
+                if "title" in token and isinstance(token["title"], str):
                     token["title"] = self.parse(token["title"])
 
         self.add_token(token, tokens)
@@ -694,21 +689,18 @@ if __name__ == "__main__":
 
     parser = LatexParser(logger=logger)
 
-    file = "papers/tested/arXiv-1509.05363v6/taodiscrepancy.tex"
-    # file = "papers/tested/arXiv-1706.03762v7/model_architecture.tex"
-    tokens = parser.parse_file(file)
+    # file = "papers/tested/arXiv-1509.05363v6/taodiscrepancy.tex"
+    # # file = "papers/tested/arXiv-1706.03762v7/model_architecture.tex"
+    # tokens = parser.parse_file(file)
 
-    # text = r"""
-    #             \define@key{pubdet}{title}{%
-    #             \renewcommand{\toc@title}{#1}
-    #         }
-
-    #         \setkeys{pubdet}{title=Hello TITLE}
-
-    #         \toc@title
-    # """
-    # tokens = parser.parse(text, preprocess=True)
-    # print(tokens)
+    text = r"""
+    \begin{description}
+    \item 3
+    \item 4
+    \end{description}
+    """
+    tokens = parser.parse(text, preprocess=True)
+    print(tokens)
 # import json
 
 # with open("test.json", "w") as f:

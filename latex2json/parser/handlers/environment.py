@@ -231,7 +231,7 @@ class BaseEnvironmentHandler(TokenHandler):
         if end_pos > 0:
             inner_content = inner_content[end_pos:]
             opt_found = True
-        if title:
+        if title and env_type == "math_env":
             token["title"] = title
 
         # Extract arguments based on environment type

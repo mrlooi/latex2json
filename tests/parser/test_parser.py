@@ -822,7 +822,6 @@ def test_complex_table(parser):
 
     # Check table properties
     assert table["type"] == "table"
-    assert table["title"] == "htbp"
     assert table["labels"] == ["tab:sales"]
     assert table["numbered"] == True
 
@@ -946,7 +945,6 @@ def test_newcommand_and_grouping(parser):
     # Check figure environment
     figure = parsed_tokens[0]
     assert figure["type"] == "figure"
-    assert figure["title"] == "h"
     assert figure["numbered"] == True
     assert len(figure["content"]) == 2
 
@@ -1346,7 +1344,7 @@ def test_nested_items_with_environments(parser):
         \begin{enumerate}
         \item[a)] Nested item with math $F=ma$
         % ssss a  \item[bbb] SS
-        \item[b)] Another nested item with:
+        \item[\textcolor{red}{b})] Another nested item with:
             \begin{itemize}
             \item Deep nested item 1
             \item Deep nested item 2 with equation:
@@ -1384,8 +1382,11 @@ def test_nested_items_with_environments(parser):
     # Check nested items
     nested_items = [t for t in nested_list["content"] if t["type"] == "item"]
     assert len(nested_items) == 2
-    assert nested_items[0]["title"] == "a)"
-
+    assert nested_items[0]["title"] == [{"type": "text", "content": "a)"}]
+    assert nested_items[1]["title"] == [
+        {"type": "text", "content": "b", "styles": ["color=red"]},
+        {"type": "text", "content": ")"},
+    ]
     # Check math in first nested item
     math = [t for t in nested_items[0]["content"] if t["type"] == "equation"][0]
     assert math["content"] == "F=ma"
