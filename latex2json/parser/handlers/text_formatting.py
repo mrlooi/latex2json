@@ -103,23 +103,6 @@ def find_first_nonspace(s):
     return len(s) - len(s.lstrip())
 
 
-def parse_dual_braces_content(content: str, first_brace_start: int) -> Tuple[str, int]:
-    first, first_brace_end = extract_nested_content(content[first_brace_start:])
-    if not first:
-        return None, 0
-    first_brace_end = first_brace_start + first_brace_end
-    has_second_brace = content[first_brace_end:].strip()[0] == "{"
-    if not has_second_brace:
-        return None, 0
-    second_brace_start = first_brace_end + content[first_brace_end:].find("{")
-    second, second_brace_end = extract_nested_content(content[second_brace_start:])
-    if not second:
-        return None, 0
-
-    end_pos = second_brace_start + second_brace_end
-    return first, second, end_pos
-
-
 def is_text_token(token: Dict) -> bool:
     return isinstance(token, dict) and token.get("type") == "text"
 
@@ -209,11 +192,15 @@ class TextFormattingHandler(TokenHandler):
         return token, total_pos
 
     def _handle_frac(self, content: str, match: re.Match) -> Tuple[str, int]:
-        out = parse_dual_braces_content(content, match.end(0) - 1)
-        if out[0] is None:
-            return None, 0
+        start_pos = match.end() - 1
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "{", "}", max_blocks=2
+        )
+        end_pos = start_pos + end_pos
 
-        first, second, end_pos = out
+        if len(blocks) != 2:
+            return None, start_pos
+        first, second = blocks
 
         if self.process_content_fn:
             first = flatten_all_to_string(self.process_content_fn(first))
@@ -229,10 +216,15 @@ class TextFormattingHandler(TokenHandler):
         }, end_pos
 
     def _handle_texorpdfstring(self, content: str, match: re.Match) -> Tuple[str, int]:
-        out = parse_dual_braces_content(content, match.end(0) - 1)
-        if out[0] is None:
-            return None, 0
-        first, second, end_pos = out
+        start_pos = match.end() - 1
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "{", "}", max_blocks=2
+        )
+        end_pos = start_pos + end_pos
+
+        if len(blocks) != 2:
+            return None, start_pos
+        first, second = blocks
 
         # choose 2nd one in texorpdfstring
         token = self._process_content(second)
