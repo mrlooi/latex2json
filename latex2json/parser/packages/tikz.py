@@ -17,6 +17,7 @@ USE_TIKZ_LIB_PATTERN = re.compile(r"\\usetikzlibrary\s*{")
 
 PATTERNS = {
     "usetikzlibrary": USE_TIKZ_LIB_PATTERN,
+    "pgfplotsset": re.compile(r"\\pgfplotsset\s*{"),
 }
 
 
@@ -35,6 +36,10 @@ class TikzHandler(TokenHandler):
             if match:
                 # If a \usetikzlibrary command is found, just ignore it
                 if pattern_name == "usetikzlibrary":
+                    start_pos = match.end() - 1
+                    content, end_pos = extract_nested_content(content[start_pos:])
+                    return None, start_pos + end_pos
+                elif pattern_name == "pgfplotsset":
                     start_pos = match.end() - 1
                     content, end_pos = extract_nested_content(content[start_pos:])
                     return None, start_pos + end_pos
