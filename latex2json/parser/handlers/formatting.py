@@ -30,6 +30,7 @@ declare_pattern_N_blocks = {
     "DeclareMathAlphabet": 5,
     "DeclareOption": 2,
     "SetMathAlphabet": 6,
+    "DeclareSymbolFontAlphabet": 2,
 }
 
 
@@ -59,6 +60,8 @@ RAW_PATTERNS = OrderedDict(
             r"\\(?:(?:[a-zA-Z@]+)?maketitle|makeatletter|makeatother|tableofcontents|@title)\b",
         ),
         ("addcontentsline", r"\\addcontentsline\s*\{[^}]*\}\s*\{[^}]*\}\s*\{[^}]*\}"),
+        ("titlecontents", r"\\titlecontents\s*{"),
+        ("contents", r"\\contentspage\b"),
         (
             "page",
             r"\\enlargethispage\s*\{[^}]*\}|\\pagecolor\*?{[^}]*}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|vfil|break|sloppy|flushbottom|flushleft|flushright|flushtop)\b",
@@ -133,7 +136,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "declare",
             re.compile(
-                r"\\(DeclareFontShape|DeclareFontFamily|DeclareMathAlphabet|DeclareOption|SetMathAlphabet|DeclareGraphicsExtensions)\*?\s*\{",
+                r"\\(DeclareFontShape|DeclareSymbolFontAlphabet|DeclareFontFamily|DeclareMathAlphabet|DeclareOption|SetMathAlphabet|DeclareGraphicsExtensions)\*?\s*\{",
                 re.DOTALL,
             ),
         ),
@@ -386,6 +389,8 @@ class FormattingHandler(TokenHandler):
                         "type": "date",
                         "content": datetime.datetime.now().strftime("%Y-%m-%d"),
                     }, match.end()
+                elif pattern_name == "titlecontents":
+                    return self._handle_titlecontents(content, match)
                 elif pattern_name in ["vspace", "pagebreak"]:
                     return {"type": "text", "content": "\n"}, match.end()
                 elif pattern_name == "options":
@@ -421,6 +426,29 @@ class FormattingHandler(TokenHandler):
                 return None, match.end()
 
         return None, 0
+
+    def _handle_titlecontents(
+        self, content: str, match: re.Match
+    ) -> Tuple[Optional[Dict], int]:
+        start_pos = match.end() - 1
+        _, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "{", "}", max_blocks=1
+        )
+        start_pos += end_pos
+        _, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "[", "]", max_blocks=1
+        )
+        start_pos += end_pos
+        _, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "{", "}", max_blocks=4
+        )
+        # final optional [] block
+        start_pos += end_pos
+        _, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "[", "]", max_blocks=1
+        )
+        start_pos += end_pos
+        return None, start_pos
 
     def _handle_declare(
         self, content: str, match: re.Match

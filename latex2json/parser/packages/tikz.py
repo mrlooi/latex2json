@@ -13,10 +13,10 @@ from latex2json.utils.tex_utils import (
 
 # TODO: all the tikz stuff...
 
-TIKZ_USING_PATTERN = re.compile(r"\\usetikzlibrary\s*{")
+USE_TIKZ_LIB_PATTERN = re.compile(r"\\usetikzlibrary\s*{")
 
 PATTERNS = {
-    "usetikzlibrary": TIKZ_USING_PATTERN,
+    "usetikzlibrary": USE_TIKZ_LIB_PATTERN,
 }
 
 

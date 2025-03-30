@@ -309,7 +309,7 @@ def test_misc_formatting_commands(handler):
     \unvbox0
     \unvbox\box
     \addcontentsline{toc}{chapter}{Bibliography}
-
+    \DeclareSymbolFontAlphabet{\amsmathbb}{AMSb}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
@@ -360,6 +360,35 @@ def test_newmdenv(handler):
 ]{monobox}
 POST
 """.strip()
+    token, pos = handler.handle(text)
+    assert token is None
+    assert text[pos:].strip() == "POST"
+
+
+def test_titlecontents(handler):
+    text = r"""
+\titlecontents{section}
+[0em]
+{\vspace{0.4em}}
+{\contentslabel{2em}}
+{\bfseries}
+{\bfseries\titlerule*[0.5pc]{$\cdot$}\contentspage}
+[0.2em]
+POST
+    """.strip()
+    token, pos = handler.handle(text)
+    assert token is None
+    assert text[pos:].strip() == "POST"
+
+    text = r"""
+\titlecontents{section}
+[0em]
+{\vspace{0.4em}}
+{\contentslabel{2em}}
+{\bfseries}
+{\bfseries\titlerule*[0.5pc]{$\cdot$}\contentspage}
+POST
+    """.strip()
     token, pos = handler.handle(text)
     assert token is None
     assert text[pos:].strip() == "POST"
