@@ -310,11 +310,19 @@ class CommandProcessor:
             # if no space and/or starts with \\, we assume the output is a single command that may be affected if wrapped in braces
             # e.g. \tilde -> \tilde{...}, and NOT {\tilde}{...}
             if math_mode:
+                c: str = out.strip()
                 start_pos = match.start()
-                prev_char = text[start_pos - 1] if start_pos > 0 else None
-                should_wrap = " " in out.strip() or (
-                    prev_char is not None and prev_char not in [" ", "}", "{"]
-                )
+                prev_char = text[start_pos - 1] if start_pos > 0 else ""
+                should_wrap = False
+                if start_pos > 0 and len(c) >= 1:
+                    if " " in c:
+                        should_wrap = True
+                    elif c[0].isalnum():
+                        should_wrap = True
+                    elif c.startswith("\\"):
+                        # Handle both subscript and superscript
+                        should_wrap = prev_char in "_^"
+
                 if should_wrap:
                     out = wrap_math_mode_arg(out)
             return out, pos

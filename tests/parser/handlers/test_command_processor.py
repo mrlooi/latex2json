@@ -103,7 +103,7 @@ def test_expand_commands(processor, newdef_handler):
     out_text, _ = processor.expand_commands(
         content, ignore_unicode=True, math_mode=True
     )
-    assert out_text == r"${({x})}$"
+    assert out_text == r"$({x})$"
 
 
 def test_expand_commands_math_mode(processor, newdef_handler):

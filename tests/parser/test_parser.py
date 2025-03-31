@@ -1943,7 +1943,7 @@ def test_paired_delimiter(parser):
     parsed_tokens = parser.parse(text)
     assert len(parsed_tokens) == 2
     assert parsed_tokens[0]["type"] == "equation"
-    assert parsed_tokens[0]["content"] == r"1+1={\{{2}\}}"
+    assert parsed_tokens[0]["content"] == r"1+1=\{{2}\}"
     assert parsed_tokens[1]["type"] == "text"
     assert parsed_tokens[1]["content"].strip() == "This is {x} equation"
 
