@@ -98,7 +98,7 @@ def test_parse_citations(parsed_training_tokens):
         token for token in parsed_training_tokens if token["type"] == "citation"
     ]
     assert len(citations) == 5
-    assert citations[0]["content"] == "DBLP:journals/corr/BritzGLL17"
+    assert citations[0]["content"] == ["DBLP:journals/corr/BritzGLL17"]
 
 
 def test_parse_refs(parser, parsed_training_tokens):
@@ -511,23 +511,42 @@ def test_align_block(parser):
 def test_parse_citations_with_titles(parser):
     text = r"""
     Regular citation \cite{DBLP:journals/corr/BritzGLL17}
-    Citation with title \cite[Theorem 2.1]{smith2023}
+    Citation with title \cite[\textsc{Theorem} 2.1]{smith2023}
     Multiple citations \cite{paper1,paper2}
     """
     parsed_tokens = parser.parse(text)
     citations = [token for token in parsed_tokens if token["type"] == "citation"]
 
     # Test regular citation
-    assert citations[0]["content"] == "DBLP:journals/corr/BritzGLL17"
+    assert citations[0]["content"] == ["DBLP:journals/corr/BritzGLL17"]
     assert "title" not in citations[0]
 
     # Test citation with title
-    assert citations[1]["content"] == "smith2023"
-    assert citations[1]["title"] == "Theorem 2.1"
+    assert citations[1]["title"] == [
+        {
+            "type": "text",
+            "content": "Theorem",
+            "styles": [FRONTEND_STYLE_MAPPING["textsc"]],
+        },
+        {"type": "text", "content": "2.1"},
+    ]
+    assert citations[1]["content"] == ["smith2023"]
 
     # Test multiple citations
-    assert citations[2]["content"] == "paper1,paper2"
+    assert citations[2]["content"] == ["paper1", "paper2"]
     assert "title" not in citations[2]
+
+
+def test_parse_citetext(parser):
+    text = r"""
+    \citetext{Smith et al. (2024) \citealt{smith2023}}
+    """
+    parsed_tokens = parser.parse(text)
+    assert len(parsed_tokens) == 2
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "Smith et al. (2024)"
+    assert parsed_tokens[1]["type"] == "citation"
+    assert parsed_tokens[1]["content"] == ["smith2023"]
 
 
 def test_parse_refs_and_urls(parser):
@@ -874,7 +893,7 @@ def test_complex_table(parser):
     assert cells[6][1:] == ["SpaceX", "Tesla", "Neuralink"]
     assert cells[6][0] == [
         {"type": "text", "content": "Thing with "},
-        {"type": "citation", "content": "elon_musk"},
+        {"type": "citation", "content": ["elon_musk"]},
     ]
 
     assert cells[7] == [

@@ -9,8 +9,8 @@ class CitationToken(BaseToken):
     """Represents citations"""
 
     type: TokenType = TokenType.CITATION
-    title: Optional[str] = None
-    content: str
+    title: Optional[List[BaseToken]] = None
+    content: List[str]
 
 
 class ReferenceToken(BaseToken):

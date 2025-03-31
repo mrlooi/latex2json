@@ -57,18 +57,13 @@ RAW_PATTERNS = OrderedDict(
         # Citations
         (
             "citation",
-            r"\\(?:c(?:ite|itep|itet|itealt|itealp|iteauthor))\s*%s?%s\s*{"
+            r"\\(?:cite|citep|citet|citealt|citealp|citeauthor|citenum|citeyear|citeyearpar|citefullauthor)\s*%s%s\s*{"
             % (OPTIONAL_BRACE_PATTERN, OPTIONAL_BRACE_PATTERN),
         ),
-        # Citations with just braces
-        ("citetext", r"\\(?:citetext|citenum)\s*{"),
-        # Citations with two braces
+        # ("citetext", r"\\citetext\s*{"), # remove citetext since it is just like regular latex -> handled by text_formatting
+        # Cite alias
         ("defcitealias", r"\\defcitealias\s*{([^}]*)}\s*{"),
-        # Citations with optional brackets (year/author specific)
-        (
-            "citeyear",
-            r"\\(?:citeyear|citeyearpar|citefullauthor)%s\s*{" % OPTIONAL_BRACE_PATTERN,
-        ),
+        ("citealias", r"\\cite[tp]alias\s*{"),
         # Title
         ("title", r"\\title\s*%s\s*{" % OPTIONAL_BRACE_PATTERN),
         # appendix
@@ -90,6 +85,11 @@ GENERIC_COMMAND_PATTERN = re.compile(r"\\[a-zA-Z]+\b")
 
 
 class ContentCommandHandler(TokenHandler):
+    citealias = {}  # key, alias/title
+
+    def clear(self):
+        self.citealias = {}
+
     def can_handle(self, content: str) -> bool:
         return any(pattern.match(content) for pattern in PATTERNS.values())
 
@@ -196,7 +196,7 @@ class ContentCommandHandler(TokenHandler):
 
         # Citations
         elif matched_type == "citation":
-            token = {"type": "citation", "content": content}
+            token = {"type": "citation", "content": content.split(",")}
             # Combine prenote and postnote into title if either exists
             prenote = match.group(1).strip() if match.group(1) else ""
             postnote = match.group(2).strip() if match.group(2) else ""
@@ -205,23 +205,27 @@ class ContentCommandHandler(TokenHandler):
                 token["title"] = combined_note
             return token
 
-        elif matched_type == "citetext":
-            return {"type": "citation", "content": content}
-
         elif matched_type == "defcitealias":
-            return {
-                "type": "citation",
-                "content": match.group(1).strip(),
-                "alias": content,
-            }
+            cite_key = match.group(1).strip()
+            self.citealias[cite_key] = content
 
-        elif matched_type == "citeyear":
-            token = {"type": "citation", "subtype": "year", "content": content}
-            optional_text = match.group(1) if match.group(1) else None
-            if optional_text:
-                token["title"] = optional_text.strip()
-            return token
+        elif matched_type == "citealias":
+            cite_keys = content.split(",")
+            tokens = []
+            for cite_key in cite_keys:
+                token = {
+                    "type": "citation",
+                    "content": [cite_key],
+                }
+                title = self.citealias.get(cite_key)
+                if title:
+                    token["title"] = title
+                tokens.append(token)
+            if len(tokens) == 1:
+                return tokens[0]
+            return tokens
 
+        # GRAPHICS
         elif matched_type == "includegraphics":
             # Extract page number from the optional parameters if present
             options = match.group(1)

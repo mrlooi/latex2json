@@ -35,7 +35,7 @@ def latex_text():
 
         \begin{figure}[h]
             \includegraphics[page=1]{mypdf.pdf}
-            \caption{My figure, from \cite{bibkey1}}
+            \caption{My figure, from \cite[\textsc{p. 42}]{bibkey1}}
         \end{figure}
 
         \subsection{SubIntro}
@@ -205,7 +205,16 @@ def expected_organizer_output():
                                         {"type": "text", "content": "My figure, from"},
                                         {
                                             "type": "citation",
-                                            "content": "bibkey1",
+                                            "content": ["bibkey1"],
+                                            "title": [
+                                                {
+                                                    "type": "text",
+                                                    "content": "p. 42",
+                                                    "styles": [
+                                                        FRONTEND_STYLE_MAPPING["textsc"]
+                                                    ],
+                                                }
+                                            ],
                                         },
                                     ],
                                 },

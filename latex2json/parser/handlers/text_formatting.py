@@ -82,6 +82,7 @@ FONT_PATTERN = {
 PATTERNS = {
     "styled": TEXT_PATTERN,
     "box": BOX_PATTERN,
+    "citetext": re.compile(r"\\citetext\s*\{"),
     # custom fonts (that we want to ignore)
     "fonts": re.compile("|".join(FONT_PATTERN.values())),
     "frac": re.compile(r"\\(?:frac|nicefrac|textfrac)\s*\{", re.DOTALL),  # \frac{}{}
@@ -129,7 +130,9 @@ class TextFormattingHandler(TokenHandler):
             return normalize_text_token(out)
         return normalize_text_token(content)
 
-    def _handle_styled(self, content: str, match: re.Match) -> Tuple[str, int]:
+    def _handle_styled(
+        self, content: str, match: re.Match
+    ) -> Tuple[Dict | List[Dict], int]:
         command = match.group(1)
         style = FRONTEND_STYLE_MAPPING.get(command)
 
@@ -191,6 +194,18 @@ class TextFormattingHandler(TokenHandler):
         token = flatten_group_token(token)
         return token, total_pos
 
+    def _handle_citetext(self, content: str, match: re.Match) -> Tuple[str, int]:
+        start_pos = match.end() - 1
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "{", "}", max_blocks=1
+        )
+        if len(blocks) != 1:
+            return None, start_pos
+        block = blocks[0]
+        if self.process_content_fn:
+            block = self.process_content_fn(block)
+        return block, start_pos + end_pos
+
     def _handle_frac(self, content: str, match: re.Match) -> Tuple[str, int]:
         start_pos = match.end() - 1
         blocks, end_pos = extract_nested_content_sequence_blocks(
@@ -230,7 +245,9 @@ class TextFormattingHandler(TokenHandler):
         token = self._process_content(second)
         return token, end_pos
 
-    def _handle_box(self, content: str, match: re.Match) -> Tuple[str, int]:
+    def _handle_box(
+        self, content: str, match: re.Match
+    ) -> Tuple[Dict | List[Dict], int]:
         s = match.group(0)
         start_pos = match.end() - 1
 
@@ -352,6 +369,8 @@ class TextFormattingHandler(TokenHandler):
             elif name == "fancyhead":
                 # same handling as box
                 return self._handle_box(content, match)
+            elif name == "citetext":
+                return self._handle_citetext(content, match)
             else:
                 return None, match.end()
 

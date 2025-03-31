@@ -138,19 +138,45 @@ def test_handle_references(handler):
 def test_handle_citations(handler):
     # Test basic citation
     token, pos = handler.handle(r"\cite{smith2023}")
-    assert token == {"type": "citation", "content": "smith2023"}
+    assert token == {"type": "citation", "content": ["smith2023"]}
 
     # Test citation with optional text
     token, pos = handler.handle(r"\cite[p. 42]{smith2023}")
-    assert token == {"type": "citation", "content": "smith2023", "title": "p. 42"}
+    assert token == {"type": "citation", "content": ["smith2023"], "title": "p. 42"}
 
     # test double []
     token, pos = handler.handle(r"\cite[p. 42][p. 43]{smith2023}")
     assert token == {
         "type": "citation",
-        "content": "smith2023",
+        "content": ["smith2023"],
         "title": "p. 42, p. 43",
     }
+
+    # test multiple citations
+    token, pos = handler.handle(r"\cite{smith2023,johnson2024}")
+    assert token == {"type": "citation", "content": ["smith2023", "johnson2024"]}
+
+
+def test_citealias(handler):
+    # define citealias
+    defcitealias_text = r"""
+\defcitealias{smith2019}{Paper I}
+POST
+""".strip()
+    token, pos = handler.handle(defcitealias_text)
+    assert defcitealias_text[pos:].strip() == "POST"
+
+    token, pos = handler.handle(r"\defcitealias{jones2020}{Paper II}")
+
+    # test citealias
+    token, pos = handler.handle(r"\citetalias{smith2019}")
+    assert token == {"type": "citation", "content": ["smith2019"], "title": "Paper I"}
+
+    token, pos = handler.handle(r"\citetalias{smith2019,jones2020}")
+    assert token == [
+        {"type": "citation", "content": ["smith2019"], "title": "Paper I"},
+        {"type": "citation", "content": ["jones2020"], "title": "Paper II"},
+    ]
 
 
 def test_handle_graphics(handler):

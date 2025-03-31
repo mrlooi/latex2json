@@ -389,6 +389,9 @@ class LatexParser:
                 token["content"] = [self._expand_command(c) for c in token["content"]]
                 if "title" in token:
                     token["title"] = self.parse(token["title"])
+            elif token["type"] == "citation":
+                if "title" in token:
+                    token["title"] = self.parse(token["title"])
             elif token["type"] in ["section", "paragraph", "title"]:
                 self.current_env = token
                 token["title"] = self.parse(token["title"])
