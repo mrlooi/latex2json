@@ -211,6 +211,7 @@ class ContentCommandHandler(TokenHandler):
         elif matched_type == "defcitealias":
             cite_key = match.group(1).strip()
             self.citealias[cite_key] = content
+            return None
 
         elif matched_type == "citealias":
             cite_keys = [c.strip() for c in content.split(",")]

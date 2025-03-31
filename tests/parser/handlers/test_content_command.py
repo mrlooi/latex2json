@@ -164,6 +164,7 @@ def test_citealias(handler):
 POST
 """.strip()
     token, pos = handler.handle(defcitealias_text)
+    assert token is None
     assert defcitealias_text[pos:].strip() == "POST"
 
     token, pos = handler.handle(r"\defcitealias{jones2020}{Paper II}")
