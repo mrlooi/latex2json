@@ -103,6 +103,9 @@ def test_handle_references(handler):
     token, pos = handler.handle(r"\cref{sec:intro, fig:fig1}")
     assert token == {"type": "ref", "content": "sec:intro, fig:fig1"}
 
+    token, pos = handler.handle(r"\Cref{sec:intro, fig:fig1}")
+    assert token == {"type": "ref", "content": "sec:intro, fig:fig1"}
+
     token, pos = handler.handle(r"\autoref{sec:intro}")
     assert token == {"type": "ref", "content": "sec:intro"}
 

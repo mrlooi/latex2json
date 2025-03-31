@@ -33,7 +33,7 @@ RAW_PATTERNS = OrderedDict(
         # input
         ("input_file", r"\\(?:input|include)\s*{"),
         # REFs
-        ("ref", r"\\(?:c|auto|eq|page)?ref\*?\s*{"),
+        ("ref", r"\\(?:[cC]|auto|eq|page)?ref\*?\s*{"),
         ("hyperref", r"\\hyperref\s*%s\s*{" % OPTIONAL_BRACE_PATTERN),
         ("href", r"\\href\s*{([^}]*)}\s*{"),
         # bookmarks (similar to refs?)

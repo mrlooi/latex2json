@@ -353,6 +353,13 @@ def test_crefname(handler):
 
     assert content[pos:].strip() == "hahaha"
 
+    content = r"\Crefname{theorem}{Theorem} POST"
+    token, pos = handler.handle(content)
+    assert token["type"] == "crefname"
+    assert token["name"] == "theorem"
+    assert token["singular"] == "Theorem"
+    assert content[pos:] == " POST"
+
 
 def test_def_usage_outputs(handler):
     def extract_def_args(text, search):

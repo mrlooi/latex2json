@@ -56,7 +56,7 @@ PATTERNS = {
     "newtheorem": re.compile(
         r"\\newtheorem\*?{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?", re.DOTALL
     ),
-    "crefname": re.compile(r"\\crefname{([^}]*)}{([^}]*)}{([^}]*)}", re.DOTALL),
+    "crefname": re.compile(r"\\[cC]refname{([^}]*)}{([^}]*)}(?:{([^}]*)})?", re.DOTALL),
     "newtoks": re.compile(
         r"\\newtoks\s*(%s)" % (command_with_opt_brace_pattern), re.DOTALL
     ),
@@ -258,7 +258,7 @@ class NewDefinitionHandler(TokenHandler):
             "type": "crefname",
             "name": match.group(1),
             "singular": match.group(2),
-            "plural": match.group(3),
+            "plural": match.group(3) or "",
         }
         return token, match.end()
 
