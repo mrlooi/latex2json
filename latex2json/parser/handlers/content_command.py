@@ -174,9 +174,9 @@ class ContentCommandHandler(TokenHandler):
 
         # REFs
         elif matched_type == "ref":
-            return {"type": "ref", "content": [content]}
+            return {"type": "ref", "content": [content.strip()]}
         elif matched_type == "cref":
-            return {"type": "ref", "content": content.split(",")}
+            return {"type": "ref", "content": [c.strip() for c in content.split(",")]}
         elif matched_type == "hyperref":
             return {
                 "type": "ref",
@@ -196,7 +196,10 @@ class ContentCommandHandler(TokenHandler):
 
         # Citations
         elif matched_type == "citation":
-            token = {"type": "citation", "content": content.split(",")}
+            token = {
+                "type": "citation",
+                "content": [c.strip() for c in content.split(",")],
+            }
             # Combine prenote and postnote into title if either exists
             prenote = match.group(1).strip() if match.group(1) else ""
             postnote = match.group(2).strip() if match.group(2) else ""
@@ -210,7 +213,7 @@ class ContentCommandHandler(TokenHandler):
             self.citealias[cite_key] = content
 
         elif matched_type == "citealias":
-            cite_keys = content.split(",")
+            cite_keys = [c.strip() for c in content.split(",")]
             tokens = []
             for cite_key in cite_keys:
                 token = {
