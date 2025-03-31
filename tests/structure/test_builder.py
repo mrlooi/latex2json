@@ -54,8 +54,8 @@ def latex_text():
             Theorem 2
         \end{theorem*}
 
+        \hyperref[sec:intro]{\textbf{Back to intro}}
         \subsection{Last sub section}
-
             \subsubsection{S3}
             \subsubsection{S4}
 
@@ -269,6 +269,19 @@ def expected_organizer_output():
                                                     "type": "text",
                                                 },
                                             ],
+                                        },
+                                        {
+                                            "type": "ref",
+                                            "title": [
+                                                {
+                                                    "type": "text",
+                                                    "content": "Back to intro",
+                                                    "styles": [
+                                                        FRONTEND_STYLE_MAPPING["textbf"]
+                                                    ],
+                                                }
+                                            ],
+                                            "content": ["sec:intro"],
                                         },
                                     ],
                                 },
@@ -577,7 +590,7 @@ def test_equation_placeholders(latex_parser):
             "content": expected_eq_output,
             "display": "block",
             "placeholders": {
-                "___PLACEHOLDER_0___": {"type": "ref", "content": "eq:sum"},
+                "___PLACEHOLDER_0___": {"type": "ref", "content": ["eq:sum"]},
                 "___PLACEHOLDER_1___": {
                     "type": "includegraphics",
                     "content": "example-image",

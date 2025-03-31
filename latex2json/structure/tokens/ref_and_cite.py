@@ -17,8 +17,8 @@ class ReferenceToken(BaseToken):
     """Represents references"""
 
     type: TokenType = TokenType.REF
-    title: Optional[str] = None
-    content: str
+    title: Optional[List[BaseToken]] = None
+    content: List[str]
 
 
 class UrlToken(BaseToken):

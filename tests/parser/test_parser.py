@@ -104,7 +104,7 @@ def test_parse_citations(parsed_training_tokens):
 def test_parse_refs(parser, parsed_training_tokens):
     refs = [token for token in parsed_training_tokens if token["type"] == "ref"]
     assert len(refs) == 1
-    assert refs[0]["content"] == "tab:variations"
+    assert refs[0]["content"] == ["tab:variations"]
 
     labels = parser.labels
     assert len(labels) == 1
@@ -551,10 +551,10 @@ def test_parse_refs_and_urls(parser):
     assert refs[0]["content"] == "https://www.tesla.com"
     assert refs[1]["content"] == "https://www.google.com"
     assert refs[1]["title"][0]["content"] == "Google"
-    assert refs[2]["title"] == "ModalNet"
-    assert refs[2]["content"] == "fig:modalnet"
+    assert refs[2]["title"][0]["content"] == "ModalNet"
+    assert refs[2]["content"] == ["fig:modalnet"]
     assert "title" not in refs[3]
-    assert refs[3]["content"] == "fig:modalnet"
+    assert refs[3]["content"] == ["fig:modalnet"]
 
     text = r"""
     \newcommand{\cmd}{MY URL}

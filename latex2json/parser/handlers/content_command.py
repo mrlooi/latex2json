@@ -33,16 +33,18 @@ RAW_PATTERNS = OrderedDict(
         # input
         ("input_file", r"\\(?:input|include)\s*{"),
         # REFs
-        ("ref", r"\\(?:[cC]|auto|eq|page)?ref\*?\s*{"),
+        ("ref", r"\\(?:auto|eq|page)?ref\*?\s*{"),
+        ("cref", r"\\[cC]ref\*?\s*{"),
         ("hyperref", r"\\hyperref\s*%s\s*{" % OPTIONAL_BRACE_PATTERN),
         ("href", r"\\href\s*{([^}]*)}\s*{"),
-        # bookmarks (similar to refs?)
+        # bookmarks
         ("bookmark", r"\\bookmark\s*%s\s*{" % OPTIONAL_BRACE_PATTERN),
         (
             "pdfbookmark",
             r"\\(?:below|current)?pdfbookmark\s*%s\s*{([^}]*)}\s*{"
             % OPTIONAL_BRACE_PATTERN,
         ),
+        # footnotes
         ("footnotemark", r"\\footnotemark%s" % OPTIONAL_BRACE_PATTERN),
         ("footnotetext", r"\\footnotetext%s\s*{" % OPTIONAL_BRACE_PATTERN),
         # URLs
@@ -170,20 +172,27 @@ class ContentCommandHandler(TokenHandler):
                 "content": content,  # Note: caller should parse this content for environments
             }
 
+        # REFs
+        elif matched_type == "ref":
+            return {"type": "ref", "content": [content]}
+        elif matched_type == "cref":
+            return {"type": "ref", "content": content.split(",")}
         elif matched_type == "hyperref":
-            return {"type": "ref", "title": content, "content": match.group(1).strip()}
+            return {
+                "type": "ref",
+                "title": content,
+                "content": [match.group(1).strip()],
+            }
 
+        # URLs
         elif matched_type == "href":
             return {"type": "url", "title": content, "content": match.group(1).strip()}
 
         elif matched_type == "url":
             return {"type": "url", "content": content}
 
-        elif matched_type in ["ref", "bookmark"]:
-            return {"type": "ref", "content": content}
-
         elif matched_type == "doi":
-            return {"type": "ref", "content": "https://doi.org/" + content}
+            return {"type": "url", "content": "https://doi.org/" + content}
 
         # Citations
         elif matched_type == "citation":
@@ -250,14 +259,13 @@ class ContentCommandHandler(TokenHandler):
 
             return {"type": "includepdf", "content": content}
 
-        elif matched_type == "pdfbookmark":
-            return {
-                "type": "ref",
-                "title": match.group(2).strip(),  # The display text
-                "content": content,  # The internal reference label
-            }
-
         elif matched_type == "graphicspath":
+            return None
+
+        # bookmarks
+        elif matched_type == "pdfbookmark":
+            return None
+        elif matched_type == "bookmark":
             return None
 
         return {"type": matched_type, "content": content}
