@@ -17,6 +17,8 @@ USE_TIKZ_LIB_PATTERN = re.compile(r"\\usetikzlibrary\s*{")
 
 PATTERNS = {
     "usetikzlibrary": USE_TIKZ_LIB_PATTERN,
+    "begin_tikzpicture": re.compile(r"\\begin\s*\{tikzpicture\}"),
+    "begin_picture": re.compile(r"\\begin\s*\{picture\}"),
     "pgfplotsset": re.compile(r"\\pgfplotsset\s*{"),
 }
 
@@ -43,13 +45,35 @@ class TikzHandler(TokenHandler):
                     start_pos = match.end() - 1
                     content, end_pos = extract_nested_content(content[start_pos:])
                     return None, start_pos + end_pos
+                elif pattern_name == "begin_picture":
+                    start_pos, end_pos, inner_content = find_matching_env_block(
+                        content, "picture"
+                    )
+                    return {
+                        "type": "diagram",
+                        "name": "picture",
+                        "content": inner_content,
+                    }, end_pos
+                elif pattern_name == "begin_tikzpicture":
+                    start_pos, end_pos, inner_content = find_matching_env_block(
+                        content, "tikzpicture"
+                    )
+                    return {
+                        "type": "diagram",
+                        "name": "tikzpicture",
+                        "content": inner_content,
+                    }, end_pos
                 return None, match.end()
         return None, 0
 
 
 if __name__ == "__main__":
     text = r"""
-\usetikzlibrary{matrix, patterns}
+\begin{tikzpicture}
+    \draw (0,0) -- (1,1);
+    \draw (0,0) -- (1,1);
+\end{tikzpicture}
+POST
 """.strip()
 
     handler = TikzHandler()

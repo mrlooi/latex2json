@@ -25,9 +25,12 @@ class TokenType(Enum):
     FIGURE = "figure"
     TABLE = "table"
     TABULAR = "tabular"
+    CAPTION = "caption"
+
+    # Graphics
     INCLUDEGRAPHICS = "includegraphics"
     INCLUDEPDF = "includepdf"
-    CAPTION = "caption"
+    DIAGRAM = "diagram"
 
     # Lists
     LIST = "list"

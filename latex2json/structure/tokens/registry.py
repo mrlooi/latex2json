@@ -22,13 +22,16 @@ from latex2json.structure.tokens.document import (
 )
 from latex2json.structure.tokens.equation import EquationToken
 from latex2json.structure.tokens.table_figure_list import (
-    IncludePdfToken,
     ListToken,
     ItemToken,
     TableToken,
     FigureToken,
-    IncludeGraphicsToken,
     CaptionToken,
+)
+from latex2json.structure.tokens.graphics import (
+    IncludeGraphicsToken,
+    IncludePdfToken,
+    DiagramToken,
 )
 from latex2json.structure.tokens.tabular import TabularToken
 from latex2json.structure.tokens.ref_and_cite import (
@@ -68,9 +71,11 @@ TokenMap: Dict[TokenType, Type[BaseToken]] = {
     TokenType.FIGURE: FigureToken,
     TokenType.TABLE: TableToken,
     TokenType.TABULAR: TabularToken,
+    TokenType.CAPTION: CaptionToken,
+    # Graphics
     TokenType.INCLUDEGRAPHICS: IncludeGraphicsToken,
     TokenType.INCLUDEPDF: IncludePdfToken,
-    TokenType.CAPTION: CaptionToken,
+    TokenType.DIAGRAM: DiagramToken,
     # Lists
     TokenType.LIST: ListToken,
     TokenType.ITEM: ItemToken,

@@ -97,6 +97,10 @@ def latex_text():
             World
         \end{description}
 
+        \begin{tikzpicture}
+            \draw (0,0) -- (1,1);
+        \end{tikzpicture}
+
     \appendix
 
     \section{My Appendix Section}
@@ -448,6 +452,11 @@ def expected_organizer_output():
                                             ],
                                         },
                                     ],
+                                },
+                                {
+                                    "type": "diagram",
+                                    "name": "tikzpicture",
+                                    "content": r"\draw (0,0) -- (1,1);",
                                 },
                             ],
                         },
