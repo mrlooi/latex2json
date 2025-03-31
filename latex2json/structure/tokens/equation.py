@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Dict, Any, List, Optional
-from latex2json.structure.tokens.base import BaseToken
+from latex2json.structure.tokens.base import BaseToken, TokenCreator
 from latex2json.structure.tokens.types import TokenType
 
 
@@ -19,7 +19,7 @@ class EquationToken(BaseToken):
     align: Optional[bool] = None
     display: Optional[DisplayType] = None
     numbering: Optional[str] = None
-    placeholders: Optional[Dict[str, BaseToken]] = None
+    placeholders: Optional[Dict[str, List[BaseToken]]] = None
 
     @classmethod
     def preprocess_data(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -33,3 +33,27 @@ class EquationToken(BaseToken):
         """Override model_validate to handle preprocessing"""
         processed_data = cls.preprocess_data(data)
         return super().model_validate(processed_data)
+
+    @classmethod
+    def process(
+        cls, data: Dict[str, Any], create_token: TokenCreator
+    ) -> "EquationToken":
+        """Process equation data, filtering for EquationItemTokens only"""
+        placeholder_dict = None
+        if "placeholders" in data:
+            placeholder_dict = {}
+            for k, v in data["placeholders"].items():
+                out = []
+                for item in v:
+                    out.append(create_token(item))
+                placeholder_dict[k] = out
+
+        return cls(
+            content=data["content"],
+            display=data.get("display"),
+            align=data.get("align"),
+            numbering=data.get("numbering"),
+            placeholders=placeholder_dict,
+            labels=data.get("labels"),
+            styles=data.get("styles"),
+        )

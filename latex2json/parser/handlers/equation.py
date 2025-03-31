@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import re
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 from latex2json.parser.handlers.content_command import ContentCommandHandler
 from latex2json.utils.tex_utils import (
     extract_nested_content,
@@ -116,7 +116,7 @@ class EquationHandler(TokenHandler):
     def _extract_contentcommands_as_placeholders(self, eq_token: Dict):
         math = eq_token["content"]
 
-        blocks: Dict[str, Dict] = {}  # key: placeholder_str, value: token
+        blocks: Dict[str, List[Dict]] = {}  # key: placeholder_str, value: token
         out_math = ""
         current_pos = 0
 
@@ -134,7 +134,9 @@ class EquationHandler(TokenHandler):
                 if token:
                     # store the token as placeholder
                     placeholder = f"___PLACEHOLDER_{len(blocks)}___"
-                    blocks[placeholder] = token
+                    blocks[placeholder] = (
+                        [token] if not isinstance(token, list) else token
+                    )
                     out_math += placeholder
 
                 if end_pos > 0:

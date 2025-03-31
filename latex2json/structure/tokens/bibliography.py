@@ -3,9 +3,8 @@ from typing import Dict, Any, List, Optional, Union
 
 from pydantic import Field
 
-from latex2json.structure.tokens.base import EnvironmentToken, BaseToken
+from latex2json.structure.tokens.base import EnvironmentToken, BaseToken, TokenCreator
 from latex2json.structure.tokens.types import TokenType
-from latex2json.structure.tokens.tabular import TokenCreator
 
 
 class BibItemToken(BaseToken):

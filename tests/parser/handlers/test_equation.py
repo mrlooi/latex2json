@@ -238,10 +238,10 @@ def test_equation_with_includegraphics(handler):
         assert key in token["content"]
 
     placeholder_values = list(placeholders.values())
-    assert placeholder_values[0]["type"] == "includegraphics"
-    assert placeholder_values[0]["content"] == r"example-image"
-    assert placeholder_values[1]["type"] == "ref"
-    assert placeholder_values[1]["content"] == ["eq:sum"]
+    pl1 = placeholder_values[0]
+    assert pl1 == [{"type": "includegraphics", "content": r"example-image"}]
+    pl2 = placeholder_values[1]
+    assert pl2 == [{"type": "ref", "content": ["eq:sum"]}]
     assert content[pos:].strip() == "AFTER"
 
 

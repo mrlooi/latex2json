@@ -3,7 +3,7 @@ from typing import Callable, Dict, Any, List, Optional, TypeVar, TypedDict, Unio
 from pydantic import BaseModel, Field
 
 from latex2json.structure.tokens.types import TokenType
-from latex2json.structure.tokens.base import BaseToken
+from latex2json.structure.tokens.base import BaseToken, TokenCreator
 
 
 # Each tabular cell can be a string, a BaseToken, or None
@@ -19,8 +19,6 @@ class TableCell(BaseModel):
 CellType = Union[TableCell, ContentElement]
 TabularRowType = List[CellType]
 TabularContentType = List[TabularRowType]
-
-TokenCreator = Callable[[Dict[str, Any]], BaseToken]
 
 
 class TabularToken(BaseToken):

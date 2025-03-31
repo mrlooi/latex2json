@@ -580,6 +580,7 @@ def test_organize_content(latex_parser, latex_text, expected_organizer_output):
 
 def test_equation_placeholders(latex_parser):
     latex_text = r"""
+    \sc 
     \begin{equation*}
     \eqref{eq:sum}
     \sum_{i=1}^{n} i = \frac{n(n+1)}{2}
@@ -596,14 +597,17 @@ def test_equation_placeholders(latex_parser):
     expected = [
         {
             "type": "equation",
+            "styles": [FRONTEND_STYLE_MAPPING["textsc"]],
             "content": expected_eq_output,
             "display": "block",
             "placeholders": {
-                "___PLACEHOLDER_0___": {"type": "ref", "content": ["eq:sum"]},
-                "___PLACEHOLDER_1___": {
-                    "type": "includegraphics",
-                    "content": "example-image",
-                },
+                "___PLACEHOLDER_0___": [{"type": "ref", "content": ["eq:sum"]}],
+                "___PLACEHOLDER_1___": [
+                    {
+                        "type": "includegraphics",
+                        "content": "example-image",
+                    }
+                ],
             },
         }
     ]

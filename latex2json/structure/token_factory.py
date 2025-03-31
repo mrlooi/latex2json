@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, List, Type, Any, Callable, Union
 from latex2json.structure.tokens.bibliography import BibliographyToken
+from latex2json.structure.tokens.equation import EquationToken
 from latex2json.structure.tokens.types import TokenType
 from latex2json.structure.tokens.base import BaseToken
 from latex2json.structure.tokens.registry import TokenMap
@@ -82,6 +83,8 @@ class TokenFactory:
             return TabularToken.process(data, self.create)
         elif token_type == TokenType.BIBLIOGRAPHY:
             return BibliographyToken.process(data, self.create)
+        elif token_type == TokenType.EQUATION:
+            return EquationToken.process(data, self.create)
 
         # Handle standard tokens
         if "content" in data:

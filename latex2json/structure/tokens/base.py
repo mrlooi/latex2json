@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, Union, Dict, Any
+from typing import Callable, List, Optional, Type, Union, Dict, Any
 from pydantic import BaseModel, Field
 from latex2json.structure.tokens.types import TokenType
 
@@ -48,6 +48,9 @@ class BaseToken(BaseModel):
             result = {k: v for k, v in result.items() if v is not None}
 
         return result
+
+
+TokenCreator = Callable[[Dict[str, Any]], BaseToken]
 
 
 class EnvironmentToken(BaseToken):
