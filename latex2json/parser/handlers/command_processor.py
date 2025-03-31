@@ -310,7 +310,12 @@ class CommandProcessor:
             # if no space and/or starts with \\, we assume the output is a single command that may be affected if wrapped in braces
             # e.g. \tilde -> \tilde{...}, and NOT {\tilde}{...}
             if math_mode:
-                if " " in out or not out.strip().startswith("\\"):
+                start_pos = match.start()
+                prev_char = text[start_pos - 1] if start_pos > 0 else None
+                should_wrap = " " in out.strip() or (
+                    prev_char is not None and prev_char not in [" ", "}", "{"]
+                )
+                if should_wrap:
                     out = wrap_math_mode_arg(out)
             return out, pos
 
@@ -371,7 +376,7 @@ if __name__ == "__main__":
 
     handler = NewDefinitionHandler()
 
-    content = r"\newcommand{\cmd}{\@ifstar{star}{nostar}}"
+    content = r"\newcommand{\ti}{\tilde}"
     token, pos = handler.handle(content)
 
     processor = CommandProcessor()
@@ -383,5 +388,5 @@ if __name__ == "__main__":
         token["usage_pattern"],
     )
 
-    out, pos = processor.handle(r"\cmd=2")
+    out, pos = processor.expand_commands(r"\ti{3}", math_mode=True)
     print(out, pos)

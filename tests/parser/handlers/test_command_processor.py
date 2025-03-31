@@ -128,25 +128,25 @@ def test_expand_commands_math_mode(processor, newdef_handler):
         )
 
     # test \tilde is not wrapped in braces
-    content = r"$\ti{3}$"
+    content = r"\ti{3}"
     out_text, _ = processor.expand_commands(
         content, ignore_unicode=True, math_mode=True
     )
-    assert out_text == r"$\tilde{3}$"
+    assert out_text == r"\tilde{3}"
 
     # test \mathcal is wrapped in braces since it has a space
-    content = r"$\frac\calR 2$"
+    content = r"\frac\calR 2"
     out_text, _ = processor.expand_commands(
         content, ignore_unicode=True, math_mode=True
     )
-    assert out_text == r"$\frac{\mathcal R} 2$"
+    assert out_text == r"\frac{\mathcal R} 2"
 
     # test \gab is wrapped in braces since it doesn't start with \
-    content = r"$\paa\gab$"
+    content = r"\paa\gab"
     out_text, _ = processor.expand_commands(
         content, ignore_unicode=True, math_mode=True
     )
-    assert out_text == r"$\partial_\alpha{g^{\alpha\beta}}$"
+    assert out_text == r"\partial_\alpha{g^{\alpha\beta}}"
 
 
 def test_ifstar_definitions(processor, newdef_handler):
