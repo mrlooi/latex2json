@@ -200,7 +200,7 @@ The parser organizes latex tokens into the following token types:
 - `algorithm` - Algorithm environments
 - `algorithmic` - Algorithmic content
 
-### Graphics Elements
+#### Graphics Elements
 
 - `includegraphics` - Image inclusion commands
 - `includepdf` - PDF inclusion commands
