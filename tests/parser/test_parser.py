@@ -709,11 +709,11 @@ def test_algorithmic(parser):
     parsed_tokens = parser.parse(text)
     algorithm = parsed_tokens[0]
     assert algorithm["type"] == "algorithm"
-    assert algorithm["labels"] == ["alg:loop"]
     assert len(algorithm["content"]) == 2
 
     caption = algorithm["content"][0]
     assert caption["type"] == "caption"
+    assert caption["labels"] == ["alg:loop"]
     assert (
         caption["content"][0]["content"].strip()
         == "Sum of Array Elements % Here is link"
@@ -775,7 +775,6 @@ def test_nested_figures(parser):
     assert len(parsed_tokens) == 1
     figure = parsed_tokens[0]
     assert figure["type"] == "figure"
-    assert figure["labels"] == ["fig:pendulum-designs"]
 
     # Check subfigures
     subfigures = [token for token in figure["content"] if token["type"] == "figure"]
@@ -783,7 +782,6 @@ def test_nested_figures(parser):
 
     # Check first subfigure
     first_subfig = subfigures[0]
-    assert first_subfig["labels"] == ["fig:pendulum-a"]
 
     # Check first subfigure content
     first_graphics = [
@@ -792,10 +790,10 @@ def test_nested_figures(parser):
     first_caption = [t for t in first_subfig["content"] if t["type"] == "caption"][0]
     assert first_graphics["content"] == "image.png"
     assert first_caption["content"][0]["content"] == "First pendulum design"
+    assert first_caption["labels"] == ["fig:pendulum-a"]
 
     # Check second subfigure
     second_subfig = subfigures[1]
-    assert second_subfig["labels"] == ["fig:pendulum-b"]
 
     # Check second subfigure content
     second_graphics = [
@@ -804,6 +802,7 @@ def test_nested_figures(parser):
     second_caption = [t for t in second_subfig["content"] if t["type"] == "caption"][0]
     assert second_graphics["content"] == "example-image-b"
     assert second_caption["content"][0]["content"] == "Second pendulum design"
+    assert second_caption["labels"] == ["fig:pendulum-b"]
 
     # Check main caption
     main_caption = [t for t in figure["content"] if t["type"] == "caption"][0]
@@ -841,7 +840,6 @@ def test_complex_table(parser):
 
     # Check table properties
     assert table["type"] == "table"
-    assert table["labels"] == ["tab:sales"]
     assert table["numbered"] == True
 
     # Check tabular content
@@ -909,6 +907,7 @@ def test_complex_table(parser):
     caption = table["content"][1]
     assert caption["type"] == "caption"
     assert caption["content"][0]["content"] == "Regional Sales Distribution"
+    assert caption["labels"] == ["tab:sales"]
 
 
 def test_tabular_with_escaped_delimiters(parser):

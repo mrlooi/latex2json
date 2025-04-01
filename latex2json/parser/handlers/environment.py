@@ -106,6 +106,7 @@ ENV_ARGS = {
     "figure": {"optional": 1},  # Expects 1 optional argument for placement
     "subfigure": {"optional": 1, "mandatory": 1},
     "wrapfigure": {"optional": 1, "mandatory": 2},
+    "adjustbox": {"mandatory": 1},  # Expects 1 mandatory argument for width
     # ... other environments with known argument patterns
     "CJK": {"mandatory": 2},
 }

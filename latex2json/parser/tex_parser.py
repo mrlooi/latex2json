@@ -377,10 +377,10 @@ class LatexParser:
                         tokens.extend(input_tokens)
                 return
             elif token["type"] in ["footnote", "caption"]:
-                prev_env = self.current_env
+                # prev_env = self.current_env
                 self.current_env = token
                 token["content"] = self.parse(token["content"])
-                self.current_env = prev_env
+                # self.current_env = prev_env
             elif token["type"] == "url":
                 if "title" in token:
                     token["title"] = self.parse(token["title"])
