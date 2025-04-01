@@ -675,7 +675,8 @@ class LatexParser:
                 self.logger.error(f"File not found: {file_path}", exc_info=True)
                 return []
 
-            out = self.parse(content, preprocess=True)
+            preprocess = should_preprocess_file(file_path)
+            out = self.parse(content, preprocess=preprocess)
             self.logger.info(f"Finished parsing file: {file_path}")
             return out
         except Exception as e:
@@ -684,6 +685,30 @@ class LatexParser:
             )
             self.logger.warning(f"Continuing from failed parse at {file_path}")
             return []
+
+
+def should_preprocess_file(file_path: str) -> bool:
+    """
+    Determine if a file should be preprocessed based on its extension.
+
+    Args:
+        file_path: Path to the file
+
+    Returns:
+        bool: True if file should be preprocessed, False otherwise
+    """
+    NO_PREPROCESS_EXTENSIONS = {
+        ".pgf",  # PGF/TikZ graphics
+        ".tikz",  # TikZ graphics
+        ".sty",  # LaTeX style files
+        ".cls",  # LaTeX class files
+        ".def",  # LaTeX definition files
+        ".clo",  # Class option files
+        ".fd",  # Font definition files
+        ".cfg",  # Configuration files
+        ".ist",  # MakeIndex style files
+    }
+    return not any(str(file_path).endswith(ext) for ext in NO_PREPROCESS_EXTENSIONS)
 
 
 if __name__ == "__main__":
