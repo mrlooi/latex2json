@@ -270,9 +270,11 @@ def test_namedef(handler):
     # similar to def
 
     # Complex delimiters with parentheses and comma
-    content = r"\@namedef{pair}(#1,#2){#1 and #2}"
-    token, _ = handler.handle(content)
+    content = r"\@namedef{pair}(#1,#2){#1 and #2} POST"
+    token, pos = handler.handle(content)
     assert token["type"] == "def"
+    assert content[pos:] == " POST"
+
     pattern = token["usage_pattern"]
 
     assert re.match(pattern, r"\pair(asd sd ,b)")
@@ -281,9 +283,10 @@ def test_namedef(handler):
     assert not re.match(pattern, r"\pair(a)")
 
     # Special case with \end as delimiter
-    content = r"\@namedef{until}#1\end#2{This text until #1 #2}"
-    token, _ = handler.handle(content)
+    content = r"\@namedef{until}#1\end#2{This text until #1 #2} POST"
+    token, pos = handler.handle(content)
     assert token["type"] == "def"
+    assert content[pos:] == " POST"
 
     pattern = token["usage_pattern"]
 
@@ -293,13 +296,20 @@ def test_namedef(handler):
     assert not re.match(pattern, r"\until text")
 
     # Special case for stuff with special chars e.g. @/. (usage via csname)
-    content = r"\@namedef{ver@everyshi.sty}{Hi there}"
-    token, _ = handler.handle(content)
+    content = r"\@namedef{ver@everyshi.sty}{}POST"
+    token, pos = handler.handle(content)
     assert token["type"] == "def"
+    assert content[pos:] == "POST"
+
+    content = r"\@namedef{ver@everyshi.sty}{Hi there}POST"
+    token, pos = handler.handle(content)
+    assert token["type"] == "def"
+    assert content[pos:] == "POST"
 
     pattern = token["usage_pattern"]
 
     assert re.match(pattern, r"\csname ver@everyshi.sty \endcsname")
+    assert content[pos:] == "POST"
 
 
 def test_let_command(handler):

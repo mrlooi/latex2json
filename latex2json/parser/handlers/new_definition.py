@@ -353,20 +353,20 @@ class NewDefinitionHandler(TokenHandler):
     def _handle_namedef(self, content: str, match) -> Tuple[Optional[Dict], int]:
         r"""Handle \@namedef definitions"""
         end_pos = match.end()
-        # convert to \def format
-        search_text = (
-            r"\def \csname " + match.group(1) + r" \endcsname " + content[end_pos:]
-        )
+        # convert to \def format and add csname to also match both cases
+        search_prefix = r"\def\csname " + match.group(1) + r" \endcsname "
+        search_text = search_prefix + content[end_pos:]
         # run matching exactly same as \def
         match = re.match(DEF_COMMAND_PREFIX, search_text)
         if match:
-            return self._handle_def_prefix(
+            token, total_pos = self._handle_def_prefix(
                 search_text,
                 match,
                 DEF_COMMAND_PATTERN,
                 self._handle_def,
                 max_csname_blocks=1,
             )
+            return token, end_pos + total_pos - len(search_prefix)
         return None, end_pos
 
     def _handle_def_prefix(
@@ -432,7 +432,8 @@ class NewDefinitionHandler(TokenHandler):
                         token["usage_pattern"] = (
                             token["usage_pattern"] + "|" + inner_csname_regex
                         )
-                    return token, start_pos + end_pos - len(search_prefix)
+                    total_pos = start_pos + end_pos - len(search_prefix)
+                    return token, total_pos
 
                 break
 
@@ -613,8 +614,10 @@ if __name__ == "__main__":
         print()
 
     text = r"""
-    \renewcommand{\(}{\left(}
+    \@namedef{ver@everyshi.sty}{}
+    \makeatother
     """.strip()
 
-    out, _ = handler.handle(text)
+    out, pos = handler.handle(text)
     print(out)
+    print(text[pos:])
