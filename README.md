@@ -65,6 +65,10 @@ This parser focuses on extracting document content rather than preserving LaTeX'
   - Style file parsing (`sty_parser.py`) # handles .sty files
 - Clean JSON output generation (`structure/builder.py`)
 
+### What about tikz/pgfpicture/picture etc?
+
+- These drawing environments are stored as verbatim, raw latex blocks (type: `diagram`)
+
 ## Installation
 
 ### From GitHub
@@ -266,8 +270,8 @@ This parser has been successfully tested on the following arxiv papers, includin
 - [2301.10945v1] A Fully First-Order Method for Stochastic Bilevel Optimization (Computer Science/Optimization, 2023)
 - [1907.11692v1] RoBERTa: A Robustly Optimized BERT Pretraining Approach (AI/ML, 2019)
 - [math/0503066] Stable signal recovery from incomplete and inaccurate measurements (Math/Numerical Analysis, 2006)
+- [2304.02643] Segment Anything (Computer Vision, 2023)
 - [1712.01815v1] Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm (AI/ML, 2017) # limitations on /chess related commands
-- [2304.02643] Segment Anything (Computer Vision, 2023) # limitations on /pgf... and /draw commands
 
 And many more across math, physics, and computer science.
 
