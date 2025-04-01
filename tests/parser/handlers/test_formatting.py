@@ -191,7 +191,6 @@ def test_misc_formatting_commands(handler):
     \textwidth 16cm 
     \textheight 21cm
     \footskip 1.0cm
-    \newcolumntype{S}{>{\hsize=.3\hsize}X}
     \linewidth
     \addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
     \protect\setcounter{tocdepth}{1}
@@ -247,8 +246,6 @@ def test_misc_formatting_commands(handler):
     \advance\leftmargin by -\rightmargin
     \advance\topskip-1cm
 
-    \newcolumntype{x}[1]{>{\centering}p{#1pt}}
-    \newcolumntype{y}{>{\centering}p{16pt}}
     \hyphenation{identity notorious underlying surpasses desired residual doubled}
 
     \DeclareFontFamily{OT1}{rsfs}{}

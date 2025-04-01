@@ -548,6 +548,16 @@ def test_newfam(handler):
     assert token["name"] == "bboardfam"
 
 
+def test_new_columntype(handler):
+    content = r"\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}} POST"
+    token, pos = handler.handle(content)
+    assert content[pos:] == " POST"
+
+    content = r"\newcolumntype{S}{>{\hsize=.3\hsize}X} POST"
+    token, pos = handler.handle(content)
+    assert content[pos:] == " POST"
+
+
 def test_font(handler):
     content = r"\font\myfont=cmr12 at 20pt POST"
     token, pos = handler.handle(content)

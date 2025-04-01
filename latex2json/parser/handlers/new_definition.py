@@ -78,6 +78,9 @@ PATTERNS = {
     "newother": re.compile(
         r"\\(?:re)?new(?:count|box|dimen|skip|muskip)\s*\\([^\s{[]+)"
     ),
+    "newcolumntype": re.compile(
+        r"\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}(?:\s*\[\d+\])?\s*{", re.DOTALL
+    ),
     "newfam": re.compile(r"\\newfam\s*\\([^\s{[]+)"),
     "setcounter": re.compile(
         r"\\setcounter\s*%s\s*%s" % (BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN),
@@ -183,10 +186,20 @@ class NewDefinitionHandler(TokenHandler):
                     next_pos = match.end()
                     token, end_pos = self.handle(content[next_pos:])
                     return token, next_pos + end_pos
+                elif pattern_name == "newcolumntype":
+                    return self._handle_newcolumntype(content, match)
                 else:
                     return None, match.end()
 
         return None, 0
+
+    def _handle_newcolumntype(self, content: str, match) -> Tuple[Optional[Dict], int]:
+        r"""Handle \newcolumntype definitions"""
+        start_pos = match.end() - 1
+        _, end_pos = extract_nested_content(content[start_pos:])
+        end_pos += start_pos
+        # token = {"type": "newcolumntype", "name": match.group(1).strip()}
+        return None, end_pos
 
     def _handle_newother(self, match) -> Tuple[Optional[Dict], int]:
         r"""Handle \newother definitions"""

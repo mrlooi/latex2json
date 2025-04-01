@@ -155,11 +155,6 @@ RAW_PATTERNS = OrderedDict(
                 re.DOTALL,
             ),
         ),
-        # table
-        (
-            "newcolumntype",
-            r"\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}(?:\s*\[\d+\])?\s*{",
-        ),
         # separators
         ("itemsep", r"\\itemsep\s*(=\s*)?-?\d*\.?\d+\w+?\b"),
         (
