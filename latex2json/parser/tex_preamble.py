@@ -26,6 +26,10 @@ USE_PATTERN = re.compile(
 )
 DELIM_PATTERN = re.compile(r"\\(?=[a-zA-Z@])[a-zA-Z@]+")
 
+# Add these patterns near the top with other patterns
+MAKEATLETTER_PATTERN = re.compile(r"\\makeatletter\b")
+MAKEATOTHER_PATTERN = re.compile(r"\\makeatother\b")
+
 
 class LatexPreamble:
     def __init__(self, logger=None):
@@ -88,6 +92,19 @@ class LatexPreamble:
                 output_preamble += use_pattern_match.group(0) + "\n"
                 current_pos += end_pos
                 continue
+
+            # Add makeatletter/makeatother handling
+            makeatletter_match = MAKEATLETTER_PATTERN.match(content[current_pos:])
+            if makeatletter_match:
+                # Find the matching makeatother
+                makeatother_match = MAKEATOTHER_PATTERN.search(content[current_pos:])
+                if makeatother_match:
+                    end_pos = makeatother_match.end()
+                    output_preamble += (
+                        content[current_pos : current_pos + end_pos] + "\n"
+                    )
+                    current_pos += end_pos
+                    continue
 
             # Expand commands using command_manager instead of command_processor
             if self.new_definition_handler.can_handle(content[current_pos:]):
