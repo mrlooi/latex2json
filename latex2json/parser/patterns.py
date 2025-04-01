@@ -3,6 +3,8 @@ from collections import OrderedDict
 
 
 BRACE_CONTENT_PATTERN = r"\{([^}]+)\}"
+OPTIONAL_BRACE_PATTERN = r"(?:\[[^\]]*\])?"
+
 NUMBER_PATTERN = r"[-+]?\d*\.?\d+"
 
 command_with_opt_brace_pattern = r"(?:{\s*)?\\([a-zA-Z@]+)(?:\s*})?"
@@ -17,14 +19,18 @@ DELIM_PATTERN = re.compile(
     r"(?<!\\)(?:\\\\|\$|%|(?:^|[ \t])\{|\s{|{}|\\\^|\\(?![$%&_#{}^~\\]))"
 )
 
-OPTIONAL_BRACE_PATTERN = r"(?:\[[^\]]*\])?"
-
+DOCUMENTCLASS_PATTERN = re.compile(
+    r"\\documentclass\s*%s\s*%s" % (OPTIONAL_BRACE_PATTERN, BRACE_CONTENT_PATTERN),
+    re.DOTALL,
+)
 USEPACKAGE_PATTERN = re.compile(
-    r"\\(?:usepackage|RequirePackage)\s*%s\s*\{([^}]+)\}" % OPTIONAL_BRACE_PATTERN,
+    r"\\(?:usepackage|RequirePackage)\s*%s\s*%s"
+    % (OPTIONAL_BRACE_PATTERN, BRACE_CONTENT_PATTERN),
     re.DOTALL,
 )
 LOADCLASS_PATTERN = re.compile(
-    r"\\LoadClass\s*%s\s*\{([^}]+)\}" % OPTIONAL_BRACE_PATTERN, re.DOTALL
+    r"\\LoadClass\s*%s\s*%s" % (OPTIONAL_BRACE_PATTERN, BRACE_CONTENT_PATTERN),
+    re.DOTALL,
 )
 
 # ASSUMES ORDERD DICT (PYTHON 3.7+)

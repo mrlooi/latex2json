@@ -9,6 +9,7 @@ from latex2json.parser.patterns import (
     USEPACKAGE_PATTERN,
     WHITELISTED_COMMANDS,
     DELIM_PATTERN,
+    DOCUMENTCLASS_PATTERN,
 )
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -16,8 +17,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from latex2json.parser.handlers.code_block import PATTERNS as VERBATIM_PATTERNS
 
 from latex2json.parser.handlers import (
-    NewDefinitionHandler,
-    CommandProcessor,
     EquationHandler,
 )
 from latex2json.utils.tex_utils import (
@@ -28,13 +27,8 @@ from latex2json.utils.tex_utils import (
 from latex2json.parser.sty_parser import LatexStyParser
 from latex2json.parser.handlers.command_manager import CommandManager
 
-OPTIONAL_BRACE_PATTERN = r"(?:\[[^\]]*\])?"
 
-DOCUMENTCLASS_PATTERN = re.compile(
-    r"\\documentclass\s*%s\s*\{([^}]+)\}" % OPTIONAL_BRACE_PATTERN
-)
 ADD_TO_PATTERN = re.compile(r"\\addto\s*(?:{?\\[^}\s]+}?)\s*\{")  # e.g. \addto\cmd{...}
-NEWLINE_PATTERN = re.compile(r"\\(?:newline|linebreak)(?![a-zA-Z])")
 
 ALL_VERBATIM_PATTERNS = list(VERBATIM_PATTERNS.values())
 ALL_VERBATIM_PATTERNS.append(
@@ -42,6 +36,11 @@ ALL_VERBATIM_PATTERNS.append(
 )
 ALL_VERBATIM_PATTERNS.append(
     re.compile(r"\\begin\s*\{algorithmic\}(.*?)\\end\s*\{algorithmic\}", re.DOTALL)
+)
+ALL_VERBATIM_PATTERNS.append(
+    re.compile(
+        r"\\begin\s*\{(picture|tikzpicture|pgfpicture)\}(.*?)\\end\s*\{\1\}", re.DOTALL
+    )
 )
 
 DELIM_PATTERN_WITH_QUOTES = re.compile(DELIM_PATTERN.pattern + r"|`")

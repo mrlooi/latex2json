@@ -4,7 +4,7 @@ from typing import List, Dict, Tuple, Union
 import sys, os, traceback
 import logging
 
-from latex2json.parser.bib_parser import BibEntry, BibParser
+from latex2json.parser.bib.bib_parser import BibEntry, BibParser
 from latex2json.utils.logger import setup_logger
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
