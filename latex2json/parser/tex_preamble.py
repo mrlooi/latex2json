@@ -63,7 +63,7 @@ class LatexPreamble:
         # find from documentclass onwards
         doc_class_match = DOCUMENTCLASS_PATTERN.search(content)
         if doc_class_match:
-            output_preamble += doc_class_match.group(0) + "\n\n"
+            # output_preamble += doc_class_match.group(0) + "\n\n"
             current_pos = doc_class_match.end()
 
         while current_pos < len(content):
