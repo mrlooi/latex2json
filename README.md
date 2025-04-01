@@ -193,14 +193,18 @@ The parser organizes latex tokens into the following token types:
 - `figure` - Figure environments
 - `table` - Table environments
 - `tabular` - Table content structure
-- `includegraphics` - Image inclusion commands
-- `includepdf` - PDF inclusion commands
 - `caption` - Captions for figures and tables
 - `list` - Enumerated or itemized lists
 - `item` - List items
 - `code` - Code blocks
 - `algorithm` - Algorithm environments
 - `algorithmic` - Algorithmic content
+
+### Graphics Elements
+
+- `includegraphics` - Image inclusion commands
+- `includepdf` - PDF inclusion commands
+- `diagram` - tikz/picture diagrams containing verbatim the raw latex for those blocks
 
 #### Environment Types
 
@@ -276,7 +280,7 @@ This makes it simpler to implement and faster for processing, but also less robu
 
 - Limited support for complex or legacy macro definitions, particularly those using advanced TeX primitives
 - Simplified if-else handling: processes only the first conditional branch for most \if commands
-- Does not currently support specialized LaTeX drawing commands and environments (e.g., `\draw`, TikZ diagrams, Chess commands et). Treats them as unknown command tokens i.e. type: "command"
+- Does not currently support specialized LaTeX drawing commands and environments (e.g., Chess commands etc). Treats them as unknown command tokens i.e. type: "command"
 - May not handle certain custom or non-standard LaTeX packages fully
 - Does not preserve latex visual formatting and counters
 
@@ -284,17 +288,13 @@ This makes it simpler to implement and faster for processing, but also less robu
 
 Contributions to improve LaTeX2JSON are welcome! Here are some areas where help is needed:
 
-1. **Drawing Package Support**
-
-   - Implementing support for TikZ, PGF, and other drawing packages
-
-2. **cls/sty Processing**
+1. **cls/sty Processing**
 
    - Improving handling of `.cls` and `.sty` files
    - Better support for complex `@if` conditionals and LaTeX internals
    - Expanding macro resolution capabilities (e.g. currently \noexpand or \expandafter are ignored)
 
-3. **Additional commands from various packages**
+2. **Additional commands from various packages**
 
    - If you find a command that is not supported, please feel free to add them!
 

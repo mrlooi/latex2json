@@ -148,6 +148,13 @@ def test_expand_commands_math_mode(processor, newdef_handler):
     )
     assert out_text == r"\partial_\alpha{g^{\alpha\beta}}"
 
+    # test if prefix _ or ^ is wrapped in braces
+    content = r"\Delta^\paa"
+    out_text, _ = processor.expand_commands(
+        content, ignore_unicode=True, math_mode=True
+    )
+    assert out_text == r"\Delta^{\partial_\alpha}"
+
 
 def test_ifstar_definitions(processor, newdef_handler):
     processor.clear()
