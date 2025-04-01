@@ -64,6 +64,7 @@ BOX_PATTERN = re.compile(
         sbox\b\s*[^{]+\s*{| # \sbox\@tempboxa{text}
         pbox\b\s*{[^}]*}\s*{| # \pbox{x}{text}
         resizebox\s*{[^}]*}\s*{[^}]*}\s*{|  # \resizebox{width}{height}{text}
+        rotatebox\s*{[^}]*}\s*{| # \rotatebox{angle}{text}
         adjustbox\s*{   # \adjustbox{max width=\textwidth}{...}
     )
     """,

@@ -171,6 +171,7 @@ def test_box_commands(handler):
         (r"\sbox\@tempboxa{Some text}", "Some text"),
         (r"\pbox{3cm}{Some text}", "Some text"),
         (r"\adjustbox{max width=\textwidth}{Some text}", "Some text"),
+        (r"\rotatebox{90}{Some text}", "Some text"),
     ]
 
     for command, expected_text in test_cases:

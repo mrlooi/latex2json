@@ -17,8 +17,7 @@ USE_TIKZ_LIB_PATTERN = re.compile(r"\\usetikzlibrary\s*{")
 
 PATTERNS = {
     "usetikzlibrary": USE_TIKZ_LIB_PATTERN,
-    "begin_tikzpicture": re.compile(r"\\begin\s*\{tikzpicture\}"),
-    "begin_picture": re.compile(r"\\begin\s*\{picture\}"),
+    "begin_picture": re.compile(r"\\begin\s*\{(tikzpicture|picture|pgfpicture)\}"),
     "pgfplotsset": re.compile(r"\\pgfplotsset\s*{"),
 }
 
@@ -46,21 +45,13 @@ class TikzHandler(TokenHandler):
                     content, end_pos = extract_nested_content(content[start_pos:])
                     return None, start_pos + end_pos
                 elif pattern_name == "begin_picture":
+                    env_name = match.group(1)
                     start_pos, end_pos, inner_content = find_matching_env_block(
-                        content, "picture"
+                        content, env_name
                     )
                     return {
                         "type": "diagram",
-                        "name": "picture",
-                        "content": inner_content,
-                    }, end_pos
-                elif pattern_name == "begin_tikzpicture":
-                    start_pos, end_pos, inner_content = find_matching_env_block(
-                        content, "tikzpicture"
-                    )
-                    return {
-                        "type": "diagram",
-                        "name": "tikzpicture",
+                        "name": env_name,
                         "content": inner_content,
                     }, end_pos
                 return None, match.end()
