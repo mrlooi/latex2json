@@ -250,7 +250,7 @@ class TokenBuilder:
             # Check if current token is a math environment followed by a proof
             if is_nonproof_math_env(current_token) and is_proof_env(next_token):
                 # Merge proof content into the math environment
-                current_token["proof"] = next_token.get("content", [])
+                current_token["proof"] = next_token
                 merged_tokens.append(current_token)
                 i += 2  # Skip the proof token
                 continue

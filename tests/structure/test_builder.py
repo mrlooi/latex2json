@@ -253,15 +253,19 @@ def expected_organizer_output():
                                     "numbering": "1.1",
                                     "numbered": True,
                                     # check proof is merged into theorem
-                                    "proof": [
-                                        {
-                                            "type": "text",
-                                            "content": "Proof of theorem 1",
-                                            "styles": [
-                                                FRONTEND_STYLE_MAPPING["textbf"]
-                                            ],
-                                        }
-                                    ],
+                                    "proof": {
+                                        "type": "math_env",
+                                        "name": "proof",
+                                        "content": [
+                                            {
+                                                "type": "text",
+                                                "content": "Proof of theorem 1",
+                                                "styles": [
+                                                    FRONTEND_STYLE_MAPPING["textbf"]
+                                                ],
+                                            }
+                                        ],
+                                    },
                                 },
                             ],
                         },

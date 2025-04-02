@@ -66,7 +66,7 @@ class MathEnvToken(BaseToken):
     content: List[BaseToken]
     numbering: Optional[str] = None
     title: Optional[List[BaseToken]] = None
-    proof: Optional[List[BaseToken]] = None
+    proof: Optional["MathEnvToken"] = None
 
     def model_dump(self, **kwargs):
         result = super().model_dump(**kwargs)
@@ -76,9 +76,7 @@ class MathEnvToken(BaseToken):
                 self.serialize_value(token, **kwargs) for token in self.title
             ]
         if self.proof:
-            result["proof"] = [
-                self.serialize_value(token, **kwargs) for token in self.proof
-            ]
+            result["proof"] = self.serialize_value(self.proof, **kwargs)
 
         return result
 
@@ -98,9 +96,7 @@ class MathEnvToken(BaseToken):
             for item in data["title"]:
                 title.append(create_token(item))
         if "proof" in data:
-            proof = []
-            for item in data["proof"]:
-                proof.append(create_token(item))
+            proof = create_token(data["proof"])
 
         return cls(
             content=content,
