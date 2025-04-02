@@ -114,6 +114,7 @@ def test_expand_commands_math_mode(processor, newdef_handler):
         r"\newcommand{\calR}{\mathcal R}",
         r"\newcommand{\gab}{g^{\alpha\beta}}",
         r"\newcommand{\paa}{\partial_\alpha}",
+        r"\newcommand{\f}{\frac}",
     ]
 
     for cmd in commands:
@@ -154,6 +155,13 @@ def test_expand_commands_math_mode(processor, newdef_handler):
         content, ignore_unicode=True, math_mode=True
     )
     assert out_text == r"\Delta^{\partial_\alpha}"
+
+    # check \f not wrapped in braces
+    content = r"x^\f{1}{2}"
+    out_text, _ = processor.expand_commands(
+        content, ignore_unicode=True, math_mode=True
+    )
+    assert out_text == r"x^\frac{1}{2}"
 
 
 def test_ifstar_definitions(processor, newdef_handler):

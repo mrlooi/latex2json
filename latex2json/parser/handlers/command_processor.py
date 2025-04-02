@@ -320,8 +320,11 @@ class CommandProcessor:
                     elif c[0].isalnum():
                         should_wrap = True
                     elif c.startswith("\\"):
-                        # Handle both subscript and superscript
-                        should_wrap = prev_char in "_^"
+                        # most likely a command
+                        is_all_alpha = c[1:].isalpha()
+                        if not is_all_alpha:
+                            # Handle both subscript and superscript
+                            should_wrap = prev_char in "_^"
 
                 if should_wrap:
                     out = wrap_math_mode_arg(out)
