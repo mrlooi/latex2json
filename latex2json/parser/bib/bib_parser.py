@@ -1,148 +1,20 @@
-from dataclasses import dataclass
 from logging import Logger
 import logging
-from typing import Dict, List, Optional
 import re
-from latex2json.utils.tex_utils import (
-    extract_nested_content,
-    strip_latex_comments,
-    normalize_whitespace_and_lines,
-)
+import os
+from typing import List
+
 from latex2json.parser.bib.compiled_bibtex import (
     is_compiled_bibtex,
     process_compiled_bibtex_to_bibtex,
 )
-
-import os
-
-
-@dataclass
-class BibEntry:
-    """Unified bibliography entry model for both BibTeX and bibitem"""
-
-    citation_key: str
-    content: str
-    title: Optional[str]
-    # BibTeX related below
-    entry_type: Optional[
-        str
-    ]  # 'article', 'book', etc. for BibTeX; 'bibitem' for LaTeX bibitem
-    fields: Optional[Dict[str, str]]
-
-    @classmethod
-    def from_bibitem(cls, token: Dict) -> "BibEntry":
-        """Convert bibitem token to bibliography entry"""
-        return cls(
-            citation_key=token["cite_key"],
-            title=token.get("title"),
-            content=token["content"],
-            fields={},
-        )
-
-    @classmethod
-    def from_bibtex(
-        cls, entry_type: str, citation_key: str, fields: Dict[str, str]
-    ) -> "BibEntry":
-        """Convert BibTeX entry to bibliography entry"""
-        # Format content as string representation of fields
-        content = ", ".join(f"{k}={v}" for k, v in fields.items())
-
-        return cls(
-            entry_type=entry_type,
-            citation_key=citation_key,
-            title=fields.get("title"),
-            content=content,
-            fields=fields,
-        )
-
-
-BibTexPattern = re.compile(r"@(\w+)\s*\{")
-BibTexFieldPattern = re.compile(r"(\w+)\s*=\s*")
-
-
-def preprocess(content: str) -> str:
-    """Preprocess content to remove comments and normalize whitespace"""
-    content = strip_latex_comments(content)
-    content = normalize_whitespace_and_lines(content)
-    return content.strip()
-
-
-class BibTexParser:
-    def __init__(self, logger: Logger = None):
-        self.logger = logger or logging.getLogger(__name__)
-
-    def parse(self, content: str) -> List[BibEntry]:
-        """Parse BibTeX content and return list of BibEntry objects"""
-        self.logger.info("Starting BibTeX parsing")
-        entries = []
-        pos = 0
-
-        content = preprocess(content)
-
-        # Find each entry starting with @
-        for match in re.finditer(BibTexPattern, content):
-            entry_type = match.group(1).lower()
-            start_pos = match.end() - 1  # Position of the opening brace
-
-            # Get everything inside the braces
-            entry_content, next_pos = extract_nested_content(content[start_pos:])
-            if entry_content is None:
-                continue
-
-            # Split into citation key and fields
-            key_end = entry_content.find(",")
-            if key_end == -1:
-                continue
-
-            citation_key = entry_content[:key_end].strip()
-            fields_text = entry_content[key_end + 1 :].strip()
-
-            # Parse fields
-            fields = {}
-            pos = 0
-
-            while pos < len(fields_text):
-                field_match = re.search(BibTexFieldPattern, fields_text[pos:])
-                if not field_match:
-                    break
-
-                field_name = field_match.group(1).lower()
-                field_start = pos + field_match.end()
-
-                # Get value - either in braces or quotes
-                if fields_text[field_start:].lstrip().startswith("{"):
-                    # Skip whitespace to actual brace
-                    while (
-                        field_start < len(fields_text)
-                        and fields_text[field_start].isspace()
-                    ):
-                        field_start += 1
-                    value, value_end = extract_nested_content(fields_text[field_start:])
-                    if value is not None:
-                        fields[field_name] = value.strip()
-                        pos = field_start + value_end
-                else:
-                    # Handle quoted values
-                    quote_match = re.match(r'\s*"([^"]*)"', fields_text[field_start:])
-                    if quote_match:
-                        fields[field_name] = quote_match.group(1)
-                        pos = field_start + quote_match.end()
-                    else:
-                        pos = field_start + 1
-
-                # Skip trailing comma and whitespace
-                while pos < len(fields_text) and (
-                    fields_text[pos].isspace() or fields_text[pos] == ","
-                ):
-                    pos += 1
-
-            entry = BibEntry.from_bibtex(
-                entry_type=entry_type, citation_key=citation_key, fields=fields
-            )
-            entries.append(entry)
-
-        return entries
-
+from latex2json.parser.bib.bibtex_parser import (
+    BibEntry,
+    BibTexParser,
+    preprocess,
+    BibTexPattern,
+)
+from latex2json.parser.bib.bibdiv_parser import BibDivParser, BibDivPattern
 
 BibItemPattern = re.compile(
     r"\\bibitem\s*(?:\[(.*?)\])?\s*\{(.*?)\}\s*([\s\S]*?)(?=\\bibitem|$)",
@@ -157,31 +29,35 @@ class BibParser:
         self.logger = logger or logging.getLogger(__name__)
 
         self.bibtex_parser = BibTexParser(logger=self.logger)
+        self.bibdiv_parser = BibDivParser(logger=self.logger)
 
     def clear(self):
         pass
 
     def parse(self, content: str) -> List[BibEntry]:
-        """Parse both BibTeX and bibitem entries from the content"""
+        """Parse both BibTeX, bibitem, and bibdiv entries from the content"""
 
         content = preprocess(content)
 
         entries = []
 
+        # Check for bibdiv environment first
+        if BibDivParser.is_bibdiv(content):
+            self.logger.debug("Parsing bibdiv environment content")
+            entries.extend(self.bibdiv_parser.parse(content))
         # Check if content has bibliography environment
-        bib_env_pattern = r"\\begin{(\w*bibliography)}(.*?)\\end{\1}"
-        bib_env_match = re.search(bib_env_pattern, content, re.DOTALL)
-
-        if bib_env_match:
+        elif re.search(r"\\begin{(\w*bibliography)}(.*?)\\end{\1}", content, re.DOTALL):
             self.logger.debug("Parsing bibliography environment content")
-            bib_content = bib_env_match.group(2)
+            bib_content = re.search(
+                r"\\begin{(\w*bibliography)}(.*?)\\end{\1}", content, re.DOTALL
+            ).group(2)
             entries.extend(self._parse_bibitems(bib_content))
         elif is_compiled_bibtex(content):
             self.logger.debug("Parsing compiled BibTeX content")
             # first convert to bibtex format
             bibtex_content = process_compiled_bibtex_to_bibtex(content)
             entries.extend(self.bibtex_parser.parse("\n".join(bibtex_content)))
-        elif re.search(BibTexPattern, content):
+        elif BibTexParser.is_bibtex(content):
             entries.extend(self.bibtex_parser.parse(content))
         else:
             self.logger.debug("Parsing standalone bibitem content")
@@ -268,9 +144,12 @@ class BibParser:
         if bib_content:
             self.logger.info(f"BibParser: Parsing {file_path}")
             entries = self.parse(bib_content)
-            self.logger.info(
-                f"Finished BibParser: {file_path} -> Found {len(entries)} entries"
-            )
+            if len(entries) == 0:
+                self.logger.warning(f"BibParser: No entries found in {file_path}")
+            else:
+                self.logger.info(
+                    f"Finished BibParser: {file_path} -> Found {len(entries)} entries"
+                )
             return entries
         else:
             self.logger.warning(f"Bibliography file not found: {file_path}")
@@ -279,17 +158,6 @@ class BibParser:
 
 if __name__ == "__main__":
     parser = BibParser()
-
-    # # For BibTeX content
-    # bibtex_content = """
-    # @article{key1,
-    # title={Some Title},
-    # author={Author Name},
-    # year={2023}
-    # }
-    # """
-    # entries = parser.parse(bibtex_content)
-    # print(entries)
 
     # For bibitem content
     bibitem_content = r"""

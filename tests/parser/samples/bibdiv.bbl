@@ -1,0 +1,33 @@
+% \bib, bibdiv, biblist are defined by the amsrefs package.
+
+\begin{bibdiv}
+\begin{biblist}
+
+
+\bib{CZN23strip}{article}{
+      author={{Coti Zelati}, Michele},
+      author={{Nualart}, Marc},
+       title={{Explicit solutions and linear inviscid damping in the
+  Euler-Boussinesq equation near a stratified Couette flow in the periodic
+  strip}},
+        date={2023-09},
+     journal={arXiv e-prints},
+      eprint={2309.08419},
+}
+
+\bib{CDGG06}{book}{
+      author={Chemin, Jean-Yves},
+      author={Desjardins, Benoit},
+      author={Gallagher, Isabelle},
+      author={Grenier, Emmanuel},
+       title={Mathematical geophysics. {An} introduction to rotating fluids and
+  the {Navier}-{Stokes} equations.},
+      series={Oxf. Lect. Ser. Math. Appl.},
+   publisher={Oxford: Clarendon Press},
+        date={2006},
+      volume={32},
+        ISBN={0-19-857133-X},
+}
+
+\end{biblist}
+\end{bibdiv}
