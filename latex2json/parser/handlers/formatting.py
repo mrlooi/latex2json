@@ -3,14 +3,17 @@ import re
 from collections import OrderedDict
 from typing import Callable, Dict, List, Optional, Tuple
 from latex2json.parser.handlers.base import TokenHandler
-from latex2json.parser.patterns import NUMBER_PATTERN, number_points_suffix
+from latex2json.parser.patterns import (
+    NUMBER_PATTERN,
+    OPTIONAL_BRACE_PATTERN,
+    BRACE_CONTENT_PATTERN,
+    number_points_suffix,
+)
 from latex2json.utils.tex_utils import (
     extract_nested_content,
     extract_nested_content_sequence_blocks,
 )
 import decimal
-
-OPTIONAL_BRACE_PATTERN = r"(?:\[([^\]]*)\])?"
 
 COLOR_CELLS_PATTERN = re.compile(
     r"""
@@ -42,7 +45,8 @@ RAW_PATTERNS = OrderedDict(
         (
             "class_setup",
             re.compile(
-                r"\\(?:NeedsTeXFormat\s*\{([^}]+)\}|(?:ProvidesClass|ProvidesPackage)\s*\{([^}]+)\}\s*\[)",
+                r"\\(?:NeedsTeXFormat\s*\{([^}]+)\}|(?:ProvidesClass|ProvidesPackage)\s*%s\s*\[)"
+                % BRACE_CONTENT_PATTERN,
                 re.DOTALL,
             ),
         ),
@@ -123,6 +127,10 @@ RAW_PATTERNS = OrderedDict(
             + r"|linespread\s*\{[^}]*\}"  # Added \linespread{...}
             r")",
         ),
+        (
+            "toolset",
+            r"\\mathtoolsset\s*%s" % (BRACE_CONTENT_PATTERN),
+        ),
         # \kern, which is technically spacing but more like a length between characters. so ignore
         ("kern", r"\\kern\s*%s" % (number_points_suffix)),
         # options
@@ -146,6 +154,7 @@ RAW_PATTERNS = OrderedDict(
             "linenumbers",
             re.compile(
                 r"\\(?:linenumbers\b|linesnumbered\b|numberwithin\s*\{[^}]*\}\s*\{[^}]*\})",
+                re.DOTALL | re.IGNORECASE,
             ),
         ),
         (

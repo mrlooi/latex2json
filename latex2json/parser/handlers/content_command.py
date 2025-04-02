@@ -57,7 +57,7 @@ RAW_PATTERNS = OrderedDict(
         # Citations
         (
             "citation",
-            r"\\(?:cite|citep|citet|citealt|citealp|citeauthor|citenum|citeyear|citeyearpar|citefullauthor)\s*%s%s\s*{"
+            r"\\(?:cite|citep|citet|cites|citealt|citealp|citeauthor|citenum|citeyear|citeyearpar|citefullauthor)\s*%s%s\s*{"
             % (OPTIONAL_BRACE_PATTERN, OPTIONAL_BRACE_PATTERN),
         ),
         # ("citetext", r"\\citetext\s*{"), # remove citetext since it is just like regular latex -> handled by text_formatting

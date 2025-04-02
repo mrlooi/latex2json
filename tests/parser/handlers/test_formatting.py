@@ -307,6 +307,7 @@ def test_misc_formatting_commands(handler):
     \unvbox\box
     \addcontentsline{toc}{chapter}{Bibliography}
     \DeclareSymbolFontAlphabet{\amsmathbb}{AMSb}
+    \mathtoolsset{mathic}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
