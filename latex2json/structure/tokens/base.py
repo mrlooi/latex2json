@@ -63,8 +63,10 @@ class EnvironmentToken(BaseToken):
 class MathEnvToken(BaseToken):
     type: TokenType = TokenType.MATH_ENV
     name: str
+    content: List[BaseToken]
     numbering: Optional[str] = None
     title: Optional[List[BaseToken]] = None
+    proof: Optional[List[BaseToken]] = None
 
     def model_dump(self, **kwargs):
         result = super().model_dump(**kwargs)
@@ -73,8 +75,42 @@ class MathEnvToken(BaseToken):
             result["title"] = [
                 self.serialize_value(token, **kwargs) for token in self.title
             ]
+        if self.proof:
+            result["proof"] = [
+                self.serialize_value(token, **kwargs) for token in self.proof
+            ]
 
         return result
+
+    @classmethod
+    def process(
+        cls, data: Dict[str, Any], create_token: TokenCreator
+    ) -> "MathEnvToken":
+        """Process math environment data, filtering for MathEnvTokens only"""
+        content = []
+        title = None
+        proof = None
+        if "content" in data:
+            for item in data["content"]:
+                content.append(create_token(item))
+        if "title" in data:
+            title = []
+            for item in data["title"]:
+                title.append(create_token(item))
+        if "proof" in data:
+            proof = []
+            for item in data["proof"]:
+                proof.append(create_token(item))
+
+        return cls(
+            content=content,
+            labels=data.get("labels"),
+            styles=data.get("styles"),
+            name=data.get("name"),
+            numbering=data.get("numbering"),
+            title=title,
+            proof=proof,
+        )
 
 
 class TextToken(BaseToken):

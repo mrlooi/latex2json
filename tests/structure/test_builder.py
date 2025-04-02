@@ -44,6 +44,10 @@ def latex_text():
         \begin{theorem}[$T=1$]
             Theorem 1
         \end{theorem}
+        % check proof is merged into theorem
+        \begin{proof}
+            \bf Proof of theorem 1
+        \end{proof}
 
         \subsection*{SubIntro2}
         SUBINTRO 2
@@ -69,9 +73,9 @@ def latex_text():
             F = ma
         \end{align*}
 
-        \begin{theorem}
-            Theorem 3
-        \end{theorem}
+        \begin{proposition}
+            Proposition X
+        \end{proposition}
 
         \begin{algorithm}
             \caption{Binary Search}
@@ -248,6 +252,16 @@ def expected_organizer_output():
                                     "title": [{"type": "equation", "content": "T=1"}],
                                     "numbering": "1.1",
                                     "numbered": True,
+                                    # check proof is merged into theorem
+                                    "proof": [
+                                        {
+                                            "type": "text",
+                                            "content": "Proof of theorem 1",
+                                            "styles": [
+                                                FRONTEND_STYLE_MAPPING["textbf"]
+                                            ],
+                                        }
+                                    ],
                                 },
                             ],
                         },
@@ -347,9 +361,9 @@ def expected_organizer_output():
                                 },
                                 {
                                     "type": "math_env",
-                                    "name": "theorem",
+                                    "name": "proposition",
                                     "content": [
-                                        {"type": "text", "content": "Theorem 3"}
+                                        {"type": "text", "content": "Proposition X"}
                                     ],
                                     "numbering": "2.1",
                                     "numbered": True,

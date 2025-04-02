@@ -84,6 +84,24 @@ def add_token_spaces_if_needed(tokens: List[Dict]) -> None:
             current_token["content"] = " " + current_token["content"]
 
 
+def is_nonproof_math_env(token: Dict) -> bool:
+    """Check if a token is a math environment."""
+    return (
+        isinstance(token, dict)
+        and token.get("type") == "math_env"
+        and token.get("name", "").lower() != "proof"
+    )
+
+
+def is_proof_env(token: Dict) -> bool:
+    """Check if a token is a proof environment."""
+    return (
+        isinstance(token, dict)
+        and token.get("type") == "math_env"
+        and token.get("name", "").lower() == "proof"
+    )
+
+
 class TokenBuilder:
     """Handles the building and organization of document tokens including numbering and hierarchy.
 
@@ -213,6 +231,35 @@ class TokenBuilder:
 
         return concatenated_tokens
 
+    def _merge_proof_environments(self, tokens: List[Dict]) -> List[Dict]:
+        """Merge proof environments with their preceding math environments.
+
+        Args:
+            tokens: List of processed tokens
+
+        Returns:
+            List of tokens with proof environments merged into their preceding math environments
+        """
+        merged_tokens = []
+        i = 0
+
+        while i < len(tokens):
+            current_token = tokens[i]
+            next_token = tokens[i + 1] if i + 1 < len(tokens) else None
+
+            # Check if current token is a math environment followed by a proof
+            if is_nonproof_math_env(current_token) and is_proof_env(next_token):
+                # Merge proof content into the math environment
+                current_token["proof"] = next_token.get("content", [])
+                merged_tokens.append(current_token)
+                i += 2  # Skip the proof token
+                continue
+
+            merged_tokens.append(current_token)
+            i += 1
+
+        return merged_tokens
+
     def _process_tokens(self, in_tokens: List[Dict]) -> List[Dict]:
         def recursive_process(tokens, should_concat=True):
             processed_tokens = []
@@ -239,15 +286,14 @@ class TokenBuilder:
                 else:
                     processed_tokens.append(token)
 
-            # # Add spaces between tokens where necessary
-            # (Update: Disable and let frontend(s) handle)
-            # add_token_spaces_if_needed(processed_tokens)
+            # Merge proof environments with their preceding math environments
+            merged_tokens = self._merge_proof_environments(processed_tokens)
 
             # Note: v0.3.0. Commented this out to preserve separation of text vs equation inline tokens
             # processed_tokens = self._convert_inline_equations_to_text(processed_tokens)
             if should_concat:
-                processed_tokens = self._concat_text_with_same_styles(processed_tokens)
-            return processed_tokens
+                merged_tokens = self._concat_text_with_same_styles(merged_tokens)
+            return merged_tokens
 
         return recursive_process(copy.deepcopy(in_tokens))
 
@@ -409,15 +455,12 @@ if __name__ == "__main__":
     # tokens = parser.parse_file(file)
 
     text = r"""
-    \begin{description}
-    \item[\textbf{Hello}] World
-    \item[Hello] 
-    \begin{enumerate}
-    \item 1
-    \item 2
-    \end{enumerate}
+    \begin{theorem}
+    Hello
+    \end{theorem}
+    \begin{proof}
     World
-    \end{description}
+    \end{proof}
     """
     tokens = parser.parse(text)
 
