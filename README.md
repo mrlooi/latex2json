@@ -250,7 +250,7 @@ tex_reader = TexReader()
 # Process a regular TeX file/folder
 result = tex_reader.process("/path/to/folder_or_file")
 # Or process a compressed TeX file (supports .gz and .tar.gz)
-result, temp_dir = tex_reader.process("path/to/paper.tar.gz")
+result = tex_reader.process("path/to/paper.tar.gz")
 
 # Convert to JSON
 json_output = tex_reader.to_json(result)
