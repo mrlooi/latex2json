@@ -283,14 +283,24 @@ class NewDefinitionHandler(TokenHandler):
             content = content[1:]
         elif name.endswith("="):
             name = name[:-1]
-        token = {
-            "type": "newcommand",
-            "name": name,
-            "content": content,
-            "num_args": 0,
-            "defaults": [],
-            "usage_pattern": r"\\" + name + r"(?![a-zA-Z@])",
-        }
+
+        # HACK: treat futurelet as newcommand?
+        if match.group(0).startswith("\\futurelet"):
+            token = {
+                "type": "newcommand",
+                "name": name,
+                "content": content,
+                "num_args": 0,
+                "defaults": [],
+                "usage_pattern": r"\\" + name + r"(?![a-zA-Z@])",
+            }
+        else:
+            token = {
+                "type": "let",
+                "name": name,
+                "content": content,
+                "usage_pattern": r"\\" + name + r"(?![a-zA-Z@])",
+            }
         return token, match.end()
 
     def _handle_newcommand(self, content: str, match) -> Tuple[Optional[Dict], int]:

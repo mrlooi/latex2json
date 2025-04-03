@@ -14,6 +14,7 @@ from .if_else_statements import IfElseBlockHandler
 from .diacritics import DiacriticsHandler
 from .for_loop_statements import ForLoopHandler
 from .command_processor import CommandProcessor
+from .command_manager import CommandManager
 
 __all__ = [
     "TokenHandler",
@@ -32,4 +33,5 @@ __all__ = [
     "DiacriticsHandler",
     "ForLoopHandler",
     "CommandProcessor",
+    "CommandManager",
 ]

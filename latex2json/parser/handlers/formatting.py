@@ -148,6 +148,13 @@ RAW_PATTERNS = OrderedDict(
                 re.DOTALL,
             ),
         ),
+        (
+            "fontsetters",
+            re.compile(
+                r"\\(?:text|script|scriptscript)font\\[a-zA-Z@]+\s*=\s*\\[a-zA-Z@]+\b",
+                re.DOTALL,
+            ),
+        ),
         # number
         ("number", r"\\num(?:\[([^\]]*)\])?\s*{([^}]*)}"),
         (

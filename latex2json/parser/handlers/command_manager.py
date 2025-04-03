@@ -88,6 +88,12 @@ class CommandManager(TokenHandler):
                 token["defaults"],
                 token["usage_pattern"],
             )
+        elif token["type"] == "let":
+            self.processor.process_let(
+                cmd_name,
+                token["content"],
+                token["usage_pattern"],
+            )
         elif token["type"] == "def":
             self.processor.process_newdef(
                 cmd_name,
@@ -151,4 +157,4 @@ class CommandManager(TokenHandler):
     @property
     def commands(self):
         """Access to registered commands"""
-        return self.processor.commands
+        return self.processor.get_commands()

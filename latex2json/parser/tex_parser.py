@@ -15,7 +15,6 @@ from latex2json.parser.handlers import (
     EquationHandler,
     TokenHandler,
     ContentCommandHandler,
-    NewDefinitionHandler,
     TabularHandler,
     FormattingHandler,
     ItemHandler,
@@ -26,7 +25,6 @@ from latex2json.parser.handlers import (
     IfElseBlockHandler,
     DiacriticsHandler,
     ForLoopHandler,
-    CommandProcessor,
 )
 from latex2json.parser.handlers.environment import BaseEnvironmentHandler
 from latex2json.parser.handlers.command_manager import CommandManager
@@ -38,7 +36,6 @@ from latex2json.utils.tex_utils import (
 from latex2json.parser.tex_preprocessor import LatexPreprocessor
 from latex2json.parser.patterns import (
     PATTERNS,
-    WHITELISTED_COMMANDS,
     DELIM_PATTERN,
 )
 from latex2json.parser.packages import get_all_custom_handlers

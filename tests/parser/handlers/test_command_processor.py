@@ -106,6 +106,52 @@ def test_expand_commands(processor, newdef_handler):
     assert out_text == r"$({x})$"
 
 
+def test_let_commands_are_copied(processor, newdef_handler):
+    processor.clear()
+
+    # ensure \let\pminus copies \pm
+    # such that when \pm is redefined in renewcommand
+    # \pminus->\pm is preserved
+    # then test \let\postpm\pm
+    # the new \postpm is now the redefined \pm
+    commands = [
+        r"\let\pminus\pm",
+        r"\renewcommand{\pm}{\phi_{\le m}}",
+        r"\let\postpm\pm",
+    ]
+    for cmd in commands:
+        token, pos = newdef_handler.handle(cmd)
+        assert token is not None
+        if token["type"] == "let":
+            processor.process_let(
+                token["name"],
+                token["content"],
+                token["usage_pattern"],
+            )
+        else:
+            processor.process_newcommand(
+                token["name"],
+                token["content"],
+                token["num_args"],
+                token["defaults"],
+                token["usage_pattern"],
+            )
+
+    content = r"\pminus \pm"
+    out_text, _ = processor.expand_commands(
+        content, ignore_unicode=True, math_mode=True
+    )
+    # preserved \pminus->\pm, while \pm is redefined
+    assert out_text == r"\pm {\phi_{\le m}}"
+
+    # check new \let\postpm\pm evaluates to renewcommand \pm
+    content = r"\postpm \pminus"
+    out_text, _ = processor.expand_commands(
+        content, ignore_unicode=True, math_mode=True
+    )
+    assert out_text == r"\phi_{\le m} \pm"
+
+
 def test_expand_commands_math_mode(processor, newdef_handler):
     processor.clear()
 

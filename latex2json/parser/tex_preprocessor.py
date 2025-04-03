@@ -278,6 +278,18 @@ class LatexPreprocessor:
                 content = content[:current_pos] + content[current_pos + end_pos :]
                 continue
 
+            # check for formatting (put formatting ahead so that we can ignore lots of unnecessary things)
+            if self.formatting_handler.can_handle(content[current_pos:]):
+                token, end_pos = self.formatting_handler.handle(content[current_pos:])
+                if end_pos > 0:
+                    block = ""
+                    if token:
+                        block = token.get("content", "")
+                    content = (
+                        content[:current_pos] + block + content[current_pos + end_pos :]
+                    )
+                    continue
+
             # Expand commands using command_manager instead of command_processor
             if self.command_manager.can_handle(content[current_pos:]):
                 expanded_text, end_pos = self.command_manager.handle(
@@ -301,18 +313,6 @@ class LatexPreprocessor:
                     if token:
                         if "@" not in token.get("type", ""):
                             block = token.get("if_content", "")
-                    content = (
-                        content[:current_pos] + block + content[current_pos + end_pos :]
-                    )
-                    continue
-
-            # check for formatting
-            if self.formatting_handler.can_handle(content[current_pos:]):
-                token, end_pos = self.formatting_handler.handle(content[current_pos:])
-                if end_pos > 0:
-                    block = ""
-                    if token:
-                        block = token.get("content", "")
                     content = (
                         content[:current_pos] + block + content[current_pos + end_pos :]
                     )

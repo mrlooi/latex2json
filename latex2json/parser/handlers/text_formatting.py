@@ -75,9 +75,6 @@ FONT_PATTERN = {
     "fontsize": (r"\\fontsize" + (r"\s*" + BRACE_CONTENT_PATTERN) * 2),
     "selectfont": (r"\\selectfont\b"),
     "usefont": (r"\\usefont" + (r"\s*" + BRACE_CONTENT_PATTERN) * 4),
-    "fontsetters": (
-        r"\\(?:text|script|scriptscript)font\\[a-zA-Z@]+\s*=\s*\\[a-zA-Z@]+\b"
-    ),
 }
 
 PATTERNS = {

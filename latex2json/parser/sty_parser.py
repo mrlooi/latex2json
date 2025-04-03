@@ -16,9 +16,7 @@ logging.basicConfig(
 )
 
 from latex2json.parser.handlers import (
-    NewDefinitionHandler,
     IfElseBlockHandler,
-    CommandProcessor,
 )
 from latex2json.utils.tex_utils import (
     extract_nested_content,

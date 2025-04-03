@@ -315,20 +315,20 @@ def test_namedef(handler):
 def test_let_command(handler):
     content = r"\let\foo=bar"
     token, _ = handler.handle(content)
-    assert token["type"] == "newcommand"
+    assert token["type"] == "let"
     assert token["name"] == "foo"
     assert token["content"] == "bar"
 
     content = r"\let\foo=\bar"
     token, _ = handler.handle(content)
-    assert token["type"] == "newcommand"
+    assert token["type"] == "let"
     assert token["name"] == "foo"
     assert token["content"] == r"\bar"
 
     # test without =
     content = r"\let\foo\bar"
     token, _ = handler.handle(content)
-    assert token["type"] == "newcommand"
+    assert token["type"] == "let"
     assert token["name"] == "foo"
     assert token["content"] == r"\bar"
 
@@ -345,10 +345,10 @@ def test_let_command(handler):
     assert token["name"] == "arXiv"
     assert token["content"] == r"\arxiv"
 
-    # futurelet
+    # futurelet (treat as newcommand?)
     content = r"\futurelet\arXiv\arxiv"
     token, _ = handler.handle(content)
-    assert token["type"] == "newcommand"
+    # assert token["type"] == "let"
     assert token["name"] == "arXiv"
     assert token["content"] == r"\arxiv"
 
@@ -486,7 +486,7 @@ def test_with_csname_and_expandafter(handler):
     # with let (double csname blocks)
     content = r"\let\noexpand\csname oldschool\expandafter\noexpand\endcsname\csname school\endcsname POST"
     token, pos = handler.handle(content)
-    assert token["type"] == "newcommand"
+    assert token["type"] == "let"
     assert token["name"] == "oldschool"
     assert token["content"] == r"\school"
     pattern = re.compile(token["usage_pattern"])

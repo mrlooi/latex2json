@@ -50,17 +50,46 @@ def wrap_math_mode_arg(text: str) -> str:
 
 class CommandProcessor:
     def __init__(self):
-        self.commands: Dict[str, CommandEntry] = {}
-
         # Replace the unicode conversion initialization with LatexUnicodeConverter
         self.unicode_converter = LatexUnicodeConverter()
         self.if_else_handler = IfElseBlockHandler()
 
+        self.commands: Dict[str, CommandEntry] = {}
+        self.let_commands: Dict[str, CommandEntry] = {}
+
     def clear(self):
         self.commands = {}
+        self.let_commands = {}
+
+    @property
+    def _all_commands(self):
+        return {**self.commands, **self.let_commands}
+
+    def get_commands(self):
+        return self._all_commands
 
     def has_command(self, command_name: str) -> bool:
-        return command_name in self.commands
+        return command_name in self._all_commands
+
+    def process_let(self, command_name: str, definition: str, usage_pattern: str):
+        # for let, we evaluate the definition right way
+        definition = self.expand_commands(definition, True)[0]
+
+        def handler(
+            match: re.Match[str], text: str, math_mode: bool = False
+        ) -> Tuple[str, int]:
+            return definition, match.end()
+
+        try:
+            command: CommandEntry = {
+                "pattern": re.compile(usage_pattern, re.DOTALL),
+                "handler": handler,
+                "definition": definition,
+            }
+            self.let_commands[command_name] = command
+        except Exception as e:
+            print(f"Error processing newcommand {command_name}: {e}")
+            raise e
 
     def _parse_definition_conditionals(self, definition: str, usage_pattern: str):
         definition = definition.strip()
@@ -280,7 +309,10 @@ class CommandProcessor:
         self, text: str, ignore_unicode: bool = False, math_mode: bool = False
     ) -> tuple[str, int]:
         """Recursively expand defined commands in the text until no further expansions are possible."""
-        text, match_count = self._expand(text, math_mode=math_mode)
+        # first process commands
+        text, match_count = self._expand(text, self.commands, math_mode=math_mode)
+        # then process let commands
+        text, match_count = self._expand(text, self.let_commands, math_mode=math_mode)
 
         # Handle unicode conversions using the converter
         if not ignore_unicode:
@@ -289,21 +321,22 @@ class CommandProcessor:
         return text, match_count
 
     def _expand(
-        self, text: str, math_mode: bool = False, max_depth: int = 1000
+        self,
+        text: str,
+        command_entries: Dict[str, CommandEntry],
+        math_mode: bool = False,
+        max_depth: int = 1000,
     ) -> tuple[str, int]:
         """Recursively expand defined commands in the text until no further expansions are possible."""
         match_count = 0
         depth = 0
 
-        commands = self.commands
-        command2pattern = {name: cmd["pattern"] for name, cmd in commands.items()}
-
         def sub_fn(text, match, cmd_name):
             nonlocal match_count
             match_count += 1
-            if cmd_name not in commands:
+            if cmd_name not in command_entries:
                 return match.group(0), match.end()
-            handler = commands[cmd_name]["handler"]
+            handler = command_entries[cmd_name]["handler"]
             out, pos = handler(match, text, math_mode=math_mode)
             # if math mode and out contains a space, wrap the out in braces for grouping
             # Example: a b c  -> {a b c}, perhaps later \frac{a b c}, and NOT \frac a b c
@@ -330,6 +363,10 @@ class CommandProcessor:
                     out = wrap_math_mode_arg(out)
             return out, pos
 
+        command2pattern = {
+            name: cmd["pattern"] for name, cmd in command_entries.items()
+        }
+
         prev_text = None
         while prev_text != text:
             depth += 1
@@ -343,7 +380,7 @@ class CommandProcessor:
         return text, match_count
 
     def can_handle(self, text: str) -> bool:
-        for cmd in self.commands.values():
+        for cmd in self._all_commands.values():
             if cmd["pattern"].match(text):
                 return True
         return CSNAME_PATTERN.match(text) is not None
@@ -353,7 +390,7 @@ class CommandProcessor:
         if match:
             nested, end_pos = extract_and_concat_nested_csname(text)
             if nested:
-                for cmd in self.commands.values():
+                for cmd in self._all_commands.values():
                     match = cmd["pattern"].match(text)
                     if match:
                         out, _ = cmd["handler"](match, text)
@@ -362,7 +399,7 @@ class CommandProcessor:
         return text, 0
 
     def _handle(self, text: str) -> str:
-        for cmd in self.commands.values():
+        for cmd in self._all_commands.values():
             match = cmd["pattern"].match(text)
             if match:
                 out, end_pos = cmd["handler"](match, text)
