@@ -111,6 +111,8 @@ class TokenBuilder:
     - Converting and concatenating tokens
     """
 
+    merge_proof_environments = False
+
     def __init__(self, logger: logging.Logger = None):
         self.logger = logger or logging.getLogger(__name__)
 
@@ -286,8 +288,11 @@ class TokenBuilder:
                 else:
                     processed_tokens.append(token)
 
-            # Merge proof environments with their preceding math environments
-            merged_tokens = self._merge_proof_environments(processed_tokens)
+            # # Merge proof environments with their preceding math environments
+            if self.merge_proof_environments:
+                merged_tokens = self._merge_proof_environments(processed_tokens)
+            else:
+                merged_tokens = processed_tokens
 
             # Note: v0.3.0. Commented this out to preserve separation of text vs equation inline tokens
             # processed_tokens = self._convert_inline_equations_to_text(processed_tokens)
