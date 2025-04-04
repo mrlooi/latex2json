@@ -9,8 +9,7 @@ class DocumentToken(BaseToken):
 
 class TitleToken(BaseToken):
     type: TokenType = TokenType.TITLE
-    title: List[BaseToken]
-    content: Optional[str] = None
+    content: List[BaseToken]
 
 
 class SectionToken(BaseToken):
@@ -35,7 +34,7 @@ class ParagraphToken(SectionToken):
     type: TokenType = TokenType.PARAGRAPH
 
 
-class AbstractToken(EnvironmentToken):
+class AbstractToken(BaseToken):
     type: TokenType = TokenType.ABSTRACT
 
 

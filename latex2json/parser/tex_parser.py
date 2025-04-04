@@ -389,9 +389,12 @@ class LatexParser:
             elif token["type"] == "citation":
                 if "title" in token:
                     token["title"] = self.parse(token["title"])
-            elif token["type"] in ["section", "paragraph", "title"]:
+            elif token["type"] == "title":
+                token["content"] = self.parse(token["content"])
+            elif token["type"] in ["section", "paragraph"]:
                 self.current_env = token
-                token["title"] = self.parse(token["title"])
+                if "title" in token:
+                    token["title"] = self.parse(token["title"])
             elif token["type"] == "abstract":
                 token["content"] = self.parse(token["content"])
             elif is_env_type:
@@ -716,19 +719,19 @@ if __name__ == "__main__":
 
     parser = LatexParser(logger=logger)
 
-    # file = "papers/tested/arXiv-1509.05363v6/taodiscrepancy.tex"
-    # # file = "papers/tested/arXiv-1706.03762v7/model_architecture.tex"
-    # tokens = parser.parse_file(file)
+    # file = "papers/new/arXiv-2402.15312v1/CZDZW-Non_linear.tex"
+    file = "papers/tested/arXiv-2205.00334v4/NMI_revision.tex"
+    tokens = parser.parse_file(file)
 
     text = r"""
-    \begin{description}
-    \item 3
-    \item 4
-    \end{description}
+    \let\pminus\pm
+    \let\hat\widehat
+    \renewcommand{\pm}{\phi_{\le m}}
+    $\pminus \pm$
     """
     tokens = parser.parse(text, preprocess=True)
     print(tokens)
-# import json
+# # import json
 
 # with open("test.json", "w") as f:
 #     json.dump(tokens, f, indent=2)

@@ -37,9 +37,10 @@ FRONTEND_STYLE_MAPPING: Dict[str, str] = {
     "textsuperscript": "superscript",
     "textsubscript": "subscript",
     "underline": "underline",
+    "overline": "overline",
+    "textoverline": "overline",
     "textstrikeout": "line-through",  # requires ulem package in LaTeX
     "sout": "line-through",  # another strikethrough command
-    "textoverline": "overline",
     "natexlab": None,
 }
 

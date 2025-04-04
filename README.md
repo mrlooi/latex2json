@@ -145,7 +145,7 @@ The parser generates a structured JSON output that preserves the document hierar
 [
   {
     "type": "title",
-    "title": [{ "type": "text", "content": "My Title" }]
+    "content": [{ "type": "text", "content": "My Title" }]
   },
   {
     "type": "document",

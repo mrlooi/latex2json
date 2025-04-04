@@ -157,7 +157,7 @@ class ContentCommandHandler(TokenHandler):
             }
 
         elif matched_type == "title":
-            return {"type": "title", "title": content}
+            return {"type": "title", "content": content}
 
         elif matched_type == "captionof":
             return {

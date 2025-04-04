@@ -130,7 +130,7 @@ def expected_organizer_output():
     return [
         {
             "type": "title",
-            "title": [
+            "content": [
                 {"type": "text", "content": "My Title"},
             ],
         },
