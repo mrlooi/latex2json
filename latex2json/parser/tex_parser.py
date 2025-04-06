@@ -4,7 +4,7 @@ from typing import List, Dict, Tuple, Union
 import sys, os, traceback
 import logging
 
-from latex2json.parser.bib.bib_parser import BibEntry, BibParser
+from latex2json.parser.bib.bib_parser import BibTexEntry, BibParser
 from latex2json.utils.logger import setup_logger
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -287,7 +287,7 @@ class LatexParser:
             self._process_new_definition_token(token)
         return end_pos
 
-    def _convert_bibitem_to_token(self, entry: BibEntry) -> Dict:
+    def _convert_bibitem_to_token(self, entry: BibTexEntry) -> Dict:
         content = entry.content
         if entry.entry_type == "bibitem":
             content = self.parse(content)

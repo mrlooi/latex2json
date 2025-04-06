@@ -6,8 +6,7 @@ from typing import Dict, List, Optional
 from latex2json.utils.tex_utils import (
     extract_nested_content,
 )
-from latex2json.parser.bib.bib_parser import preprocess
-from latex2json.parser.bib.bibtex_parser import BibEntry
+from latex2json.parser.bib.bibtex_parser import BibTexEntry
 
 BibDivPattern = re.compile(r"\\begin\s*{bibdiv}")
 BibPattern = re.compile(r"\\bib\s*\{([^}]+)\}\s*\{([^}]+)\}")
@@ -16,6 +15,18 @@ BibPattern = re.compile(r"\\bib\s*\{([^}]+)\}\s*\{([^}]+)\}")
 class BibDivParser:
     def __init__(self, logger: Logger = None):
         self.logger = logger or logging.getLogger(__name__)
+
+    @staticmethod
+    def can_handle(content: str) -> bool:
+        """Check if this parser can handle the given content.
+
+        Args:
+            content: The content to check
+
+        Returns:
+            bool: True if content can be handled by this parser
+        """
+        return BibDivParser.is_bibdiv(content)
 
     @staticmethod
     def is_bibdiv(content: str) -> bool:
@@ -29,12 +40,10 @@ class BibDivParser:
         """
         return bool(BibDivPattern.search(content))
 
-    def parse(self, content: str) -> List[BibEntry]:
+    def parse(self, content: str) -> List[BibTexEntry]:
         """Parse bibdiv content and return list of BibEntry objects"""
         self.logger.info("Starting BibDiv parsing")
         entries = []
-
-        content = preprocess(content)
 
         # # Find bibdiv environment
         # bibdiv_match = BibDivPattern.search(content)
@@ -111,7 +120,7 @@ class BibDivParser:
                 while pos < len(entry_content) and entry_content[pos].isspace():
                     pos += 1
 
-            entry = BibEntry.from_bibtex(
+            entry = BibTexEntry.from_bibtex(
                 entry_type=entry_type, citation_key=citation_key, fields=fields
             )
             entries.append(entry)

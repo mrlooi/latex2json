@@ -1,26 +1,25 @@
 from logging import Logger
 import logging
-import re
 import os
 from typing import List
 
-from latex2json.parser.bib.compiled_bibtex import (
-    is_compiled_bibtex,
-    process_compiled_bibtex_to_bibtex,
-)
 from latex2json.parser.bib.bibtex_parser import (
-    BibEntry,
+    BibTexEntry,
     BibTexParser,
-    preprocess,
-    BibTexPattern,
 )
-from latex2json.parser.bib.bibdiv_parser import BibDivParser, BibDivPattern
+from latex2json.parser.bib.bibdiv_parser import BibDivParser
+from latex2json.parser.bib.bibitem_parser import BibItemParser
+from latex2json.utils.tex_utils import (
+    strip_latex_comments,
+    normalize_whitespace_and_lines,
+)
 
-BibItemPattern = re.compile(
-    r"\\bibitem\s*(?:\[(.*?)\])?\s*\{(.*?)\}\s*([\s\S]*?)(?=\\bibitem|$)",
-    re.DOTALL,
-)
-NewblockPattern = re.compile(r"\\newblock\b")
+
+def preprocess(content: str) -> str:
+    """Preprocess content to remove comments and normalize whitespace"""
+    content = strip_latex_comments(content)
+    content = normalize_whitespace_and_lines(content)
+    return content.strip()
 
 
 class BibParser:
@@ -30,11 +29,12 @@ class BibParser:
 
         self.bibtex_parser = BibTexParser(logger=self.logger)
         self.bibdiv_parser = BibDivParser(logger=self.logger)
+        self.bibitem_parser = BibItemParser(logger=self.logger)
 
     def clear(self):
         pass
 
-    def parse(self, content: str) -> List[BibEntry]:
+    def parse(self, content: str) -> List[BibTexEntry]:
         """Parse both BibTeX, bibitem, and bibdiv entries from the content"""
 
         content = preprocess(content)
@@ -42,60 +42,23 @@ class BibParser:
         entries = []
 
         # Check for bibdiv environment first
-        if BibDivParser.is_bibdiv(content):
+        if self.bibdiv_parser.can_handle(content):
             self.logger.debug("Parsing bibdiv environment content")
             entries.extend(self.bibdiv_parser.parse(content))
-        # Check if content has bibliography environment
-        elif re.search(r"\\begin{(\w*bibliography)}(.*?)\\end{\1}", content, re.DOTALL):
-            self.logger.debug("Parsing bibliography environment content")
-            bib_content = re.search(
-                r"\\begin{(\w*bibliography)}(.*?)\\end{\1}", content, re.DOTALL
-            ).group(2)
-            entries.extend(self._parse_bibitems(bib_content))
-        elif is_compiled_bibtex(content):
-            self.logger.debug("Parsing compiled BibTeX content")
-            # first convert to bibtex format
-            bibtex_content = process_compiled_bibtex_to_bibtex(content)
-            entries.extend(self.bibtex_parser.parse("\n".join(bibtex_content)))
-        elif BibTexParser.is_bibtex(content):
+        # Use the can_handle method for BibTeX
+        elif self.bibtex_parser.can_handle(content):
             entries.extend(self.bibtex_parser.parse(content))
+        # Use the can_handle method for BibItem (now includes bibliography environment check)
+        elif self.bibitem_parser.can_handle(content):
+            self.logger.debug("Parsing bibitem content")
+            entries.extend(self.bibitem_parser.parse(content))
         else:
-            self.logger.debug("Parsing standalone bibitem content")
-            entries.extend(self._parse_bibitems(content))
+            self.logger.warning("No suitable parser found for the content")
+            return []
 
         return entries
 
-    def _parse_bibitems(self, content: str) -> List[BibEntry]:
-        """Parse bibitem entries from content"""
-        entries = []
-        previous_content = None
-        bysame_pattern = re.compile(r"\\bysame\b")
-
-        for match in BibItemPattern.finditer(content):
-            item = match.group(3).strip()
-            if item:
-                # remove newblock
-                item = NewblockPattern.sub("", item)
-
-                # Handle \bysame by replacing it with content from previous entry
-                if previous_content and bysame_pattern.search(item):
-                    # Extract author part from previous entry (up to first comma)
-                    author_part = previous_content.split(",")[0]
-                    if author_part:
-                        item = bysame_pattern.sub(author_part, item)
-
-                entry = BibEntry(
-                    citation_key=match.group(2).strip(),
-                    content=item,
-                    title=match.group(1).strip() if match.group(1) else None,
-                    entry_type="bibitem",
-                    fields={},
-                )
-                entries.append(entry)
-                previous_content = item
-        return entries
-
-    def parse_file(self, file_path: str) -> List[BibEntry]:
+    def parse_file(self, file_path: str) -> List[BibTexEntry]:
         """Parse a bibliography file and return list of entries.
 
         Args:

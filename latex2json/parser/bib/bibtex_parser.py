@@ -5,13 +5,15 @@ import re
 from typing import Dict, List, Optional
 from latex2json.utils.tex_utils import (
     extract_nested_content,
-    strip_latex_comments,
-    normalize_whitespace_and_lines,
+)
+from latex2json.parser.bib.compiled_bibtex import (
+    is_compiled_bibtex,
+    process_compiled_bibtex_to_bibtex,
 )
 
 
 @dataclass
-class BibEntry:
+class BibTexEntry:
     """Unified bibliography entry model for both BibTeX and bibitem"""
 
     citation_key: str
@@ -26,7 +28,7 @@ class BibEntry:
     @classmethod
     def from_bibtex(
         cls, entry_type: str, citation_key: str, fields: Dict[str, str]
-    ) -> "BibEntry":
+    ) -> "BibTexEntry":
         """Convert BibTeX entry to bibliography entry"""
         # Format content as string representation of fields
         content = ", ".join(f"{k}={v}" for k, v in fields.items())
@@ -44,20 +46,25 @@ BibTexPattern = re.compile(r"@(\w+)\s*\{")
 BibTexFieldPattern = re.compile(r"(\w+)\s*=\s*")
 
 
-def preprocess(content: str) -> str:
-    """Preprocess content to remove comments and normalize whitespace"""
-    content = strip_latex_comments(content)
-    content = normalize_whitespace_and_lines(content)
-    return content.strip()
-
-
 class BibTexParser:
     def __init__(self, logger: Logger = None):
         self.logger = logger or logging.getLogger(__name__)
 
     @staticmethod
+    def can_handle(content: str) -> bool:
+        """Check if this parser can handle the given content.
+
+        Args:
+            content: The content to check
+
+        Returns:
+            bool: True if content can be handled by this parser
+        """
+        return BibTexParser.is_bibtex(content) or is_compiled_bibtex(content)
+
+    @staticmethod
     def is_bibtex(content: str) -> bool:
-        """Check if the content is in BibTeX format.
+        """Check if the content is in standard BibTeX format.
 
         Args:
             content: The content to check
@@ -67,13 +74,20 @@ class BibTexParser:
         """
         return bool(BibTexPattern.search(content))
 
-    def parse(self, content: str) -> List[BibEntry]:
+    def parse(self, content: str) -> List[BibTexEntry]:
         """Parse BibTeX content and return list of BibEntry objects"""
         self.logger.info("Starting BibTeX parsing")
+
+        # Check if this is compiled BibTeX and convert if needed
+        if is_compiled_bibtex(content):
+            self.logger.info(
+                "Detected compiled BibTeX format, converting to standard BibTeX"
+            )
+            bibtex_entries = process_compiled_bibtex_to_bibtex(content)
+            content = "\n".join(bibtex_entries)
+
         entries = []
         pos = 0
-
-        content = preprocess(content)
 
         # Find each entry starting with @
         for match in re.finditer(BibTexPattern, content):
@@ -132,7 +146,7 @@ class BibTexParser:
                 ):
                     pos += 1
 
-            entry = BibEntry.from_bibtex(
+            entry = BibTexEntry.from_bibtex(
                 entry_type=entry_type, citation_key=citation_key, fields=fields
             )
             entries.append(entry)
