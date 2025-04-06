@@ -23,12 +23,12 @@ Brown, Alice.
 
     assert len(entries) == 2
     assert entries[0].citation_key == "smith2020"
-    assert entries[0].title == "Smith et al."
+    assert entries[0].label == "Smith et al."
     assert "Some interesting paper" in entries[0].content
     assert entries[0].entry_type == "bibitem"
 
     assert entries[1].citation_key == "brown2021"
-    assert entries[1].title is None
+    assert entries[1].label is None
     assert "Another paper title" in entries[1].content
 
 
@@ -42,11 +42,11 @@ def test_standalone_bibitem():
 
     assert len(entries) == 2
     assert entries[0].citation_key == "key1"
-    assert entries[0].title is None
+    assert entries[0].label is None
     assert entries[0].content == "First reference"
 
     assert entries[1].citation_key == "key2"
-    assert entries[1].title == "Title"
+    assert entries[1].label == "Title"
     assert entries[1].content == "Second reference"
 
 
@@ -144,10 +144,10 @@ def test_bibitem_with_bysame():
 def test_bib_parser_bibtex():
     test_bib = """
 @article{brown2020-gpt3,
-  title={Language models are few-shot learners},
-  author={Brown, Tom B and Mann, Benjamin},
-  journal={arXiv},
-  year={2020}
+    title={Language models are few-shot learners},
+    author={Brown, Tom B and Mann, Benjamin},
+    journal={arXiv},
+    year={2020}
 }
 
 @inproceedings{vaswani2017,
@@ -174,6 +174,16 @@ year = {2017},
     assert entries[1].citation_key == "vaswani2017"
     assert entries[1].fields["title"] == "Attention is All you Need"
     assert entries[1].fields["booktitle"] == "NIPS"
+
+    # test conversion to content str
+    assert (
+        entries[0].content
+        == "@article{brown2020-gpt3,\n\ttitle={Language models are few-shot learners},\n\tauthor={Brown, Tom B and Mann, Benjamin},\n\tjournal={arXiv},\n\tyear={2020}\n}"
+    )
+    assert (
+        entries[1].content
+        == "@inproceedings{vaswani2017,\n\ttitle={Attention is All you Need},\n\tauthor={Vaswani, Ashish and Shazeer, Noam},\n\tbooktitle={NIPS},\n\tyear={2017}\n}"
+    )
 
 
 def test_invalid_bibtex():

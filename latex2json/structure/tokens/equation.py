@@ -10,6 +10,9 @@ class DisplayType(Enum):
     INLINE = "inline"
     BLOCK = "block"
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class EquationToken(BaseToken):
     """Represents math equations"""
@@ -20,19 +23,6 @@ class EquationToken(BaseToken):
     display: Optional[DisplayType] = None
     numbering: Optional[str] = None
     placeholders: Optional[Dict[str, List[BaseToken]]] = None
-
-    @classmethod
-    def preprocess_data(cls, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Preprocess equation-specific data before validation"""
-        if isinstance(data.get("display"), str):
-            data["display"] = DisplayType(data["display"])
-        return data
-
-    @classmethod
-    def model_validate(cls, data: Dict[str, Any]) -> "EquationToken":
-        """Override model_validate to handle preprocessing"""
-        processed_data = cls.preprocess_data(data)
-        return super().model_validate(processed_data)
 
     @classmethod
     def process(

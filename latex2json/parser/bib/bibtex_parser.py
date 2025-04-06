@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from logging import Logger
 import logging
 import re
@@ -12,18 +13,35 @@ from latex2json.parser.bib.compiled_bibtex import (
 )
 
 
+class BibFormat(Enum):
+    """Enum for bibliography formats"""
+
+    BIBTEX = "bibtex"
+    BIBITEM = "bibitem"
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, str):
+            return self.value == other
+        return super().__eq__(other)
+
+    def __hash__(self) -> int:
+        return hash(self.value)
+
+    def __str__(self) -> str:
+        return self.value
+
+
 @dataclass
 class BibTexEntry:
     """Unified bibliography entry model for both BibTeX and bibitem"""
 
     citation_key: str
     content: str
-    title: Optional[str]
+    format: BibFormat = BibFormat.BIBTEX
+    label: Optional[str] = None
     # BibTeX related below
-    entry_type: Optional[
-        str
-    ]  # 'article', 'book', etc. for BibTeX; 'bibitem' for LaTeX bibitem
-    fields: Optional[Dict[str, str]]
+    entry_type: Optional[str] = None  # 'article', 'book', etc. for BibTeX
+    fields: Optional[Dict[str, str]] = None
 
     @classmethod
     def from_bibtex(
@@ -31,12 +49,13 @@ class BibTexEntry:
     ) -> "BibTexEntry":
         """Convert BibTeX entry to bibliography entry"""
         # Format content as string representation of fields
-        content = ", ".join(f"{k}={v}" for k, v in fields.items())
+        content = BibTexParser.convert_fields_to_bibtex_str(
+            entry_type, citation_key, fields
+        )
 
         return cls(
             entry_type=entry_type,
             citation_key=citation_key,
-            title=fields.get("title"),
             content=content,
             fields=fields,
         )
@@ -73,6 +92,14 @@ class BibTexParser:
             bool: True if content is in BibTeX format, False otherwise
         """
         return bool(BibTexPattern.search(content))
+
+    @staticmethod
+    def convert_fields_to_bibtex_str(
+        entry_type: str, citation_key: str, fields: Dict[str, str]
+    ) -> str:
+        """Convert fields to BibTeX string"""
+        content = ",\n\t".join(f"{k}={{{v}}}" for k, v in fields.items())
+        return f"@{entry_type}{{{citation_key},\n\t{content}\n}}"
 
     def parse(self, content: str) -> List[BibTexEntry]:
         """Parse BibTeX content and return list of BibEntry objects"""

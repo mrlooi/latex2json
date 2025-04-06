@@ -550,6 +550,7 @@ def expected_organizer_output():
                     "content": [
                         {
                             "type": "bibitem",
+                            "format": "bibitem",
                             "content": [
                                 {"type": "text", "content": "Some content "},
                                 {
@@ -559,7 +560,8 @@ def expected_organizer_output():
                                 },
                             ],
                             "cite_key": "bibkey1",
-                            "title": "Title",
+                            "label": "Title",
+                            "fields": {},
                         }
                     ],
                 },
@@ -650,6 +652,17 @@ def test_organize_appendix(latex_parser):
         \subsubsection{Sub sub appendix 3}
         \subsubsection*{Sub sub appendix 4}
     \end{appendices}
+
+    \begin{thebibliography}{99}
+    @article{Hinton06,
+        author = {Hinton, Geoffrey E. and Osindero, Simon and Teh, Yee Whye},
+        journal = {Neural Computation},
+        pages = {1527--1554},
+        title = {A Fast Learning Algorithm for Deep Belief Nets},
+        volume = {18},
+        year = {2006}
+    }
+    \end{thebibliography}
     """
 
     expected = [
@@ -718,6 +731,27 @@ def test_organize_appendix(latex_parser):
                             ],
                         },
                     ],
+                }
+            ],
+        },
+        {
+            "type": "bibliography",
+            "args": ["99"],
+            "content": [
+                {
+                    "type": "bibitem",
+                    "cite_key": "Hinton06",
+                    "format": "bibtex",
+                    "content": "@article{Hinton06,\n\tauthor={Hinton, Geoffrey E. and Osindero, Simon and Teh, Yee Whye},\n\tjournal={Neural Computation},\n\tpages={1527--1554},\n\ttitle={A Fast Learning Algorithm for Deep Belief Nets},\n\tvolume={18},\n\tyear={2006}\n}",
+                    "fields": {
+                        "author": "Hinton, Geoffrey E. and Osindero, Simon and Teh, Yee Whye",
+                        "journal": "Neural Computation",
+                        "pages": "1527--1554",
+                        "title": "A Fast Learning Algorithm for Deep Belief Nets",
+                        "volume": "18",
+                        "year": "2006",
+                    },
+                    "label": None,
                 }
             ],
         },

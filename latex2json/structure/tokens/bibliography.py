@@ -1,8 +1,9 @@
 from enum import Enum
 from typing import Dict, Any, List, Optional, Union
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
+from latex2json.parser.bib.bibtex_parser import BibFormat
 from latex2json.structure.tokens.base import EnvironmentToken, BaseToken, TokenCreator
 from latex2json.structure.tokens.types import TokenType
 
@@ -11,11 +12,17 @@ class BibItemToken(BaseToken):
     """Represents bibliography items"""
 
     type: TokenType = TokenType.BIBITEM
+    format: BibFormat = BibFormat.BIBITEM
     cite_key: str
-    title: Optional[str] = None
+    content: Union[str, List[BaseToken]]
+    label: Optional[str] = None
+
+    fields: Optional[Dict[str, str]] = (
+        None  # e.g. author=John Doe, year=2021, title=xxx
+    )
 
 
-class BibliographyToken(EnvironmentToken):
+class BibliographyToken(BaseToken):
     """Represents bibliography environment"""
 
     type: TokenType = TokenType.BIBLIOGRAPHY

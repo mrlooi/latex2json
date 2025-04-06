@@ -5,6 +5,7 @@ import sys, os, traceback
 import logging
 
 from latex2json.parser.bib.bib_parser import BibTexEntry, BibParser
+from latex2json.parser.bib.bibtex_parser import BibFormat
 from latex2json.utils.logger import setup_logger
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -287,17 +288,17 @@ class LatexParser:
             self._process_new_definition_token(token)
         return end_pos
 
-    def _convert_bibitem_to_token(self, entry: BibTexEntry) -> Dict:
+    def _convert_bibentry_tokens(self, entry: BibTexEntry) -> Dict:
         content = entry.content
-        if entry.entry_type == "bibitem":
+        if entry.format == BibFormat.BIBITEM:
             content = self.parse(content)
-        # else:
-        #     content = {"type": "text", "content": content}
         return {
             "type": "bibitem",
-            "content": content,
+            "format": entry.format,
             "cite_key": entry.citation_key,
-            "title": entry.title,
+            "content": content,
+            "label": entry.label,
+            "fields": entry.fields,
         }
 
     def _parse_bib_file(self, file_path: str) -> Dict:
@@ -326,7 +327,7 @@ class LatexParser:
             try:
                 entries = self.bib_parser.parse_file(full_path)
                 all_tokens.extend(
-                    [self._convert_bibitem_to_token(entry) for entry in entries]
+                    [self._convert_bibentry_tokens(entry) for entry in entries]
                 )
             except Exception as e:
                 self.logger.warning(
@@ -358,7 +359,7 @@ class LatexParser:
                 if isinstance(token["content"], str):
                     entries = self.bib_parser.parse(token["content"])
                     token["content"] = [
-                        self._convert_bibitem_to_token(entry) for entry in entries
+                        self._convert_bibentry_tokens(entry) for entry in entries
                     ]
             elif token["type"] == "bibliography_file":
                 if token["content"]:
