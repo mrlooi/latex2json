@@ -79,12 +79,12 @@ class CommandManager(TokenHandler):
         ignore_sty = token.get("is_sty", False) and self.ignore_sty_commands
         if token["type"] == "newcommand":
             # Check for recursion like tex_parser does
-            if re.search(token["usage_pattern"], token["content"]):
+            content = token["content"] if not ignore_sty else ""
+            if content and re.search(token["usage_pattern"], content):
                 self.logger.warning(
                     f"Potential recursion detected for newcommand: \\{cmd_name}, skipping..."
                 )
                 return
-            content = token["content"] if not ignore_sty else ""
             self.processor.process_newcommand(
                 cmd_name,
                 content,
