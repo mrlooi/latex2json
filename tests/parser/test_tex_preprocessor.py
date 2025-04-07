@@ -64,6 +64,9 @@ def test_usepackage_processing(preprocessor):
 
 
 def test_documentclass_processing(preprocessor):
+    if preprocessor.command_manager.ignore_sty_commands:
+        pytest.skip("Skipping test because ignore_sty_commands is True")
+
     text = r"""
     \documentclass{basecls}
     \somecmd

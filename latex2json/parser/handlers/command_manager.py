@@ -10,6 +10,8 @@ from latex2json.parser.packages.keyval import KeyValHandler
 
 
 class CommandManager(TokenHandler):
+    ignore_sty_commands = True
+
     def __init__(
         self,
         command_types: Optional[Set[str]] = None,
@@ -74,6 +76,7 @@ class CommandManager(TokenHandler):
             return
 
         # Consolidate command registration logic from sty_parser/tex_parser/tex_preprocessor
+        ignore_sty = token.get("is_sty", False) and self.ignore_sty_commands
         if token["type"] == "newcommand":
             # Check for recursion like tex_parser does
             if re.search(token["usage_pattern"], token["content"]):
@@ -81,23 +84,26 @@ class CommandManager(TokenHandler):
                     f"Potential recursion detected for newcommand: \\{cmd_name}, skipping..."
                 )
                 return
+            content = token["content"] if not ignore_sty else ""
             self.processor.process_newcommand(
                 cmd_name,
-                token["content"],
+                content,
                 token["num_args"],
                 token["defaults"],
                 token["usage_pattern"],
             )
         elif token["type"] == "let":
+            content = token["content"] if not ignore_sty else ""
             self.processor.process_let(
                 cmd_name,
-                token["content"],
+                content,
                 token["usage_pattern"],
             )
         elif token["type"] == "def":
+            content = token["content"] if not ignore_sty else ""
             self.processor.process_newdef(
                 cmd_name,
-                token["content"],
+                content,
                 token["num_args"],
                 token["usage_pattern"],
                 token["is_edef"],

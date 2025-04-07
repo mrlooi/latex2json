@@ -2042,6 +2042,9 @@ def test_delim_braces(parser):
 
 
 def test_sty_usepackage(parser):
+    if parser.command_manager.ignore_sty_commands:
+        pytest.skip("Skipping test because ignore_sty_commands is True")
+
     text = r"""
     \usepackage{%s/package2}
 

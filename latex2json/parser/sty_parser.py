@@ -99,7 +99,7 @@ class LatexStyParser:
         return [], 0
 
     def _check_loadclass(self, content: str) -> Tuple[List[Dict], int]:
-        """Check for \loadclass commands and parse any found .cls files
+        r"""Check for \loadclass commands and parse any found .cls files
 
         Returns:
             tuple: (list of tokens from cls files, end_position)
@@ -267,12 +267,16 @@ class LatexStyParser:
             current_file_dir = self.current_file_dir
 
             content = read_tex_file_content(file_path, extension=extension)
-            self.logger.info(f"Finished parsing file: {file_path}")
             self.parsed_files.add(file_path)
 
-            out = self.parse(content, file_path=file_path)
+            tokens = self.parse(content, file_path=file_path)
+
+            for token in tokens:
+                token["is_sty"] = True
+
             self.current_file_dir = current_file_dir
-            return out
+            self.logger.info(f"Finished parsing file: {file_path}")
+            return tokens
         except Exception as e:
             self.logger.error(
                 f"Failed to parse file: {file_path}, error: {str(e)}", exc_info=True
