@@ -312,6 +312,12 @@ def test_misc_formatting_commands(handler):
 
     \textfont\bboardfam=\tenbboard
     \scriptfont\bboardfam=\sevenbboard
+
+    \setmathfont[range=\setminus, Scale=MatchUppercase]{Asana-Math.otf}
+    \ExecuteBibliographyOptions{safeinputenc=true,backref=true,giveninits,useprefix=true,maxnames=5,doi=false,eprint=true,isbn=false,url=false}
+
+    \setdefaultlanguage{english}
+    \tracinglostchars=3
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

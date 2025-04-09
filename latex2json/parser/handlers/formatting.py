@@ -53,6 +53,10 @@ RAW_PATTERNS = OrderedDict(
         # pdf options
         ("pdf", r"\\(?:pdfoutput|pdfsuppresswarningpagegroup)\s*=\s*\d+"),
         ("pdfinfo", r"\\pdfinfo\s*{"),
+        # language
+        ("language", r"\\setdefaultlanguage\s*%s" % BRACE_CONTENT_PATTERN),
+        # Add tracing commands here
+        ("tracing", r"\\(?:tracinglostchars)\s*=\s*\d+"),
         # date
         ("date", r"\\date\s*\{"),
         ("today", r"\\today\b"),
@@ -137,7 +141,8 @@ RAW_PATTERNS = OrderedDict(
         (
             "options",
             re.compile(
-                r"\\(?:ProcessOptions\b|(PassOptionsToPackage|PassOptionsToClass)\s*\{[^}]*\}\s*\{[^}]*\})",
+                r"\\(?:ProcessOptions\b|(PassOptionsToPackage|PassOptionsToClass)\s*%s\s*%s)|\\ExecuteBibliographyOptions\s*%s"
+                % (BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN, BRACE_CONTENT_PATTERN),
                 re.DOTALL,
             ),
         ),
@@ -151,7 +156,9 @@ RAW_PATTERNS = OrderedDict(
         (
             "fontsetters",
             re.compile(
-                r"\\(?:text|script|scriptscript)font\\[a-zA-Z@]+\s*=\s*\\[a-zA-Z@]+\b",
+                r"\\(?:text|script|scriptscript)font\\[a-zA-Z@]+\s*=\s*\\[a-zA-Z@]+\b"
+                + r"|\\setmathfont\s*%s\s*%s"
+                % (OPTIONAL_BRACE_PATTERN, BRACE_CONTENT_PATTERN),
                 re.DOTALL,
             ),
         ),
