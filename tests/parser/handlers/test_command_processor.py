@@ -276,21 +276,21 @@ def test_comparison_operators(processor, newdef_handler):
         token["usage_pattern"],
     )
 
-    # check operator and ignore
-    text = r"\foo = 2 POST"
-    out_text, pos = processor.handle(text)
-    assert out_text == ""
-    assert text[pos:] == " POST"
+    # # check operator and ignore
+    # text = r"\foo = 2 POST"
+    # out_text, pos = processor.handle(text)
+    # assert out_text == ""
+    # assert text[pos:] == " POST"
 
-    text = r"\foo = 2.5pt POST"
-    out_text, pos = processor.handle(text)
-    assert out_text == ""
-    assert text[pos:] == " POST"
+    # text = r"\foo = 2.5pt POST"
+    # out_text, pos = processor.handle(text)
+    # assert out_text == ""
+    # assert text[pos:] == " POST"
 
-    text = r"\foo=\somecmd POST"
-    out_text, pos = processor.handle(text)
-    assert out_text == ""
-    assert text[pos:] == " POST"
+    # text = r"\foo=\somecmd POST"
+    # out_text, pos = processor.handle(text)
+    # assert out_text == ""
+    # assert text[pos:] == " POST"
 
 
 def test_nested_command_arg_substitution(processor, newdef_handler):

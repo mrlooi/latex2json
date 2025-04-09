@@ -443,11 +443,12 @@ class CommandProcessor:
 
     def handle(self, text: str) -> str:
         out, end_pos = self._handle(text)
-        if end_pos > 0:
-            # check if next token is =<>
-            comp_op_match = COMPARISON_OP_PATTERN.match(text[end_pos:])
-            if comp_op_match:
-                return "", end_pos + comp_op_match.end()
+        # (this was originally added to handle some setting of macros with \cmd = x, but commented out -> TOO aggressive, will interfere with math data)
+        # if end_pos > 0:
+        #     # check if next token is =<>
+        #     comp_op_match = COMPARISON_OP_PATTERN.match(text[end_pos:])
+        #     if comp_op_match:
+        #         return "", end_pos + comp_op_match.end()
         return out, end_pos
 
 
