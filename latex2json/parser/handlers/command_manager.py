@@ -77,6 +77,7 @@ class CommandManager(TokenHandler):
 
         # Consolidate command registration logic from sty_parser/tex_parser/tex_preprocessor
         ignore_sty = token.get("is_sty", False) and self.ignore_sty_commands
+        math_mode_only = token.get("math_mode_only", False)
         if token["type"] == "newcommand":
             # Check for recursion like tex_parser does
             content = token["content"] if not ignore_sty else ""
@@ -91,6 +92,7 @@ class CommandManager(TokenHandler):
                 token["num_args"],
                 token["defaults"],
                 token["usage_pattern"],
+                math_mode_only,
             )
         elif token["type"] == "let":
             content = token["content"] if not ignore_sty else ""

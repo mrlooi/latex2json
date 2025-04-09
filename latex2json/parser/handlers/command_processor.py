@@ -30,6 +30,7 @@ class CommandEntry(TypedDict):
     pattern: Pattern[str]
     handler: Callable[[re.Match[str], str, Optional[bool]], Tuple[str, int]]
     definition: Optional[str]
+    math_mode_only: Optional[bool] = False
 
 
 def default_ignore_handler(
@@ -70,6 +71,24 @@ class CommandProcessor:
 
     def has_command(self, command_name: str) -> bool:
         return command_name in self._all_commands
+
+    def get_command_iter(self, math_mode=False):
+        """
+        Returns an iterator over commands, filtered by math_mode if specified.
+
+        Args:
+            math_mode (bool): If True, include all commands. If False, exclude math_mode_only commands.
+
+        Returns:
+            Iterator of CommandEntry objects
+        """
+        commands = self._all_commands
+        if math_mode:
+            yield from commands.values()
+        else:
+            for cmd in commands.values():
+                if not cmd.get("math_mode_only", False):
+                    yield cmd
 
     def process_let(self, command_name: str, definition: str, usage_pattern: str):
         # for let, we evaluate the definition right way
@@ -120,6 +139,7 @@ class CommandProcessor:
         num_args: int,
         defaults: List[str],
         usage_pattern: str,
+        math_mode_only=False,
     ):
 
         get_definition = lambda match: definition
@@ -143,6 +163,10 @@ class CommandProcessor:
             def handler(
                 match: re.Match[str], text: str, math_mode: bool = False
             ) -> Tuple[str, int]:
+                definition = get_definition(match)
+                # if math_mode_only and not math_mode:
+                #     return "\\" + command_name, match.end()
+
                 start_pos = match.end()
                 end_pos = start_pos
                 args = defaults.copy()
@@ -177,13 +201,14 @@ class CommandProcessor:
                 # fill remaining args with empty strings
                 args.extend([""] * (num_args - len(args)))
 
-                return substitute_args(get_definition(match), args), end_pos
+                return substitute_args(definition, args), end_pos
 
         try:
             command: CommandEntry = {
                 "pattern": re.compile(usage_pattern, re.DOTALL),
                 "handler": handler,
                 "definition": definition,
+                "math_mode_only": math_mode_only,
             }
             self.commands[command_name] = command
         except Exception as e:
@@ -309,8 +334,15 @@ class CommandProcessor:
         self, text: str, ignore_unicode: bool = False, math_mode: bool = False
     ) -> tuple[str, int]:
         """Recursively expand defined commands in the text until no further expansions are possible."""
+        command_entries = self.commands
+        if not math_mode:
+            command_entries = {
+                k: v
+                for k, v in self.commands.items()
+                if not v.get("math_mode_only", False)
+            }
         # first process commands
-        text, match_count = self._expand(text, self.commands, math_mode=math_mode)
+        text, match_count = self._expand(text, command_entries, math_mode=math_mode)
         # then process let commands
         text, match_count = self._expand(text, self.let_commands, math_mode=math_mode)
 
@@ -380,7 +412,7 @@ class CommandProcessor:
         return text, match_count
 
     def can_handle(self, text: str) -> bool:
-        for cmd in self._all_commands.values():
+        for cmd in self.get_command_iter(False):
             if cmd["pattern"].match(text):
                 return True
         return CSNAME_PATTERN.match(text) is not None
@@ -390,7 +422,7 @@ class CommandProcessor:
         if match:
             nested, end_pos = extract_and_concat_nested_csname(text)
             if nested:
-                for cmd in self._all_commands.values():
+                for cmd in self.get_command_iter(False):
                     match = cmd["pattern"].match(text)
                     if match:
                         out, _ = cmd["handler"](match, text)
@@ -399,7 +431,7 @@ class CommandProcessor:
         return text, 0
 
     def _handle(self, text: str) -> str:
-        for cmd in self._all_commands.values():
+        for cmd in self.get_command_iter(False):
             match = cmd["pattern"].match(text)
             if match:
                 out, end_pos = cmd["handler"](match, text)

@@ -30,10 +30,11 @@ number_regex = NUMBER_PATTERN
 declare_pattern_N_blocks = {
     "DeclareFontFamily": 3,
     "DeclareFontShape": 6,
-    "DeclareMathAlphabet": 5,
     "DeclareOption": 2,
     "SetMathAlphabet": 6,
-    "DeclareSymbolFontAlphabet": 2,
+    # both of the below create new macros, we handle this in newdef
+    # "DeclareMathAlphabet": 5,
+    # "DeclareSymbolFontAlphabet": 2,
 }
 
 
@@ -149,7 +150,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "declare",
             re.compile(
-                r"\\(DeclareFontShape|DeclareSymbolFontAlphabet|DeclareFontFamily|DeclareMathAlphabet|DeclareOption|SetMathAlphabet|DeclareGraphicsExtensions)\*?\s*\{",
+                r"\\(DeclareFontShape|DeclareFontFamily|DeclareOption|SetMathAlphabet|DeclareGraphicsExtensions)\*?\s*\{",
                 re.DOTALL,
             ),
         ),

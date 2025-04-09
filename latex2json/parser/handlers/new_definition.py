@@ -36,6 +36,16 @@ END_CSNAME_PATTERN = re.compile(r"\\endcsname(?![a-zA-Z])")
 command_with_opt_brace_pattern = r"(?:%s|%s)" % (BRACE_CONTENT_PATTERN, command_pattern)
 
 
+declare_pattern_N_blocks = {
+    # "DeclareFontFamily": 3,
+    # "DeclareFontShape": 6,
+    # "DeclareOption": 2,
+    # "SetMathAlphabet": 6,
+    # both of the below create new macros, we handle this in newdef
+    "DeclareMathAlphabet": 5,
+    "DeclareSymbolFontAlphabet": 2,
+}
+
 # Compile patterns for definition commands
 PATTERNS = {
     # Matches newcommand/renewcommand, supports both {\commandname} and \commandname syntax
@@ -43,11 +53,21 @@ PATTERNS = {
         r"\\(?:new|renew|provide)command" + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL
     ),
     "let": re.compile(LET_COMMAND_PREFIX),
-    "declaremathoperator": re.compile(
-        r"\\DeclareMathOperator" + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL
-    ),  # for math mode
+    # declares
     "declarerobustcommand": re.compile(
         r"\\DeclareRobustCommand" + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL
+    ),
+    "declarepairedelimiter": re.compile(
+        r"\\DeclarePairedDelimiter\s*(?:{\\([^\s{}]+)}|\\([^\s{]+))\s*{",
+        re.DOTALL,
+    ),
+    # declares for math mode
+    "declaremathoperator": re.compile(
+        r"\\DeclareMathOperator" + POST_NEW_COMMAND_PATTERN_STR, re.DOTALL
+    ),
+    "declarealphabets": re.compile(
+        r"\\(DeclareMathAlphabet|DeclareSymbolFontAlphabet)\s*{",
+        re.DOTALL,
     ),
     # Matches \def commands - always with backslash before command name
     "def": re.compile(DEF_COMMAND_PREFIX),
@@ -89,15 +109,14 @@ PATTERNS = {
     "floatname": re.compile(r"\\floatname{([^}]*)}{([^}]*)}"),
     "expandafter": EXPAND_PATTERN,
     "endcsname": END_CSNAME_PATTERN,  # for trailing \endcsname?
-    "declarepairedelimiter": re.compile(
-        r"\\DeclarePairedDelimiter\s*(?:{\\([^\s{}]+)}|\\([^\s{]+))\s*{",
-        re.DOTALL,
-    ),
+    # color/font
     "definecolor": re.compile(r"\\definecolor\s*{"),
     "font": re.compile(
         r"\\font\s*\\([^\s=]+)\s*=\s*([^\s]+)(?:\s+at\s+(\d+(?:\.\d+)?)(pt|cm|mm|in|ex|em|bp|dd|pc|sp))?"
     ),
 }
+
+USAGE_SUFFIX = r"(?![a-zA-Z@])"
 
 
 def extract_and_concat_nested_csname(content: str) -> Tuple[str, int]:
@@ -133,6 +152,13 @@ class NewDefinitionHandler(TokenHandler):
             if match:
                 if pattern_name == "declarepairedelimiter":
                     return self._handle_paired_delimiter(content, match)
+                elif pattern_name == "declarealphabets":
+                    return self._handle_declare_alphabets(content, match)
+                elif pattern_name == "declaremathoperator":
+                    token, end_pos = self._handle_newcommand(content, match)
+                    if token:
+                        token["math_mode_only"] = True
+                    return token, end_pos
                 elif pattern_name == "newcommand" or pattern_name.startswith("declare"):
                     return self._handle_newcommand(content, match)
                 elif pattern_name == "let":
@@ -192,6 +218,31 @@ class NewDefinitionHandler(TokenHandler):
                     return None, match.end()
 
         return None, 0
+
+    def _handle_declare_alphabets(
+        self, content: str, match
+    ) -> Tuple[Optional[Dict], int]:
+        r"""Handle \DeclareMathAlphabet and \DeclareSymbolFontAlphabet definitions"""
+        declare_type = match.group(1)
+        start_pos = match.end() - 1
+        N_blocks = declare_pattern_N_blocks.get(declare_type, 1)
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "{", "}", max_blocks=N_blocks
+        )
+        end_pos += start_pos
+        if len(blocks) < 1:
+            return None, end_pos
+        cmd = blocks[0]
+        token = {
+            "type": "newcommand",
+            "name": cmd.strip("\\"),
+            "content": "#1",
+            "math_mode_only": True,
+            "num_args": 1,
+            "defaults": [],
+            "usage_pattern": re.escape(cmd) + USAGE_SUFFIX,
+        }
+        return token, end_pos
 
     def _handle_newcolumntype(self, content: str, match) -> Tuple[Optional[Dict], int]:
         r"""Handle \newcolumntype definitions"""
@@ -292,19 +343,19 @@ class NewDefinitionHandler(TokenHandler):
                 "content": content,
                 "num_args": 0,
                 "defaults": [],
-                "usage_pattern": r"\\" + name + r"(?![a-zA-Z@])",
+                "usage_pattern": r"\\" + name + USAGE_SUFFIX,
             }
         else:
             token = {
                 "type": "let",
                 "name": name,
                 "content": content,
-                "usage_pattern": r"\\" + name + r"(?![a-zA-Z@])",
+                "usage_pattern": r"\\" + name + USAGE_SUFFIX,
             }
         return token, match.end()
 
     def _handle_newcommand(self, content: str, match) -> Tuple[Optional[Dict], int]:
-        """Handle \newcommand and \renewcommand definitions"""
+        r"""Handle \newcommand and \renewcommand definitions"""
         start_pos = match.end()
         definition, end_pos = extract_nested_content(
             content[start_pos - 1 :]
@@ -332,7 +383,7 @@ class NewDefinitionHandler(TokenHandler):
 
         # Don't add negative lookahead for commands ending in special chars
         needs_lookahead = cmd_name[-1].isalnum()
-        postfix = r"(?![a-zA-Z@])" if needs_lookahead else ""
+        postfix = USAGE_SUFFIX if needs_lookahead else ""
         pattern = r"\\" + re.escape(cmd_name) + postfix
 
         token = {
@@ -431,7 +482,7 @@ class NewDefinitionHandler(TokenHandler):
                     if token and inner_csnames:  # allow csname regex compile
                         first_inner = inner_csnames[0]
                         # Partition the usage_pattern to remove up to and including cmd_str
-                        usage_suffix = r"(?![a-zA-Z@])"
+                        usage_suffix = USAGE_SUFFIX
                         if add_usage_suffix:
                             _, _, usage_suffix = token["usage_pattern"].partition(
                                 "\\" + first_inner.replace(" ", "")
@@ -502,7 +553,7 @@ class NewDefinitionHandler(TokenHandler):
             # if last char is alpha or @, add negative lookahead
             # this is to avoid matching e.g. \def\foo#1{bar #1} with \fooa \foob \fooxyz etc
             if pre_arg[-1].isalpha() or pre_arg[-1] == "@":
-                parts.append(r"(?![a-zA-Z@])")
+                parts.append(USAGE_SUFFIX)
 
             # then we handle the args #1 ... #2 etc
             args = pattern[start_pos:]
@@ -528,7 +579,7 @@ class NewDefinitionHandler(TokenHandler):
             if current_pos < len(args):
                 parts.append(re.escape(args[current_pos:]))
         else:
-            parts.append(re.escape(pattern) + r"(?![a-zA-Z@])")
+            parts.append(re.escape(pattern) + USAGE_SUFFIX)
 
         return parts, param_count
 

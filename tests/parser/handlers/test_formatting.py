@@ -250,7 +250,6 @@ def test_misc_formatting_commands(handler):
 
     \DeclareFontFamily{OT1}{rsfs}{}
     \DeclareFontShape{OT1}{rsfs}{n}{it}{<-> rsfs10}{}
-    \DeclareMathAlphabet{\mathscr}{OT1}{rsfs}{n}{it}
     \SetMathAlphabet{\mathscr}{OT1}{rsfs}{n}{it}{xxx}
 
     \@addtoreset{equation}{section}
@@ -306,7 +305,6 @@ def test_misc_formatting_commands(handler):
     \unvbox0
     \unvbox\box
     \addcontentsline{toc}{chapter}{Bibliography}
-    \DeclareSymbolFontAlphabet{\amsmathbb}{AMSb}
     \mathtoolsset{mathic}
 
 

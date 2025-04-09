@@ -351,5 +351,34 @@ def test_nested_command_arg_substitution(processor, newdef_handler):
     )
 
 
+def test_math_mode_only(processor, newdef_handler):
+    processor.clear()
+
+    content = r"\DeclareMathAlphabet{\mathbfx}{OT1}{cmr}{b}{n}"
+    token, pos = newdef_handler.handle(content)
+    assert token is not None
+
+    processor.process_newcommand(
+        token["name"],
+        token["content"],
+        token["num_args"],
+        token["defaults"],
+        token["usage_pattern"],
+        math_mode_only=token["math_mode_only"],
+    )
+
+    # Test mathbfx in math mode - should work
+    text = r"\mathbfx{yy}"
+    out_text, _ = processor.expand_commands(text, math_mode=True)
+    assert not r"\mathbfx{yy}" in out_text
+    assert "yy" in out_text
+
+    # Test mathbfx outside math mode - should not expand
+    text = r"\mathbfx{x}"
+    out_text, _ = processor.expand_commands(text, math_mode=False)
+    assert out_text == text  # Command should remain unexpanded
+    assert r"\mathbfx{x}" in out_text
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

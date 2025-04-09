@@ -584,5 +584,20 @@ def test_font(handler):
     # assert token["unit"] == "pt"
 
 
+def test_declare_alphabets(handler):
+    content = r"\DeclareMathAlphabet{\mathbf}{OT1}{cmr}{b}{n} POST"
+    token, pos = handler.handle(content)
+    assert token["type"] == "newcommand"
+    assert token["name"] == "mathbf"
+    assert token["math_mode_only"]
+    assert content[pos:] == " POST"
+
+    content = r"\DeclareSymbolFontAlphabet{\mathbf}{OT1} POST"
+    token, pos = handler.handle(content)
+    assert token["type"] == "newcommand"
+    assert token["name"] == "mathbf"
+    assert token["math_mode_only"]
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
