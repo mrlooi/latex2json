@@ -103,7 +103,7 @@ def test_expand_commands(processor, newdef_handler):
     out_text, _ = processor.expand_commands(
         content, ignore_unicode=True, math_mode=True
     )
-    assert out_text == r"$({x})$"
+    assert out_text == r"$(x)$"
 
 
 def test_let_commands_are_copied(processor, newdef_handler):
@@ -142,7 +142,7 @@ def test_let_commands_are_copied(processor, newdef_handler):
         content, ignore_unicode=True, math_mode=True
     )
     # preserved \pminus->\pm, while \pm is redefined
-    assert out_text == r"\pm {\phi_{\le m}}"
+    assert out_text == r"\pm \phi_{\le m}"
 
     # check new \let\postpm\pm evaluates to renewcommand \pm
     content = r"\postpm \pminus"

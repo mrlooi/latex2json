@@ -185,39 +185,6 @@ def test_has_uncommented_percent_before():
     assert has_comment_on_sameline(text, text.find(r"\begin"))
 
 
-def test_strip_latex_comments():
-    # Test basic single-line comments
-    text = r"This is code % with a comment"
-    assert strip_latex_comments(text) == "This is code"
-
-    # Test multiline text with various comment types
-    text = r"""
-    First line% with comment
-    Second line with \% escaped percent % and a comment
-    % Fully commented line
-    No comments here
-    Mixed line with \% escaped and % real comment
-    """.strip()
-
-    expected = r"""
-    First line
-    Second line with \% escaped percent
-
-    No comments here
-    Mixed line with \% escaped and""".strip()
-
-    assert strip_latex_comments(text) == expected
-
-    # Test empty lines and whitespace handling
-    text = r"""
-    % Comment only
-    
-    Text % Comment
-      % Indented comment
-        Text with space   % Comment
-    """.strip()
-
-
 def test_normalize_whitespace_and_lines():
     input_text = "Hello\nworld"
     expected = "Hello world"
@@ -266,7 +233,33 @@ def test_find_delimiter_end():
     assert end_pos == -1
 
 
-def test_strip_latex_comments_advanced():
+def test_strip_latex_comments():
+
+    # Test basic single-line comments
+    text = r"This is code % with a comment"
+    assert strip_latex_comments(text) == "This is code"
+
+    # Test multiline text with various comment types
+    text = r"""
+    First line% with comment
+    Second line with \% escaped percent % and a comment
+    % Fully commented line
+    No comments here
+    Mixed line with \% escaped and % real comment
+    """.strip()
+
+    expected = r"""
+    First line
+    Second line with \% escaped percent
+
+    No comments here
+    Mixed line with \% escaped and""".strip()
+
+    assert strip_latex_comments(text) == expected
+
+    # FAILING THIS TEST: test that double \\% is not removed
+    text = r"not a comment \\% is a comment"
+    assert strip_latex_comments(text) == r"not a comment \\"
     # Test with multiple escaped percents
     text = r"Line with \% and \% and % real comment"
     assert strip_latex_comments(text) == r"Line with \% and \% and"
@@ -285,7 +278,7 @@ def test_strip_latex_comments_advanced():
 
     # Test with escaped backslashes before percent
     text = r"Text with \\% not a comment and % real comment"
-    assert strip_latex_comments(text) == r"Text with \\% not a comment and"
+    assert strip_latex_comments(text) == r"Text with \\"
 
 
 def test_find_matching_delimiter_edge_cases():

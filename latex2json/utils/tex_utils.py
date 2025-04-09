@@ -307,34 +307,52 @@ def has_comment_on_sameline(content: str, pos: int) -> bool:
     return False
 
 
+def count_preceding_backslashes(text: str, pos: int) -> int:
+    """Count number of backslashes immediately preceding the position."""
+    count = 0
+    pos -= 1
+    while pos >= 0 and text[pos] == "\\":
+        count += 1
+        pos -= 1
+    return count
+
+
+def is_escaped(pos: int, text: str) -> bool:
+    """Check if character at position is escaped by backslashes."""
+    return count_preceding_backslashes(text, pos) % 2 == 1
+
+
 def strip_latex_comments(text: str) -> str:
-    r"""
-    Remove all LaTeX comments (lines starting with % or inline comments after unescaped %)
-    while preserving escaped \% characters.
+    """
+    Remove all LaTeX comments while preserving escaped \% characters.
+
+    A % starts a comment if it is preceded by an even number (including zero)
+    of consecutive backslashes. An odd number indicates that the % is escaped.
 
     Args:
         text: Input LaTeX text
 
     Returns:
-        Text with all comments removed
+        Text with all comments removed.
     """
     lines = []
     for line in text.splitlines():
-        processed_line = ""
+        result = []
         i = 0
         while i < len(line):
-            # Handle escaped %
-            if i < len(line) - 1 and line[i : i + 2] == r"\%":
-                processed_line += r"\%"
-                i += 2
-                continue
-            # Handle unescaped %
             if line[i] == "%":
-                break
-            processed_line += line[i]
-            i += 1
-        lines.append(processed_line.rstrip())
-
+                # Use helper to decide if this % is escaped.
+                if not is_escaped(i, line):
+                    break  # Unescaped % starts a comment
+                else:
+                    # Escaped percent: include literal %
+                    result.append("%")
+                    i += 1
+                    continue
+            else:
+                result.append(line[i])
+                i += 1
+        lines.append("".join(result).rstrip())
     return "\n".join(lines)
 
 
@@ -462,12 +480,15 @@ def check_string_has_hash_number(text: str) -> bool:
     return bool(NO_ESC_HASH_NUMBER_PATTERN.search(text))
 
 
-def substitute_args(definition: str, args: List[str]) -> str:
+def substitute_args(definition: str, args: List[str], math_mode=False) -> str:
     r"""
     Substitute argument patterns in LaTeX command definitions.
     First finds the smallest sequence of unescaped #s in the definition (e.g. #1, ##1, or ###1),
     then only substitutes patterns with exactly that number of #s.
     Escaped \# characters are preserved and not counted in the sequence.
+
+    When math_mode is True, the two surrounding characters (if any) are checked; if either
+    is alphabetic then the substitution is wrapped in curly braces.
     """
     if not args:
         return definition
@@ -480,12 +501,7 @@ def substitute_args(definition: str, args: List[str]) -> str:
     if min_hashes < 1:
         return definition
 
-    # New regex that matches either:
-    #   1. An escaped hash (\\#) – these we want to leave intact.
-    #   2. A sequence of one or more '#' followed by digits.
-    pattern = re.compile(r"(\\#)|(#+)(\d+)")
-
-    def repl(match):
+    def sub_fn(match):
         # If group(1) matched, it's an escaped hash, so leave it as is.
         if match.group(1) is not None:
             return match.group(0)
@@ -496,13 +512,26 @@ def substitute_args(definition: str, args: List[str]) -> str:
             arg_index = int(number) - 1  # convert to 0-based index
             if arg_index >= len(args):
                 return match.group(0)
-            elif args[arg_index] is None:
-                return ""
-            return args[arg_index]
+            # Retrieve the replacement text.
+            replacement = "" if args[arg_index] is None else args[arg_index]
+
+            # If math_mode is enabled, check surrounding characters.
+            if math_mode and replacement:
+                start_index = match.start()
+                end_index = match.end()
+                char_before = definition[start_index - 1] if start_index > 0 else ""
+                char_after = (
+                    definition[end_index] if end_index < len(definition) else ""
+                )
+                # If either the preceding or following character is alphabetic,
+                # wrap the replacement in braces.
+                if (char_before.isalpha()) or (char_after.isalpha()):
+                    replacement = "{" + replacement + "}"
+            return replacement
         else:
             return match.group(0)
 
-    return HASH_NUMBER_PATTERN.sub(repl, definition)
+    return HASH_NUMBER_PATTERN.sub(sub_fn, definition)
 
 
 if __name__ == "__main__":

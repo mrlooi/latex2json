@@ -191,17 +191,10 @@ class CommandProcessor:
                     for block in blocks:
                         args.append(block)
 
-                if math_mode:
-                    # pad args with spaces
-                    args = [
-                        wrap_math_mode_arg(arg) if arg is not None else arg
-                        for arg in args
-                    ]
-
                 # fill remaining args with empty strings
                 args.extend([""] * (num_args - len(args)))
 
-                return substitute_args(definition, args), end_pos
+                return substitute_args(definition, args, math_mode), end_pos
 
         try:
             command: CommandEntry = {
@@ -228,9 +221,6 @@ class CommandProcessor:
             content, end_pos = extract_nested_content(text[start_pos:], "{", "}")
             if content is None:
                 return "", start_pos
-
-            if math_mode:
-                content = wrap_math_mode_arg(content)
 
             end_pos += start_pos
             return f"{left_delim}{content}{right_delim}", end_pos
@@ -269,9 +259,10 @@ class CommandProcessor:
             args = []
             for g in match.groups():
                 if g is not None:
-                    args.append(wrap_math_mode_arg(g) if math_mode else g)
+                    args.append(g)
+                    # args.append(wrap_math_mode_arg(g) if math_mode else g)
 
-            return substitute_args(get_definition(match), args), match.end()
+            return substitute_args(get_definition(match), args, math_mode), match.end()
 
         if expand_definition:
             definition = self.expand_commands(definition, True)[0]
@@ -380,16 +371,16 @@ class CommandProcessor:
                 prev_char = text[start_pos - 1] if start_pos > 0 else ""
                 should_wrap = False
                 if start_pos > 0 and len(c) >= 1:
-                    if " " in c:
-                        should_wrap = True
-                    elif c[0].isalnum():
+                    if c[0].isalnum():
                         should_wrap = True
                     elif c.startswith("\\"):
-                        # most likely a command
-                        is_all_alpha = c[1:].isalpha()
-                        if not is_all_alpha:
+                        is_single_command = c[1:].isalpha()
+                        if not is_single_command:
                             # Handle both subscript and superscript
                             should_wrap = prev_char in "_^"
+                            if not should_wrap:
+                                # wrap if last char is alphabetic
+                                should_wrap = c[-1].isalpha()
 
                 if should_wrap:
                     out = wrap_math_mode_arg(out)
