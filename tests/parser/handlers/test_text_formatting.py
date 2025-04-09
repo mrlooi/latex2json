@@ -251,3 +251,27 @@ def test_subfloat(handler):
         {"type": "text", "content": "Content"},
     ]
     assert text[pos:] == " POST"
+
+
+def test_roman_numerals(handler):
+    text = r"\romannumeral 123 POST"
+    token, pos = handler.handle(text)
+    assert token["type"] == "text"
+    assert token["content"] == "cxxiii"
+    assert text[pos:] == " POST"
+
+
+def test_upper_lower_case(handler):
+    text = r"\uppercase{Hello} POST"
+    token, pos = handler.handle(text)
+    assert token["type"] == "text"
+    assert token["content"] == "Hello"
+    assert token["styles"] == ["uppercase"]
+    assert text[pos:] == " POST"
+
+    text = r"\lowercase\expandafter{Hello} POST"
+    token, pos = handler.handle(text)
+    assert token["type"] == "text"
+    assert token["content"] == "Hello"
+    assert token["styles"] == ["lowercase"]
+    assert text[pos:] == " POST"

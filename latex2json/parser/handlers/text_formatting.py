@@ -5,6 +5,7 @@ import re
 
 from latex2json.parser.handlers.base import TokenHandler
 from latex2json.parser.patterns import BRACE_CONTENT_PATTERN, OPTIONAL_BRACE_PATTERN
+from latex2json.utils.conversions import int_to_roman
 from latex2json.utils.tex_utils import (
     extract_nested_content,
     extract_nested_content_sequence_blocks,
@@ -42,11 +43,13 @@ FRONTEND_STYLE_MAPPING: Dict[str, str] = {
     "textstrikeout": "line-through",  # requires ulem package in LaTeX
     "sout": "line-through",  # another strikethrough command
     "natexlab": None,
+    "uppercase": "uppercase",
+    "lowercase": "lowercase",
 }
 
 TEXT_COMMANDS = "|".join(FRONTEND_STYLE_MAPPING.keys())
 TEXT_PATTERN = re.compile(
-    rf"\\({TEXT_COMMANDS})" + r"(?![a-zA-Z])(\s*(\{)|.*)?", re.DOTALL
+    rf"\\({TEXT_COMMANDS})" + r"(?![a-zA-Z])(?:\\expandafter)?(\s*(\{)|.*)?", re.DOTALL
 )
 
 BOX_PATTERN = re.compile(
@@ -95,6 +98,7 @@ PATTERNS = {
         r"\\(?:fancyhead|rhead|chead|lhead)\s*%s\s*{" % OPTIONAL_BRACE_PATTERN,
         re.DOTALL,
     ),
+    "roman_numerals": re.compile(r"\\romannumeral\s+(\d+)"),
 }
 
 
@@ -345,6 +349,12 @@ class TextFormattingHandler(TokenHandler):
             "content": out_tokens,
         }, total_pos
 
+    def _handle_roman_numerals(self, content: str, match: re.Match) -> Tuple[str, int]:
+        numeral = int(match.group(1))
+
+        roman_numeral = int_to_roman(numeral)
+        return {"type": "text", "content": roman_numeral}, match.end()
+
     def handle(self, content: str, prev_token: Optional[Dict] = None):
 
         for name, pattern in PATTERNS.items():
@@ -370,6 +380,8 @@ class TextFormattingHandler(TokenHandler):
                 return self._handle_box(content, match)
             elif name == "citetext":
                 return self._handle_citetext(content, match)
+            elif name == "roman_numerals":
+                return self._handle_roman_numerals(content, match)
             else:
                 return None, match.end()
 
@@ -392,7 +404,7 @@ if __name__ == "__main__":
     #     check(text)
 
     text = r"""
-\textcolor[HTML]{FF0000}{Haha}
+\romannumeral 123
 """.strip()
     print(handler.handle(text))
 

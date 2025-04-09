@@ -11,7 +11,14 @@ from latex2json.utils.tex_utils import (
     extract_equation_content,
     substitute_args,
 )
+from latex2json.utils.conversions import int_to_roman
 import re
+
+
+def test_int_to_roman():
+    assert int_to_roman(1) == "i"
+    assert int_to_roman(123) == "cxxiii"
+    assert int_to_roman(1234) == "mccxxxiv"
 
 
 def test_find_matching_delimiter_with_double_backslash():
