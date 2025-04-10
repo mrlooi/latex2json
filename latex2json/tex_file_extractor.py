@@ -73,82 +73,134 @@ class TexFileExtractor:
 
         Yields:
             tuple: (main_tex_file, main_folder)
-                  main_tex_file: Name of the main TeX file
-                  main_folder: Path to folder containing the main TeX file
+                  main_tex_file: Relative path of the main TeX file within the temp dir
+                  main_folder: Path to temporary directory containing extracted files
         """
         temp_dir = tempfile.mkdtemp()
+        main_tex = None
+        main_folder_abs = None  # Store the absolute path found by find_main_tex_file
+        processed = False
+
         try:
             if compressed_path.endswith(".zip"):
                 with zipfile.ZipFile(compressed_path, "r") as zip_ref:
-                    # Check for path traversal attempts before extraction
+                    # Security check for unsafe paths before extraction
+                    safe_members = []
                     for member in zip_ref.namelist():
-                        if os.path.isabs(member) or ".." in member:
-                            continue
-                        zip_ref.extract(member, temp_dir)
-                main_tex, main_folder = TexFileExtractor.find_main_tex_file(temp_dir)
-            else:
-                with gzip.open(compressed_path, "rb") as f_in:
-                    content = f_in.read()
-                    is_tar = content.startswith(b"ustar") or compressed_path.endswith(
-                        ".tar.gz"
-                    )
-
-                    if is_tar:
-                        temp_tar = os.path.join(temp_dir, "temp.tar")
-                        with open(temp_tar, "wb") as f_out:
-                            f_out.write(content)
-
-                        try:
-                            # Try to open as a tar file with error handling
-                            with tarfile.open(temp_tar) as tar:
-                                # Check for path traversal attempts before extraction
-                                for member in tar.getmembers():
-                                    if (
-                                        os.path.isabs(member.name)
-                                        or ".." in member.name
-                                    ):
-                                        continue
-                                    tar.extract(member, temp_dir)
-
-                            main_tex, main_folder = TexFileExtractor.find_main_tex_file(
-                                temp_dir
+                        member_path = os.path.join(temp_dir, member)
+                        # Prevent path traversal and absolute paths
+                        if (
+                            os.path.isabs(member)
+                            or ".." in member
+                            or not os.path.abspath(member_path).startswith(
+                                os.path.abspath(temp_dir)
                             )
-                        except (
-                            tarfile.ReadError,
-                            tarfile.CompressionError,
-                            EOFError,
-                        ) as e:
-                            # Handle tar file errors by treating it as a single file
+                        ):
                             print(
-                                f"Error processing tar file: {str(e)}. Treating as a single file."
+                                f"[WARNING] Skipping potentially unsafe path in zip: {member}"
                             )
-                            temp_file = os.path.join(temp_dir, "temp_file.tex")
-                            with open(temp_file, "wb") as f_out:
-                                f_out.write(content)
+                            continue
+                        safe_members.append(member)
+                    # Extract only safe members
+                    for member in safe_members:
+                        zip_ref.extract(member, temp_dir)
 
-                            content_str = read_file(temp_file)
-                            if TexFileExtractor.is_main_tex_file(content_str):
-                                main_tex = "temp_file.tex"
-                                main_folder = temp_dir
-                            else:
-                                raise FileNotFoundError(
-                                    f"Could not process as tar file and extracted content is not a valid TeX file: {str(e)}"
+                main_tex, main_folder_abs = TexFileExtractor.find_main_tex_file(
+                    temp_dir
+                )
+                processed = True
+
+            elif compressed_path.endswith((".tar.gz", ".tgz")):
+                try:
+                    # Open .tar.gz directly using tarfile
+                    with tarfile.open(compressed_path, "r:gz") as tar:
+                        # Security check for unsafe paths before extraction
+                        safe_members = []
+                        for member in tar.getmembers():
+                            member_path = os.path.join(temp_dir, member.name)
+                            # Prevent path traversal and absolute paths
+                            if (
+                                os.path.isabs(member.name)
+                                or ".." in member.name
+                                or not os.path.abspath(member_path).startswith(
+                                    os.path.abspath(temp_dir)
                                 )
+                            ):
+                                print(
+                                    f"[WARNING] Skipping potentially unsafe path in tar.gz: {member.name}"
+                                )
+                                continue
+                            safe_members.append(member)
+                        # Extract only safe members (use filter='data' in Python 3.12+ for better security)
+                        # For broader compatibility, we extract member by member after checks
+                        for member in safe_members:
+                            tar.extract(member, temp_dir)
+
+                    main_tex, main_folder_abs = TexFileExtractor.find_main_tex_file(
+                        temp_dir
+                    )
+                    processed = True
+                except (
+                    tarfile.ReadError,
+                    tarfile.CompressionError,
+                    EOFError,
+                    gzip.BadGzipFile,
+                ) as e:
+                    print(
+                        f"[INFO] Failed to open {compressed_path} as tar.gz: {e}. Checking if it's a single gzipped file."
+                    )
+                    # Fall through to check if it's a single .gz file if the extension matches
+
+            # Handle single .gz file (or fallback from failed .tar.gz attempt)
+            if not processed and compressed_path.endswith(".gz"):
+                try:
+                    # Assume it's a single gzipped file
+                    base_filename = os.path.basename(compressed_path)
+                    # Attempt to create a sensible output filename
+                    output_filename = (
+                        base_filename[:-3]
+                        if base_filename.lower().endswith(".gz")
+                        else base_filename + "_extracted"
+                    )
+                    if not output_filename.lower().endswith(".tex"):
+                        output_filename += ".tex"  # Assume .tex if no extension
+                    temp_file_path = os.path.join(temp_dir, output_filename)
+
+                    with gzip.open(compressed_path, "rb") as f_in, open(
+                        temp_file_path, "wb"
+                    ) as f_out:
+                        shutil.copyfileobj(f_in, f_out)
+
+                    content_str = read_file(temp_file_path)
+                    if TexFileExtractor.is_main_tex_file(content_str):
+                        # For single files, the main_tex is the filename relative to temp_dir,
+                        # and the main_folder is temp_dir itself.
+                        main_tex = output_filename
+                        main_folder_abs = temp_dir
+                        processed = True
                     else:
-                        # Single file case
-                        temp_file = os.path.join(temp_dir, "temp_file.tex")
-                        with open(temp_file, "wb") as f_out:
-                            f_out.write(content)
+                        raise FileNotFoundError(
+                            f"Decompressed file {output_filename} from {compressed_path} is not a valid main TeX file."
+                        )
 
-                        content_str = read_file(temp_file)
-                        if TexFileExtractor.is_main_tex_file(content_str):
-                            main_tex = "temp_file.tex"
-                            main_folder = temp_dir
-                        else:
-                            raise FileNotFoundError(
-                                "Extracted file is not a valid TeX file"
-                            )
+                except gzip.BadGzipFile as gz_err:
+                    # This specifically catches errors if it's a .gz file but not valid gzip format
+                    raise IOError(
+                        f"Could not process {compressed_path}. Invalid Gzip file format: {gz_err}"
+                    ) from gz_err
+                except (
+                    Exception
+                ) as e:  # Catch other potential errors during single file processing
+                    raise IOError(
+                        f"Error processing {compressed_path} as single gz file: {e}"
+                    ) from e
 
+            if not processed:
+                raise ValueError(
+                    f"Unsupported file type or error processing file: {compressed_path}"
+                )
+
+            # Yield the relative path of main_tex from temp_dir and temp_dir itself
             yield main_tex, temp_dir
 
         finally:
@@ -166,8 +218,8 @@ class TexFileExtractor:
         Returns:
             tuple: (main_tex_file, folder_path)
         """
-        main_tex = cls.find_main_tex_file(folder_path)
-        return main_tex
+        main_tex, main_folder = cls.find_main_tex_file(folder_path)
+        return main_tex, main_folder
 
     @classmethod
     @contextmanager
