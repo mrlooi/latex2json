@@ -351,3 +351,37 @@ def test_substitute_args():
         substitute_args("\\#\\####1 \\#1 ##1 \\###2", ["arg", "arg2"])
         == "\\#\\####1 \\#1 arg \\#arg2"
     )
+
+
+def test_substitute_args_math_mode():
+    # check braces added if appropriate
+    assert (
+        substitute_args(r"\vert#1vert", ["arg1"], math_mode=True) == r"\vert{arg1}vert"
+    )
+
+    # math_mode=False should not add braces
+    assert (
+        substitute_args(r"\vert#1vert", ["arg1"], math_mode=False) == r"\vertarg1vert"
+    )
+
+    assert (
+        substitute_args(r"\vert#1\vert", ["arg1"], math_mode=True)
+        == r"\vert{arg1}\vert"
+    )
+
+    # braces not needed here since there are spaces
+    assert (
+        substitute_args(r"\vert #1 \vert", ["arg1"], math_mode=True)
+        == r"\vert arg1 \vert"
+    )
+
+    assert (
+        substitute_args(r"\vert#1 \vert", ["arg1"], math_mode=True)
+        == r"\vert{arg1} \vert"
+    )
+
+    # brace not needed here since surrounding #1 not alphabetic
+    assert (
+        substitute_args(r"\vert #1\vert", ["arg1"], math_mode=True)
+        == r"\vert arg1\vert"
+    )
