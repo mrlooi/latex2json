@@ -399,15 +399,9 @@ class FormattingHandler(TokenHandler):
                     extracted_content, end_pos = extract_nested_content(
                         content[start_pos:]
                     )
-                    return {
-                        "type": "date",
-                        "content": extracted_content,
-                    }, start_pos + end_pos
+                    return None, start_pos + end_pos
                 elif pattern_name == "today":
-                    return {
-                        "type": "date",
-                        "content": datetime.datetime.now().strftime("%Y-%m-%d"),
-                    }, match.end()
+                    return None, match.end()
                 elif pattern_name == "titlecontents":
                     return self._handle_titlecontents(content, match)
                 elif pattern_name in ["vspace", "pagebreak"]:
