@@ -3,6 +3,7 @@ import re
 from typing import Callable, Dict, List, Optional, Tuple
 from latex2json.parser.handlers.content_command import ContentCommandHandler
 from latex2json.utils.tex_utils import (
+    extract_args,
     extract_nested_content,
     check_delimiter_balance,
     extract_equation_content,
@@ -169,10 +170,15 @@ class EquationHandler(TokenHandler):
             if not equation:
                 return None, end_pos
 
-            # Handle unbalanced braces for non-environment equations
-            if not pattern_name in EQUATION_ENV and not check_delimiter_balance(
+            if pattern_name == "alignat":
+                # extract out {}
+                extracted_args, inner_end_pos = extract_args(equation, 1)
+                if extracted_args:
+                    equation = equation[inner_end_pos:].strip()
+            elif not pattern_name in EQUATION_ENV and not check_delimiter_balance(
                 equation
             ):
+                # Handle unbalanced braces for non-environment equations
                 delimiter = self._get_equation_delimiter(pattern_name)
                 if not delimiter:
                     return None, 0

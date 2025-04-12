@@ -40,6 +40,40 @@ def default_ignore_handler(
     return "", match.end()
 
 
+def should_wrap_math_mode_arg(
+    expanded_output: str,
+    full_text: str,
+    expanded_start_pos: int,  # position of the expanded output in the full text
+    expanded_end_pos: int,  # end position of the expanded output in the full text
+) -> bool:
+    c: str = expanded_output.strip()
+    start_pos = expanded_start_pos
+    end_pos = expanded_end_pos
+    should_wrap = False
+    if len(c) >= 1:
+        if start_pos > 0 and c[0].isalnum() and full_text[start_pos - 1].isalnum():
+            # if expanded first char and previous char in full_text are both alnum
+            should_wrap = True
+        elif (
+            c[-1].isalnum()
+            and end_pos < len(full_text)
+            and full_text[end_pos].isalnum()
+        ):
+            # if expanded last char and next char in full_text are both alnum
+            should_wrap = True
+        elif c.startswith("\\"):
+            is_single_command = c[1:].isalpha()
+            if not is_single_command and start_pos > 0:
+                # Handle both subscript and superscript
+                prev_char = full_text[start_pos - 1]
+                should_wrap = prev_char in "_^"
+                if not should_wrap:
+                    # wrap if last char is alphabetic
+                    should_wrap = c[-1].isalpha()
+
+    return should_wrap
+
+
 def wrap_math_mode_arg(text: str) -> str:
     # Strip whitespace first to properly check braces
     text = text.strip()
@@ -211,8 +245,8 @@ class CommandProcessor:
     def process_paired_delimiter(
         self, command_name: str, left_delim: str, right_delim: str
     ):
-        """Process a paired delimiter command like \br{content}"""
-        usage_pattern = r"\\" + command_name + r"\s*{"
+        r"""Process a paired delimiter command like \br{content}"""
+        usage_pattern = r"\\" + command_name + r"\*?\s*{"
 
         def handler(
             match: re.Match[str], text: str, math_mode: bool = False
@@ -222,8 +256,14 @@ class CommandProcessor:
             if content is None:
                 return "", start_pos
 
+            out = f"{left_delim}{content}{right_delim}"
+            if math_mode and should_wrap_math_mode_arg(
+                content, out, len(left_delim), len(left_delim) + len(content)
+            ):
+                out = left_delim + wrap_math_mode_arg(content) + right_delim
+
             end_pos += start_pos
-            return f"{left_delim}{content}{right_delim}", end_pos
+            return out, end_pos
 
         try:
             command: CommandEntry = {
@@ -366,21 +406,7 @@ class CommandProcessor:
             # if no space and/or starts with \\, we assume the output is a single command that may be affected if wrapped in braces
             # e.g. \tilde -> \tilde{...}, and NOT {\tilde}{...}
             if math_mode:
-                c: str = out.strip()
-                start_pos = match.start()
-                prev_char = text[start_pos - 1] if start_pos > 0 else ""
-                should_wrap = False
-                if start_pos > 0 and len(c) >= 1:
-                    if c[0].isalnum():
-                        should_wrap = True
-                    elif c.startswith("\\"):
-                        is_single_command = c[1:].isalpha()
-                        if not is_single_command:
-                            # Handle both subscript and superscript
-                            should_wrap = prev_char in "_^"
-                            if not should_wrap:
-                                # wrap if last char is alphabetic
-                                should_wrap = c[-1].isalpha()
+                should_wrap = should_wrap_math_mode_arg(out, text, match.start(), pos)
 
                 if should_wrap:
                     out = wrap_math_mode_arg(out)

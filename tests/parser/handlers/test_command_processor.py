@@ -83,27 +83,43 @@ def test_paired_delimiter(processor, newdef_handler):
     assert out_text == r"(x)"
     assert content[pos:] == " POST"
 
+    # also test with *
+    content = r"\br*{x} POST"
+    out_text, pos = processor.handle(content)
+    assert out_text == r"(x)"
+    assert content[pos:] == " POST"
 
-def test_expand_commands(processor, newdef_handler):
+
+def test_expand_paired_delimiters(processor, newdef_handler):
     processor.clear()
 
-    content = r"\DeclarePairedDelimiter{\br}{(}{)}"
-    token, pos = newdef_handler.handle(content)
-    assert token is not None
+    declares = [
+        r"\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}",
+        r"\DeclarePairedDelimiter{\br}{(}{)}",
+    ]
+    for declare in declares:
+        token, pos = newdef_handler.handle(declare)
+        assert token is not None
+        processor.process_paired_delimiter(
+            token["name"], token["left_delim"], token["right_delim"]
+        )
 
-    processor.process_paired_delimiter(
-        token["name"], token["left_delim"], token["right_delim"]
+    # regular \br
+    out_text, _ = processor.expand_commands(
+        r"\br{x}", ignore_unicode=True, math_mode=True
     )
+    assert out_text == r"(x)"
 
-    content = r"$\br{x}$"
+    # test \norm in text mode
+    content = r"\norm{x}"
     out_text, _ = processor.expand_commands(content, math_mode=False)
-    assert out_text == r"$(x)$"
+    assert out_text == r"\lVertx\rVert"  # no padding
 
-    # math mode = True pads the output with braces
+    # math mode = True pads the output with braces if alnum surrounding
     out_text, _ = processor.expand_commands(
         content, ignore_unicode=True, math_mode=True
     )
-    assert out_text == r"$(x)$"
+    assert out_text == r"\lVert{x}\rVert"
 
 
 def test_let_commands_are_copied(processor, newdef_handler):

@@ -78,6 +78,19 @@ def test_handle_equation_environments(handler):
     }
     assert pos == len(content)
 
+    # test alignat with 1 req arg
+    content = r"\begin{alignat} {1} x &= y\end{alignat} POST"
+    token, pos = handler.handle(content)
+    assert token == {
+        "type": "equation",
+        "content": "x &= y",
+        "display": "block",
+        "numbered": True,
+        "align": True,
+    }
+
+    assert content[pos:] == " POST"
+
 
 def test_handle_equations_with_labels(handler):
     # Test equation with label
