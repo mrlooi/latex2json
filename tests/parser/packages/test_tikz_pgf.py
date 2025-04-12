@@ -1,9 +1,9 @@
 import pytest
-from latex2json.parser.packages.tikz import TikzHandler
+from latex2json.parser.packages.tikz_pgf import TikzPGFHandler
 
 
 def test_tikz_handler_can_handle():
-    handler = TikzHandler()
+    handler = TikzPGFHandler()
 
     # Should handle tikz library commands
     assert handler.can_handle(r"\usetikzlibrary{matrix}")
@@ -15,7 +15,7 @@ def test_tikz_handler_can_handle():
 
 
 def test_tikz_handler_handle():
-    handler = TikzHandler()
+    handler = TikzPGFHandler()
 
     # Test with single library
     text = r"\usetikzlibrary{matrix} some text"
@@ -40,7 +40,7 @@ def test_tikz_handler_handle():
 
 
 def test_picture():
-    handler = TikzHandler()
+    handler = TikzPGFHandler()
 
     text = r"""\begin{picture}
     \draw (0,0) -- (1,1);
@@ -55,7 +55,7 @@ def test_picture():
 
 
 def test_tikzpicture():
-    handler = TikzHandler()
+    handler = TikzPGFHandler()
 
     text = r"""\begin{tikzpicture} 
 \draw (0,0) -- (1,1);

@@ -32,6 +32,7 @@ declare_pattern_N_blocks = {
     "DeclareFontShape": 6,
     "DeclareOption": 2,
     "SetMathAlphabet": 6,
+    "DeclareSymbolFont": 5,
     # both of the below create new macros, we handle this in newdef
     # "DeclareMathAlphabet": 5,
     # "DeclareSymbolFontAlphabet": 2,
@@ -95,7 +96,8 @@ RAW_PATTERNS = OrderedDict(
             "style",
             r"\\(?:pagestyle|urlstyle|thispagestyle|theoremstyle|bibliographystyle|documentstyle|setcitestyle)\s*\{[^}]*\}",
         ),
-        ("print", r"\\printbibliography\b"),
+        ("bib", r"\\printbibliography\b"),
+        ("bibmacro", r"\\renewbibmacro\*?\s*%s\s*{" % (BRACE_CONTENT_PATTERN)),
         ("newstyle", r"\\(?:newpagestyle|renewpagestyle)\s*\{[^}]*\}\s*{"),
         # ("font", r"\\(?:mdseries|bfseries|itshape|slshape|normalfont|ttfamily)\b"),
         # setters
@@ -150,7 +152,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "declare",
             re.compile(
-                r"\\(DeclareFontShape|DeclareFontFamily|DeclareOption|SetMathAlphabet|DeclareGraphicsExtensions)\*?\s*\{",
+                r"\\(DeclareFontShape|DeclareFontFamily|DeclareOption|DeclareSymbolFont|SetMathAlphabet|DeclareGraphicsExtensions)\*?\s*\{",
                 re.DOTALL,
             ),
         ),
@@ -182,10 +184,11 @@ RAW_PATTERNS = OrderedDict(
         # separators
         ("itemsep", r"\\itemsep\s*(=\s*)?-?\d*\.?\d+\w+?\b"),
         (
-            "table_separators",
+            "separators",
             r"\\(?:"
             r"hline\b|"  # no args
             r"center\b|"  # no args
+            r"hrulefill\b|"  # no args
             r"centerline\b|"  # no args
             r"cline\s*{([^}]+)}|"  # {n-m}
             r"topsep\b|parsep\b|partopsep\b|"
@@ -224,6 +227,7 @@ RAW_PATTERNS = OrderedDict(
         ("backslash", r"\\(?:backslash|textbackslash|arraybackslash)\b"),
         ("geometry", r"\\geometry\s*\{"),
         ("ensuremath", r"\\ensuremath\s*{"),
+        ("stackmath", r"\\stackMath\b"),
         ("hyphenation", r"\\hyphenation\s*{"),
         # Handle vspace separately
         ("vspace", r"\\vspace\*?\s*{[^}]*}"),
@@ -377,6 +381,7 @@ class FormattingHandler(TokenHandler):
                     "typeout",
                     "pdfinfo",
                     "Hy@",
+                    "bibmacro",
                 ]:
                     # extracted nested
                     start_pos = match.end() - 1

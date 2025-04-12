@@ -7,6 +7,7 @@ from latex2json.parser.handlers.base import TokenHandler
 from latex2json.parser.patterns import BRACE_CONTENT_PATTERN, OPTIONAL_BRACE_PATTERN
 from latex2json.utils.conversions import int_to_roman
 from latex2json.utils.tex_utils import (
+    extract_delimited_args,
     extract_nested_content,
     extract_nested_content_sequence_blocks,
     flatten_all_to_string,
@@ -52,27 +53,26 @@ TEXT_PATTERN = re.compile(
     rf"\\({TEXT_COMMANDS})" + r"(?![a-zA-Z])(?:\\expandafter)?(\s*(\{)|.*)?", re.DOTALL
 )
 
+BOX_DELIMITERS = {
+    r"[fhv]box": "{",  # \fbox{text} hbox vbox
+    "parbox": "[[[{{",  # \parbox[pos][height][inner-pos]{width}{text}
+    "makebox": "[[{",  # \makebox[width]{text}
+    "framebox": "[[{",  # \framebox[width][pos]{text}
+    "raisebox": "{[{",  # \raisebox{raise}[height]{text}
+    "colorbox": "{{",  # \colorbox{color}{text}
+    "fcolorbox": "{{{",  # \fcolorbox{border}{bg}{text}
+    "scalebox": "{{",  # \scalebox{scale}{text}
+    "mbox": "{",  # \mbox{text}
+    r"hbox\s+to\s*[^{]+": "{",  # \hbox to \hsize{text}
+    r"sbox\b\s*[^{]+": "{",  # \sbox\@tempboxa{text}
+    "pbox": "{{",  # \pbox{x}{text}
+    "resizebox": "{{{",  # \resizebox{width}{height}{text}
+    "rotatebox": "{{",  # \rotatebox{angle}{text}
+    "adjustbox": "{{",  # \adjustbox{max width=\textwidth}{text}
+}
+
 BOX_PATTERN = re.compile(
-    r"""
-    \\(?:
-        [fhv]box\s*{| # \fbox{text} hbox vbox 
-        parbox(?:\s*\[[^\]]*\])*\s*{[^}]*}\s*{| # \parbox[pos][height][inner-pos]{width}{text}
-        makebox(?:\s*\[[^\]]*\])*\s*{| # \makebox[width][pos]
-        framebox(?:\s*\[[^\]]*\])*\s*{| # \framebox[width][pos]
-        raisebox\s*{[^}]+}(?:\s*\[[^\]]*\])*\s*{| # \raisebox{raise}[height][depth]
-        colorbox\s*{[^}]*}\s*{|           # \colorbox{color}{text}
-        fcolorbox\s*{[^}]*}\s*{[^}]*}\s*{|   # \fcolorbox{border}{bg}{text}
-        scalebox\s*{[^}]*}\s*{|  # \scalebox{scale}{text}
-        mbox\s*{| # \mbox{text}
-        hbox\s+to\s*[^{]+\s*{| # \hbox to \hsize{text}
-        sbox\b\s*[^{]+\s*{| # \sbox\@tempboxa{text}
-        pbox\b\s*{[^}]*}\s*{| # \pbox{x}{text}
-        resizebox\s*{[^}]*}\s*{[^}]*}\s*{|  # \resizebox{width}{height}{text}
-        rotatebox\s*{[^}]*}\s*{| # \rotatebox{angle}{text}
-        adjustbox\s*{   # \adjustbox{max width=\textwidth}{...}
-    )
-    """,
-    re.VERBOSE | re.DOTALL,
+    r"\\(%s)\s*[\[\{]" % "|".join(BOX_DELIMITERS.keys()), re.VERBOSE | re.DOTALL
 )
 
 FONT_PATTERN = {
@@ -95,7 +95,7 @@ PATTERNS = {
     "columns": re.compile(r"\\(?:onecolumn\b|twocolumn\s*\[?)"),
     "subfloat": re.compile(r"\\subfloat\s*\["),
     "fancyhead": re.compile(
-        r"\\(?:fancyhead|rhead|chead|lhead)\s*%s\s*{" % OPTIONAL_BRACE_PATTERN,
+        r"\\(fancyhead|rhead|chead|lhead)\s*%s\s*{" % OPTIONAL_BRACE_PATTERN,
         re.DOTALL,
     ),
     "roman_numerals": re.compile(r"\\romannumeral\s+(\d+)"),
@@ -254,13 +254,20 @@ class TextFormattingHandler(TokenHandler):
         s = match.group(0)
         start_pos = match.end() - 1
 
-        if s.startswith("\\adjustbox"):
-            # strip out one brace
-            _, end_pos = extract_nested_content(content[start_pos:], "{", "}")
-            start_pos += end_pos
+        start_char = s[-1]
+        delimiter_str = BOX_DELIMITERS.get(match.group(1), start_char)
+        N = len(delimiter_str)
+        extracted_args, end_pos = extract_delimited_args(
+            content[start_pos:], delimiter_str
+        )
+        end_pos += start_pos
 
-        extracted_content, end_pos = extract_nested_content(content[start_pos:])
-        # extracted_content = extracted_content + "\n"  # add newline to end of box?
+        extracted_content = None
+        if len(extracted_args) == N:
+            extracted_content = extracted_args[-1]
+
+        if not extracted_content:
+            return None, end_pos
 
         one_liner = s.startswith("\\mbox")
 
@@ -276,8 +283,8 @@ class TextFormattingHandler(TokenHandler):
         out = normalize_text_token(extracted_content)
         # return as a list if group?
         if isinstance(out, dict) and out.get("type") == "group":
-            return out["content"], start_pos + end_pos
-        return out, start_pos + end_pos
+            return out["content"], end_pos
+        return out, end_pos
 
     def _handle_color(self, content: str, match: re.Match) -> Tuple[str, int]:
         start_pos = match.end() - 1
@@ -391,38 +398,35 @@ class TextFormattingHandler(TokenHandler):
 if __name__ == "__main__":
     handler = TextFormattingHandler()
 
-    # def check(text):
-    #     out, end_pos = handler.handle(text)
-    #     print(text, "->", out)
-    #     print("rem", text[end_pos:])
-    #     print()
+    test_cases = [
+        (r"\makebox{Simple text}", "Simple text"),
+        (r"\framebox{Simple text}", "Simple text"),
+        (r"\raisebox{2pt}{Raised text}", "Raised text"),
+        (r"\makebox[3cm]{Fixed width}", "Fixed width"),
+        (r"\framebox[3cm][l]{Left in frame}", "Left in frame"),
+        (r"\parbox{5cm}{Simple parbox text}", "Simple parbox text"),
+        (r"\parbox[t][3cm][s]{5cm}{Stretched vertically}", "Stretched vertically"),
+        (r"\fbox{Framed text}", "Framed text"),
+        (r"\colorbox{yellow}{Colored box}", "Colored box"),
+        (
+            r"\parbox[c][3cm]{5cm}{Center aligned with fixed height}",
+            "Center aligned with fixed height",
+        ),
+        (
+            r"""\mbox{
+            All
+            One line ajajaja
+            }""",
+            "All One line ajajaja",
+        ),
+        (r"\hbox to 3in{Some text}", "Some text"),
+        (r"\sbox\@tempboxa{Some text}", "Some text"),
+        (r"\pbox{3cm}{Some text}", "Some text"),
+        (r"\adjustbox{max width=\textwidth}{Some text}", "Some text"),
+        (r"\rotatebox{90}{Some text}", "Some text"),
+    ]
 
-    # text_blocks = [
-    #     r"\textbf \textsc sss",
-    # ]
-    # for text in text_blocks:
-    #     check(text)
-
-    text = r"""
-\romannumeral 123
-""".strip()
-    print(handler.handle(text))
-
-    # tokens = [
-    #     {
-    #         "type": "styled",
-    #         "style": "normal",
-    #         "content": [
-    #             {"type": "text", "content": "sss\n    "},
-    #             {
-    #                 "type": "styled",
-    #                 "style": "bold",
-    #                 "content": [{"type": "text", "content": "Hii"}],
-    #             },
-    #             {"type": "text", "content": "bro"},
-    #         ],
-    #     }
-    # ]
-
-    # out = TextFormattingHandler.process_style_in_tokens(tokens)
-    # print(out)
+    for command, expected_text in test_cases:
+        token, pos = handler.handle(command)
+        print(command)
+        assert token and token["content"].strip() == expected_text

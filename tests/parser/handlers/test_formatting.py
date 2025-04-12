@@ -251,6 +251,11 @@ def test_misc_formatting_commands(handler):
     \DeclareFontFamily{OT1}{rsfs}{}
     \DeclareFontShape{OT1}{rsfs}{n}{it}{<-> rsfs10}{}
     \SetMathAlphabet{\mathscr}{OT1}{rsfs}{n}{it}{xxx}
+    \DeclareSymbolFont{bbold}{U}{bbold}{m}{n}
+    
+    \renewbibmacro{in:}{}
+    \stackMath
+    \hrulefill
 
     \@addtoreset{equation}{section}
 

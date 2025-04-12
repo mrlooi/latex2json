@@ -418,6 +418,13 @@ def test_extract_delimited_args():
     assert args == ["arg1"]  # Should stop after first arg
     assert text[cmd_len + end_pos :] == " rest"
 
+    # Test with missing required argument
+    text = r"\cmd[1in]\hrulefill"
+    cmd_len = len(r"\cmd")
+    args, end_pos = extract_delimited_args(text[cmd_len:], "[[{")
+    assert args == ["1in"]  # Should stop after first arg
+    assert text[cmd_len + end_pos :] == "\hrulefill"
+
     # Test with nested delimiters
     text = r"\cmd{a{nested}}[opt[nested]]{arg2}{arg3} rest"
     cmd_len = len(r"\cmd")

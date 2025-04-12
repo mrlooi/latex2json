@@ -13,16 +13,16 @@ from latex2json.utils.tex_utils import (
 
 # TODO: all the tikz stuff...
 
-USE_TIKZ_LIB_PATTERN = re.compile(r"\\usetikzlibrary\s*{")
+USE_LIB_PATTERN = re.compile(r"\\use(tikz|pgf|pgfplots)library\s*{")
 
 PATTERNS = {
-    "usetikzlibrary": USE_TIKZ_LIB_PATTERN,
+    "uselibrary": USE_LIB_PATTERN,
     "begin_picture": re.compile(r"\\begin\s*\{(tikzpicture|picture|pgfpicture)\}"),
     "pgfplotsset": re.compile(r"\\pgfplotsset\s*{"),
 }
 
 
-class TikzHandler(TokenHandler):
+class TikzPGFHandler(TokenHandler):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -35,8 +35,8 @@ class TikzHandler(TokenHandler):
         for pattern_name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if match:
-                # If a \usetikzlibrary command is found, just ignore it
-                if pattern_name == "usetikzlibrary":
+                # If a \uselibrary command is found, just ignore it
+                if pattern_name == "uselibrary":
                     start_pos = match.end() - 1
                     content, end_pos = extract_nested_content(content[start_pos:])
                     return None, start_pos + end_pos
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 POST
 """.strip()
 
-    handler = TikzHandler()
+    handler = TikzPGFHandler()
     out, end_pos = handler.handle(text)
     print(out)
     print(text[end_pos:])

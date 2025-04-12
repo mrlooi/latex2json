@@ -323,7 +323,7 @@ def is_escaped(pos: int, text: str) -> bool:
 
 
 def strip_latex_comments(text: str) -> str:
-    """
+    r"""
     Remove all LaTeX comments while preserving escaped \% characters.
 
     A % starts a comment if it is preceded by an even number (including zero)
@@ -561,6 +561,7 @@ def extract_delimited_args(
     results = []
     current_pos = 0
 
+    total_end_pos = 0
     for delimiter in delimiter_pattern:
         # Skip all whitespace characters (including newlines)
         while current_pos < len(content) and content[current_pos].isspace():
@@ -582,7 +583,7 @@ def extract_delimited_args(
                 return results, current_pos  # Stop at first missing required arg
             results.append(nested_content)
             current_pos += end_pos
-
+            total_end_pos = current_pos
         elif delimiter == "[":
             # Optional argument
             content_slice = content[current_pos:]
@@ -590,10 +591,11 @@ def extract_delimited_args(
             if nested_content is not None:
                 results.append(nested_content)
                 current_pos += end_pos
+                total_end_pos = current_pos
             else:
                 results.append(None)
 
-    return results, current_pos
+    return results, total_end_pos
 
 
 if __name__ == "__main__":
