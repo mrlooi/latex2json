@@ -534,6 +534,68 @@ def substitute_args(definition: str, args: List[str], math_mode=False) -> str:
     return HASH_NUMBER_PATTERN.sub(sub_fn, definition)
 
 
+def extract_delimited_args(
+    content: str, delimiter_pattern: str
+) -> Tuple[List[str | None], int]:
+    """
+    Extract nested content based on a pattern of delimiters.
+
+    Args:
+        content: Input text to process
+        delimiter_pattern: String of opening delimiters where:
+            '{' indicates required curly braces
+            '[' indicates optional square brackets
+
+    Returns:
+        Tuple of (extracted_contents, end_position) where:
+            - extracted_contents is a list of contents up until first missing required arg
+            - end_position is the position after the last successfully processed delimiter
+
+    Example:
+        extract_delimited_args("foo{a}\n[b]{c}", "{[{")
+        -> (["a", "b", "c"], 13)
+
+        extract_delimited_args("foo{a}", "{[{")
+        -> (["a"], 5)  # Stops at first missing required argument
+    """
+    results = []
+    current_pos = 0
+
+    for delimiter in delimiter_pattern:
+        # Skip all whitespace characters (including newlines)
+        while current_pos < len(content) and content[current_pos].isspace():
+            current_pos += 1
+
+        if current_pos >= len(content):
+            break
+
+        current_char = content[current_pos]
+        if current_char not in ["{", "["]:
+            current_pos -= 1
+            break
+
+        if delimiter == "{":
+            # Required argument
+            content_slice = content[current_pos:]
+            nested_content, end_pos = extract_nested_content(content_slice, "{", "}")
+            if nested_content is None:
+                return results, current_pos  # Stop at first missing required arg
+            results.append(nested_content)
+            current_pos += end_pos
+
+        elif delimiter == "[":
+            # Optional argument
+            content_slice = content[current_pos:]
+            nested_content, end_pos = extract_nested_content(content_slice, "[", "]")
+            if nested_content is not None:
+                results.append(nested_content)
+                current_pos += end_pos
+            else:
+                results.append(None)
+
+    return results, current_pos
+
+
 if __name__ == "__main__":
     text = r"{ssss"
     print(find_matching_delimiter(text, "{", "}"))

@@ -23,6 +23,9 @@ def preprocess(content: str) -> str:
 
 
 class BibParser:
+
+    # _parsed_files = set()
+
     def __init__(self, logger: logging.Logger = None):
         # for logging
         self.logger = logger or logging.getLogger(__name__)
@@ -33,6 +36,7 @@ class BibParser:
 
     def clear(self):
         pass
+        # self._parsed_files = set()
 
     def parse(self, content: str) -> List[BibTexEntry]:
         """Parse both BibTeX, bibitem, and bibdiv entries from the content"""
@@ -58,6 +62,14 @@ class BibParser:
 
         return entries
 
+    def _open_file(self, file_path: str) -> str | None:
+        # if file_path in self._parsed_files:
+        #     self.logger.warning(f"BibParser: Already parsed {file_path}")
+        #     return None
+        # self._parsed_files.add(file_path)
+        with open(file_path, "r") as f:
+            return f.read()
+
     def parse_file(self, file_path: str) -> List[BibTexEntry]:
         """Parse a bibliography file and return list of entries.
 
@@ -74,16 +86,14 @@ class BibParser:
 
         # Case 1: File already has correct extension
         if file_path.endswith(tuple(exts)) and os.path.exists(file_path):
-            with open(file_path, "r") as f:
-                bib_content = f.read()
+            bib_content = self._open_file(file_path)
 
         # Case 2: Need to try adding extensions
         else:
             for ext in exts:
                 full_path = file_path + ext
                 if os.path.exists(full_path):
-                    with open(full_path, "r") as f:
-                        bib_content = f.read()
+                    bib_content = self._open_file(full_path)
                     break
 
         # Case 3: Try main.bbl first, then any .bbl file in the same directory
@@ -93,16 +103,14 @@ class BibParser:
 
             if os.path.exists(main_bbl):
                 self.logger.info("Bib fallback -> Found main.bbl")
-                with open(main_bbl, "r") as f:
-                    bib_content = f.read()
+                bib_content = self._open_file(main_bbl)
             else:
                 # Look for any .bbl file
                 bbl_files = [f for f in os.listdir(directory) if f.endswith(".bbl")]
                 if bbl_files:
                     first_bbl = os.path.join(directory, bbl_files[0])
                     self.logger.info(f"Bib fallback -> Found {bbl_files[0]}")
-                    with open(first_bbl, "r") as f:
-                        bib_content = f.read()
+                    bib_content = self._open_file(first_bbl)
 
         if bib_content:
             self.logger.info(f"BibParser: Parsing {file_path}")

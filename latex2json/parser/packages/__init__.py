@@ -2,6 +2,7 @@ from latex2json.parser.packages.etoolbox import EtoolboxHandler
 from latex2json.parser.packages.keyval import KeyValHandler
 from .tikz import TikzHandler
 from .overpic import OverpicHandler
+from .titlesec import TitlesecHandler
 
 # Define handler groups by priority (lower numbers run first)
 PACKAGE_HANDLERS = {
@@ -10,6 +11,7 @@ PACKAGE_HANDLERS = {
         OverpicHandler,
         TikzHandler,
         EtoolboxHandler,
+        TitlesecHandler,
         # Add other image-related handlers here
     ],
     # Priority 20: Table/data handlers

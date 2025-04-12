@@ -1,5 +1,6 @@
 import pytest
 from latex2json.utils.tex_utils import (
+    extract_delimited_args,
     extract_nested_content_sequence_blocks,
     extract_nested_content_pattern,
     find_matching_env_block,
@@ -385,3 +386,41 @@ def test_substitute_args_math_mode():
         substitute_args(r"\vert #1\vert", ["arg1"], math_mode=True)
         == r"\vert arg1\vert"
     )
+
+
+def test_extract_delimited_args():
+    # Basic test with all arguments present
+    text = r"\cmd{arg1}[opt]{arg2} rest"
+    cmd_len = len(r"\cmd")
+    args, end_pos = extract_delimited_args(text[cmd_len:], "{[{")
+    assert args == ["arg1", "opt", "arg2"]
+    assert text[cmd_len + end_pos :] == " rest"
+
+    # Test with missing optional argument
+    text = r"\cmd{arg1}{arg2} rest"
+    cmd_len = len(r"\cmd")
+    args, end_pos = extract_delimited_args(text[cmd_len:], "{[{")
+    assert args == ["arg1", None, "arg2"]
+    assert text[cmd_len + end_pos :] == " rest"
+
+    # Test with whitespace between arguments and newlines
+    text = r"""\cmd{arg1}  [opt]
+    {arg2} rest"""
+    cmd_len = len(r"\cmd")
+    args, end_pos = extract_delimited_args(text[cmd_len:], "{[{")
+    assert args == ["arg1", "opt", "arg2"]
+    assert text[cmd_len + end_pos :] == " rest"
+
+    # Test with missing required argument
+    text = r"\cmd{arg1} rest"
+    cmd_len = len(r"\cmd")
+    args, end_pos = extract_delimited_args(text[cmd_len:], "{[{")
+    assert args == ["arg1"]  # Should stop after first arg
+    assert text[cmd_len + end_pos :] == " rest"
+
+    # Test with nested delimiters
+    text = r"\cmd{a{nested}}[opt[nested]]{arg2}{arg3} rest"
+    cmd_len = len(r"\cmd")
+    args, end_pos = extract_delimited_args(text[cmd_len:], "{[{{")
+    assert args == ["a{nested}", "opt[nested]", "arg2", "arg3"]
+    assert text[cmd_len + end_pos :] == " rest"
