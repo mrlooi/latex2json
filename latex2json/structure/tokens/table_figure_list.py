@@ -7,15 +7,19 @@ from latex2json.structure.tokens.types import TokenType
 
 
 # FIGURE
-class FigureToken(EnvironmentToken):
+class FigureToken(BaseToken):
     """Represents figures"""
 
     type: TokenType = TokenType.FIGURE
     numbering: Optional[str] = None
 
 
+class SubFigureToken(BaseToken):
+    type: TokenType = TokenType.SUBFIGURE
+
+
 # TABLES
-class TableToken(EnvironmentToken):
+class TableToken(BaseToken):
     """Represents tables"""
 
     type: TokenType = TokenType.TABLE

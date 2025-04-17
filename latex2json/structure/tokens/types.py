@@ -23,6 +23,7 @@ class TokenType(Enum):
     MATH_ENV = "math_env"
     # Tables & Figures
     FIGURE = "figure"
+    SUBFIGURE = "subfigure"
     TABLE = "table"
     TABULAR = "tabular"
     CAPTION = "caption"

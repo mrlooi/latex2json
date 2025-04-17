@@ -775,7 +775,7 @@ def test_nested_figures(parser):
     assert figure["type"] == "figure"
 
     # Check subfigures
-    subfigures = [token for token in figure["content"] if token["type"] == "figure"]
+    subfigures = [token for token in figure["content"] if token["type"] == "subfigure"]
     assert len(subfigures) == 2
 
     # Check first subfigure

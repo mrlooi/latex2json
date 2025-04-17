@@ -24,6 +24,7 @@ from latex2json.structure.tokens.equation import EquationToken
 from latex2json.structure.tokens.table_figure_list import (
     ListToken,
     ItemToken,
+    SubFigureToken,
     TableToken,
     FigureToken,
     CaptionToken,
@@ -69,6 +70,7 @@ TokenMap: Dict[TokenType, Type[BaseToken]] = {
     TokenType.MATH_ENV: MathEnvToken,
     # Tables & Figures
     TokenType.FIGURE: FigureToken,
+    TokenType.SUBFIGURE: SubFigureToken,
     TokenType.TABLE: TableToken,
     TokenType.TABULAR: TabularToken,
     TokenType.CAPTION: CaptionToken,

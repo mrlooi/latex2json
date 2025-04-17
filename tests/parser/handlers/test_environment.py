@@ -248,7 +248,7 @@ def test_subfigure(handler):
 
     token, pos = handler.handle(content)
     assert token["name"] == "subfigure"
-    assert token["type"] == "figure"
+    assert token["type"] == "subfigure"
     out_c = token["content"].strip()
     assert out_c.startswith("\caption") and out_c.endswith("{conv}")
     assert content[pos:].strip() == "POST"

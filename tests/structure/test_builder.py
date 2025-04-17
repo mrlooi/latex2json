@@ -36,6 +36,9 @@ def latex_text():
         \begin{figure}[h]
             \includegraphics[page=1]{mypdf.pdf}
             \caption{My figure, from \cite[\textsc{p. 42}]{bibkey1}}
+            \begin{subfigure}[b]{0.45\textwidth}
+                \caption{Subfigure caption}
+            \end{subfigure}
         \end{figure}
 
         \subsection{SubIntro}
@@ -194,7 +197,6 @@ def expected_organizer_output():
                         },
                         {
                             "type": "figure",
-                            "name": "figure",
                             "numbered": True,
                             "numbering": "1",
                             "content": [
@@ -217,6 +219,20 @@ def expected_organizer_output():
                                                     "styles": [
                                                         FRONTEND_STYLE_MAPPING["textsc"]
                                                     ],
+                                                }
+                                            ],
+                                        },
+                                    ],
+                                },
+                                {
+                                    "type": "subfigure",
+                                    "content": [
+                                        {
+                                            "type": "caption",
+                                            "content": [
+                                                {
+                                                    "type": "text",
+                                                    "content": "Subfigure caption",
                                                 }
                                             ],
                                         },
@@ -570,7 +586,7 @@ def expected_organizer_output():
     ]
 
 
-def strip_content_str(content, omit_fields=[]):
+def strip_content_str(content, omit_fields=["name", "args"]):
     """Helper function to remove newline characters from the content."""
     if isinstance(content, list):
         return [strip_content_str(item, omit_fields) for item in content]
@@ -761,7 +777,7 @@ def test_organize_appendix(latex_parser):
     token_builder = TokenBuilder()
     organized_tokens = token_builder.organize_content(tokens)
 
-    normalized_organized = strip_content_str(organized_tokens, omit_fields=["name"])
+    normalized_organized = strip_content_str(organized_tokens)
     normalized_expected = strip_content_str(expected)
 
     assert normalized_organized == normalized_expected

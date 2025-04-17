@@ -81,9 +81,9 @@ ENV_TYPES = {
     "subsubtable": "table",
     "tabular": "tabular",  # should be handled in tabular handler
     "figure": "figure",
-    "subfigure": "figure",
+    "subfigure": "subfigure",
+    "subfloat": "subfigure",  # another common figure subdivision
     "wrapfigure": "figure",
-    "subfloat": "figure",  # another common figure subdivision
     "algorithm": "algorithm",
     "algorithmic": "algorithmic",
     "quote": "quote",
