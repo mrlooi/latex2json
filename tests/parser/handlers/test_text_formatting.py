@@ -150,6 +150,7 @@ def test_box_commands(handler):
         (r"\makebox{Simple text}", "Simple text"),
         (r"\framebox{Simple text}", "Simple text"),
         (r"\raisebox{2pt}{Raised text}", "Raised text"),
+        (r"\raisebox{2pt}[1pt][2pt]{Raised text}", "Raised text"),
         (r"\makebox[3cm]{Fixed width}", "Fixed width"),
         (r"\framebox[3cm][l]{Left in frame}", "Left in frame"),
         (r"\parbox{5cm}{Simple parbox text}", "Simple parbox text"),

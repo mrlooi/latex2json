@@ -234,7 +234,7 @@ RAW_PATTERNS = OrderedDict(
         ("phantom", r"\\(?:hphantom|vphantom|phantom)\s*{"),
         (
             "raise",
-            r"\\(?:raise|lower|raisebox)\s*(?:"
+            r"\\(?:raise|lower)\s*(?:"
             + number_regex
             + r"\w+\b|\{[^}]*\})(?:\s*\{[^}]*\})*",
         ),

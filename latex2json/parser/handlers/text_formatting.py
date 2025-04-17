@@ -58,7 +58,7 @@ BOX_DELIMITERS = {
     "parbox": "[[[{{",  # \parbox[pos][height][inner-pos]{width}{text}
     "makebox": "[[{",  # \makebox[width]{text}
     "framebox": "[[{",  # \framebox[width][pos]{text}
-    "raisebox": "{[{",  # \raisebox{raise}[height]{text}
+    "raisebox": "{[[{",  # \raisebox{distance}[extend-above][extend-below]{text}
     "colorbox": "{{",  # \colorbox{color}{text}
     "fcolorbox": "{{{",  # \fcolorbox{border}{bg}{text}
     "scalebox": "{{",  # \scalebox{scale}{text}
