@@ -117,6 +117,7 @@ RAW_PATTERNS = OrderedDict(
             + r"\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|skip|footskip|headheight|headsep|footnotesep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz|hoffset|voffset)"
             + r"\s*(\=?\s*(?:%s))?" % (number_points_suffix),
         ),
+        ("indent", r"\\indent\b"),
         (
             "lineskip",
             r"\\lineskip\s*%s" % (number_points_suffix)
@@ -357,6 +358,8 @@ class FormattingHandler(TokenHandler):
                         # then strip out the trailing number if it exists
                         strip_trailing_number_from_token(prev_token)
                     return None, match.end()
+                elif pattern_name == "indent":
+                    return {"type": "text", "content": "\t"}, match.end()
                 elif pattern_name == "backslash":
                     return {"type": "text", "content": r"\\"}, match.end()
                 elif pattern_name == "spacing":
