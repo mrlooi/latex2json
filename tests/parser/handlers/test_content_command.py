@@ -71,6 +71,11 @@ def test_handle_captions(handler):
         "content": "A figure caption",
     }
 
+    # test subcaption
+    token, pos = handler.handle(r"\subcaption{A subcaption}")
+    assert token["type"] == "caption"
+    assert token["content"] == "A subcaption"
+
 
 def test_handle_footnotes(handler):
     token, pos = handler.handle(r"\footnote{A footnote text}")

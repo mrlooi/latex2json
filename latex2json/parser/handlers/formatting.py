@@ -129,7 +129,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "spacing",
             r"\\(?:"
-            r"quad|qquad|xspace|,|;|:|\!|"  # \quad, \qquad, \, \; \:
+            r"quad|qquad|xspace|space|,|;|:|\!|"  # \quad, \qquad, \, \; \:
             r"hspace\*?\s*{([^}]+)}|"  # \hspace{length}
             r"hskip\s*%s" % (number_points_suffix)  # \hskip 10pt
             + r"|linespread\s*\{[^}]*\}"  # Added \linespread{...}
