@@ -69,6 +69,7 @@ WHITELISTED_COMMANDS = [
     "subsubsection",
     "paragraph",
     "subparagraph",
+    "newline",
     "maketitle",
     "title",
     "author",
