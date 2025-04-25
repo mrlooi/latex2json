@@ -7,7 +7,6 @@ from latex2json.parser.handlers.base import TokenHandler
 from latex2json.parser.patterns import BRACE_CONTENT_PATTERN, OPTIONAL_BRACE_PATTERN
 from latex2json.utils.conversions import int_to_roman
 from latex2json.utils.tex_utils import (
-    extract_delimited_args,
     extract_nested_content,
     extract_nested_content_sequence_blocks,
     flatten_all_to_string,
@@ -53,28 +52,6 @@ TEXT_PATTERN = re.compile(
     rf"\\({TEXT_COMMANDS})" + r"(?![a-zA-Z])(?:\\expandafter)?(\s*(\{)|.*)?", re.DOTALL
 )
 
-BOX_DELIMITERS = {
-    r"[fhv]box": "{",  # \fbox{text} hbox vbox
-    "parbox": "[[[{{",  # \parbox[pos][height][inner-pos]{width}{text}
-    "makebox": "[[{",  # \makebox[width]{text}
-    "framebox": "[[{",  # \framebox[width][pos]{text}
-    "raisebox": "{[[{",  # \raisebox{distance}[extend-above][extend-below]{text}
-    "colorbox": "{{",  # \colorbox{color}{text}
-    "fcolorbox": "{{{",  # \fcolorbox{border}{bg}{text}
-    "scalebox": "{{",  # \scalebox{scale}{text}
-    "mbox": "{",  # \mbox{text}
-    r"hbox\s+to\s*[^{]+": "{",  # \hbox to \hsize{text}
-    r"sbox\b\s*[^{]+": "{",  # \sbox\@tempboxa{text}
-    "pbox": "{{",  # \pbox{x}{text}
-    "resizebox": "{{{",  # \resizebox{width}{height}{text}
-    "rotatebox": "{{",  # \rotatebox{angle}{text}
-    "adjustbox": "{{",  # \adjustbox{max width=\textwidth}{text}
-}
-
-BOX_PATTERN = re.compile(
-    r"\\(%s)\s*[\[\{]" % "|".join(BOX_DELIMITERS.keys()), re.VERBOSE | re.DOTALL
-)
-
 FONT_PATTERN = {
     "fontsize": (r"\\fontsize" + (r"\s*" + BRACE_CONTENT_PATTERN) * 2),
     "selectfont": (r"\\selectfont\b"),
@@ -83,21 +60,13 @@ FONT_PATTERN = {
 
 PATTERNS = {
     "styled": TEXT_PATTERN,
-    "box": BOX_PATTERN,
     "citetext": re.compile(r"\\citetext\s*\{"),
-    # custom fonts (that we want to ignore)
     "fonts": re.compile("|".join(FONT_PATTERN.values())),
-    "frac": re.compile(r"\\(?:frac|nicefrac|textfrac)\s*\{", re.DOTALL),  # \frac{}{}
-    "texorpdfstring": re.compile(
-        r"\\texorpdfstring\s*\{", re.DOTALL
-    ),  # \texorpdfstring{pdf version}{text version}
+    "frac": re.compile(r"\\(?:frac|nicefrac|textfrac)\s*\{", re.DOTALL),
+    "texorpdfstring": re.compile(r"\\texorpdfstring\s*\{", re.DOTALL),
     "color": re.compile(r"\\textcolor\s*(\[\w+\])?\s*{"),
     "columns": re.compile(r"\\(?:onecolumn\b|twocolumn\s*\[?)"),
     "subfloat": re.compile(r"\\subfloat\s*\["),
-    "fancyhead": re.compile(
-        r"\\(fancyhead|rhead|chead|lhead)\s*%s\s*{" % OPTIONAL_BRACE_PATTERN,
-        re.DOTALL,
-    ),
     "roman_numerals": re.compile(r"\\romannumeral\s+(\d+)"),
 }
 
@@ -248,44 +217,6 @@ class TextFormattingHandler(TokenHandler):
         token = self._process_content(second)
         return token, end_pos
 
-    def _handle_box(
-        self, content: str, match: re.Match
-    ) -> Tuple[Dict | List[Dict], int]:
-        s = match.group(0)
-        start_pos = match.end() - 1
-
-        start_char = s[-1]
-        delimiter_str = BOX_DELIMITERS.get(match.group(1), start_char)
-        N = len(delimiter_str)
-        extracted_args, end_pos = extract_delimited_args(
-            content[start_pos:], delimiter_str
-        )
-        end_pos += start_pos
-
-        extracted_content = None
-        if len(extracted_args) == N:
-            extracted_content = extracted_args[-1]
-
-        if not extracted_content:
-            return None, end_pos
-
-        one_liner = s.startswith("\\mbox")
-
-        if self.process_content_fn:
-            extracted_content = self.process_content_fn(extracted_content)
-
-        if one_liner:
-            # make everything into one line
-            extracted_content = strip_latex_newlines(
-                flatten_all_to_string(extracted_content)
-            )
-
-        out = normalize_text_token(extracted_content)
-        # return as a list if group?
-        if isinstance(out, dict) and out.get("type") == "group":
-            return out["content"], end_pos
-        return out, end_pos
-
     def _handle_color(self, content: str, match: re.Match) -> Tuple[str, int]:
         start_pos = match.end() - 1
         blocks, end_pos = extract_nested_content_sequence_blocks(
@@ -363,7 +294,6 @@ class TextFormattingHandler(TokenHandler):
         return {"type": "text", "content": roman_numeral}, match.end()
 
     def handle(self, content: str, prev_token: Optional[Dict] = None):
-
         for name, pattern in PATTERNS.items():
             match = pattern.match(content)
             if not match:
@@ -374,17 +304,12 @@ class TextFormattingHandler(TokenHandler):
                 return self._handle_frac(content, match)
             elif name == "texorpdfstring":
                 return self._handle_texorpdfstring(content, match)
-            elif name == "box":
-                return self._handle_box(content, match)
             elif name == "color":
                 return self._handle_color(content, match)
             elif name == "columns":
                 return self._handle_columns(content, match)
             elif name == "subfloat":
                 return self._handle_subfloat(content, match)
-            elif name == "fancyhead":
-                # same handling as box
-                return self._handle_box(content, match)
             elif name == "citetext":
                 return self._handle_citetext(content, match)
             elif name == "roman_numerals":
@@ -397,36 +322,3 @@ class TextFormattingHandler(TokenHandler):
 
 if __name__ == "__main__":
     handler = TextFormattingHandler()
-
-    test_cases = [
-        (r"\makebox{Simple text}", "Simple text"),
-        (r"\framebox{Simple text}", "Simple text"),
-        (r"\raisebox{2pt}{Raised text}", "Raised text"),
-        (r"\makebox[3cm]{Fixed width}", "Fixed width"),
-        (r"\framebox[3cm][l]{Left in frame}", "Left in frame"),
-        (r"\parbox{5cm}{Simple parbox text}", "Simple parbox text"),
-        (r"\parbox[t][3cm][s]{5cm}{Stretched vertically}", "Stretched vertically"),
-        (r"\fbox{Framed text}", "Framed text"),
-        (r"\colorbox{yellow}{Colored box}", "Colored box"),
-        (
-            r"\parbox[c][3cm]{5cm}{Center aligned with fixed height}",
-            "Center aligned with fixed height",
-        ),
-        (
-            r"""\mbox{
-            All
-            One line ajajaja
-            }""",
-            "All One line ajajaja",
-        ),
-        (r"\hbox to 3in{Some text}", "Some text"),
-        (r"\sbox\@tempboxa{Some text}", "Some text"),
-        (r"\pbox{3cm}{Some text}", "Some text"),
-        (r"\adjustbox{max width=\textwidth}{Some text}", "Some text"),
-        (r"\rotatebox{90}{Some text}", "Some text"),
-    ]
-
-    for command, expected_text in test_cases:
-        token, pos = handler.handle(command)
-        print(command)
-        assert token and token["content"].strip() == expected_text

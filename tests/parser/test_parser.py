@@ -2185,5 +2185,19 @@ def test_keyval_definitions(parser):
     assert parsed_tokens[0]["content"].strip() == "Hello TITLE"
 
 
+def test_savebox_usebox(parser):
+    text = r"""
+    \newsavebox{\imagebox}
+    \savebox{\imagebox}{
+    \includegraphics[width=0.38\textwidth]{img/region_map_6_25.png}
+    }
+    \usebox{\imagebox}
+    """
+    parsed_tokens = parser.parse(text, preprocess=True)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "includegraphics"
+    assert parsed_tokens[0]["content"].strip() == "img/region_map_6_25.png"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
