@@ -13,31 +13,13 @@ from latex2json.parser.bib.compiled_bibtex import (
 )
 
 
-class BibFormat(Enum):
-    """Enum for bibliography formats"""
-
-    BIBTEX = "bibtex"
-    BIBITEM = "bibitem"
-
-    def __eq__(self, other) -> bool:
-        if isinstance(other, str):
-            return self.value == other
-        return super().__eq__(other)
-
-    def __hash__(self) -> int:
-        return hash(self.value)
-
-    def __str__(self) -> str:
-        return self.value
-
-
 @dataclass
 class BibTexEntry:
     """Unified bibliography entry model for both BibTeX and bibitem"""
 
     citation_key: str
     content: str
-    format: BibFormat = BibFormat.BIBTEX
+    format: str = "bibtex"  # Use .value instead of the enum
     label: Optional[str] = None
     # BibTeX related below
     entry_type: Optional[str] = None  # 'article', 'book', etc. for BibTeX

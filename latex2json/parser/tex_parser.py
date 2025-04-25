@@ -5,7 +5,6 @@ import sys, os, traceback
 import logging
 
 from latex2json.parser.bib.bib_parser import BibTexEntry, BibParser
-from latex2json.parser.bib.bibtex_parser import BibFormat
 from latex2json.utils.logger import setup_logger
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -290,7 +289,7 @@ class LatexParser:
 
     def _convert_bibentry_tokens(self, entry: BibTexEntry) -> Dict:
         content = entry.content
-        if entry.format == BibFormat.BIBITEM:
+        if entry.format == "bibitem":
             content = self.parse(content)
         return {
             "type": "bibitem",

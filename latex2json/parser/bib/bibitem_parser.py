@@ -1,7 +1,7 @@
 import re
 from typing import List
 import logging
-from latex2json.parser.bib.bibtex_parser import BibFormat, BibTexEntry
+from latex2json.parser.bib.bibtex_parser import BibTexEntry
 
 
 class BibItemParser:
@@ -51,7 +51,7 @@ class BibItemParser:
                     content=item,
                     label=match.group(1).strip() if match.group(1) else None,
                     entry_type="bibitem",
-                    format=BibFormat.BIBITEM,
+                    format="bibitem",
                     fields={},
                 )
                 entries.append(entry)
