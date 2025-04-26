@@ -70,8 +70,10 @@ RAW_PATTERNS = OrderedDict(
             r"\\(?:(?:[a-zA-Z@]+)?maketitle|makeatletter|makeatother|tableofcontents|@title)\b",
         ),
         ("addcontentsline", r"\\addcontentsline\s*\{[^}]*\}\s*\{[^}]*\}\s*\{[^}]*\}"),
+        ("addtocontents", r"\\(?:addtocontents|addtocounter)\s*\{[^}]*\s*\}\s*{"),
         ("titlecontents", r"\\titlecontents\s*{"),
-        ("contents", r"\\contentspage\b"),
+        ("contents", r"\\(?:contentspage|startcontents)\b"),
+        ("printcontents", r"\\printcontents\s*{"),
         (
             "page",
             r"\\enlargethispage\s*\{[^}]*\}|\\pagecolor\*?{[^}]*}|\\(?:centering|raggedright|raggedleft|allowdisplaybreaks|samepage|thepage|noindent|par|clearpage|cleardoublepage|nopagebreak|hss|hfill|hfil|vfill|vfil|break|sloppy|flushbottom|flushleft|flushright|flushtop)\b",
@@ -141,6 +143,8 @@ RAW_PATTERNS = OrderedDict(
         ),
         # \kern, which is technically spacing but more like a length between characters. so ignore
         ("kern", r"\\kern\s*%s" % (number_points_suffix)),
+        # tcb
+        ("tcb", r"\\(?:tcbset|tcbuselibrary)\s*{"),
         # options
         (
             "options",
@@ -219,7 +223,6 @@ RAW_PATTERNS = OrderedDict(
         ),
         ("paper", r"\\(?:paperwidth|paperheight)\s*=\s*%s(?:\w+)?" % number_regex),
         ("protect", r"\\protect\\[a-zA-Z]+(?:\s*(?:\[[^\]]*\]|\{[^}]*\})*)?"),
-        ("addtocontents", r"\\(?:addtocontents|addtocounter)\s*\{[^}]*\s*\}\s*{"),
         (
             "counters",
             r"\\c@page\b|\\counterwithin\s*\{[^}]*}\s*\{[^}]*\}|\\refstepcounter{[^}]+}|\\@addtoreset\s*\{[^}]*\}\s*\{[^}]*\}",
@@ -412,6 +415,20 @@ class FormattingHandler(TokenHandler):
                     return None, match.end()
                 elif pattern_name == "titlecontents":
                     return self._handle_titlecontents(content, match)
+                elif pattern_name == "printcontents":
+                    start_pos = match.end() - 1
+                    _, end_pos = extract_nested_content_sequence_blocks(
+                        content[start_pos:], "{", "}", max_blocks=3
+                    )
+                    start_pos += end_pos
+                    return None, start_pos
+                elif pattern_name == "tcb":
+                    start_pos = match.end() - 1
+                    _, end_pos = extract_nested_content_sequence_blocks(
+                        content[start_pos:], "{", "}", max_blocks=1
+                    )
+                    start_pos += end_pos
+                    return None, start_pos
                 elif pattern_name in ["vspace", "pagebreak"]:
                     return {"type": "text", "content": "\n"}, match.end()
                 elif pattern_name == "options":

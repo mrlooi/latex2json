@@ -321,6 +321,12 @@ def test_misc_formatting_commands(handler):
 
     \setdefaultlanguage{english}
     \tracinglostchars=3
+
+    \startcontents
+    \printcontents{}{1}{\setcounter{tocdepth}{2}}
+
+    \tcbset{colback=pink!50!20, colframe=white, boxrule=0mm, sharp corners}
+    \tcbuselibrary{skins}
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:
