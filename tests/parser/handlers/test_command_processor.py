@@ -177,6 +177,7 @@ def test_expand_commands_math_mode(processor, newdef_handler):
         r"\newcommand{\gab}{g^{\alpha\beta}}",
         r"\newcommand{\paa}{\partial_\alpha}",
         r"\newcommand{\f}{\frac}",
+        r"\newcommand{\la}{\left\vert}",
     ]
 
     for cmd in commands:
@@ -224,6 +225,19 @@ def test_expand_commands_math_mode(processor, newdef_handler):
         content, ignore_unicode=True, math_mode=True
     )
     assert out_text == r"x^\frac{1}{2}"
+
+    # check \la is wrapped in braces
+    content = r"\la \nabla_{x,y}"
+    out_text, _ = processor.expand_commands(
+        content, ignore_unicode=True, math_mode=True
+    )
+    assert out_text == r"\left\vert \nabla_{x,y}"
+
+    content = r"\chi(x-x_0) \la"
+    out_text, _ = processor.expand_commands(
+        content, ignore_unicode=True, math_mode=True
+    )
+    assert out_text == r"\chi(x-x_0) \left\vert"
 
 
 def test_ifstar_definitions(processor, newdef_handler):

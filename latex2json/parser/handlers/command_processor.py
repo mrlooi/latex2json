@@ -4,7 +4,7 @@ import re
 from typing import List, Dict, Optional, TypedDict, Callable, Pattern, Tuple
 from latex2json.latex_maps.latex_unicode_converter import LatexUnicodeConverter
 
-from latex2json.parser.patterns import command_or_dim
+# from latex2json.parser.patterns import command_or_dim
 from latex2json.parser.handlers.if_else_statements import IfElseBlockHandler
 from latex2json.utils.tex_utils import (
     extract_nested_content_sequence_blocks,
@@ -16,6 +16,7 @@ from latex2json.parser.handlers.new_definition import (
     END_CSNAME_PATTERN,
     START_CSNAME_PATTERN,
     extract_and_concat_nested_csname,
+    command_pattern,
 )
 
 
@@ -23,7 +24,7 @@ CSNAME_PATTERN = re.compile(
     START_CSNAME_PATTERN.pattern + r"(.*)" + END_CSNAME_PATTERN.pattern
 )
 
-COMPARISON_OP_PATTERN = re.compile(r"\s*=\s*%s" % command_or_dim)
+# COMPARISON_OP_PATTERN = re.compile(r"\s*=\s*%s" % command_or_dim)
 
 
 class CommandEntry(TypedDict):
@@ -40,6 +41,9 @@ def default_ignore_handler(
     return "", match.end()
 
 
+ENDS_WITH_SPACE_N_WORD_PATTERN = re.compile(r".+(\s+\w+)$")
+
+
 def should_wrap_math_mode_arg(
     expanded_output: str,
     full_text: str,
@@ -51,14 +55,15 @@ def should_wrap_math_mode_arg(
     end_pos = expanded_end_pos
     should_wrap = False
     if len(c) >= 1:
+        # print(start_pos, end_pos)
+        # print(c)
+        # print(full_text)
+        is_last = end_pos >= len(full_text)
+        next_pos_is_alnum = not is_last and full_text[end_pos].isalnum()
         if start_pos > 0 and c[0].isalnum() and full_text[start_pos - 1].isalnum():
             # if expanded first char and previous char in full_text are both alnum
             should_wrap = True
-        elif (
-            c[-1].isalnum()
-            and end_pos < len(full_text)
-            and full_text[end_pos].isalnum()
-        ):
+        elif c[-1].isalnum() and next_pos_is_alnum:
             # if expanded last char and next char in full_text are both alnum
             should_wrap = True
         elif c.startswith("\\"):
@@ -68,8 +73,11 @@ def should_wrap_math_mode_arg(
                 prev_char = full_text[start_pos - 1]
                 should_wrap = prev_char in "_^"
                 if not should_wrap:
-                    # wrap if last char is alphabetic
-                    should_wrap = c[-1].isalpha()
+                    # Check if expanded ends with space+word
+                    # this is to ensure stuff like \newcommand{\calR}{\mathcal R}, \calR 2 -> {\mathcal R} 2
+                    match = ENDS_WITH_SPACE_N_WORD_PATTERN.match(c)
+                    if match:
+                        should_wrap = True
 
     return should_wrap
 
