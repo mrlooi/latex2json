@@ -81,6 +81,9 @@ def test_handle_footnotes(handler):
     token, pos = handler.handle(r"\footnote{A footnote text}")
     assert token == {"type": "footnote", "content": "A footnote text"}
 
+    token, pos = handler.handle(r"\footnote[Hi]{A footnote text}")
+    assert token == {"type": "footnote", "content": "A footnote text"}
+
     token, pos = handler.handle(r"\footnotemark")
     assert token == {"type": "footnote", "content": "*"}
 

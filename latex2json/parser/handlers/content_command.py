@@ -27,7 +27,7 @@ RAW_PATTERNS = OrderedDict(
         ("part", r"\\part\*?\s*{"),
         ("chapter", r"\\chapter\*?\s*{"),
         ("paragraph", r"\\(?:(?:sub)*paragraph\*?)\s*{"),
-        ("footnote", r"\\footnote\*?\s*{"),
+        ("footnote", r"\\footnote\*?%s\s*{" % OPTIONAL_BRACE_PATTERN),
         ("caption", r"\\(caption|subcaption)\*?\s*%s\s*{" % OPTIONAL_BRACE_PATTERN),
         ("captionof", r"\\captionof\*?\s*{([^}]*?)}\s*{"),
         # input
