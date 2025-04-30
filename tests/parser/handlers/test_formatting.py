@@ -228,6 +228,8 @@ def test_misc_formatting_commands(handler):
     \linenumbers
     \linebreak
     \linebreak[1]
+    \smallbreak
+    \bigbreak
     \p@
     \z@
     5\p@
