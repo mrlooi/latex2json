@@ -118,7 +118,7 @@ RAW_PATTERNS = OrderedDict(
         (
             "margins",
             r"\\(?:rightmargin|leftmargin)\b|"
-            + r"\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|skip|footskip|headheight|headsep|footnotesep|marginparsep|marginparwidth|parindent|parskip|vfuzz|hfuzz|hoffset|voffset)"
+            + r"\\(?:topmargin|oddsidemargin|evensidemargin|textwidth|textheight|skip|footskip|headheight|headsep|footnotesep|marginparsep|marginparwidth|parindent|itemindent|parskip|vfuzz|hfuzz|hoffset|voffset)"
             + r"\s*(\=?\s*(?:%s))?" % (number_points_suffix),
         ),
         ("indent", r"\\indent\b"),

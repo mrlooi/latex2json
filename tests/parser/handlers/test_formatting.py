@@ -285,6 +285,7 @@ def test_misc_formatting_commands(handler):
     \pagecolor{lightgray}
     \pacs{98.70.Vc}
     \parindent = 0 pt
+    \itemindent=14pt
     \parskip = 5 pt
     \kern.4ex
     \pdfinfo{/Author (OK-Robot)}
