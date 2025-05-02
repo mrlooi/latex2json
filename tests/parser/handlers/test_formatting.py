@@ -262,6 +262,8 @@ def test_misc_formatting_commands(handler):
     \@addtoreset{equation}{section}
 
     \penalty1000
+    \clubpenalty=0 
+    \widowpenalty=0
     \interfootnotelinepenalty=1000
     \subjclass{Primary 01A80}
     \subjclass[xx]{Secondary 01A80}
@@ -276,6 +278,7 @@ def test_misc_formatting_commands(handler):
     \paperheight=11in
     \tableofcontents
     \counterwithin{table}{section}
+    \counterwithout{table}{section}
     \linespread{1.5}
     \raise.17ex
     \setlist[enumerate]{itemsep=-0.5mm,partopsep=0pt}

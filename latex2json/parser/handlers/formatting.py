@@ -88,7 +88,9 @@ RAW_PATTERNS = OrderedDict(
         ),
         (
             "penalty",
-            r"\\(?:penalty\s*|interfootnotelinepenalty\s*=?\s*)" + number_regex + r"\b",
+            r"\\(?:penalty|clubpenalty|widowpenalty|interfootnotelinepenalty)\s*=?"
+            + number_regex
+            + r"\b",
         ),
         (
             "skip",
@@ -225,7 +227,7 @@ RAW_PATTERNS = OrderedDict(
         ("protect", r"\\protect\\[a-zA-Z]+(?:\s*(?:\[[^\]]*\]|\{[^}]*\})*)?"),
         (
             "counters",
-            r"\\c@page\b|\\counterwithin\s*\{[^}]*}\s*\{[^}]*\}|\\refstepcounter{[^}]+}|\\@addtoreset\s*\{[^}]*\}\s*\{[^}]*\}",
+            r"\\c@page\b|\\(?:counterwithin|counterwithout)\s*\{[^}]*}\s*\{[^}]*\}|\\refstepcounter{[^}]+}|\\@addtoreset\s*\{[^}]*\}\s*\{[^}]*\}",
         ),
         ("add_enumerate_counter", r"\\AddEnumerateCounter\s*\{"),
         ("backslash", r"\\(?:backslash|textbackslash|arraybackslash)\b"),
