@@ -139,3 +139,17 @@ def test_box_content_processing(handler):
     assert command2[pos2:] == " POST"
     assert result2 is not None
     assert result2["content"] == "PROCESSED_Test content"
+
+
+def test_setbox(handler):
+    command = r"\setbox0=\hbox{Hello} POST"
+    result, pos = handler.handle(command)
+    assert command[pos:] == " POST"
+    assert result is None
+    assert handler.numbered_boxes[0]["content"] == "Hello"
+
+    command = r"\setbox1=\makebox[3cm]{World} POST"
+    result, pos = handler.handle(command)
+    assert command[pos:] == " POST"
+    assert result is None
+    assert handler.numbered_boxes[1]["content"] == "World"

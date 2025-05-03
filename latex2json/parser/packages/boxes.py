@@ -45,6 +45,9 @@ SAVED_BOX_PATTERN = re.compile(
     re.VERBOSE | re.DOTALL,
 )
 
+# Add new pattern after SAVED_BOX_PATTERN
+SETBOX_PATTERN = re.compile(r"\\(setbox)\s*(\d+)\s*=\s*", re.VERBOSE | re.DOTALL)
+
 
 def parse_varname_from_brace_or_backslash(var_name: str) -> Tuple[Optional[str], int]:
     if var_name.startswith("{"):
@@ -60,20 +63,28 @@ def parse_varname_from_brace_or_backslash(var_name: str) -> Tuple[Optional[str],
 
 class BoxHandler(TokenHandler):
     saved_boxes = {}
+    numbered_boxes = {}  # Add storage for numbered boxes
 
     def can_handle(self, content: str) -> bool:
         return bool(
             BOX_PATTERN.match(content)
             or FANCYHEAD_PATTERN.match(content)
             or SAVED_BOX_PATTERN.match(content)
+            or SETBOX_PATTERN.match(content)  # Add setbox pattern
         )
 
     def clear(self):
         self.saved_boxes = {}
+        self.numbered_boxes = {}  # Clear numbered boxes too
 
     def handle(
         self, content: str, prev_token: Dict = None
     ) -> Tuple[Dict | List[Dict], int]:
+        # Try to match setbox first
+        setbox_match = SETBOX_PATTERN.match(content)
+        if setbox_match:
+            return self._handle_setbox(content, setbox_match)
+
         # Try to match saved box commands first
         saved_match = SAVED_BOX_PATTERN.match(content)
         if saved_match:
@@ -160,20 +171,64 @@ class BoxHandler(TokenHandler):
 
         return None, match.end()
 
+    def _handle_setbox(
+        self, content: str, match: re.Match
+    ) -> Tuple[Optional[Dict], int]:
+        box_number = int(match.group(2))
+        start_pos = match.end()
+
+        # Skip any whitespace after the =
+        while start_pos < len(content) and content[start_pos].isspace():
+            start_pos += 1
+
+        # Check if the content after = matches any box pattern
+        remaining_content = content[start_pos:]
+        box_match = BOX_PATTERN.match(remaining_content)
+
+        if box_match:
+            # Use the existing box handling logic
+            box_result, end_pos = self.handle(remaining_content)
+            if box_result:
+                self.numbered_boxes[box_number] = box_result
+                return None, start_pos + end_pos
+
+        # Fallback to direct content extraction if no box pattern matches
+        extracted_args, end_pos = extract_delimited_args(remaining_content, "{")
+        if extracted_args:
+            box_content = extracted_args[0]
+            if self.process_content_fn:
+                box_content = self.process_content_fn(box_content)
+            # Store content in a consistent format
+            if isinstance(box_content, str):
+                self.numbered_boxes[box_number] = {
+                    "type": "text",
+                    "content": box_content,
+                }
+            else:
+                self.numbered_boxes[box_number] = box_content
+            return None, start_pos + end_pos
+
+        return None, start_pos
+
 
 if __name__ == "__main__":
     # Example usage of box handling
     handler = BoxHandler()
 
-    command1 = r"\newsavebox{\mybox} POST"
-    result1, pos1 = handler.handle(command1)
-    assert command1[pos1:] == " POST"
-    assert result1 is None  # newsavebox just registers, returns nothing
-    assert "mybox" in handler.saved_boxes
-    assert handler.saved_boxes["mybox"] is None
+    # command1 = r"\newsavebox{\mybox} POST"
+    # result1, pos1 = handler.handle(command1)
+    # assert command1[pos1:] == " POST"
+    # assert result1 is None  # newsavebox just registers, returns nothing
+    # assert "mybox" in handler.saved_boxes
+    # assert handler.saved_boxes["mybox"] is None
 
-    # Test sbox storing content
-    command2 = r"\sbox\mybox{Stored content} POST"
-    result2, pos2 = handler.handle(command2)
-    assert command2[pos2:] == " POST"
-    assert result2 is None  # sbox stores but returns nothing
+    # # Test sbox storing content
+    # command2 = r"\sbox\mybox{Stored content} POST"
+    # result2, pos2 = handler.handle(command2)
+    # assert command2[pos2:] == " POST"
+    # assert result2 is None  # sbox stores but returns nothing
+
+    command1 = r"\setbox0=\hbox{Hello} POST"
+    result1, pos1 = handler.handle(command1)
+    print(result1)
+    print(command1[pos1:])
