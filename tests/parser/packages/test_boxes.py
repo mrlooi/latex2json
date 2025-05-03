@@ -141,7 +141,17 @@ def test_box_content_processing(handler):
     assert result2["content"] == "PROCESSED_Test content"
 
 
+def test_newbox(handler):
+    handler.clear()
+    command = r"\newbox\myboxa"
+    result, pos = handler.handle(command)
+    assert command[pos:] == ""
+    assert result is None
+    assert "myboxa" in handler.saved_boxes
+
+
 def test_setbox(handler):
+    handler.clear()
     command = r"\setbox0=\hbox{Hello} POST"
     result, pos = handler.handle(command)
     assert command[pos:] == " POST"
@@ -153,3 +163,10 @@ def test_setbox(handler):
     assert command[pos:] == " POST"
     assert result is None
     assert handler.numbered_boxes[1]["content"] == "World"
+
+    # also test setbox\mybox
+    command1 = r"\setbox\mybox=\hbox{HI THERE} POST"
+    result1, pos1 = handler.handle(command1)
+    assert command1[pos1:] == " POST"
+    assert result1 is None
+    assert handler.saved_boxes["mybox"]["content"] == "HI THERE"

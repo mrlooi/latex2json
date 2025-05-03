@@ -41,12 +41,16 @@ FANCYHEAD_PATTERN = re.compile(
 
 # Add new pattern after BOX_PATTERN
 SAVED_BOX_PATTERN = re.compile(
-    r"\\(usebox|sbox|savebox|newsavebox)\s*(%s)" % command_with_opt_brace_pattern,
+    r"\\(usebox|sbox|savebox|newsavebox|newbox)\s*(%s)"
+    % command_with_opt_brace_pattern,
     re.VERBOSE | re.DOTALL,
 )
 
-# Add new pattern after SAVED_BOX_PATTERN
-SETBOX_PATTERN = re.compile(r"\\(setbox)\s*(\d+)\s*=\s*", re.VERBOSE | re.DOTALL)
+# add ADDITIONAL pattern for setbox
+SETBOX_PATTERN = re.compile(
+    r"\\setbox\s*(\d+|%s)\s*=\s*" % command_with_opt_brace_pattern,
+    re.VERBOSE | re.DOTALL,
+)
 
 
 def parse_varname_from_brace_or_backslash(var_name: str) -> Tuple[Optional[str], int]:
@@ -140,7 +144,7 @@ class BoxHandler(TokenHandler):
         # Strip braces from box name if present
         box_name = parse_varname_from_brace_or_backslash(box_name)
 
-        if command == "newsavebox":
+        if command.startswith("new"):
             # Just register the box name
             self.saved_boxes[box_name] = None
             return None, match.end()
@@ -174,7 +178,18 @@ class BoxHandler(TokenHandler):
     def _handle_setbox(
         self, content: str, match: re.Match
     ) -> Tuple[Optional[Dict], int]:
-        box_number = int(match.group(2))
+
+        box_name = match.group(1).strip()
+
+        # check if box_name is a number or \command
+        save_box_dict = self.saved_boxes
+        is_digit = box_name.isdigit()
+        if is_digit:
+            box_name = int(box_name)
+            save_box_dict = self.numbered_boxes
+        else:
+            box_name = parse_varname_from_brace_or_backslash(box_name)
+
         start_pos = match.end()
 
         # Skip any whitespace after the =
@@ -189,7 +204,7 @@ class BoxHandler(TokenHandler):
             # Use the existing box handling logic
             box_result, end_pos = self.handle(remaining_content)
             if box_result:
-                self.numbered_boxes[box_number] = box_result
+                save_box_dict[box_name] = box_result
                 return None, start_pos + end_pos
 
         # Fallback to direct content extraction if no box pattern matches
@@ -200,12 +215,12 @@ class BoxHandler(TokenHandler):
                 box_content = self.process_content_fn(box_content)
             # Store content in a consistent format
             if isinstance(box_content, str):
-                self.numbered_boxes[box_number] = {
+                save_box_dict[box_name] = {
                     "type": "text",
                     "content": box_content,
                 }
             else:
-                self.numbered_boxes[box_number] = box_content
+                save_box_dict[box_name] = box_content
             return None, start_pos + end_pos
 
         return None, start_pos

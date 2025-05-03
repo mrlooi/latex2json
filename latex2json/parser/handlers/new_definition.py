@@ -96,9 +96,7 @@ PATTERNS = {
     "newcounter": re.compile(
         r"\\(?:(?:re)?newcounter|stepcounter)\s*" + BRACE_CONTENT_PATTERN, re.DOTALL
     ),
-    "newother": re.compile(
-        r"\\(?:re)?new(?:count|box|dimen|skip|muskip)\s*\\([^\s{[]+)"
-    ),
+    "newother": re.compile(r"\\(?:re)?new(?:count|dimen|skip|muskip)\s*\\([^\s{[]+)"),
     "newcolumntype": re.compile(
         r"\\(?:newcolumntype|renewcolumntype)\s*\{[^}]*\}(?:\s*\[\d+\])?\s*{", re.DOTALL
     ),

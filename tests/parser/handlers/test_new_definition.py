@@ -521,10 +521,6 @@ def test_other_newX_commands(handler):
     token, pos = handler.handle(content)
     assert token["name"] == "cvpr@ruleroffset"
 
-    content = r"\newbox\cvpr@rulerbox"
-    token, pos = handler.handle(content)
-    assert token["name"] == "cvpr@rulerbox"
-
 
 def test_paired_delimiter(handler):
     content = r"\DeclarePairedDelimiter\br{(}{)} POST"
