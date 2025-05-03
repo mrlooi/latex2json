@@ -64,6 +64,7 @@ def test_box_with_surrounding_text(handler):
 def test_fancyhead(handler):
     test_cases = [
         (r"\fancyhead[R]{Simple text}", "Simple text"),
+        (r"\fancyheadoffset{Simple text}", "Simple text"),
         (r"\rhead{Simple text}", "Simple text"),
         (r"\lhead{Raised text}", "Raised text"),
     ]

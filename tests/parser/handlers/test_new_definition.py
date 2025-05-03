@@ -114,6 +114,22 @@ def test_handle_newtheorem(handler):
     }
 
 
+def test_handle_newtheoremstyle(handler):
+    content = r"""
+\newtheoremstyle{mystyle}
+  {}
+  {}
+  {\itshape}
+  {}
+  {\bfseries}
+  {.}
+  { }
+  {\thmname{#1}\thmnumber{ #2}\thmnote{ (#3)}} POST
+""".strip()
+    token, pos = handler.handle(content)
+    assert content[pos:] == " POST"
+
+
 def test_handle_newif(handler):
     content = r"\newif\ifvar\after"
     token, pos = handler.handle(content)

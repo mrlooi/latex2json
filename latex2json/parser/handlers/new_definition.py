@@ -76,6 +76,7 @@ PATTERNS = {
     "newtheorem": re.compile(
         r"\\newtheorem\*?{([^}]*)}(?:\[([^]]*)\])?{([^}]*)}(?:\[([^]]*)\])?", re.DOTALL
     ),
+    "newtheoremstyle": re.compile(r"\\newtheoremstyle\*?{", re.DOTALL),
     "crefname": re.compile(r"\\[cC]refname{([^}]*)}{([^}]*)}(?:{([^}]*)})?", re.DOTALL),
     "newtoks": re.compile(
         r"\\newtoks\s*(%s)" % (command_with_opt_brace_pattern), re.DOTALL
@@ -188,6 +189,8 @@ class NewDefinitionHandler(TokenHandler):
                     return self._handle_newtoks(match)
                 elif pattern_name == "newtheorem":
                     return self._handle_newtheorem(match)
+                elif pattern_name == "newtheoremstyle":
+                    return self._handle_newtheoremstyle(content, match)
                 elif pattern_name == "crefname":
                     return self._handle_crefname(match)
                 elif pattern_name == "newif":
@@ -410,6 +413,16 @@ class NewDefinitionHandler(TokenHandler):
             token["within"] = match.group(4)
 
         return token, match.end()
+
+    def _handle_newtheoremstyle(
+        self, content: str, match
+    ) -> Tuple[Optional[Dict], int]:
+        start_pos = match.end() - 1
+        blocks, end_pos = extract_nested_content_sequence_blocks(
+            content[start_pos:], "{", "}", max_blocks=9
+        )
+        end_pos += start_pos
+        return None, end_pos
 
     def _handle_namedef(self, content: str, match) -> Tuple[Optional[Dict], int]:
         r"""Handle \@namedef definitions"""

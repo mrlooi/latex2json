@@ -128,7 +128,10 @@ RAW_PATTERNS = OrderedDict(
             + r"|(%s)?\\baselineskip(?:\s*%s)?" % (number_regex, number_points_suffix),
         ),
         # width
-        ("width", r"\\(?:linewidth|columnwidth|textwidth|hsize|labelwidth|wd)\b"),
+        (
+            "width",
+            r"\\(?:linewidth|columnwidth|textwidth|hsize|labelwidth|wd)\b",
+        ),
         # spacing
         (
             "spacing",
@@ -223,7 +226,7 @@ RAW_PATTERNS = OrderedDict(
             r"\\(?:arrayrulewidth|heavyrulewidth|overfullrule)(?:\s*=?\s*%s(?:\w+)?)?"
             % number_regex,
         ),
-        ("paper", r"\\(?:paperwidth|paperheight)\s*=\s*%s(?:\w+)?" % number_regex),
+        ("paper", r"\\(?:paperwidth|paperheight)(?:\s*=\s*%s(?:\w+)?)?" % number_regex),
         ("protect", r"\\protect\\[a-zA-Z]+(?:\s*(?:\[[^\]]*\]|\{[^}]*\})*)?"),
         (
             "counters",
@@ -263,6 +266,7 @@ RAW_PATTERNS = OrderedDict(
         ("physics", r"\\pacs\s*\{(.*?)\}"),
         ("Hy@", r"\\Hy@[a-zA-Z]+\s*{"),
         ("unvbox", r"\\unvbox\s*(?:%s|\\[a-zA-Z@]+\b)" % (number_regex)),
+        ("string_or_chars", r"\\string\b|\\escapechar\b"),
     ]
 )
 

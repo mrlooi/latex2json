@@ -273,7 +273,9 @@ def test_misc_formatting_commands(handler):
     \cmidrule(lr){3-11}
 
     \FloatBarrier
-
+    \string
+    \escapechar
+    \paperwidth
     \paperwidth=8.5in
     \paperheight=11in
     \tableofcontents

@@ -34,7 +34,8 @@ BOX_PATTERN = re.compile(
 
 # Add fancyhead pattern
 FANCYHEAD_PATTERN = re.compile(
-    r"\\(fancyhead|rhead|chead|lhead)\s*%s\s*{" % OPTIONAL_BRACE_PATTERN,
+    r"\\(fancyhead|fancyheadoffset|rhead|chead|lhead)\s*%s\s*{"
+    % OPTIONAL_BRACE_PATTERN,
     re.DOTALL,
 )
 
