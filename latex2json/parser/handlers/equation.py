@@ -73,6 +73,7 @@ class EquationHandler(TokenHandler):
         """Remove LaTeX formatting commands from equation."""
         backslash_pos = equation.find("\\")
         while backslash_pos >= 0:
+            incr = 1
             x, end_pos = self.formatter.handle(
                 equation[backslash_pos:], exclude_patterns=["spacing"]
             )
@@ -85,6 +86,7 @@ class EquationHandler(TokenHandler):
                     + content
                     + equation[backslash_pos + end_pos :]
                 )
+                incr = 0
             else:
                 # check box handling to remove boxes e.g. raisebox
                 x, end_pos = self.box_handler.handle(equation[backslash_pos:])
@@ -97,8 +99,9 @@ class EquationHandler(TokenHandler):
                         + content
                         + equation[backslash_pos + end_pos :]
                     )
-            backslash_pos = equation.find("\\", backslash_pos + 1)
-        return equation
+                    incr = 0
+            backslash_pos = equation.find("\\", backslash_pos + incr)
+        return equation.strip()
 
     def _handle_labels(self, equation: str) -> Tuple[str, list[str]]:
         """Extract and remove labels from equation."""
@@ -244,14 +247,19 @@ class EquationHandler(TokenHandler):
 if __name__ == "__main__":
     handler = EquationHandler()
     # print(handler.can_handle("$x^2$"))
-    content = r"""
-    $
-    \begin{array}{c}
-    \includegraphics[width=0.5\textwidth]{example-image}
-    1+1=2, \mbox{as shown in \eqref{eq:sum}}
-    \end{array}
-    $
-    """.strip()
+    # content = r"""
+    # $
+    # \begin{array}{c}
+    # \includegraphics[width=0.5\textwidth]{example-image}
+    # 1+1=2, \mbox{as shown in \eqref{eq:sum}}
+    # \end{array}
+    # $
+    # """.strip()
+    # token, pos = handler.handle(content)
+    # print(token)
+    # print(content[pos:])
+
+    content = r"$$\setbox0=\hbox{1+1} \hbox{1+1} \kern-.6\wd0 $$ POST"
     token, pos = handler.handle(content)
     print(token)
     print(content[pos:])

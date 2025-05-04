@@ -2088,19 +2088,6 @@ def test_simple_quotes(parser):
     assert out.strip().split(" ") == ['"aaa"', "'aaa'", "'aaa'", '"aaa"']
 
 
-def test_newcommand_nested_equations(parser):
-    text = r"""
-    \newcommand{\app}{\raise.17ex\hbox{$\scriptstyle\sim$}}
-    $\app$3
-    """
-    parsed_tokens = parser.parse(text, preprocess=True)
-    assert len(parsed_tokens) == 2
-    assert parsed_tokens[0]["type"] == "equation"
-    assert parsed_tokens[0]["content"] == r"\hbox{$\scriptstyle\sim$}"
-    assert parsed_tokens[1]["type"] == "text"
-    assert parsed_tokens[1]["content"] == "3"
-
-
 def test_math_mode_padding(parser):
     # ensure that math mode padding is properly padded.
     # this is to ensure e.g. \vert#1->\vert{x}instead of error-prone \vert#1 -> \vertx

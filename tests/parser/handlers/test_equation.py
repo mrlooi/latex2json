@@ -257,6 +257,14 @@ def test_equation_with_boxes(handler):
     assert token["content"] == "1+1"
     assert content[pos:] == " POST"
 
+    # more complex setbox cases
+    content = r"$$\setbox0=\hbox{1+1} \hbox{1+1} \kern-.6\wd0 $$ POST"
+    assert handler.can_handle(content)
+    token, pos = handler.handle(content)
+    assert token
+    assert token["content"] == "1+1"
+    assert content[pos:] == " POST"
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
