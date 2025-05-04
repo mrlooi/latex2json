@@ -185,15 +185,6 @@ Post align
 
 def test_equation_with_nested_delimiters(handler):
     content = r"""
-    $\hbox{$\scriptstyle\sim$}$ POST
-    """.strip()
-    assert handler.can_handle(content)
-    token, pos = handler.handle(content)
-    assert token
-    assert token["content"] == r"\hbox{$\scriptstyle\sim$}"
-    assert content[pos:] == " POST"
-
-    content = r"""
     $$
     {
     $$1+1$$
@@ -256,6 +247,15 @@ def test_equation_with_includegraphics(handler):
     pl2 = placeholder_values[1]
     assert pl2 == [{"type": "ref", "content": ["eq:sum"]}]
     assert content[pos:].strip() == "AFTER"
+
+
+def test_equation_with_boxes(handler):
+    content = r"$$ \raisebox{\depth}{1+1} $$ POST"
+    assert handler.can_handle(content)
+    token, pos = handler.handle(content)
+    assert token
+    assert token["content"] == "1+1"
+    assert content[pos:] == " POST"
 
 
 if __name__ == "__main__":

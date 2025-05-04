@@ -1,4 +1,4 @@
-import datetime
+# import datetime
 import re
 from collections import OrderedDict
 from typing import Callable, Dict, List, Optional, Tuple
@@ -8,6 +8,7 @@ from latex2json.parser.patterns import (
     OPTIONAL_BRACE_PATTERN,
     BRACE_CONTENT_PATTERN,
     number_points_suffix,
+    command_with_opt_brace_pattern,
 )
 from latex2json.utils.tex_utils import (
     extract_nested_content,
@@ -130,7 +131,7 @@ RAW_PATTERNS = OrderedDict(
         # width
         (
             "width",
-            r"\\(?:linewidth|columnwidth|textwidth|hsize|labelwidth|wd)\b",
+            r"\\(?:linewidth|columnwidth|textwidth|hsize|labelwidth)\b",
         ),
         # spacing
         (
@@ -267,6 +268,14 @@ RAW_PATTERNS = OrderedDict(
         ("Hy@", r"\\Hy@[a-zA-Z]+\s*{"),
         ("unvbox", r"\\unvbox\s*(?:%s|\\[a-zA-Z@]+\b)" % (number_regex)),
         ("string_or_chars", r"\\string\b|\\escapechar\b"),
+        (
+            "dims",
+            re.compile(
+                r"\\(?:wd|ht|dp)(\d+|%s)" % (command_with_opt_brace_pattern),
+                re.VERBOSE | re.DOTALL,
+            ),
+        ),
+        ("debug", r"\\(?:showthe|the)\b"),
     ]
 )
 

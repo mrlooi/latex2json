@@ -74,7 +74,7 @@ class BoxHandler(TokenHandler):
             BOX_PATTERN.match(content)
             or FANCYHEAD_PATTERN.match(content)
             or SAVED_BOX_PATTERN.match(content)
-            or SETBOX_PATTERN.match(content)  # Add setbox pattern
+            or SETBOX_PATTERN.match(content)
         )
 
     def clear(self):
@@ -243,7 +243,12 @@ if __name__ == "__main__":
     # assert command2[pos2:] == " POST"
     # assert result2 is None  # sbox stores but returns nothing
 
-    command1 = r"\setbox0=\hbox{Hello} POST"
-    result1, pos1 = handler.handle(command1)
-    print(result1)
-    print(command1[pos1:])
+    # command1 = r"\setbox0=\hbox{Hello} POST"
+    # result1, pos1 = handler.handle(command1)
+    # print(result1)
+    # print(command1[pos1:])
+
+    command = r"\wd0 POST"
+    result, pos = handler.handle(command)
+    print(result)
+    print(command[pos:])

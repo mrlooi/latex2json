@@ -335,6 +335,11 @@ def test_misc_formatting_commands(handler):
 
     \tcbset{colback=pink!50!20, colframe=white, boxrule=0mm, sharp corners}
     \tcbuselibrary{skins}
+
+    \wd0
+    \wd\mybox
+    \the
+    \showthe
     """
     content = [l.strip() for l in text.strip().split("\n") if l.strip()]
     for line in content:

@@ -1,18 +1,17 @@
 import re
 from typing import Callable, Dict, List, Optional, Tuple
 from latex2json.parser.handlers.base import TokenHandler
-from latex2json.parser.patterns import BRACE_CONTENT_PATTERN
+from latex2json.parser.patterns import (
+    BRACE_CONTENT_PATTERN,
+    command_pattern,
+    command_with_opt_brace_pattern,
+)
 from latex2json.utils.tex_utils import (
     extract_nested_content,
     extract_nested_content_pattern,
     extract_nested_content_sequence_blocks,
 )
 
-# Command pattern matches:
-# 1. Standard commands: letters and @ (e.g., \foo, \@foo)
-# 2. Non-letter commands (e.g., \<, \>, \=, \,, \., \;, \!, \|, \$, \%, \&, \#, \_, \{, \}, \<<, \>>)
-# 3. Active character ~ which can behave like a command
-command_pattern = r"\\([a-zA-Z@]+|[<>=,\.;!|$%&#_{}()\[\]~]+|\d)"
 
 POST_NEW_COMMAND_PATTERN_STR = (
     r"\*?\s*(?:{%s}|%s)(?:\s*\[(\d+)\])?((?:\s*\[[^]]*\])*)\s*{"
@@ -32,8 +31,6 @@ LET_COMMAND_PATTERN = re.compile(
 EXPAND_PATTERN = re.compile(r"\\(?:expandafter|noexpand)(?:\w+)?(?![a-zA-Z])")
 START_CSNAME_PATTERN = re.compile(r"\\csname(?![a-zA-Z])")
 END_CSNAME_PATTERN = re.compile(r"\\endcsname(?![a-zA-Z])")
-
-command_with_opt_brace_pattern = r"(?:%s|%s)" % (BRACE_CONTENT_PATTERN, command_pattern)
 
 
 declare_pattern_N_blocks = {

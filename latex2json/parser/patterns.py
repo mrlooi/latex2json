@@ -7,7 +7,13 @@ OPTIONAL_BRACE_PATTERN = r"(?:\[[^\]]*\])?"
 
 NUMBER_PATTERN = r"[-+]?\d*\.?\d+"
 
-command_with_opt_brace_pattern = r"(?:{\s*)?\\([a-zA-Z@]+)(?:\s*})?"
+# Command pattern matches:
+# 1. Standard commands: letters and @ (e.g., \foo, \@foo)
+# 2. Non-letter commands (e.g., \<, \>, \=, \,, \., \;, \!, \|, \$, \%, \&, \#, \_, \{, \}, \<<, \>>)
+# 3. Active character ~ which can behave like a command
+command_pattern = r"\\([a-zA-Z@]+|[<>=,\.;!|$%&#_{}()\[\]~]+|\d)"
+command_with_opt_brace_pattern = r"(?:%s|%s)" % (BRACE_CONTENT_PATTERN, command_pattern)
+
 number_points_suffix = (
     NUMBER_PATTERN + r"\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)(?=[^a-zA-Z]|$)"
 )

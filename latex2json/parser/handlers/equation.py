@@ -2,6 +2,7 @@ from collections import OrderedDict
 import re
 from typing import Callable, Dict, List, Optional, Tuple
 from latex2json.parser.handlers.content_command import ContentCommandHandler
+from latex2json.parser.packages.boxes import BoxHandler
 from latex2json.utils.tex_utils import (
     extract_args,
     extract_nested_content,
@@ -57,8 +58,12 @@ class EquationHandler(TokenHandler):
     def __init__(self, process_content_fn: Optional[Callable] = None):
         self.process_content_fn = process_content_fn
         self.formatter = FormattingHandler()
+        self.box_handler = BoxHandler()
         # content command handler to parse out e.g. includegraphics/eqref etc inside equation/math itself
         self.content_command = ContentCommandHandler()
+
+    def clear(self):
+        self.box_handler.clear()
 
     def can_handle(self, content: str) -> bool:
         """Check if content contains an equation pattern."""
@@ -80,6 +85,18 @@ class EquationHandler(TokenHandler):
                     + content
                     + equation[backslash_pos + end_pos :]
                 )
+            else:
+                # check box handling to remove boxes e.g. raisebox
+                x, end_pos = self.box_handler.handle(equation[backslash_pos:])
+                if end_pos > 0:
+                    content = ""
+                    if x and isinstance(x.get("content", ""), str):
+                        content = x.get("content").strip().strip("$")
+                    equation = (
+                        equation[:backslash_pos]
+                        + content
+                        + equation[backslash_pos + end_pos :]
+                    )
             backslash_pos = equation.find("\\", backslash_pos + 1)
         return equation
 

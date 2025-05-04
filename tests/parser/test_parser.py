@@ -2199,5 +2199,19 @@ def test_savebox_usebox(parser):
     assert parsed_tokens[0]["content"].strip() == "img/region_map_6_25.png"
 
 
+def test_strip_boxes_in_equation(parser):
+    text = r"""
+    \DeclareRobustCommand{\rchi}{{\mathpalette\irchi\relax}}
+    \newcommand{\irchi}[2]{\raisebox{\depth}{$#1\chi$}} 
+    $\rchi_\alpha$
+    """
+    parsed_tokens = parser.parse(text, preprocess=True)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "equation"
+    assert parsed_tokens[0]["content"] == r"{\mathpalette\chi}_\alpha"
+
+    # more complex setbox cases
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
