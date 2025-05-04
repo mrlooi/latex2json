@@ -15,7 +15,7 @@ command_pattern = r"\\([a-zA-Z@]+|[<>=,\.;!|$%&#_{}()\[\]~]+|\d)"
 command_with_opt_brace_pattern = r"(?:%s|%s)" % (BRACE_CONTENT_PATTERN, command_pattern)
 
 number_points_suffix = (
-    NUMBER_PATTERN + r"\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)(?=[^a-zA-Z]|$)"
+    NUMBER_PATTERN + r"\s*(?:pt|mm|cm|in|em|ex|sp|bp|dd|cc|nd|nc)?(?=[^a-zA-Z]|$)"
 )
 command_or_dim = rf"(?:[-+]?\s*{command_with_opt_brace_pattern}|{number_points_suffix}|{NUMBER_PATTERN}\s*[-+]?\s*{command_with_opt_brace_pattern}|{NUMBER_PATTERN})"
 # Add these compiled patterns at module level

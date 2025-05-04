@@ -2199,6 +2199,17 @@ def test_savebox_usebox(parser):
     assert parsed_tokens[0]["content"].strip() == "img/region_map_6_25.png"
 
 
+def test_setbox_case(parser):
+    text = r"""
+    \setbox0=\hbox{HI THERE}
+    \hbox{HI THERE} \kern-.6\wd0
+    """
+    parsed_tokens = parser.parse(text, preprocess=True)
+    assert len(parsed_tokens) == 1
+    assert parsed_tokens[0]["type"] == "text"
+    assert parsed_tokens[0]["content"].strip() == "HI THERE"
+
+
 def test_strip_boxes_in_equation(parser):
     text = r"""
     \DeclareRobustCommand{\rchi}{{\mathpalette\irchi\relax}}
